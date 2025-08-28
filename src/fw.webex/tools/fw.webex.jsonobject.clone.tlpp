@@ -1,0 +1,39 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+    The source code `fw.webex.jsonobject.clone.tlpp` is based on a more detailed and feature-rich
+    source code, `dna.tech.jsonobject.clone.tlpp`, and implements part of the functionalities
+    present in the latter.
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "totvs.ch"
+#include "parmtype.ch"
+
+namespace FWWebEx
+using namespace FWWebEx
+
+class JSONObjectClone from FWWebEx.ClassBase
+    protected data jObject as json
+    protected method New(jObject as json) as object
+    static method CloneJSON(jObject as json) as json
+end class
+
+method New(jObject) class JSONObjectClone
+    paramtype 1 var jObject as json
+    self:jObject:=jObject
+return(self)
+
+static method CloneJSON(jObject) class JSONObjectClone
+    local oSelf as object
+    local oClone as object
+    paramtype 1 var jObject as json
+    oSelf:=JSONObjectClone():New(jObject)
+    oClone:=oSelf:Clone(oSelf)
+return(oClone:GetMemberData("jObject"))

@@ -5,6 +5,10 @@
 |  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
 |_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
 
+    The source code `fw.webex.class.base.tlpp` is based on a more detailed and feature-rich
+    source code, `dna.tech.class.base.tlpp`, and implements part of the functionalities
+    present in the latter.
+
 Released to Public Domain.
 --------------------------------------------------------------------------------------
 */

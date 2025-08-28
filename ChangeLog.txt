@@ -5,6 +5,10 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")
 */
 
+2025-08-28 20:38 (Clone JSONObject)
+  + src/fw.webex/tools/fw.webex.jsonobject.clone.tlpp
+  * src/fw.webex/tools/fw.webex.class.base.tlpp
+
 2025-08-15 18:06 UTC naldodj (Reuse Protheus ERPTOKEN from sessionStorage to authenticate DataTable REST requests via Bearer token)
   * src/fw.webex.examples/007/fw.webex.example.007.tlpp
   * src/fw.webex.examples/008/fw.webex.example.008.tlpp
