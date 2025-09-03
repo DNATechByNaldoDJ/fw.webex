@@ -31,9 +31,14 @@ method New(jObject) class JSONObjectClone
 return(self)
 
 static method CloneJSON(jObject) class JSONObjectClone
-    local oSelf as object
-    local oClone as object
+    local jTarget as json
+    local oSource as object
+    local oTarget as object
     paramtype 1 var jObject as json
-    oSelf:=JSONObjectClone():New(jObject)
-    oClone:=oSelf:Clone(oSelf)
-return(oClone:GetMemberData("jObject"))
+    oSource:=JSONObjectClone():New(jObject)
+    oTarget:=JSONObjectClone():New(JSONObject():New())
+    oTarget:SetFromObject(oSource)
+    FreeObj(@oSource)
+    jTarget:=oTarget:GetMemberData("JOBJECT")
+    FreeObj(@oTarget)
+return(jTarget)

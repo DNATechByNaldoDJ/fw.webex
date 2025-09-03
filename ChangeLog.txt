@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve complex data cloning and member setting)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor class cloning and JSON object handling)"
 */
+
+2025-09-03 18:37 UTC naldodj (Refactor class cloning and JSON object handling)
+  ! Refactor class cloning and JSON object handling
+    Updated class base methods to improve cloning logic, ensuring correct member data
+    assignment and handling of complex data types.
+    Refactored CloneJSON in JSONObjectClone to use new object instantiation and member copying, improving memory management and consistency.
+    * src/fw.webex/tools/fw.webex.class.base.tlpp
+    * src/fw.webex/tools/fw.webex.jsonobject.clone.tlpp
 
 2025-09-03 15:17 UTC naldodj (Improve complex data cloning and member setting)
   ! Improve complex data cloning and member setting

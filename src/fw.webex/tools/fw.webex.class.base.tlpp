@@ -92,15 +92,16 @@ method SetFromObject(oSource) class ClassBase
     cTargetClass:=GetClassName(self)
 
     if (cTargetClass==cSourceClass)
-        private __pFromObjSelf:=oSource as object
+        private __pFromObjSelf:=self as object
+        private __pFromObjSource:=oSource as object
         aMemberData:=aClone(ClassDataArr(oSource,.T.))
         for i:=1 to Len(aMemberData)
             cKey:=aMemberData[i][1]
-            cData:="__pFromObjSelf"
+            cData:="__pFromObjSource"
             cData+=":"
             cData+=cKey
             xValue:=&(cData)
-            self:SetMemberData(cKey,xValue,.T.)
+            __pFromObjSelf:SetMemberData(cKey,xValue,.T.)
         next i
         FWFreeArray(@aMemberData)
     endif
@@ -158,31 +159,32 @@ method SetMemberData(cMember,xValue,lSuperClass) class ClassBase
         cData+=":"
         cData+=cMember
         cType:=ValType(xValue)
-        if ((cType$"A|J|O").and.(FWIsInCallStack("CLONE")))
+        if (cType$"A|J|O")
             if (((cType=="J")).and.(Len(xValue)>0))
                 aJSON:=Array(0)
                 for i:=1 to Len(xValue)
-                    aAdd(aJSON,self:__CloneCompexData(xValue[i]))
+                    aAdd(aJSON,__pSetMemberDataSelf:__CloneCompexData(xValue[i]))
                 next i
-                xValue:=aJSON
+                &(cData):=JSONObject():New()
+                &(cData):Set(aClone(aJSON))
+                FWFreeArray(@aJSON)
             else
-                xValue:=self:__CloneCompexData(xValue)
+                xValue:=__pSetMemberDataSelf:__CloneCompexData(xValue)
+                &(cData):=xValue
             endif
-        endif
-        if ((cType=="J").and.(ValType(xValue)=="A"))
-            &(cData):Set(xValue)
         else
             &(cData):=xValue
         endif
     endif
 return(lSetMemberData)
 
-method Clone() class ClassBase
+method Clone(oSource) class ClassBase
     local oClone as object
+    paramtype oSource as object optional default self
     // Cria nova instancia do mesmo tipo
-    oClone:=self:__CloneNewInstance()
+    oClone:=oSource:__CloneNewInstance()
     // Copia dados da classe
-    oClone:SetFromObject(self)
+    oClone:SetFromObject(oSource)
 return(oClone)
 
 method __CloneNewInstance() class ClassBase
@@ -253,7 +255,8 @@ method __CloneCompexData(xComplex) class ClassBase
             if (j>0).and.(ValType(xComplex[1])=="J")
                 aJSON:=Array(0)
                 aAdd(aJSON,self:__CloneCompexData(xComplex[1]))
-                xClone:Set(aJSON)
+                xClone:Set(aClone(aJSON))
+                FWFreeArray(@aJSON)
             endif
         else
             for i:=1 to j
