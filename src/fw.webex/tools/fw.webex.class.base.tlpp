@@ -45,7 +45,7 @@ return(self)
 method ClassName() class ClassBase
     local aClassName as array
     local cClassName:=::ClassFullName()
-    aClassName:=StrTokArr2(cClassName,".")
+    aClassName:=StrTokArr2(cClassName,".",.T.)
     cClassName:=aClassName[Len(aClassName)]
 return(cClassName)
 
@@ -59,7 +59,7 @@ method ClassNameSpace() class ClassBase
     local i as numeric
     local j as numeric
     if ("."$cClassName)
-        aClassName:=StrTokArr2(cClassName,".")
+        aClassName:=StrTokArr2(cClassName,".",.T.)
         j:=Len(aClassName)
         aDel(aClassName,j)
         aSize(aClassName,--j)
@@ -92,11 +92,11 @@ method SetFromObject(oSource) class ClassBase
     cTargetClass:=GetClassName(self)
 
     if (cTargetClass==cSourceClass)
-        private pFromObjSelf:=oSource as object
+        private __pFromObjSelf:=oSource as object
         aMemberData:=aClone(ClassDataArr(oSource,.T.))
         for i:=1 to Len(aMemberData)
             cKey:=aMemberData[i][1]
-            cData:="pFromObjSelf"
+            cData:="__pFromObjSelf"
             cData+=":"
             cData+=cKey
             xValue:=&(cData)
@@ -141,9 +141,11 @@ method GetMemberData(cMember,xDefault,lSuperClass) class ClassBase
 return(xValue)
 
 method SetMemberData(cMember,xValue,lSuperClass) class ClassBase
+    local aJSON as array
     local cType as character
     local cData as character
     local lSetMemberData as logical
+    local i as numeric
     paramtype 1 var cMember as character
     if (xValue!=nil)
         paramtype 2 var xValue as array,block,character,json,logical,numeric,object
@@ -151,15 +153,27 @@ method SetMemberData(cMember,xValue,lSuperClass) class ClassBase
     paramtype 3 var lSuperClass as logical optional default .T.
     lSetMemberData:=AttIsMemberOf(self,cMember,lSuperClass)
     if (lSetMemberData)
-        private pSetMemberDataSelf:=self as object
-        cData:="pSetMemberDataSelf"
+        private __pSetMemberDataSelf:=self as object
+        cData:="__pSetMemberDataSelf"
         cData+=":"
         cData+=cMember
         cType:=ValType(xValue)
         if ((cType$"A|J|O").and.(FWIsInCallStack("CLONE")))
-            xValue:=self:__CloneCompexData(xValue)
+            if (((cType=="J")).and.(Len(xValue)>0))
+                aJSON:=Array(0)
+                for i:=1 to Len(xValue)
+                    aAdd(aJSON,self:__CloneCompexData(xValue[i]))
+                next i
+                xValue:=aJSON
+            else
+                xValue:=self:__CloneCompexData(xValue)
+            endif
         endif
-        &(cData):=xValue
+        if ((cType=="J").and.(ValType(xValue)=="A"))
+            &(cData):Set(xValue)
+        else
+            &(cData):=xValue
+        endif
     endif
 return(lSetMemberData)
 
@@ -215,6 +229,7 @@ method __CloneNewInstance() class ClassBase
 return(oClone)
 
 method __CloneCompexData(xComplex) class ClassBase
+    local aJSON as array
     local aNames as array
     local cKey as character
     local cType as character
@@ -233,10 +248,19 @@ method __CloneCompexData(xComplex) class ClassBase
         xClone:=JSONObject():New()
         aNames:=xComplex:GetNames()
         j:=Len(aNames)
-        for i:=1 to j
-            cKey:=aNames[i]
-            xClone[cKey]:=self:__CloneCompexData(xComplex[cKey])
-        next i
+        if (j==0)
+            j:=Len(xComplex)
+            if (j>0).and.(ValType(xComplex[1])=="J")
+                aJSON:=Array(0)
+                aAdd(aJSON,self:__CloneCompexData(xComplex[1]))
+                xClone:Set(aJSON)
+            endif
+        else
+            for i:=1 to j
+                cKey:=aNames[i]
+                xClone[cKey]:=self:__CloneCompexData(xComplex[cKey])
+            next i
+        endif
     case (cType=="O")
         cClassName:=GetClassName(xComplex)
         if(;

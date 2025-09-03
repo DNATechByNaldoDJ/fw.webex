@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve complex data cloning and member setting)"
 */
+
+2025-09-03 15:17 UTC naldodj (Improve complex data cloning and member setting)
+  ! Improve complex data cloning and member setting
+    Enhanced handling of JSON and array types in SetMemberData and __CloneCompexData
+    methods to better support deep cloning and assignment. Updated variable naming for
+    clarity and added logic to handle empty and nested JSON objects.
+    * src/fw.webex/tools/fw.webex.class.base.tlpp
 
 2025-08-28 20:38 (Clone JSONObject)
   + src/fw.webex/tools/fw.webex.jsonobject.clone.tlpp
