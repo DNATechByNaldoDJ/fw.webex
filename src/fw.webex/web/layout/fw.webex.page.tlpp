@@ -404,19 +404,22 @@ return(self)
 
 method Clean() class WebExPage
 
+    local jPageStyle as json
+
     //Styles
+    jPageStyle:=::jPageStyle
     aEval(;
-         ::jPageStyle:GetNames();
+         jPageStyle:GetNames();
         ,{|cName as character|;
             if(;
-                (ValType(::jPageStyle[cName])=="O");
+                (ValType(jPageStyle[cName])=="O");
                 ,(;
-                    ::jPageStyle[cName]:CleanChildren();
-                   ,FreeObj(::jPageStyle[cName]);
+                    jPageStyle[cName]:CleanChildren();
+                   ,FreeObj(@jPageStyle[cName]);
                 );
                 ,nil;
             );
-            ,::jPageStyle:DelName(cName);
+            ,jPageStyle:DelName(cName);
         };
     )
 
@@ -498,6 +501,7 @@ method RenderHTML() class WebExPage
 
     local jHeader as json
     local jAssets as json
+    local jPageStyle as json
     local jHeadScripts as json
     local jPageScripts as json
 
@@ -670,7 +674,8 @@ method RenderHTML() class WebExPage
             WITH WEBEXOBJECT CLASS WebExComment
                 .:SetContent("Custom Styles")
             END WEBEXOBJECT
-            aEval(::jPageStyle:GetNames(),{|cName|::GetMemberData("oPageHeader"):AddChild(::jPageStyle[cName])})
+            jPageStyle:=::jPageStyle
+            aEval(jPageStyle:GetNames(),{|cName|::GetMemberData("oPageHeader"):AddChild(jPageStyle[cName])})
             ***************************************************************************************************************************
             //Custom Scripts Head
             WITH WEBEXOBJECT CLASS WebExComment
@@ -769,6 +774,7 @@ method RenderHTML() class WebExPage
     endif
 
     FreeObj(@jHeader)
+    FreeObj(@jPageStyle)
     FreeObj(@jHeadScripts)
     FreeObj(@jPageScripts)
 

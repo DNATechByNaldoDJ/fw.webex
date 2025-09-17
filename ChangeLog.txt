@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor class cloning and JSON object handling)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor jPageStyle usage in WebExPage methods)"
 */
+
+2025-09-17 13:25 UTC naldodj (Refactor jPageStyle usage in WebExPage methods)
+  ! Refactor jPageStyle usage in WebExPage methods
+    Assigned ::jPageStyle to a local variable jPageStyle in Clean() and RenderHTML()
+    methods for consistency and clarity. Updated all references to use the local variable,
+    and ensured jPageStyle is properly freed in RenderHTML().
+      * src/fw.webex/web/layout/fw.webex.page.tlpp
 
 2025-09-03 18:37 UTC naldodj (Refactor class cloning and JSON object handling)
   ! Refactor class cloning and JSON object handling
