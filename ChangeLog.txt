@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add custom pagination styles for Bootstrap and DataTables)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update license notice to 'Public Domain' in templates)"
 */
+
+2025-09-18 20:49 UTC naldodj (Update license notice to 'Public Domain' in templates)
+  ; Changed the license notice from 'Released to Public DoBodyMain.' to 'Released to Public Domain.' in both
+    fw.webex.sbadmin.page.tlpp and fw.webex.page.tlpp for clarity and accuracy.
+    * src/fw.webex/web/layout/fw.webex.page.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.page.tlpp
 
 2025-09-18 16:03 UTC naldodj (Add custom pagination styles for Bootstrap and DataTables)
   ! Add custom pagination styles for Bootstrap and DataTables
