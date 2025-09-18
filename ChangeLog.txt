@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor jPageStyle usage in WebExPage methods)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add custom pagination styles for Bootstrap and DataTables)"
 */
+
+2025-09-18 16:03 UTC naldodj (Add custom pagination styles for Bootstrap and DataTables)
+  ! Add custom pagination styles for Bootstrap and DataTables
+      Introduced a new CSS block to style pagination components for Bootstrap 4/5, legacy Bootstrap 2/3, and DataTables.
+      These styles ensure consistent theming with the application's color variables and improve the appearance and usability
+      of pagination controls.
+        * src/fw.webex/web/layout/fw.webex.page.tlpp
 
 2025-09-17 13:25 UTC naldodj (Refactor jPageStyle usage in WebExPage methods)
   ! Refactor jPageStyle usage in WebExPage methods

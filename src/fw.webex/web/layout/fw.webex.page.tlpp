@@ -622,6 +622,79 @@ method RenderHTML() class WebExPage
                 accent-color: var(--totvs-red) !important;
             }
 
+            /* ------------ Pagination Sunset (Bootstrap 4/5 + legacy + DataTables) ------------ */
+            /* IMPORTANTE: carregue este bloco DEPOIS do bootstrap / datatables CSS */
+
+            /* Bootstrap 4/5 */
+            .pagination .page-link {
+                background-color: var(--totvs-btn-bg) !important;
+                color: var(--totvs-red) !important;
+                border: 1px solid var(--totvs-border) !important;
+                border-radius: 4px !important;
+                padding: .375rem .75rem !important;
+                font-weight: 600 !important;
+                transition: all .12s ease-in-out !important;
+            }
+
+            /* hover / focus */
+            .pagination .page-link:hover,
+            .pagination .page-link:focus {
+                background-color: var(--totvs-red) !important;
+                color: #fff !important;
+                text-decoration: none !important;
+                box-shadow: 0 0 0 .15rem rgba(198,40,40,0.12) !important;
+            }
+
+            /* active */
+            .pagination .page-item.active .page-link,
+            .pagination .page-item.active .page-link:hover,
+            .pagination .page-item.active .page-link:focus {
+                background-color: var(--totvs-red) !important;
+                border-color: var(--totvs-red) !important;
+                color: #fff !important;
+                cursor: default !important;
+                box-shadow: none !important;
+            }
+
+            /* disabled */
+            .pagination .page-item.disabled .page-link {
+                background-color: transparent !important;
+                color: var(--totvs-dark-gray) !important;
+                border-color: var(--totvs-border) !important;
+                pointer-events: none !important;
+                opacity: .65 !important;
+            }
+
+            /* Legacy Bootstrap 2/3 markup fallback */
+            .pagination > li > a,
+            .pagination > li > span {
+                background-color: var(--totvs-btn-bg) !important;
+                color: var(--totvs-red) !important;
+                border: 1px solid var(--totvs-border) !important;
+            }
+
+            /* DataTables pagination (quando usado) */
+            .dataTables_wrapper .dataTables_paginate .paginate_button {
+                background-color: var(--totvs-btn-bg) !important;
+                color: var(--totvs-red) !important;
+                border: 1px solid var(--totvs-border) !important;
+                border-radius: 4px !important;
+                padding: 6px 10px !important;
+                margin: 0 3px !important;
+            }
+            .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+            .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+                background-color: var(--totvs-red) !important;
+                color: #fff !important;
+                border-color: var(--totvs-red) !important;
+            }
+
+            /* Forca maxima (use so se necessario) */
+            body ul.pagination li.page-item a.page-link,
+            body .dataTables_wrapper .dataTables_paginate a.paginate_button {
+                /* fallback extra especifico */
+            }
+
         endContent
 
         ::AddPageStyle(cPageStyle)
