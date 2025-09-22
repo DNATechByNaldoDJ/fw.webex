@@ -123,8 +123,6 @@ static procedure FWWebExExample_012(cHTML as character) as character
     oFWWebExNavSide:=WebExNavSide():New()
     oFWWebExNavSide:SetType("div")
     oFWWebExNavSide:SetFixedID("webex-sidebar")
-    oFWWebExNavSide:AddClass("collapse")
-    oFWWebExNavSide:AddClass("show")
     oFWWebExNavSide:SetAttr("class","collapse show")
     oFWWebExNavSide:SetNavSideBrand("Side Menu")
 

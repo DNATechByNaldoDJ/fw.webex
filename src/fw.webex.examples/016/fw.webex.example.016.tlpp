@@ -106,8 +106,6 @@ static procedure FWWebExExample_016(cHTML as character) as character
                         WITH WEBEXOBJECT oWebExNavSide CLASS WebExNavSide
                             oWebExNavSide:SetType("div")
                             oWebExNavSide:SetFixedID("webex-sidebar")
-                            oWebExNavSide:AddClass("collapse")
-                            oWebExNavSide:AddClass("show")
                             oWebExNavSide:SetAttr("class","collapse show")
                             oWebExNavSide:SetNavSideBrand("Side Menu")
                             .:AddDivider()

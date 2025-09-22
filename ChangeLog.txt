@@ -2,8 +2,18 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update progress bar styles and remove bg-primary class)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor sidebar class assignment in WebExNavSide)"
 */
+
+2025-09-22 19:07 UTC naldodj (Refactor sidebar class assignment in WebExNavSide)
+  ! Refactor sidebar class assignment in WebExNavSide
+    Removed redundant AddClass calls for 'collapse' and 'show' on WebExNavSide objects
+    and replaced them with a single SetAttr('class', 'collapse show') call.
+    This simplifies the code and ensures class assignment is handled consistently.
+      * src/fw.webex/tools/fw.webex.file.tools.tlpp
+      * src/fw.webex.examples/012/fw.webex.example.012.tlpp
+      * src/fw.webex.examples/013/fw.webex.example.013.tlpp
+      * src/fw.webex.examples/016/fw.webex.example.016.tlpp
 
 2025-09-22 17:46 UTC naldodj (Update progress bar styles and remove bg-primary class)
   ! Update progress bar styles and remove bg-primary class

@@ -187,8 +187,6 @@ static method HTMLDumpDOMFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName
                             WITH WEBEXOBJECT oWebExNavSide CLASS WebExNavSide
                                 oWebExNavSide:SetType("div")
                                 oWebExNavSide:SetFixedID("webex-sidebar")
-                                oWebExNavSide:AddClass("collapse")
-                                oWebExNavSide:AddClass("show")
                                 oWebExNavSide:SetAttr("class","collapse show")
                                 oWebExNavSide:SetNavSideBrand("Side Menu")
                                 oWebExNavSideMenuItem:=oWebExNavSide:AddItem("Data","#",WebExIcon():New("bi-window"))
