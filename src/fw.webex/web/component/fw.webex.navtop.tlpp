@@ -63,7 +63,7 @@ method New(cNavTopBrand) class WebExNavTop
     ::jNavTopDropDowns:=JSONObject():New()
 
     _Super:New()
-    ::AddClass("navbar mb-4")
+    ::AddClass("navbar mb-4 w-100")
 
     // Botao para abrir/recolher o menu lateral (sidebar)
     ::oNavTopSidebarToggle:=WebExButton():New("","")
@@ -89,7 +89,7 @@ method New(cNavTopBrand) class WebExNavTop
 
     // Container principal do topo
     ::oNavTopContainer:=WebExDiv():New()
-    ::oNavTopContainer:SetAttr("class","container-fluid d-flex flex-column align-items-start px-0")
+    ::oNavTopContainer:SetAttr("class","container-fluid d-flex flex-row align-items-center px-0")
 
     ::oNavTopContainer:AddChild(::oNavTopSidebarToggle)
     ::oNavTopContainer:AddChild(::oNavTopBrand)

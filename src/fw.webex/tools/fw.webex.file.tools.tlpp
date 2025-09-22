@@ -204,16 +204,16 @@ static method HTMLDumpDOMFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName
                             .:AddClass("d-flex flex-column w-100")
                             //TopContainer
                             WITH WEBEXOBJECT CLASS WebExControl TYPE div
-                                .:AddClass("d-flex align-items-center gap-2") // gap-2 adiciona espaco
+                                .:AddClass("d-flex flex-row align-items-center gap-2") // gap-2 adiciona espaco
                                 //NavTop
                                 WITH WEBEXOBJECT CLASS WebExNavTop
-                                END WEBEXOBJECT
-                                //Nav
-                                WITH WEBEXOBJECT CLASS WebExControl TYPE nav
-                                    .:AddClass("navbar shadow mb-3")
-                                    WITH WEBEXOBJECT CLASS WebExControl TYPE h1
-                                        .:AddClass("h4")
-                                        .:SetContent(cProcName)
+                                    WITH WEBEXOBJECT .:GetMemberData("oNavTopContainer")
+                                        WITH WEBEXOBJECT CLASS WebExControl TYPE h1
+                                            .:AddClass("h4")
+                                            .:AddClass("mb-0")
+                                            .:AddClass("flex-grow-1")
+                                            .:SetContent(cProcName)
+                                        END WEBEXOBJECT
                                     END WEBEXOBJECT
                                 END WEBEXOBJECT
                             END WEBEXOBJECT

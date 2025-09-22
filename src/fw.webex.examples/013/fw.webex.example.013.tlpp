@@ -94,7 +94,6 @@ static procedure FWWebExExample_013(cHTML as character) as character
 
     local oH1 as object
 
-    local oTopBar as object
     local oWrapper as object
     local oTopContainer as object
     local oContentWrapper as object
@@ -109,14 +108,6 @@ static procedure FWWebExExample_013(cHTML as character) as character
     local oFWWebExSideBar as object
     local oFWWebExCardKPI1 as object
     local oFWWebExCardKPI2 as object
-
-    oH1:=WebExControl():New("h1")
-    oH1:AddClass("h4")
-    oH1:SetContent("Dashboard")
-
-    oTopBar:=WebExNav():New()
-    oTopBar:AddClass("navbar shadow mb-3")
-    oTopBar:AddChild(oH1)
 
     oFWWebExSideBar:=WebExSideBar():New()
 
@@ -155,12 +146,18 @@ static procedure FWWebExExample_013(cHTML as character) as character
     oFWWebExMain:AddChild(oFWWebExCardKPI1)
     oFWWebExMain:AddChild(oFWWebExCardKPI2)
 
+    oH1:=WebExControl():New("h1")
+    oH1:SetContent("Dashboard")
+    oH1:AddClass("h4")
+    oH1:AddClass("mb-0")
+    oH1:AddClass("flex-grow-1")
+
     oFWWebExNavTop:=WebExNavTop():New("")
+    oFWWebExNavTop:GetMemberData("oNavTopContainer"):AddChild(oH1)
 
     oTopContainer:=WebExDiv():New()
-    oTopContainer:AddClass("d-flex align-items-center gap-2") // gap-2 adiciona espaco
+    oTopContainer:AddClass("d-flex align-items-center gap-2 w-100") // gap-2 adiciona espaco
     oTopContainer:AddChild(oFWWebExNavTop)
-    oTopContainer:AddChild(oTopBar)
 
     oContentWrapper:=WebExDiv():New()
     oContentWrapper:AddClass("d-flex flex-column w-100")
@@ -227,7 +224,6 @@ static procedure FWWebExExample_013(cHTML as character) as character
 
     FreeObj(@oH1)
 
-    FreeObj(@oTopBar)
     FreeObj(@oWrapper)
     FreeObj(@oTopContainer)
     FreeObj(@oContentWrapper)
