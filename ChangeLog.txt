@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor nav top layout and header integration)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update progress bar styles and remove bg-primary class)"
 */
+
+2025-09-22 17:46 UTC naldodj (Update progress bar styles and remove bg-primary class)
+  ! Update progress bar styles and remove bg-primary class
+    Added custom CSS for progress bars to match the Sunset theme, ensuring consistent
+    appearance with Bootstrap 4/5 and legacy styles.
+    Removed the 'bg-primary' class from the progress bar in WebExBody to rely on the new custom styling.
+      * src/fw.webex/web/layout/fw.webex.page.tlpp
+      * src/fw.webex/web/page/fw.webex.body.tlpp
 
 2025-09-22 12:59 UTC naldodj (Refactor nav top layout and header integration)
   ! Refactor nav top layout and header integration

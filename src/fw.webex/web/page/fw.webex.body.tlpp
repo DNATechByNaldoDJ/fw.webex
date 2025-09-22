@@ -61,7 +61,6 @@ method New() class WebExBody
                         .:AddClass("progress-bar")
                         .:AddClass("progress-bar-striped")
                         .:AddClass("progress-bar-animated")
-                        .:AddClass("bg-primary")
                         .:SetAttr("style","width: 100%")
                         .:SetContent("Carregando...")
                     END WEBEXOBJECT

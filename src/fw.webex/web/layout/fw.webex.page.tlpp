@@ -695,6 +695,42 @@ method RenderHTML() class WebExPage
                 /* fallback extra especifico */
             }
 
+            /* ------------ ProgressBar Sunset (Bootstrap 4/5 + legacy) ------------ */
+            /* IMPORTANTE: carregue este bloco DEPOIS do bootstrap.css e datatables.css */
+            .progress {
+                background-color: var(--totvs-btn-bg) !important;
+                border-radius: 4px !important;
+                height: 1.25rem !important;
+                box-shadow: inset 0 0 3px rgba(0,0,0,0.2) !important;
+            }
+
+            .progress-bar {
+                background-color: var(--totvs-red) !important;
+                color: #fff !important;
+                font-weight: 600 !important;
+                text-align: center !important;
+                transition: width .3s ease-in-out !important;
+            }
+
+            .progress-bar.bg-primary {
+                /* forca conversao de "primary" pro red do sunset */
+                background-color: var(--totvs-red) !important;
+            }
+
+            .progress-bar-striped {
+                background-image: linear-gradient(
+                    45deg,
+                    rgba(255,255,255,.15) 25%,
+                    transparent 25%,
+                    transparent 50%,
+                    rgba(255,255,255,.15) 50%,
+                    rgba(255,255,255,.15) 75%,
+                    transparent 75%,
+                    transparent
+                ) !important;
+                background-size: 1rem 1rem !important;
+            }
+
         endContent
 
         ::AddPageStyle(cPageStyle)
