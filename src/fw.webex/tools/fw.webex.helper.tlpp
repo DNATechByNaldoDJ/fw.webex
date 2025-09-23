@@ -88,7 +88,7 @@ static method ConvertHeaderToJSObject(cHeaderString) class WebExHelper
 
     paramtype 1 var cHeaderString as character
 
-    aHeaderString:=StrTokArr2(cHeaderString,":")
+    aHeaderString:=StrTokArr2(cHeaderString,":",.T.)
     if (Len(aHeaderString)==2)
         cHeaderString:="'"+AllTrim(aHeaderString[1])+"'"
         cHeaderString+=":"

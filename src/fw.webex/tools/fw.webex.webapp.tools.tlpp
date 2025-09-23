@@ -283,8 +283,8 @@ static method JSToAdvPL(oTWebChannel,cCodeType,cCodeContent) class WebApp
     bCallBack:=oTWebChannel:bSetGet
 
     cCallBackAct:=Upper(AllTrim(oTWebChannel:cMSG))
-    aCallBackAct:=StrTokArr2(cCallBackAct,"|")
-    aEval(aCallBackAct,{|cCallBackActRet as character,y as numeric|aCallBackAct[y]:=StrTokArr2(cCallBackActRet,":")})
+    aCallBackAct:=StrTokArr2(cCallBackAct,"|",.T.)
+    aEval(aCallBackAct,{|cCallBackActRet as character,y as numeric|aCallBackAct[y]:=StrTokArr2(cCallBackActRet,":",.T.)})
 
     nCallBackAct:=aScan(;
         aCallBackAct;

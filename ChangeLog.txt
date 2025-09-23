@@ -2,8 +2,19 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor sidebar class assignment in WebExNavSide)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update StrTokArr2 usage and improve filter UI)"
 */
+
+2025-09-23 03:45 UTC naldodj (Update StrTokArr2 usage and improve filter UI)
+  % Update StrTokArr2 usage and improve filter UI
+      Replaces calls to StrTokArr2 with explicit .T. parameter for consistent tokenization across multiple files.
+      In fw.webex.example.020, refactors the filter and search UI, renaming elements and adding a new search input with live filtering for better usability.
+        * src/fw.webex/tools/fw.webex.helper.tlpp
+        * src/fw.webex/tools/fw.webex.webapp.tools.tlpp
+        * src/fw.webex/web/control/fw.webex.control.tlpp
+        * src/fw.webex.examples/007/fw.webex.example.007.tlpp
+        * src/fw.webex.examples/008/fw.webex.example.008.tlpp
+        * src/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-22 19:07 UTC naldodj (Refactor sidebar class assignment in WebExNavSide)
   ! Refactor sidebar class assignment in WebExNavSide

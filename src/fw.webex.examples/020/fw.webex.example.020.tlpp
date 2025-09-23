@@ -135,9 +135,12 @@ static procedure FWWebExExample_020(cHTML as character) as character
                 <!-- fora da tabela, sera movido via JS -->
                 <div id="meuFiltroCustom" class="datatable-filter-wrapper mb-2">
                     <div class="input-group input-group-sm">
-                        <select id="searchField" class="form-select form-select-sm"></select>
-                        <input id="searchValue" type="text" class="form-control" placeholder="Digite o valor..." />
-                        <button id="btnSearch" class="btn btn-primary" type="button">Pesquisar</button>
+                        <select id="filterField" class="form-select form-select-sm"></select>
+                        <input id="filterValue" type="search" class="form-control" placeholder="Filter..." aria-label="Filter" />
+                        <button id="btnFilter" class="btn btn-primary" type="button">Filtrar</button>
+                    </div>
+                    <div class="input-group">
+                        <input id="searchValue" type="search" class="form-control" placeholder="Search..." aria-label="Search" />
                     </div>
                 </div>
                 <table id="example" class="table table-striped table-hover display compact nowrap">
@@ -160,7 +163,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
 
                 function montarCampoSelect() {
                     const fields = yesFields.split(',');
-                    const select = document.getElementById("searchField");
+                    const select = document.getElementById("filterField");
                     fields.forEach(field => {
                         const opt = document.createElement("option");
                         opt.value = field.trim();
@@ -265,10 +268,19 @@ static procedure FWWebExExample_020(cHTML as character) as character
             let filtroCampo = "";
             let filtroValor = "";
 
-            document.getElementById("btnSearch").addEventListener("click", function () {
-                filtroCampo = document.getElementById("searchField").value;
-                filtroValor = document.getElementById("searchValue").value.trim();
+            document.getElementById("btnFilter").addEventListener("click", function () {
+                filtroCampo = document.getElementById("filterField").value;
+                filtroValor = document.getElementById("filterValue").value.trim();
                 table.ajax.reload(); // recarrega o DataTable usando o novo filtro
+            });
+
+            document.getElementById('searchValue').addEventListener('keyup', function() {
+                const filter = this.value.toLowerCase();
+                const rows = document.querySelectorAll('table tbody tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
             });
 
             table.on('processing.dt', function (e, settings, processing) {

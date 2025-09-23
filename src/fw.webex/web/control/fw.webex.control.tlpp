@@ -275,7 +275,7 @@ return(cAttrValues)
 method GetAttrArray(cAttr) class WebExControl
     local aAttrValues as array
     paramtype 1 var cAttr as character
-    aAttrValues:=StrTokArr2(Lower(AllTrim(::GetAttr(cAttr)))," ")
+    aAttrValues:=StrTokArr2(Lower(AllTrim(::GetAttr(cAttr)))," ",.T.)
 return(aAttrValues)
 
 method HasAttr(cAttr,cAttrValue,aAttr) class WebExControl
@@ -910,7 +910,7 @@ method AddClass(cNewClass) class WebExControl
         while (cChrSpace2$cNewClass)
             cNewClass:=StrTran(cNewClass,cChrSpace2," ")
         end while
-        aNewClass:=StrTokArr2(Lower(AllTrim(cNewClass))," ")
+        aNewClass:=StrTokArr2(Lower(AllTrim(cNewClass))," ",.T.)
         for i:=1 to Len(aNewClass)
             cClassItem:=AllTrim(aNewClass[i])
             if (Empty(cClassItem))

@@ -106,7 +106,7 @@ static procedure FWWebExExample_007(cHTML as character) as character
 
     lUseCredential:=(Type("__cCredential")=="C")
     lUseCredential:=((lUseCredential).and.(!Empty("__cCredential")))
-    lUseCredential:=((lUseCredential).and.(Len(StrTokArr2(__cCredential,";"))>=4))
+    lUseCredential:=((lUseCredential).and.(Len(StrTokArr2(__cCredential,";",.T.))>=4))
 
     if (!FWExampleTools():GetRESTCredential(@cUSR,@cPDW,@cRESTURL,@cRESTURLOAuth2,@jGetAuthorization,@lUseOAuth2))
         return
