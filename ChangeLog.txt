@@ -2,8 +2,13 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update StrTokArr2 usage and improve filter UI)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Remove duplicate SetFixedID call in modal setup)"
 */
+
+2025-09-23 10:47 UTC naldodj (Remove duplicate SetFixedID call in modal setup)
+    ! Remove duplicate SetFixedID call in modal setup
+      Eliminated a redundant call to .:SetFixedID(cIDModal) in the RenderHTML method of WebExTemplateBulkActionTable to clean up the code.
+        * src/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp
 
 2025-09-23 03:45 UTC naldodj (Update StrTokArr2 usage and improve filter UI)
   % Update StrTokArr2 usage and improve filter UI
