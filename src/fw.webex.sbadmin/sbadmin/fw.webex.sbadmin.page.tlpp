@@ -34,7 +34,9 @@ method New(cPageTitle) class SBAdminPage
 
     local cSBAdminPath as character
 
-    _Super:New()
+    paramtype cPageTitle as character optional default "FWWEBEX_SBADMIN"
+
+    _Super:New(cPageTitle)
     _Super:DisableFooter(.T.)
     _Super:DisableDarkTheme(.T.)
 

@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Remove duplicate SetFixedID call in modal setup)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Pass page title to SBAdminPage constructor)"
 */
+
+2025-09-23 21:05 UTC naldodj (Pass page title to SBAdminPage constructor)
+    ! Pass page title to SBAdminPage constructor
+      Adds an optional cPageTitle parameter to the SBAdminPage constructor and passes it to the superclass.
+      This allows customization of the page title when creating SBAdminPage instances.
+        * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.page.tlpp
 
 2025-09-23 10:47 UTC naldodj (Remove duplicate SetFixedID call in modal setup)
     ! Remove duplicate SetFixedID call in modal setup
