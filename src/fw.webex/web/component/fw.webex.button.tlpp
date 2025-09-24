@@ -15,13 +15,18 @@ namespace FWWebEx
 
 class WebExButton from WebExControl
 
-    protected data cButtonLabel
-    protected data cButtonType
+    protected data cButtonLabel as character
+    protected data cButtonType as character
+
+    protected data oButton as object
+    protected data oButtonIcon as object
 
     public method New(cButtonLabel as character,cButtonType as character) as object
 
     public method SetButtonLabel(cButtonLabel as character) as character
     public method SetButtonType(cButtonType as character) as character
+
+    public method SetButtonIcon(cIconName as character,cIconType as character,lIconBefore as logical) as object
 
 endclass
 
@@ -31,6 +36,7 @@ method New(cButtonLabel,cButtonType) class WebExButton
     ::cButtonLabel:=cButtonLabel
     ::cButtonType:=Lower(cButtonType)
     _Super:New("button")
+    ::oButton:=self
     ::AddClass("btn")
     ::AddClass("btn-primary")
     ::SetButtonLabel()
@@ -47,4 +53,14 @@ method SetButtonType(cButtonType) class WebExButton
     paramtype 1 var cButtonType as character optional default ::cButtonType
     ::SetMemberData("cButtonType",Lower(cButtonType))
     ::SetAttr("type",cButtonType)
+return(self)
+
+method SetButtonIcon(cIconName,cIconType,lIconBefore) class WebExButton
+    paramtype 1 var cIconName as character optional default "bootstrap"
+    paramtype 2 var cIconType as character
+    paramtype 3 var lIconBefore as logical optional default .T.
+    WITH WEBEXOBJECT ::oButton
+        WITH WEBEXOBJECT ::oButtonIcon CLASS WebExIcon ARGS cIconName,cIconType,lIconBefore
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
 return(self)

@@ -5,6 +5,10 @@
 |  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
 |_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
 
+    The source code `fw.webex.helper.tlpp` is based on a more detailed and feature-rich
+    source code, `dna.tech.cTools.tlpp`, and implements part of the functionalities
+    present in the latter.
+
 Released to Public Domain.
 --------------------------------------------------------------------------------------
 */
@@ -32,8 +36,7 @@ class WebExHelper
     static method GetEmojiHtmlCode(cName as character) as character
 
     static method StrReplace(cTemplate as character,vSubstitutions as variant) as character
-
-
+    static method StrReplaceEx(cTemplate as character,vSubstitutions as variadic) as character
 
 end class
 
@@ -216,3 +219,66 @@ method StrReplace(cTemplate,vSubstitutions) class WebExHelper
     endif
 
 return(cApplied)
+
+static function ___WebExHelper____StrReplaceEx(cString as character,vSubstitutions as variadic) as character
+
+    local aNames as array
+    local aTokens as array
+
+    local cType as character
+    local cName as character
+    local cStrReplace:=cString as character
+
+    local nStr as numeric
+
+    local nName as numeric
+    local nNames as numeric
+
+    local nToken as numeric
+    local nTokens as numeric
+
+    local uStr as variant
+
+    begin sequence
+
+        if (vSubstitutions==nil)
+            break
+        endif
+
+        aTokens:={"=>","->","|",":","="}
+        nTokens:=Len(aTokens)
+
+        for nStr:=1 to vSubstitutions:vCount
+            uStr:=vSubstitutions:vArgs[nStr]
+            cType:=valtype(uStr)
+            if (cType=="C")
+                for nToken :=1 to nTokens
+                    if (aTokens[nToken]$uStr)
+                        uStr:=StrTokArr2(uStr,aTokens[nToken],.T.)
+                        cType:=valtype(uStr)
+                        exit
+                    endif
+                next nToken
+            endif
+            if ((cType=="A").and.(Len(uStr)==2))
+                while ((uStr[1]$cStrReplace).and.(!(uStr[1]==uStr[2])))
+                    cStrReplace:=StrTran(cStrReplace,uStr[1],uStr[2])
+                end while
+            elseif (cType=="J")
+                aNames:=aClone(uStr:GetNames())
+                nNames:=Len(aNames)
+                for nName:=1 to nNames
+                    cName:=aNames[nName]
+                    while ((cName$cStrReplace).and.(!(cName==uStr[cName])))
+                        cStrReplace:=StrTran(cStrReplace,cName,uStr[cName])
+                    end while
+                next nName
+                FWFreeArray(@aNames)
+            endif
+        next nStr
+
+    end sequence
+
+    FWFreeArray(@aTokens)
+
+return(cStrReplace)

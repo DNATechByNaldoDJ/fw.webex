@@ -5,6 +5,17 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Pass page title to SBAdminPage constructor)"
 */
 
+2025-09-24 21:15 UTC naldodj (Add datatable filter panel and enhance filtering)
+  + Add datatable filter panel and enhance filtering
+      Introduces the WebExDataTableFilterPanel component for dynamic table filtering.
+      Updates the example to use the new filter panel, adds StrReplaceEx utility for advanced string substitution, and enhances WebExButton to support icons.
+      Also exposes StrReplaceEx in WebExControl for broader usage.
+        + src/fw.webex/web/component/fw.webex.datatable.filter.panel.tlpp
+        * src/fw.webex/tools/fw.webex.helper.tlpp
+        * src/fw.webex/web/component/fw.webex.button.tlpp
+        * src/fw.webex/web/control/fw.webex.control.tlpp
+        * src/fw.webex.examples/020/fw.webex.example.020.tlpp
+
 2025-09-23 21:05 UTC naldodj (Pass page title to SBAdminPage constructor)
     ! Pass page title to SBAdminPage constructor
       Adds an optional cPageTitle parameter to the SBAdminPage constructor and passes it to the superclass.
