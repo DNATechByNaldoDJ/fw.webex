@@ -226,14 +226,17 @@ static procedure FWWebExExample_020(cHTML as character) as character
                     const pageNumber = Math.floor(data.start / data.length) + 1;
                     const rowsPerPage = data.length === -1 ? 999999 : data.length;
 
+                    // monta o filtro fixo + dinamico
+                    const baseFilter = { RA_SEXO: 'M' };
+                    const dynamicFilter = (filtroCampo && filtroValor) ? { [filtroCampo]: filtroValor } : {};
+                    const extraFilter = table.settings()[0].oInit.Filter || {};
+
                     const request = {
                         ClassName: 'userRestCrudTLPPCoreFunction',
                         FunctionName: 'dna.tech.codAliasPost',
                         codAlias: 'SRA',
                         yesFields: 'RA_FILIAL,RA_MAT,RA_APELIDO,RA_CC,RA_SALARIO,RA_ADTPOSE,RA_CATFUNC,RA_DEPIR,RA_SEXO',
-                        Filter: Object.assign({
-                            RA_SEXO: 'M'
-                        }, filtroCampo && filtroValor ? { [filtroCampo]: filtroValor } : {}),
+                        Filter: Object.assign({}, baseFilter, dynamicFilter, extraFilter),
                         PageNumber: pageNumber,
                         RowspPage: rowsPerPage,
                         cEmp: '99',

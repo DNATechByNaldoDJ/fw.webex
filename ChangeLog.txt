@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add datatable filter panel and enhance filtering)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor filter construction in data request)"
 */
+
+2025-09-24 22:45 UTC naldodj (Refactor filter construction in data request)
+  ! Refactor filter construction in data request
+    Replaces inline filter object with separate base, dynamic, and extra filter objects.
+    This improves readability and allows for easier extension of filter logic in the data request.
+    * src/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-24 21:20 UTC naldodj (Add datatable filter panel and enhance filtering)
   + Add datatable filter panel and enhance filtering
