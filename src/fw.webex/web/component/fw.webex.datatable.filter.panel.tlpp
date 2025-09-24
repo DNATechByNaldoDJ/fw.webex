@@ -1,0 +1,162 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExDataTableFilterPanel from WebExControl
+
+    protected data cTitle as character
+    protected data cTargetTableID as character
+    protected data jTargetTableFields as json
+
+    protected data oPanel as object
+    protected data oPanelContainer as object
+    protected data oPanelContent as object
+
+    protected data oPanelHeader as object
+    protected data oPanelHeaderTitle as object
+    protected data oPanelHeaderButtonClose as object
+
+    protected data oPanelBody as object
+    protected data oPanelBodyContainer as object
+    protected data oPanelBodyButtonAdd as object
+
+    protected data oPanelFooter as object
+    protected data oPanelFooterButtonClose as object
+    protected data oPanelFooterButtonApply as object
+
+    public method New(cTitle as character,cTargetTableID as character,jTargetTableFields as json) as object
+
+endclass
+
+method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterPanel
+
+    local cScript as character
+    local cIDPanel as character
+    local cIDContainer as character
+
+    paramtype 1 var cTitle as character optional default "Filter"
+    paramtype 2 var cTargetTableID as character
+    paramtype 3 var jTargetTableFields as json
+
+    ::cTitle:=cTitle
+    ::cTargetTableID:=cTargetTableID
+    ::jTargetTableFields:=jTargetTableFields
+
+    _Super:New("div")
+
+    ::oPanel:=self
+
+    WITH WEBEXOBJECT ::oPanel
+        cIDPanel:=.:GetID()
+        .:SetAttr("tabindex","-1")
+        .:AddClass("modal fade")
+        WITH WEBEXOBJECT ::oPanelContainer CLASS WebExDiv
+            .:AddClass("modal-dialog modal-lg")
+            WITH WEBEXOBJECT ::oPanelContent CLASS WebExDiv
+                .:AddClass("modal-content")
+                WITH WEBEXOBJECT ::oPanelHeader CLASS WebExDiv
+                    .:AddClass("modal-header")
+                    WITH WEBEXOBJECT ::oPanelHeaderTitle CLASS WebExH5
+                        .:AddClass("modal-title")
+                        .:SetContent(::cTitle)
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT ::oPanelHeaderButtonClose CLASS WebExButton ARGS "","button"
+                        .:SetAttr("data-bs-dismiss","modal")
+                        .:AddClass("btn-close")
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT ::oPanelBody CLASS WebExDiv
+                    .:AddClass("modal-body")
+                    WITH WEBEXOBJECT ::oPanelBodyContainer CLASS WebExDiv
+                        cIDContainer:=.:GetID()
+                        .:SetFixedID(cIDContainer+"_rows")
+                        WITH WEBEXOBJECT ::oPanelHeaderButtonClose CLASS WebExButton ARGS "+","button"
+                            .:SetAttr("onclick","addFilterRow_"+cIDContainer+"()")
+                            .:AddClass("btn btn-sm btn-outline-primary mt-2")
+                        END WEBEXOBJECT
+                        beginContent var cScript
+                            function addFilterRow___ID_CONTAINER__(){
+                                const container = document.getElementById("__ID_CONTAINER___rows");
+                                const row = document.createElement("div");
+                                row.className = "input-group input-group-sm mb-2";
+                                row.innerHTML = `
+                                <select class="form-select field__ID_CONTAINER__"></select>
+                                <input type="search" class="form-control value__ID_CONTAINER__" placeholder="value...">
+                                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">x</button>
+                                `;
+                                container.appendChild(row);
+                                const select = row.querySelector(".field__ID_CONTAINER__");
+                                const fields = __FIELDS__;
+                                fields.fields.forEach(function(field){
+                                    const opt = document.createElement("option");
+                                    opt.value = field.name.trim();
+                                    opt.textContent = field.label.trim();
+                                    select.appendChild(opt);
+                                });
+                            }
+                        endContent
+                        cScript:=WebExHelper():StrReplaceEx(;
+                             cScript;
+                            ,{"__ID_CONTAINER__",cIDContainer};
+                            ,{"__FIELDS__",jTargetTableFields:ToJSON()};
+                        )
+                        WITH WEBEXOBJECT CLASS WebExScript
+                            .:SetContent(cScript)
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT ::oPanelFooter CLASS WebExDiv
+                    .:AddClass("modal-footer")
+                    WITH WEBEXOBJECT ::oPanelFooterButtonClose CLASS WebExButton ARGS "Close","button"
+                        .:SetAttr("data-bs-dismiss","modal")
+                        .:AddClass("btn btn-secondary")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT ::oPanelFooterButtonApply CLASS WebExButton ARGS "Apply","button"
+                        .:AddClass("btn btn-primary")
+                        .:SetAttr("onclick","applyFilters_"+cIDContainer+"()")
+                    END WEBEXOBJECT
+                    beginContent var cScript
+                        function applyFilters___ID_CONTAINER__(){
+                            let filters = {};
+                            document.querySelectorAll("#__ID_CONTAINER___rows .input-group").forEach(row => {
+                                const field = row.querySelector(".field__ID_CONTAINER__").value;
+                                const value = row.querySelector(".value__ID_CONTAINER__").value;
+                                if(field && value) filters[field] = value;
+                            });
+                            // aplica direto na tabela
+                            if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
+                                let tbl = $("#__TARGET_TABLE_ID__").DataTable();
+                                tbl.settings()[0].oInit.Filter = filters;
+                                tbl.ajax.reload();
+                            } else {
+                                console.warn("Target table #__TARGET_TABLE_ID__ not found to apply filters.");
+                            }
+                            bootstrap.Modal.getInstance(document.getElementById("__ID_PANEL__")).hide();
+                        }
+                    endContent
+                    cScript:=WebExHelper():StrReplaceEx(;
+                        cScript;
+                        ,{"__ID_PANEL__",cIDPanel};
+                        ,{"__ID_CONTAINER__",cIDContainer};
+                        ,{"__TARGET_TABLE_ID__",::cTargetTableID};
+                    )
+                    WITH WEBEXOBJECT CLASS WebExScript
+                        .:SetContent(cScript)
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT
+
+return(self)

@@ -2,8 +2,13 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Pass page title to SBAdminPage constructor)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add datatable filter panel and enhance filtering)"
 */
+
+2025-09-24 21:20 UTC naldodj (Add datatable filter panel and enhance filtering)
+  + Add datatable filter panel and enhance filtering
+      Introduces the WebExDataTableFilterPanel component for dynamic table filtering.
+      + src/fw.webex/web/component/fw.webex.datatable.filter.panel.tlpp
 
 2025-09-24 21:15 UTC naldodj (Add datatable filter panel and enhance filtering)
   + Add datatable filter panel and enhance filtering
