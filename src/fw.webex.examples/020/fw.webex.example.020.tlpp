@@ -230,13 +230,14 @@ static procedure FWWebExExample_020(cHTML as character) as character
                     const baseFilter = { RA_SEXO: 'M' };
                     const dynamicFilter = (filtroCampo && filtroValor) ? { [filtroCampo]: filtroValor } : {};
                     const extraFilter = table.settings()[0].oInit.Filter || {};
+                    const searchFilter = table.settings()[0].oInit.Search || {};
 
                     const request = {
                         ClassName: 'userRestCrudTLPPCoreFunction',
                         FunctionName: 'dna.tech.codAliasPost',
                         codAlias: 'SRA',
                         yesFields: 'RA_FILIAL,RA_MAT,RA_APELIDO,RA_CC,RA_SALARIO,RA_ADTPOSE,RA_CATFUNC,RA_DEPIR,RA_SEXO',
-                        Filter: Object.assign({}, baseFilter, dynamicFilter, extraFilter),
+                        Filter: Object.assign({}, baseFilter, dynamicFilter, extraFilter, searchFilter),
                         PageNumber: pageNumber,
                         RowspPage: rowsPerPage,
                         cEmp: '99',
@@ -464,8 +465,11 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         END WEBEXOBJECT //oWebExRow5
                         WITH WEBEXOBJECT oSBAdminCardHeaderTable CLASS SBAdminCardHeader ARGS "Data Table","fa-table"
                             WITH WEBEXOBJECT oSBAdminCardBodyTable CLASS SBAdminCardBody
+                                // Adiciona o Campo para Pesquisa
+                                WITH WEBEXOBJECT oWebExDataTableSearch CLASS WebExDataTableSearch ARGS "example",jTableFields
+                                END WEBEXOBJECT
                                 // Adiciona container de tabela
-                                WITH WEBEXOBJECT CLASS WebExDiv
+                                WITH WEBEXOBJECT oWebExDivTableResult CLASS WebExDiv
                                     .:SetFixedID("tableResult")
                                 END WEBEXOBJECT
                             END WEBEXOBJECT //oSBAdminCardBodyTable

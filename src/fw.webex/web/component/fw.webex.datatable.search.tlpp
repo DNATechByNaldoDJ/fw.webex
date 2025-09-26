@@ -1,0 +1,107 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExDataTableSearch from WebExInputGroup
+
+    protected data cTargetTableID as character
+
+    protected data jTargetTableFields as json
+
+    protected data oSearch as object
+    protected data oSearchContainer as object
+
+    public method New(cTargetTableID as character,jTargetTableFields as json) as object
+
+endclass
+
+method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
+
+    local cScript as character
+    local cIDSearch as character
+
+    local cInputName as character
+    local cInputType as character
+    local cInputPlaceHolder as character
+    local cInputTitle as character
+
+    paramtype 1 var cTargetTableID as character
+    paramtype 2 var jTargetTableFields as json
+
+    ::cTargetTableID:=cTargetTableID
+    ::jTargetTableFields:=jTargetTableFields
+
+    _Super:New()
+
+    ::oSearchContainer:=self
+    WITH WEBEXOBJECT ::oSearchContainer
+        // campo de pesquisa
+        cInputName:="FWWebExSearch"
+        cInputType:="search"
+        cInputPlaceHolder:="Search..."
+        cInputTitle:="Search"
+        WITH WEBEXOBJECT ::oSearch CLASS WebExInput ARGS cInputName,cInputType,cInputPlaceHolder,cInputTitle
+            cIDSearch:=.:GetID()
+            .:SetFixedID("FWWebExSearchValue_"+cIDSearch)
+            .:AddClass("form-control")
+            .:SetAttr("aria-label","Search")
+            // script: pesquisa local ou server-side
+            beginContent var cScript
+                document.getElementById("FWWebExSearchValue___ID_SEARCH__").addEventListener("keyup", function(e) {
+                    let term = this.value.trim();
+                    if (!term) return;
+
+                    if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
+                        let tbl = $("#__TARGET_TABLE_ID__").DataTable();
+                        let info = tbl.page.info();
+
+                        // verifica se todos os registros ja estao carregados
+                        let allLoaded = (info.recordsDisplay === info.recordsTotal);
+
+                        if (allLoaded) {
+                            // pesquisa local
+                            const rows = document.querySelectorAll("#__TARGET_TABLE_ID__ tbody tr");
+                            rows.forEach(row => {
+                                const text = row.textContent.toLowerCase();
+                                row.style.display = text.includes(term.toLowerCase()) ? '' : 'none';
+                            });
+                        } else {
+                            // pesquisa server-side: injeta termo em todos os campos
+                            let searchFilter = {};
+                            const fields = __FIELDS__;
+                            fields.fields.forEach(field => {
+                                searchFilter[field.name] = term;
+                            });
+
+                            tbl.settings()[0].oInit.Search = searchFilter;
+                            tbl.ajax.reload();
+                        }
+                    } else {
+                        console.warn("Target table #__TARGET_TABLE_ID__ not found to apply search.");
+                    }
+                });
+            endContent
+            cScript:=WebExHelper():StrReplaceEx(;
+                cScript;
+                ,{"__ID_SEARCH__",cIDSearch};
+                ,{"__TARGET_TABLE_ID__",::cTargetTableID};
+                ,{"__FIELDS__",jTargetTableFields:ToJSON()};
+            )
+            WITH WEBEXOBJECT CLASS WebExScript
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+return(self)

@@ -2,8 +2,17 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor filter construction in data request)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add search component to datatable and update filter panel)"
 */
+
+2025-09-26 11:29 UTC naldodj (Add search component to datatable and update filter panel)
+  + Add search component to datatable and update filter panel
+    Introduced WebExDataTableSearch component for enhanced search functionality in datatables.
+    Updated the example and filter panel to integrate the new search field and ensure search filters are included in server-side requests.
+    Also refactored WebExDataTableFilterPanel to inherit from WebExDiv and adjusted child handling.
+      + src/fw.webex/web/component/fw.webex.datatable.search.tlpp
+      * src/fw.webex/web/component/fw.webex.datatable.filter.panel.tlpp
+      * src/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-24 22:45 UTC naldodj (Refactor filter construction in data request)
   ! Refactor filter construction in data request

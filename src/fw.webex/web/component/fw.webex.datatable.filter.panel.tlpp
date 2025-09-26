@@ -13,7 +13,7 @@ namespace FWWebEx
 
 #include "fw.webex.th"
 
-class WebExDataTableFilterPanel from WebExControl
+class WebExDataTableFilterPanel from WebExDiv
 
     protected data cTitle as character
     protected data cTargetTableID as character
@@ -53,7 +53,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
     ::cTargetTableID:=cTargetTableID
     ::jTargetTableFields:=jTargetTableFields
 
-    _Super:New("div")
+    _Super:New()
 
     ::oPanel:=self
 
@@ -157,6 +157,6 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
 
 return(self)
