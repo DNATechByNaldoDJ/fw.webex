@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve datatable search event handling and logic)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor table filter to use dynamic fields and add helper)"
 */
+
+2025-09-27 03:23 UTC naldodj (Refactor table filter to use dynamic fields and add helper)
+  % Refactor table filter to use dynamic fields and add helper
+    Reworked the table filter logic to dynamically generate filter fields and yesFields based on jTableFields, and excluded the 'RA_SEXO' field from filter options.
+    Introduced a new TableResultDiv() helper function to generate the filter and table HTML, and updated JavaScript and WebExObject usages to utilize these dynamic values for improved maintainability and flexibility.
+  * src/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-27 01:41 UTC naldodj (Improve datatable search event handling and logic)
   % Improve datatable search event handling and logic

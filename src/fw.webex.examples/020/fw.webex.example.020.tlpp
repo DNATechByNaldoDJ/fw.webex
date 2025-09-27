@@ -44,9 +44,13 @@ static procedure FWWebExExample_020(cHTML as character) as character
 
     local cUserID:=if((Type("__cUserID")=="C").and.(!Empty(__cUserID)),__cUserID,"000000")
     local cScript as character
+    local cYesFields as character
     local cPageStyle as character
 
     local jTableFields as json
+    local jTableFilter as json
+
+    local nAT_RA_SEXO as numeric
 
     local oFWWebExPage as object
     local oFWWebExBody as object
@@ -66,8 +70,19 @@ static procedure FWWebExExample_020(cHTML as character) as character
     aAdd(jTableFields["fields"],{"name":"RA_ADTPOSE","label":GetSX3Cache("RA_ADTPOSE","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_CATFUNC","label":GetSX3Cache("RA_CATFUNC","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_DEPIR","label":GetSX3Cache("RA_DEPIR","X3_TITULO")})
-    *Sexo Esta Fixo, nao permitir Filtrar
-    *aAdd(jTableFields["fields"],{"name":"RA_SEXO","label":GetSX3Cache("RA_SEXO","X3_TITULO")})
+    aAdd(jTableFields["fields"],{"name":"RA_SEXO","label":GetSX3Cache("RA_SEXO","X3_TITULO")})
+
+    cYesFields:=""
+    aEval(jTableFields["fields"],{|jField|cYesFields+=jField["name"]+","})
+    cYesFields:=SubStr(cYesFields,1,Len(cYesFields)-1)
+
+    jTableFilter:=JSONObjectClone():CloneJSON(jTableFields)
+    //Sexo Esta Fixo no Filtro da Tabela, nao permitir Alterar no Filtro/Pesquisa.
+    nAT_RA_SEXO:=aScan(jTableFilter["fields"],{|jField|jField["name"]=="RA_SEXO"})
+    if (nAT_RA_SEXO>0)
+        aDel(jTableFilter["fields"],nAT_RA_SEXO)
+        aSize(jTableFilter["fields"],Len(jTableFilter["fields"])-1)
+    endif
 
     beginContent var cPageStyle
 
@@ -151,47 +166,20 @@ static procedure FWWebExExample_020(cHTML as character) as character
             FWWebEx.RequestHandler.debug(_debug_FWWebExExample_020);
             document.getElementById('tableResult').innerHTML = `
                 <!-- fora da tabela, sera movido via JS -->
-                <div id="meuFiltroCustom" class="datatable-filter-wrapper mb-2">
-                    <div class="input-group input-group-sm">
-                        <select id="filterField" class="form-select form-select-sm"></select>
-                        <input id="filterValue" type="search" class="form-control" placeholder="Filter..." aria-label="Filter" />
-                        <button id="btnFilter" class="btn btn-primary" type="button">Filtrar</button>
-                    </div>
-                    <div class="input-group">
-                        <input id="searchValue" type="search" class="form-control" placeholder="Search..." aria-label="Search" />
-                    </div>
-                </div>
-                <table id="example" class="table table-striped table-hover display compact nowrap">
-                    <thead>
-                        <tr>
-                            <th>Filial</th>
-                            <th>Matr&iacute;cula</th>
-                            <th>Apelido</th>
-                            <th>Centro de Custo</th>
-                            <th>Sal&aacute;rio</th>
-                            <th>Adt.Servi&ccedil;o</th>
-                            <th>Cat.Func.</th>
-                            <th>Dep.IRRF.</th>
-                            <th>Sexo</th>
-                        </tr>
-                    </thead>
-                </table>`;
+                __TABLE_RESULT__`;
 
-                const yesFields = 'RA_FILIAL,RA_MAT,RA_APELIDO,RA_CC,RA_SALARIO,RA_ADTPOSE,RA_CATFUNC,RA_DEPIR,RA_SEXO';
-
+            /* Filtro Customizado Inicio */
                 function montarCampoSelect() {
-                    const fields = yesFields.split(',');
+                    const fields = __MONTA_CAMPO_SELECT_FIELDS__;
                     const select = document.getElementById("filterField");
-                    fields.forEach(field => {
+                    fields.fields.forEach(field => {
                         const opt = document.createElement("option");
-                        opt.value = field.trim();
-                        opt.textContent = field.trim();
+                        opt.value = field.name.trim();
+                        opt.textContent = field.label.trim();
                         select.appendChild(opt);
                     });
                 }
-
-                montarCampoSelect(); // monta o select com base no yesFields
-
+                montarCampoSelect(); // monta o select com base no jTableFilter
                 // Adiciona o filtro customizado no lugar da search bar padrao
                 const filtroEl = document.getElementById("meuFiltroCustom");
                 const containerFiltro = document.querySelector("div.topFiltro");
@@ -199,6 +187,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                     containerFiltro.appendChild(filtroEl);
                     filtroEl.style.display = 'block'; // caso esteja oculto
                 }
+            /* Filtro Customizado Fim */
 
             const table = new DataTable('#example', {
                 serverSide: true,
@@ -238,7 +227,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         ClassName: 'userRestCrudTLPPCoreFunction',
                         FunctionName: 'dna.tech.codAliasPost',
                         codAlias: 'SRA',
-                        yesFields: 'RA_FILIAL,RA_MAT,RA_APELIDO,RA_CC,RA_SALARIO,RA_ADTPOSE,RA_CATFUNC,RA_DEPIR,RA_SEXO',
+                        yesFields: '__YES_FIELDS__',
                         Filter: Object.assign({}, baseFilter, dynamicFilter, extraFilter, searchFilter),
                         PageNumber: pageNumber,
                         RowspPage: rowsPerPage,
@@ -298,15 +287,6 @@ static procedure FWWebExExample_020(cHTML as character) as character
                 table.ajax.reload(); // recarrega o DataTable usando o novo filtro
             });
 
-            document.getElementById('searchValue').addEventListener('keyup', function() {
-                const filter = this.value.toLowerCase();
-                const rows = document.querySelectorAll('table tbody tr');
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(filter) ? '' : 'none';
-                });
-            });
-
             table.on('processing.dt', function (e, settings, processing) {
                 $('#fwwebex-datatable-custom-loader').toggle(processing);
             });
@@ -329,6 +309,13 @@ static procedure FWWebExExample_020(cHTML as character) as character
         });
 
     endContent
+
+    cScript:=WebExHelper():StrReplaceEx(;
+        cScript;
+        ,{"__MONTA_CAMPO_SELECT_FIELDS__",jTableFilter:ToJSON()}; //__MONTA_CAMPO_SELECT_FIELDS__ em montarCampoSelect
+        ,{"__YES_FIELDS__",cYesFields}; //__YES_FIELDS__ em request
+        ,{"__TABLE_RESULT__",TableResultDiv(jTableFields)};
+    )
 
     cScript+=CRLF
     //ChartSpripts
@@ -468,7 +455,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         WITH WEBEXOBJECT oSBAdminCardHeaderTable CLASS SBAdminCardHeader ARGS "Data Table","fa-table"
                             WITH WEBEXOBJECT oSBAdminCardBodyTable CLASS SBAdminCardBody
                                 // Adiciona o Campo para Pesquisa
-                                WITH WEBEXOBJECT oWebExDataTableSearch CLASS WebExDataTableSearch ARGS "example",jTableFields
+                                WITH WEBEXOBJECT oWebExDataTableSearch CLASS WebExDataTableSearch ARGS "example",jTableFilter
                                 END WEBEXOBJECT
                                 // Adiciona container de tabela
                                 WITH WEBEXOBJECT oWebExDivTableResult CLASS WebExDiv
@@ -479,7 +466,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         //Adiciona o Filtro
                         WITH WEBEXOBJECT oSBAdminCardHeaderTable:GetMemberData("oCardHeader")
                             .:AddClass("d-flex w-100 align-items-center")
-                            WITH WEBEXOBJECT oWebExDataTableFilterPanel CLASS WebExDataTableFilterPanel ARGS "Filtros","example",jTableFields
+                            WITH WEBEXOBJECT oWebExDataTableFilterPanel CLASS WebExDataTableFilterPanel ARGS "Filtros","example",jTableFilter
                             END WEBEXOBJECT
                             //Botoes alinhados aa direita
                             WITH WEBEXOBJECT CLASS WebExDiv
@@ -524,6 +511,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
 
     FreeObj(@oFWWebExPage)
     FreeObj(@jTableFields)
+    FreeObj(@jTableFilter)
 
 return(cHTMLFile)
 
@@ -1072,3 +1060,51 @@ static function ApexChartScripts() as character
     endContent
 
 return(cScript)
+
+static function TableResultDiv(jTableFields as json) as character
+
+    local cInputName:="filterValue"
+    local cInputType:="search"
+    local cInputPlaceHolder:="Filter..."
+    local cInputTitle:="Search"
+
+    local cTableResultHTML as character
+
+    local oTableResultDiv
+    local oTableResultTable
+
+    WITH WEBEXOBJECT oTableResultDiv CLASS WebExDiv
+        .:SetFixedID("meuFiltroCustom")
+        .:AddClass("datatable-filter-wrapper mb-2")
+        WITH WEBEXOBJECT CLASS WebExInputGroup
+            .:AddClass("input-group-sm")
+            WITH WEBEXOBJECT CLASS WebExControl type select
+                .:AddClass("form-select form-select-sm")
+                .:SetFixedID("filterField")
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS WebExInput ARGS cInputName,cInputType,cInputPlaceHolder,cInputTitle
+                .:SetAttr("aria-label","Filter")
+                .:SetFixedID("filterValue")
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtrar","button"
+                .:AddClass("btn btn-primary")
+                .:SetFixedID("btnFilter")
+                .:SetButtonIcon("fa-filter","fontawesome",.F.)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT
+    cTableResultHTML:=oTableResultDiv:RenderHtml()
+    oTableResultDiv:Clean()
+    FreeObj(@oTableResultDiv)
+
+    WITH WEBEXOBJECT oTableResultTable CLASS WebExTable ARGS "Example"
+        .:AddClass("display compact nowrap")
+        .:SetFixedID("example")
+        aEval(jTableFields["fields"],{|jField|oTableResultTable:AddColumnHeader(jField["label"])})
+        oTableResultTable:BuildHeader()
+    END WEBEXOBJECT
+    cTableResultHTML+=oTableResultTable:RenderHtml()
+    oTableResultTable:Clean()
+    FreeObj(@oTableResultTable)
+
+return(cTableResultHTML)
