@@ -2,8 +2,142 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add README for FWWebEx with usage example)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Restructure fw.webex: move files to new directories)"
 */
+
+2025-09-27 13:49 UTC naldodj (Restructure fw.webex: move files to new directories)
+  * Restructure fw.webex: move files to new directories
+    All files under src/fw.webex.examples, src/fw.webex.sbadmin, src/fw.webex/web, src/fw.webex/tools, src/fw.webex/web/layout, src/fw.webex/web/page, src/fw.webex/web/control, py/, and src/extra/ have been moved to new locations under src/fw.webex/contrib, src/fw.webex/main, and their respective subdirectories. This change improves project organization and aligns the directory structure for better maintainability.
+    - py/html2fwwebex.py
+    - py/README.md
+    + src/fw.webex/main/control/py/html2fwwebex.py
+    + src/fw.webex/main/control/py/README.md
+    * src/extra/for.each.tlpp -> src/fw.webex/main/tools/extra/for.each.tlpp
+    * src/extra/switch.tlpp -> src/fw.webex/main/tools/extra/switch.tlpp
+    * src/fw.webex/tools/fw.webex.class.base.tlpp -> src/fw.webex/main/tools/fw.webex.class.base.tlpp
+    * src/fw.webex/tools/fw.webex.context.tlpp -> src/fw.webex/main/tools/fw.webex.context.tlpp
+    * src/fw.webex/tools/fw.webex.file.tools.tlpp -> src/fw.webex/main/tools/fw.webex.file.tools.tlpp
+    * src/fw.webex/tools/fw.webex.helper.tlpp -> src/fw.webex/main/tools/fw.webex.helper.tlpp
+    * src/fw.webex/tools/fw.webex.jsonobject.clone.tlpp -> src/fw.webex/main/tools/fw.webex.jsonobject.clone.tlpp
+    * src/fw.webex/tools/fw.webex.url.tlpp -> src/fw.webex/main/tools/fw.webex.url.tlpp
+    * src/fw.webex/tools/fw.webex.user.tlpp -> src/fw.webex/main/tools/fw.webex.user.tlpp
+    * src/fw.webex/tools/fw.webex.webapp.auth.tlpp -> src/fw.webex/main/tools/fw.webex.webapp.auth.tlpp
+    * src/fw.webex/tools/fw.webex.webapp.tools.tlpp -> src/fw.webex/main/tools/fw.webex.webapp.tools.tlpp
+    * src/fw.webex/web/component/fw.webex.alert.tlpp -> src/fw.webex/main/component/fw.webex.alert.tlpp
+    * src/fw.webex/web/component/fw.webex.back.url.button.tlpp -> src/fw.webex/main/component/fw.webex.back.url.button.tlpp
+    * src/fw.webex/web/component/fw.webex.button.tlpp -> src/fw.webex/main/component/fw.webex.button.tlpp
+    * src/fw.webex/web/component/fw.webex.card.tlpp -> src/fw.webex/main/component/fw.webex.card.tlpp
+    * src/fw.webex/web/component/fw.webex.cardkpi.tlpp -> src/fw.webex/main/component/fw.webex.cardkpi.tlpp
+    * src/fw.webex/web/component/fw.webex.checkbox.tlpp -> src/fw.webex/main/component/fw.webex.checkbox.tlpp
+    * src/fw.webex/web/component/fw.webex.comment.tlpp -> src/fw.webex/main/component/fw.webex.comment.tlpp
+    * src/fw.webex/web/component/fw.webex.container.tlpp -> src/fw.webex/main/component/fw.webex.container.tlpp
+    * src/fw.webex/web/component/fw.webex.datatable.filter.panel.tlpp -> src/fw.webex/main/component/fw.webex.datatable.filter.panel.tlpp
+    * src/fw.webex/web/component/fw.webex.datatable.search.tlpp -> src/fw.webex/main/component/fw.webex.datatable.search.tlpp
+    * src/fw.webex/web/component/fw.webex.field.group.tlpp -> src/fw.webex/main/component/fw.webex.field.group.tlpp
+    * src/fw.webex/web/component/fw.webex.field.tlpp -> src/fw.webex/main/component/fw.webex.field.tlpp
+    * src/fw.webex/web/component/fw.webex.fieldset.tlpp -> src/fw.webex/main/component/fw.webex.fieldset.tlpp
+    * src/fw.webex/web/component/fw.webex.form.tlpp -> src/fw.webex/main/component/fw.webex.form.tlpp
+    * src/fw.webex/web/component/fw.webex.gridsystem.tlpp -> src/fw.webex/main/component/fw.webex.gridsystem.tlpp
+    * src/fw.webex/web/component/fw.webex.icon.tlpp -> src/fw.webex/main/component/fw.webex.icon.tlpp
+    * src/fw.webex/web/component/fw.webex.iframe.tlpp -> src/fw.webex/main/component/fw.webex.iframe.tlpp
+    * src/fw.webex/web/component/fw.webex.input.group.tlpp -> src/fw.webex/main/component/fw.webex.input.group.tlpp
+    * src/fw.webex/web/component/fw.webex.input.tlpp -> src/fw.webex/main/component/fw.webex.input.tlpp
+    * src/fw.webex/web/component/fw.webex.label.tlpp -> src/fw.webex/main/component/fw.webex.label.tlpp
+    * src/fw.webex/web/component/fw.webex.legend.tlpp -> src/fw.webex/main/component/fw.webex.legend.tlpp
+    * src/fw.webex/web/component/fw.webex.navside.tlpp -> src/fw.webex/main/component/fw.webex.navside.tlpp
+    * src/fw.webex/web/component/fw.webex.navtop.tlpp -> src/fw.webex/main/component/fw.webex.navtop.tlpp
+    * src/fw.webex/web/component/fw.webex.rules.tlpp -> src/fw.webex/main/component/fw.webex.rules.tlpp
+    * src/fw.webex/web/component/fw.webex.sidebar.tlpp -> src/fw.webex/main/component/fw.webex.sidebar.tlpp
+    * src/fw.webex/web/component/fw.webex.strong.tlpp -> src/fw.webex/main/component/fw.webex.strong.tlpp
+    * src/fw.webex/web/component/fw.webex.table.tlpp -> src/fw.webex/main/component/fw.webex.table.tlpp
+    * src/fw.webex/web/control/fw.webex.control.tlpp -> src/fw.webex/main/control/fw.webex.control.tlpp
+    * src/fw.webex/web/layout/fw.webex.main.tlpp -> src/fw.webex/main/layout/fw.webex.main.tlpp
+    * src/fw.webex/web/layout/fw.webex.page.tlpp -> src/fw.webex/main/layout/fw.webex.page.tlpp
+    * src/fw.webex/web/page/fw.webex.anchor.tlpp -> src/fw.webex/main/page/fw.webex.anchor.tlpp
+    * src/fw.webex/web/page/fw.webex.blockquote.tlpp -> src/fw.webex/main/page/fw.webex.blockquote.tlpp
+    * src/fw.webex/web/page/fw.webex.body.tlpp -> src/fw.webex/main/page/fw.webex.body.tlpp
+    * src/fw.webex/web/page/fw.webex.code.tlpp -> src/fw.webex/main/page/fw.webex.code.tlpp
+    * src/fw.webex/web/page/fw.webex.div.tlpp -> src/fw.webex/main/page/fw.webex.div.tlpp
+    * src/fw.webex/web/page/fw.webex.footer.tlpp -> src/fw.webex/main/page/fw.webex.footer.tlpp
+    * src/fw.webex/web/page/fw.webex.head.tlpp -> src/fw.webex/main/page/fw.webex.head.tlpp
+    * src/fw.webex/web/page/fw.webex.hlevel.tlpp -> src/fw.webex/main/page/fw.webex.hlevel.tlpp
+    * src/fw.webex/web/page/fw.webex.html.tlpp -> src/fw.webex/main/page/fw.webex.html.tlpp
+    * src/fw.webex/web/page/fw.webex.link.tlpp -> src/fw.webex/main/page/fw.webex.link.tlpp
+    * src/fw.webex/web/page/fw.webex.liststructure.tlpp -> src/fw.webex/main/page/fw.webex.liststructure.tlpp
+    * src/fw.webex/web/page/fw.webex.meta.tlpp -> src/fw.webex/main/page/fw.webex.meta.tlpp
+    * src/fw.webex/web/page/fw.webex.nav.tlpp -> src/fw.webex/main/page/fw.webex.nav.tlpp
+    * src/fw.webex/web/page/fw.webex.paragraph.tlpp -> src/fw.webex/main/page/fw.webex.paragraph.tlpp
+    * src/fw.webex/web/page/fw.webex.preformatted.tlpp -> src/fw.webex/main/page/fw.webex.preformatted.tlpp
+    * src/fw.webex/web/page/fw.webex.span.tlpp -> src/fw.webex/main/page/fw.webex.span.tlpp
+    * src/fw.webex/web/page/fw.webex.style.tlpp -> src/fw.webex/main/page/fw.webex.style.tlpp
+    * src/fw.webex/web/page/fw.webex.table.structure.tlpp -> src/fw.webex/main/page/fw.webex.table.structure.tlpp
+    * src/fw.webex/web/page/fw.webex.title.tlpp -> src/fw.webex/main/page/fw.webex.title.tlpp
+    * src/fw.webex/web/script/fw.webex.script.tlpp -> src/fw.webex/main/component/fw.webex.script.tlpp
+    * src/fw.webex.examples/000/fw.webex.example.000.tlpp -> src/fw.webex/contrib/fw.webex.examples/000/fw.webex.example.000.tlpp
+    * src/fw.webex.examples/000/fw.webex.example.tools.tlpp -> src/fw.webex/contrib/fw.webex.examples/000/fw.webex.example.tools.tlpp
+    * src/fw.webex.examples/000/fw.webex.oauth2.tlpp -> src/fw.webex/contrib/fw.webex.examples/000/fw.webex.oauth2.tlpp
+    * src/fw.webex.examples/000/fw.webex.parambox.tools.tlpp -> src/fw.webex/contrib/fw.webex.examples/000/fw.webex.parambox.tools.tlpp
+    * src/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp -> src/fw.webex/contrib/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp
+    * src/fw.webex.examples/000/README.md -> src/fw.webex/contrib/fw.webex.examples/000/README.md
+    * src/fw.webex.examples/001/fw.webex.example.001.tlpp -> src/fw.webex/contrib/fw.webex.examples/001/fw.webex.example.001.tlpp
+    * src/fw.webex.examples/001/README.md -> src/fw.webex/contrib/fw.webex.examples/001/README.md
+    * src/fw.webex.examples/002/fw.webex.example.002.tlpp -> src/fw.webex/contrib/fw.webex.examples/002/fw.webex.example.002.tlpp
+    * src/fw.webex.examples/002/README.md -> src/fw.webex/contrib/fw.webex.examples/002/README.md
+    * src/fw.webex.examples/003/fw.webex.example.003.tlpp -> src/fw.webex/contrib/fw.webex.examples/003/fw.webex.example.003.tlpp
+    * src/fw.webex.examples/003/README.md -> src/fw.webex/contrib/fw.webex.examples/003/README.md
+    * src/fw.webex.examples/004/fw.webex.example.004.tlpp -> src/fw.webex/contrib/fw.webex.examples/004/fw.webex.example.004.tlpp
+    * src/fw.webex.examples/004/README.md -> src/fw.webex/contrib/fw.webex.examples/004/README.md
+    * src/fw.webex.examples/005/fw.webex.example.005.tlpp -> src/fw.webex/contrib/fw.webex.examples/005/fw.webex.example.005.tlpp
+    * src/fw.webex.examples/005/README.md -> src/fw.webex/contrib/fw.webex.examples/005/README.md
+    * src/fw.webex.examples/006/fw.webex.example.006.tlpp -> src/fw.webex/contrib/fw.webex.examples/006/fw.webex.example.006.tlpp
+    * src/fw.webex.examples/006/README.md -> src/fw.webex/contrib/fw.webex.examples/006/README.md
+    * src/fw.webex.examples/007/fw.webex.example.007.tlpp -> src/fw.webex/contrib/fw.webex.examples/007/fw.webex.example.007.tlpp
+    * src/fw.webex.examples/007/README.md -> src/fw.webex/contrib/fw.webex.examples/007/README.md
+    * src/fw.webex.examples/008/fw.webex.example.008.tlpp -> src/fw.webex/contrib/fw.webex.examples/008/fw.webex.example.008.tlpp
+    * src/fw.webex.examples/008/README.md -> src/fw.webex/contrib/fw.webex.examples/008/README.md
+    * src/fw.webex.examples/009/fw.webex.example.009.tlpp -> src/fw.webex/contrib/fw.webex.examples/009/fw.webex.example.009.tlpp
+    * src/fw.webex.examples/009/README.md -> src/fw.webex/contrib/fw.webex.examples/009/README.md
+    * src/fw.webex.examples/010/fw.webex.example.010.tlpp -> src/fw.webex/contrib/fw.webex.examples/010/fw.webex.example.010.tlpp
+    * src/fw.webex.examples/010/README.md -> src/fw.webex/contrib/fw.webex.examples/010/README.md
+    * src/fw.webex.examples/011/fw.webex.example.011.tlpp -> src/fw.webex/contrib/fw.webex.examples/011/fw.webex.example.011.tlpp
+    * src/fw.webex.examples/011/README.md -> src/fw.webex/contrib/fw.webex.examples/011/README.md
+    * src/fw.webex.examples/012/fw.webex.example.012.tlpp -> src/fw.webex/contrib/fw.webex.examples/012/fw.webex.example.012.tlpp
+    * src/fw.webex.examples/012/README.md -> src/fw.webex/contrib/fw.webex.examples/012/README.md
+    * src/fw.webex.examples/013/fw.webex.example.013.tlpp -> src/fw.webex/contrib/fw.webex.examples/013/fw.webex.example.013.tlpp
+    * src/fw.webex.examples/013/README.md -> src/fw.webex/contrib/fw.webex.examples/013/README.md
+    * src/fw.webex.examples/014/fw.webex.example.014.tlpp -> src/fw.webex/contrib/fw.webex.examples/014/fw.webex.example.014.tlpp
+    * src/fw.webex.examples/014/README.md -> src/fw.webex/contrib/fw.webex.examples/014/README.md
+    * src/fw.webex.examples/015/fw.webex.example.015.tlpp -> src/fw.webex/contrib/fw.webex.examples/015/fw.webex.example.015.tlpp
+    * src/fw.webex.examples/015/README.md -> src/fw.webex/contrib/fw.webex.examples/015/README.md
+    * src/fw.webex.examples/016/fw.webex.example.016.tlpp -> src/fw.webex/contrib/fw.webex.examples/016/fw.webex.example.016.tlpp
+    * src/fw.webex.examples/016/README.md -> src/fw.webex/contrib/fw.webex.examples/016/README.md
+    * src/fw.webex.examples/017/fw.webex.example.017.tlpp -> src/fw.webex/contrib/fw.webex.examples/017/fw.webex.example.017.tlpp
+    * src/fw.webex.examples/017/README.md -> src/fw.webex/contrib/fw.webex.examples/017/README.md
+    * src/fw.webex.examples/018/fw.webex.example.018.tlpp -> src/fw.webex/contrib/fw.webex.examples/018/fw.webex.example.018.tlpp
+    * src/fw.webex.examples/018/README.md -> src/fw.webex/contrib/fw.webex.examples/018/README.md
+    * src/fw.webex.examples/019/fw.webex.example.019.tlpp -> src/fw.webex/contrib/fw.webex.examples/019/fw.webex.example.019.tlpp
+    * src/fw.webex.examples/019/README.md -> src/fw.webex/contrib/fw.webex.examples/019/README.md
+    * src/fw.webex.examples/020/fw.webex.example.020.tlpp -> src/fw.webex/contrib/fw.webex.examples/020/fw.webex.example.020.tlpp
+    * src/fw.webex.examples/020/README.md -> src/fw.webex/contrib/fw.webex.examples/020/README.md
+    * src/fw.webex.examples/021/fw.webex.example.021.tlpp -> src/fw.webex/contrib/fw.webex.examples/021/fw.webex.example.021.tlpp
+    * src/fw.webex.examples/021/README.md -> src/fw.webex/contrib/fw.webex.examples/021/README.md
+    * src/fw.webex.examples/022/fw.webex.example.022.tlpp -> src/fw.webex/contrib/fw.webex.examples/022/fw.webex.example.022.tlpp
+    * src/fw.webex.examples/022/README.md -> src/fw.webex/contrib/fw.webex.examples/022/README.md
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.body.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.body.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.container.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.container.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.header.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.header.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.with.link.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.with.link.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.container.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.container.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.footer.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.footer.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.content.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.content.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.nav.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.nav.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.main.content.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.main.content.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.modal.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.modal.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.nav.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.nav.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.page.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.page.tlpp
+    * src/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.simple.datatables.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.simple.datatables.tlpp
+    * src/fw.webex.sbadmin/tools/fw.webex.sbadmin.tools.tlpp -> src/fw.webex/contrib/fw.webex.sbadmin/tools/fw.webex.sbadmin.tools.tlpp
 
 2025-09-27 13:37 UTC naldodj (Add README for FWWebEx with usage example)
   Add README for FWWebEx with usage example
