@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor datatable search and improve string replace logic)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve datatable search event handling and logic)"
 */
+
+2025-09-27 01:41 UTC naldodj (Improve datatable search event handling and logic)
+  % Improve datatable search event handling and logic
+    Replaces the 'keyup' event with the 'input' event for better responsiveness to user input, including paste and clear actions.
+    Refactors search logic to handle both server-side and client-side DataTables more cleanly, ensuring proper reset and search behavior for each mode.
+      * src/fw.webex/web/component/fw.webex.datatable.search.tlpp
 
 2025-09-27 01:20 UTC naldodj (Refactor datatable search and improve string replace logic)
   % Refactor datatable search and improve string replace logic

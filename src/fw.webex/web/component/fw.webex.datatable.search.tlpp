@@ -68,58 +68,52 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
                         return;
                     }
 
-                    input.addEventListener("keyup", function(e) {
+                    // Use 'input' event for better handling of changes (e.g., paste, clear)
+                    input.addEventListener("input", function(e) {
 
                         clearTimeout(searchTimer___ID_SEARCH__);
 
                         searchTimer___ID_SEARCH__ = setTimeout(() => {
 
-                            let term = this.value.trim();
-
-                            if (!term) {
-                                table.settings()[0].oInit.Search = {}; // reset
-                                table.search('').page('first').draw();
-                                table.ajax.reload();
-                                return;
-                            }
+                            let term = this.value.trim().toLowerCase();
 
                             if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
 
                                 let table = $("#__TARGET_TABLE_ID__").DataTable();
                                 let tableInfo = table.page.info();
+                                let isServerSide = table.settings()[0].oFeatures.bServerSide;
 
-                                // verifica se todos os registros ja estao carregados
-                                let rowsLoaded = table.rows({ page: 'all' }).data().length;
-                                let allLoaded = (rowsLoaded === tableInfo.recordsTotal);
-
-                                if (allLoaded) {
-                                    table.settings()[0].oInit.Search = {}; // reset
-                                    // pesquisa local
-                                    const rows = document.querySelectorAll("#__TARGET_TABLE_ID__ tbody tr");
-                                    rows.forEach(row => {
-                                        const text = row.textContent.toLowerCase();
-                                        row.style.display = text.includes(term.toLowerCase()) ? '' : 'none';
-                                    });
-                                } else {
-                                    if (term === "") {
-                                        table.settings()[0].oInit.Search = {}; // reset
-                                        table.search('').page('first').draw();
+                                // Reset search settings when term is empty
+                                if (!term) {
+                                    table.settings()[0].oInit.Search = {}; // Clear custom search filter
+                                    if (isServerSide) {
+                                        table.search('').columns().search('').page(0).draw(); // Reset global and column searches, go to first page
+                                        table.ajax.reload(); // Reload from server
                                     } else {
-                                        // pesquisa server-side: injeta termo em todos os campos
-                                        let searchFilter = {};
-                                        const fields = __FIELDS__;
-                                        fields.fields.forEach(field => {
-                                            searchFilter[field.name] = term;
-                                        });
-                                        table.settings()[0].oInit.Search = searchFilter;
+                                        table.search('').columns().search('').page(0).draw(); // Client-side reset
                                     }
-                                    table.ajax.reload();
+                                    return;
                                 }
+
+                                // Handle server-side search
+                                if (isServerSide) {
+                                    let searchFilter = {};
+                                    const fields = __FIELDS__;
+                                    fields.fields.forEach(field => {
+                                        searchFilter[field.name] = term;
+                                    });
+                                    table.settings()[0].oInit.Search = searchFilter;
+                                    table.ajax.reload();
+                                } else {
+                                    // Client-side search using DataTable's built-in global search
+                                    table.search(term).draw();
+                                }
+
                             } else {
                                 console.warn("Target table #__TARGET_TABLE_ID__ not found to apply search.");
                             }
 
-                        }, 300); // debounce 300ms
+                        }, 300); // Debounce 300ms
 
                     });
 
