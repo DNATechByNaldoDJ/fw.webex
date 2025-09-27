@@ -2,8 +2,67 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Restructure fw.webex: move files to new directories)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add accentuation and Markdown utilities to WebEx)"
 */
+
+2025-09-27 19:54 UTC naldodj (Add accentuation and Markdown utilities to WebEx)
+  + Add accentuation and Markdown utilities to WebEx
+    Introduces new methods in fw.webex.helper.tlpp for accentuation handling, including NoAccent, Accentuation, AsciiToWebAccentuation, and WebAccentuationToAscii.
+    Adds a new fw.webex.markdown.tlpp file implementing a FWMarkdown class for generating Markdown content programmatically.
+    Also moves example files from contrib to tests for better organization.
+      + src/fw.webex/main/tools/fw.webex.markdown.tlpp
+      + src/fw.webex/tests/md/testemd.tlpp
+      * src/fw.webex/main/tools/fw.webex.helper.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/000/fw.webex.example.000.tlpp -> src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/000/fw.webex.example.tools.tlpp -> src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.tools.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/000/fw.webex.oauth2.tlpp -> src/fw.webex/tests/fw.webex.examples/000/fw.webex.oauth2.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/000/fw.webex.parambox.tools.tlpp -> src/fw.webex/tests/fw.webex.examples/000/fw.webex.parambox.tools.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp -> src/fw.webex/tests/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/000/README.md -> src/fw.webex/tests/fw.webex.examples/000/README.md
+      * src/fw.webex/contrib/fw.webex.examples/001/fw.webex.example.001.tlpp -> src/fw.webex/tests/fw.webex.examples/001/fw.webex.example.001.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/001/README.md -> src/fw.webex/tests/fw.webex.examples/001/README.md
+      * src/fw.webex/contrib/fw.webex.examples/002/fw.webex.example.002.tlpp -> src/fw.webex/tests/fw.webex.examples/002/fw.webex.example.002.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/002/README.md -> src/fw.webex/tests/fw.webex.examples/002/README.md
+      * src/fw.webex/contrib/fw.webex.examples/003/fw.webex.example.003.tlpp -> src/fw.webex/tests/fw.webex.examples/003/fw.webex.example.003.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/003/README.md -> src/fw.webex/tests/fw.webex.examples/003/README.md
+      * src/fw.webex/contrib/fw.webex.examples/004/fw.webex.example.004.tlpp -> src/fw.webex/tests/fw.webex.examples/004/fw.webex.example.004.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/004/README.md -> src/fw.webex/tests/fw.webex.examples/004/README.md
+      * src/fw.webex/contrib/fw.webex.examples/005/fw.webex.example.005.tlpp -> src/fw.webex/tests/fw.webex.examples/005/fw.webex.example.005.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/005/README.md -> src/fw.webex/tests/fw.webex.examples/005/README.md
+      * src/fw.webex/contrib/fw.webex.examples/006/fw.webex.example.006.tlpp -> src/fw.webex/tests/fw.webex.examples/006/fw.webex.example.006.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/006/README.md -> src/fw.webex/tests/fw.webex.examples/006/README.md
+      * src/fw.webex/contrib/fw.webex.examples/007/fw.webex.example.007.tlpp -> src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/007/README.md -> src/fw.webex/tests/fw.webex.examples/007/README.md
+      * src/fw.webex/contrib/fw.webex.examples/008/fw.webex.example.008.tlpp -> src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/008/README.md -> src/fw.webex/tests/fw.webex.examples/008/README.md
+      * src/fw.webex/contrib/fw.webex.examples/009/fw.webex.example.009.tlpp -> src/fw.webex/tests/fw.webex.examples/009/fw.webex.example.009.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/009/README.md -> src/fw.webex/tests/fw.webex.examples/009/README.md
+      * src/fw.webex/contrib/fw.webex.examples/010/fw.webex.example.010.tlpp -> src/fw.webex/tests/fw.webex.examples/010/fw.webex.example.010.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/010/README.md -> src/fw.webex/tests/fw.webex.examples/010/README.md
+      * src/fw.webex/contrib/fw.webex.examples/011/fw.webex.example.011.tlpp -> src/fw.webex/tests/fw.webex.examples/011/fw.webex.example.011.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/011/README.md -> src/fw.webex/tests/fw.webex.examples/011/README.md
+      * src/fw.webex/contrib/fw.webex.examples/012/fw.webex.example.012.tlpp -> src/fw.webex/tests/fw.webex.examples/012/fw.webex.example.012.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/012/README.md -> src/fw.webex/tests/fw.webex.examples/012/README.md
+      * src/fw.webex/contrib/fw.webex.examples/013/fw.webex.example.013.tlpp -> src/fw.webex/tests/fw.webex.examples/013/fw.webex.example.013.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/013/README.md -> src/fw.webex/tests/fw.webex.examples/013/README.md
+      * src/fw.webex/contrib/fw.webex.examples/014/fw.webex.example.014.tlpp -> src/fw.webex/tests/fw.webex.examples/014/fw.webex.example.014.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/014/README.md -> src/fw.webex/tests/fw.webex.examples/014/README.md
+      * src/fw.webex/contrib/fw.webex.examples/015/fw.webex.example.015.tlpp -> src/fw.webex/tests/fw.webex.examples/015/fw.webex.example.015.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/015/README.md -> src/fw.webex/tests/fw.webex.examples/015/README.md
+      * src/fw.webex/contrib/fw.webex.examples/016/fw.webex.example.016.tlpp -> src/fw.webex/tests/fw.webex.examples/016/fw.webex.example.016.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/016/README.md -> src/fw.webex/tests/fw.webex.examples/016/README.md
+      * src/fw.webex/contrib/fw.webex.examples/017/fw.webex.example.017.tlpp -> src/fw.webex/tests/fw.webex.examples/017/fw.webex.example.017.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/017/README.md -> src/fw.webex/tests/fw.webex.examples/017/README.md
+      * src/fw.webex/contrib/fw.webex.examples/018/fw.webex.example.018.tlpp -> src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/018/README.md -> src/fw.webex/tests/fw.webex.examples/018/README.md
+      * src/fw.webex/contrib/fw.webex.examples/019/fw.webex.example.019.tlpp -> src/fw.webex/tests/fw.webex.examples/019/fw.webex.example.019.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/019/README.md -> src/fw.webex/tests/fw.webex.examples/019/README.md
+      * src/fw.webex/contrib/fw.webex.examples/020/fw.webex.example.020.tlpp -> src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/020/README.md -> src/fw.webex/tests/fw.webex.examples/020/README.md
+      * src/fw.webex/contrib/fw.webex.examples/021/fw.webex.example.021.tlpp -> src/fw.webex/tests/fw.webex.examples/021/fw.webex.example.021.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/021/README.md -> src/fw.webex/tests/fw.webex.examples/021/README.md
+      * src/fw.webex/contrib/fw.webex.examples/022/fw.webex.example.022.tlpp -> src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+      * src/fw.webex/contrib/fw.webex.examples/022/README.md -> src/fw.webex/tests/fw.webex.examples/022/README.md
 
 2025-09-27 13:49 UTC naldodj (Restructure fw.webex: move files to new directories)
   * Restructure fw.webex: move files to new directories

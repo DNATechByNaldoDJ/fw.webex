@@ -22,6 +22,9 @@ static __cCHR13:=CHR(13) as character
 
 static __jEmojis as json
 
+static __aAccentuation as array
+static __nAccentuation as numeric
+
 class WebExHelper
 
     static method EscapeAll(cValue as character) as character
@@ -37,6 +40,11 @@ class WebExHelper
 
     static method StrReplace(cTemplate as character,vSubstitutions as variant) as character
     static method StrReplaceEx(cTemplate as character,vSubstitutions as variadic) as character
+
+    static method NoAccent(cStrAnsi as character) as character
+    static method Accentuation(cString as character,vAccentuation as variadic) as character
+    static method AsciiToWebAccentuation(cString as character) as character
+    static method WebAccentuationToAscii(cString as character) as character
 
 end class
 
@@ -263,11 +271,11 @@ static function ___WebExHelper____StrReplaceEx(cString as character,vSubstitutio
             if ((cType=="A").and.(Len(uStr)==2))
                 if ((ValType(uStr[1])=="A").and.(ValType(uStr[2])=="C"))
                     for nToken:=1 to Len(uStr[1])
-                        cStrReplace:=cTools():StrReplace(cStrReplace,{uStr[1][nToken],uStr[2]})
+                        cStrReplace:=WebExHelper():StrReplaceEx(cStrReplace,{uStr[1][nToken],uStr[2]})
                     next nToken
                 elseif ((ValType(uStr[1])=="A").and.(ValType(uStr[2])=="A"))
                     for nToken:=1 to Min(Len(uStr[1]),Len(uStr[2]))
-                        cStrReplace:=cTools():StrReplace(cStrReplace,{uStr[1][nToken],uStr[2][nToken]})
+                        cStrReplace:=WebExHelper():StrReplaceEx(cStrReplace,{uStr[1][nToken],uStr[2][nToken]})
                     next nToken
                 elseif ((ValType(uStr[1])=="C").and.(ValType(uStr[2])=="C"))
                     while ((uStr[1]$cStrReplace).and.(!(uStr[1]==uStr[2])))
@@ -292,3 +300,452 @@ static function ___WebExHelper____StrReplaceEx(cString as character,vSubstitutio
     FWFreeArray(@aTokens)
 
 return(cStrReplace)
+
+static method NoAccent(cStrAnsi) class WebExHelper
+    paramtype cStrAnsi as character
+return(NoAccent(cStrAnsi))
+
+static function ___WebExHelper____Accentuation(cString as character,vAccentuation as variadic) as character
+
+    local ai18n as array
+
+    local cIdx as character
+    local cChar as character
+    local cAccentuation:=cString as character
+
+    local nAT as numeric
+    local nIdx as numeric
+    local nLen as numeric
+    local nATPos as numeric
+    local nAccentuation as numeric
+
+    begin sequence
+
+        if (vAccentuation==nil)
+            break
+        endif
+
+        getAccentuation()
+        DEFAULT __nAccentuation:=Len(__aAccentuation)
+
+        ai18n:=array(0)
+
+        for nAccentuation:=1 to vAccentuation:vCount
+            cChar:=allTrim(vAccentuation:vArgs[nAccentuation])
+            if (Left(cChar,1)=="&")
+                cChar:=SubStr(cChar,2)
+            endif
+            if (Right(cChar,1)==";")
+                cChar:=SubStr(cChar,1,Len(cChar)-1)
+            endif
+            if (cChar!=vAccentuation:vArgs[nAccentuation])
+                vAccentuation:vArgs[nAccentuation]:=cChar
+            endif
+            nAT:=aScan(__aAccentuation,{|x|x[3]==cChar})
+            cChar:=if(nAT>0,__aAccentuation[nAT][1],cChar)
+            aAdd(ai18n,cChar)
+        next nAccentuation
+
+        nIdx:=0
+        nLen:=Len(cAccentuation)
+        for nAT:=1 to nLen
+            nATPos:=AT("#",SubStr(cAccentuation,nAT))
+            if (nATPos==0)
+                exit
+            endif
+            nAT+=(nATPos-1)
+            cChar:=SubStr(cAccentuation,nAT,1)
+            if (cChar=="#")
+                cIdx:=LTrim(Str(++nIdx))
+                cAccentuation:=Stuff(cAccentuation,++nAT,1,cIdx)
+            endif
+        next nAT
+
+        cAccentuation:=i18n(cAccentuation,ai18n)
+
+        FWFreeArray(@ai18n)
+
+    end sequence
+
+return(cAccentuation)
+
+ static method AsciiToWebAccentuation(cString) class WebExHelper
+
+    local ai18n as array
+
+    local cIdx as character
+    local cChar as character
+    local cAccent as character
+    local cWebAccent as character
+    local cWebString as character
+
+    local nIdx as numeric
+    local nATPos as numeric
+    local nAccent as numeric
+    local nAccentLen as numeric
+
+    paramtype 1 var cString as character
+    cWebString:=cString
+
+    getAccentuation()
+    DEFAULT __nAccentuation:=Len(__aAccentuation)
+
+    ai18n:=array(0)
+
+    nIdx:=0
+    for nAccent:=1 to __nAccentuation
+        cAccent:=__aAccentuation[nAccent][1]
+        nAccentLen:=Len(cAccent)
+        while ((nATPos:=AT(cAccent,cWebString))>0)
+            cChar:=SubStr(cWebString,nATPos,nAccentLen)
+            if (cChar==cAccent)
+                cIdx:=("#"+LTrim(Str(++nIdx)))
+                cWebString:=Stuff(cWebString,nATPos,nAccentLen,cIdx)
+                cWebAccent:=__aAccentuation[nAccent][4]
+                aAdd(ai18n,cWebAccent)
+            endif
+        end while
+    next nAccent
+
+    cWebString:=i18n(cWebString,ai18n)
+
+    FWFreeArray(@ai18n)
+
+return(cWebString)
+
+static method WebAccentuationToAscii(cWebString) class WebExHelper
+
+    local ai18n as array
+
+    local cIdx as character
+    local cChar as character
+    local cAccent as character
+    local cWebAccent as character
+
+    local nIdx as numeric
+    local nATPos as numeric
+    local nAccent as numeric
+    local nWebAccentLen as numeric
+
+    paramtype 1 var cWebString as character
+    cString:=cWebString
+
+    getAccentuation()
+    DEFAULT __nAccentuation:=Len(__aAccentuation)
+
+    ai18n:=array(0)
+
+    nIdx:=0
+    for nAccent:=1 to __nAccentuation
+        cWebAccent:=__aAccentuation[nAccent][4]
+        nWebAccentLen:=Len(cWebAccent)
+        while ((nATPos:=AT(cWebAccent,cString))>0)
+            cChar:=SubStr(cString,nATPos,nWebAccentLen)
+            if (cChar==cWebAccent)
+                cIdx:=("#"+LTrim(Str(++nIdx)))
+                cString:=Stuff(cString,nATPos,nWebAccentLen,cIdx)
+                cAccent:=__aAccentuation[nAccent][1]
+                aAdd(ai18n,cAccent)
+            endif
+        end while
+    next nAccent
+
+    cString:=i18n(cString,ai18n)
+
+    FWFreeArray(@ai18n)
+
+return(cString)
+
+ //Devera estar no Padrao ANSI utilizar a funcao OemToAnsi() para a conversao
+static function NoAccent(cStrAnsi as character) as character
+
+    local cAcento as character
+    local cNoAcento as character
+    local cStrAnsiNoAc as character
+
+    local nAcento as numeric
+
+    getAccentuation()
+    DEFAULT __nAccentuation:=Len(__aAccentuation)
+
+    begin sequence
+
+        if (empty(cStrAnsi))
+            cStrAnsiNoAc:=cStrAnsi
+            break
+        endif
+
+        cStrAnsiNoAc:=cStrAnsi
+
+        for nAcento:=1 to __nAccentuation
+            cAcento:=__aAccentuation[nAcento][1]
+            while (cAcento$cStrAnsiNoAc)
+                cNoAcento:=__aAccentuation[nAcento][2]
+                cStrAnsiNoAc:=WebExHelper():StrReplaceEx(cStrAnsiNoAc,{cAcento,cNoAcento})
+            end while
+        next nAcento
+
+    end sequence
+
+return(FwNoAccent(cStrAnsiNoAc))
+
+ static function getAccentuation() as array
+
+    local aAccentuation as array
+
+    local cAccent as character
+    local cNoAccent as character
+    local cAccentuation as character
+    local cWebAccentName as character
+    local cWebAccentClean as character
+    local cWebAccentNumber as character
+
+    local jAccentuation as json
+
+    local nAccent as numeric
+    local nAccents as numeric
+    local nNoAccent as numeric
+
+    if (empty(__aAccentuation))
+        __aAccentuation:=Array(0)
+        beginContent var cAccentuation
+{"__JSONARRAY__":[
+     {"DEC":9,"OCT":"011","HEX":"09","BIN":"00001001","HTMLNumber":"&#9;","HTMLName":"&Tab;","Description":"Horizontal Tab (HT)"}
+    ,{"DEC":10,"OCT":"012","HEX":"0A","BIN":"00001010","HTMLNumber":"&#10;","HTMLName":"&NewLine;","Description":"Line Feed (LF)"}
+    ,{"DEC":13,"OCT":"015","HEX":"0D","BIN":"00001101","HTMLNumber":"&#13;","HTMLName":"&cr;","Description":"Carriage Return (CR)"}
+    ,{"DEC":129,"OCT":"201","HEX":"81","BIN":"10000001","HTMLNumber":"&#129;","HTMLName":"","Description":"Undefined / Control"}
+    ,{"DEC":141,"OCT":"215","HEX":"8D","BIN":"10001101","HTMLNumber":"&#141;","HTMLName":"","Description":"Undefined / Control"}
+    ,{"DEC":143,"OCT":"217","HEX":"8F","BIN":"10001111","HTMLNumber":"&#143;","HTMLName":"","Description":"Undefined / Control"}
+    ,{"DEC":144,"OCT":"220","HEX":"90","BIN":"10010000","HTMLNumber":"&#144;","HTMLName":"","Description":"Undefined / Control"}
+    ,{"DEC":157,"OCT":"235","HEX":"9D","BIN":"10011101","HTMLNumber":"&#157;","HTMLName":"","Description":"Undefined / Control"}
+    ,{"DEC":128,"OCT":"200","HEX":"80","BIN":"10000000","HTMLNumber":"&#8364;","HTMLName":"&euro;","Description":"Euro sign"}
+    ,{"DEC":129,"OCT":"201","HEX":"81","BIN":"10000001","HTMLNumber":"&#129;","HTMLName":"","Description":"Unused"}
+    ,{"DEC":130,"OCT":"202","HEX":"82","BIN":"10000010","HTMLNumber":"&#130;","HTMLName":"&sbquo;","Description":"Single low?9 quotation mark"}
+    ,{"DEC":131,"OCT":"203","HEX":"83","BIN":"10000011","HTMLNumber":"&#131;","HTMLName":"&fnof;","Description":"Latin small letter f with hook"}
+    ,{"DEC":132,"OCT":"204","HEX":"84","BIN":"10000100","HTMLNumber":"&#132;","HTMLName":"&bdquo;","Description":"Double low?9 quotation mark"}
+    ,{"DEC":133,"OCT":"205","HEX":"85","BIN":"10000101","HTMLNumber":"&#133;","HTMLName":"&hellip;","Description":"Horizontal ellipsis"}
+    ,{"DEC":134,"OCT":"206","HEX":"86","BIN":"10000110","HTMLNumber":"&#134;","HTMLName":"&dagger;","Description":"Dagger"}
+    ,{"DEC":135,"OCT":"207","HEX":"87","BIN":"10000111","HTMLNumber":"&#135;","HTMLName":"&Dagger;","Description":"Double dagger"}
+    ,{"DEC":136,"OCT":"210","HEX":"88","BIN":"10001000","HTMLNumber":"&#136;","HTMLName":"&circ;","Description":"Modifier letter circumflex accent"}
+    ,{"DEC":137,"OCT":"211","HEX":"89","BIN":"10001001","HTMLNumber":"&#137;","HTMLName":"&permil;","Description":"Per mille sign"}
+    ,{"DEC":138,"OCT":"212","HEX":"8A","BIN":"10001010","HTMLNumber":"&#138;","HTMLName":"&Scaron;","Description":"Latin capital letter S with caron"}
+    ,{"DEC":139,"OCT":"213","HEX":"8B","BIN":"10001011","HTMLNumber":"&#139;","HTMLName":"&lsaquo;","Description":"Single left?pointing angle quotation mark"}
+    ,{"DEC":140,"OCT":"214","HEX":"8C","BIN":"10001100","HTMLNumber":"&#140;","HTMLName":"&OElig;","Description":"Latin capital ligature OE"}
+    ,{"DEC":141,"OCT":"215","HEX":"8D","BIN":"10001101","HTMLNumber":"&#141;","HTMLName":"","Description":"Unused"}
+    ,{"DEC":142,"OCT":"216","HEX":"8E","BIN":"10001110","HTMLNumber":"&#142;","HTMLName":"&Zcaron;","Description":"Latin capital letter Z with caron"}
+    ,{"DEC":143,"OCT":"217","HEX":"8F","BIN":"10001111","HTMLNumber":"&#143;","HTMLName":"","Description":"Unused"}
+    ,{"DEC":144,"OCT":"220","HEX":"90","BIN":"10010000","HTMLNumber":"&#144;","HTMLName":"","Description":"Unused"}
+    ,{"DEC":145,"OCT":"221","HEX":"91","BIN":"10010001","HTMLNumber":"&#145;","HTMLName":"&lsquo;","Description":"Left single quotation mark"}
+    ,{"DEC":146,"OCT":"222","HEX":"92","BIN":"10010010","HTMLNumber":"&#146;","HTMLName":"&rsquo;","Description":"Right single quotation mark"}
+    ,{"DEC":147,"OCT":"223","HEX":"93","BIN":"10010011","HTMLNumber":"&#147;","HTMLName":"&ldquo;","Description":"Left double quotation mark"}
+    ,{"DEC":148,"OCT":"224","HEX":"94","BIN":"10010100","HTMLNumber":"&#148;","HTMLName":"&rdquo;","Description":"Right double quotation mark"}
+    ,{"DEC":149,"OCT":"225","HEX":"95","BIN":"10010101","HTMLNumber":"&#149;","HTMLName":"&bull;","Description":"Bullet"}
+    ,{"DEC":150,"OCT":"226","HEX":"96","BIN":"10010110","HTMLNumber":"&#150;","HTMLName":"&ndash;","Description":"En dash"}
+    ,{"DEC":151,"OCT":"227","HEX":"97","BIN":"10010111","HTMLNumber":"&#151;","HTMLName":"&mdash;","Description":"Em dash"}
+    ,{"DEC":152,"OCT":"230","HEX":"98","BIN":"10011000","HTMLNumber":"&#152;","HTMLName":"&tilde;","Description":"Small tilde"}
+    ,{"DEC":153,"OCT":"231","HEX":"99","BIN":"10011001","HTMLNumber":"&#153;","HTMLName":"&trade;","Description":"Trade mark sign"}
+    ,{"DEC":154,"OCT":"232","HEX":"9A","BIN":"10011010","HTMLNumber":"&#154;","HTMLName":"&scaron;","Description":"Latin small letter S with caron"}
+    ,{"DEC":155,"OCT":"233","HEX":"9B","BIN":"10011011","HTMLNumber":"&#155;","HTMLName":"&rsaquo;","Description":"Single right?pointing angle quotation mark"}
+    ,{"DEC":156,"OCT":"234","HEX":"9C","BIN":"10011100","HTMLNumber":"&#156;","HTMLName":"&oelig;","Description":"Latin small ligature OE"}
+    ,{"DEC":157,"OCT":"235","HEX":"9D","BIN":"10011101","HTMLNumber":"&#157;","HTMLName":"","Description":"Unused"}
+    ,{"DEC":158,"OCT":"236","HEX":"9E","BIN":"10011110","HTMLNumber":"&#158;","HTMLName":"&zcaron;","Description":"Latin small letter Z with caron"}
+    ,{"DEC":159,"OCT":"237","HEX":"9F","BIN":"10011111","HTMLNumber":"&#159;","HTMLName":"&Yuml;","Description":"Latin capital letter Y with diaeresis"}
+    ,{"DEC":160,"OCT":"240","HEX":"A0","BIN":"10100000","HTMLNumber":"&#160;","HTMLName":"&nbsp;","Description":"Non?breaking space"}
+    ,{"DEC":161,"OCT":"241","HEX":"A1","BIN":"10100001","HTMLNumber":"&#161;","HTMLName":"&iexcl;","Description":"Inverted exclamation mark"}
+    ,{"DEC":162,"OCT":"242","HEX":"A2","BIN":"10100010","HTMLNumber":"&#162;","HTMLName":"&cent;","Description":"Cent sign"}
+    ,{"DEC":163,"OCT":"243","HEX":"A3","BIN":"10100011","HTMLNumber":"&#163;","HTMLName":"&pound;","Description":"Pound sign"}
+    ,{"DEC":164,"OCT":"244","HEX":"A4","BIN":"10100100","HTMLNumber":"&#164;","HTMLName":"&curren;","Description":"Currency sign"}
+    ,{"DEC":165,"OCT":"245","HEX":"A5","BIN":"10100101","HTMLNumber":"&#165;","HTMLName":"&yen;","Description":"Yen sign"}
+    ,{"DEC":166,"OCT":"246","HEX":"A6","BIN":"10100110","HTMLNumber":"&#166;","HTMLName":"&brvbar;","Description":"Broken vertical bar"}
+    ,{"DEC":167,"OCT":"247","HEX":"A7","BIN":"10100111","HTMLNumber":"&#167;","HTMLName":"&sect;","Description":"Section sign"}
+    ,{"DEC":168,"OCT":"250","HEX":"A8","BIN":"10101000","HTMLNumber":"&#168;","HTMLName":"&uml;","Description":"Spacing diaeresis"}
+    ,{"DEC":169,"OCT":"251","HEX":"A9","BIN":"10101001","HTMLNumber":"&#169;","HTMLName":"&copy;","Description":"Copyright sign"}
+    ,{"DEC":170,"OCT":"252","HEX":"AA","BIN":"10101010","HTMLNumber":"&#170;","HTMLName":"&ordf;","Description":"Feminine ordinal indicator"}
+    ,{"DEC":171,"OCT":"253","HEX":"AB","BIN":"10101011","HTMLNumber":"&#171;","HTMLName":"&laquo;","Description":"Left double angle quote"}
+    ,{"DEC":172,"OCT":"254","HEX":"AC","BIN":"10101100","HTMLNumber":"&#172;","HTMLName":"&not;","Description":"Negation sign"}
+    ,{"DEC":173,"OCT":"255","HEX":"AD","BIN":"10101101","HTMLNumber":"&#173;","HTMLName":"&shy;","Description":"Soft hyphen"}
+    ,{"DEC":174,"OCT":"256","HEX":"AE","BIN":"10101110","HTMLNumber":"&#174;","HTMLName":"&reg;","Description":"Registered trade mark"}
+    ,{"DEC":175,"OCT":"257","HEX":"AF","BIN":"10101111","HTMLNumber":"&#175;","HTMLName":"&macr;","Description":"Spacing macron"}
+    ,{"DEC":176,"OCT":"260","HEX":"B0","BIN":"10110000","HTMLNumber":"&#176;","HTMLName":"&deg;","Description":"Degree sign"}
+    ,{"DEC":177,"OCT":"261","HEX":"B1","BIN":"10110001","HTMLNumber":"&#177;","HTMLName":"&plusmn;","Description":"Plus?minus sign"}
+    ,{"DEC":178,"OCT":"262","HEX":"B2","BIN":"10110010","HTMLNumber":"&#178;","HTMLName":"&sup2;","Description":"Superscript two"}
+    ,{"DEC":179,"OCT":"263","HEX":"B3","BIN":"10110011","HTMLNumber":"&#179;","HTMLName":"&sup3;","Description":"Superscript three"}
+    ,{"DEC":180,"OCT":"264","HEX":"B4","BIN":"10110100","HTMLNumber":"&#180;","HTMLName":"&acute;","Description":"Spacing acute accent"}
+    ,{"DEC":181,"OCT":"265","HEX":"B5","BIN":"10110101","HTMLNumber":"&#181;","HTMLName":"&micro;","Description":"Micro sign"}
+    ,{"DEC":182,"OCT":"266","HEX":"B6","BIN":"10110110","HTMLNumber":"&#182;","HTMLName":"&para;","Description":"Pilcrow (paragraph) sign"}
+    ,{"DEC":183,"OCT":"267","HEX":"B7","BIN":"10110111","HTMLNumber":"&#183;","HTMLName":"&middot;","Description":"Middle dot"}
+    ,{"DEC":184,"OCT":"270","HEX":"B8","BIN":"10111000","HTMLNumber":"&#184;","HTMLName":"&cedil;","Description":"Spacing cedilla"}
+    ,{"DEC":185,"OCT":"271","HEX":"B9","BIN":"10111001","HTMLNumber":"&#185;","HTMLName":"&sup1;","Description":"Superscript one"}
+    ,{"DEC":186,"OCT":"272","HEX":"BA","BIN":"10111010","HTMLNumber":"&#186;","HTMLName":"&ordm;","Description":"Masculine ordinal indicator"}
+    ,{"DEC":187,"OCT":"273","HEX":"BB","BIN":"10111011","HTMLNumber":"&#187;","HTMLName":"&raquo;","Description":"Right double angle quote"}
+    ,{"DEC":188,"OCT":"274","HEX":"BC","BIN":"10111100","HTMLNumber":"&#188;","HTMLName":"&frac14;","Description":"Fraction one quarter"}
+    ,{"DEC":189,"OCT":"275","HEX":"BD","BIN":"10111101","HTMLNumber":"&#189;","HTMLName":"&frac12;","Description":"Fraction one half"}
+    ,{"DEC":190,"OCT":"276","HEX":"BE","BIN":"10111110","HTMLNumber":"&#190;","HTMLName":"&frac34;","Description":"Fraction three quarters"}
+    ,{"DEC":191,"OCT":"277","HEX":"BF","BIN":"10111111","HTMLNumber":"&#191;","HTMLName":"&iquest;","Description":"Inverted question mark"}
+    ,{"DEC":192,"OCT":"300","HEX":"C0","BIN":"11000000","HTMLNumber":"&#192;","HTMLName":"&Agrave;","Description":"Latin capital letter A with grave"}
+    ,{"DEC":193,"OCT":"301","HEX":"C1","BIN":"11000001","HTMLNumber":"&#193;","HTMLName":"&Aacute;","Description":"Latin capital letter A with acute"}
+    ,{"DEC":194,"OCT":"302","HEX":"C2","BIN":"11000010","HTMLNumber":"&#194;","HTMLName":"&Acirc;","Description":"Latin capital letter A with circumflex"}
+    ,{"DEC":195,"OCT":"303","HEX":"C3","BIN":"11000011","HTMLNumber":"&#195;","HTMLName":"&Atilde;","Description":"Latin capital letter A with tilde"}
+    ,{"DEC":196,"OCT":"304","HEX":"C4","BIN":"11000100","HTMLNumber":"&#196;","HTMLName":"&Auml;","Description":"Latin capital letter A with diaeresis"}
+    ,{"DEC":197,"OCT":"305","HEX":"C5","BIN":"11000101","HTMLNumber":"&#197;","HTMLName":"&Aring;","Description":"Latin capital letter A with ring above"}
+    ,{"DEC":198,"OCT":"306","HEX":"C6","BIN":"11000110","HTMLNumber":"&#198;","HTMLName":"&AElig;","Description":"Latin capital ligature AE"}
+    ,{"DEC":199,"OCT":"307","HEX":"C7","BIN":"11000111","HTMLNumber":"&#199;","HTMLName":"&Ccedil;","Description":"Latin capital letter C with cedilla"}
+    ,{"DEC":200,"OCT":"310","HEX":"C8","BIN":"11001000","HTMLNumber":"&#200;","HTMLName":"&Egrave;","Description":"Latin capital letter E with grave"}
+    ,{"DEC":201,"OCT":"311","HEX":"C9","BIN":"11001001","HTMLNumber":"&#201;","HTMLName":"&Eacute;","Description":"Latin capital letter E with acute"}
+    ,{"DEC":202,"OCT":"312","HEX":"CA","BIN":"11001010","HTMLNumber":"&#202;","HTMLName":"&Ecirc;","Description":"Latin capital letter E with circumflex"}
+    ,{"DEC":203,"OCT":"313","HEX":"CB","BIN":"11001011","HTMLNumber":"&#203;","HTMLName":"&Euml;","Description":"Latin capital letter E with diaeresis"}
+    ,{"DEC":204,"OCT":"314","HEX":"CC","BIN":"11001100","HTMLNumber":"&#204;","HTMLName":"&Igrave;","Description":"Latin capital letter I with grave"}
+    ,{"DEC":205,"OCT":"315","HEX":"CD","BIN":"11001101","HTMLNumber":"&#205;","HTMLName":"&Iacute;","Description":"Latin capital letter I with acute"}
+    ,{"DEC":206,"OCT":"316","HEX":"CE","BIN":"11001110","HTMLNumber":"&#206;","HTMLName":"&Icirc;","Description":"Latin capital letter I with circumflex"}
+    ,{"DEC":207,"OCT":"317","HEX":"CF","BIN":"11001111","HTMLNumber":"&#207;","HTMLName":"&Iuml;","Description":"Latin capital letter I with diaeresis"}
+    ,{"DEC":208,"OCT":"320","HEX":"D0","BIN":"11010000","HTMLNumber":"&#208;","HTMLName":"&ETH;","Description":"Latin capital letter ETH"}
+    ,{"DEC":209,"OCT":"321","HEX":"D1","BIN":"11010001","HTMLNumber":"&#209;","HTMLName":"&Ntilde;","Description":"Latin capital letter N with tilde"}
+    ,{"DEC":210,"OCT":"322","HEX":"D2","BIN":"11010010","HTMLNumber":"&#210;","HTMLName":"&Ograve;","Description":"Latin capital letter O with grave"}
+    ,{"DEC":211,"OCT":"323","HEX":"D3","BIN":"11010011","HTMLNumber":"&#211;","HTMLName":"&Oacute;","Description":"Latin capital letter O with acute"}
+    ,{"DEC":212,"OCT":"324","HEX":"D4","BIN":"11010100","HTMLNumber":"&#212;","HTMLName":"&Ocirc;","Description":"Latin capital letter O with circumflex"}
+    ,{"DEC":213,"OCT":"325","HEX":"D5","BIN":"11010101","HTMLNumber":"&#213;","HTMLName":"&Otilde;","Description":"Latin capital letter O with tilde"}
+    ,{"DEC":214,"OCT":"326","HEX":"D6","BIN":"11010110","HTMLNumber":"&#214;","HTMLName":"&Ouml;","Description":"Latin capital letter O with diaeresis"}
+    ,{"DEC":215,"OCT":"327","HEX":"D7","BIN":"11010111","HTMLNumber":"&#215;","HTMLName":"&times;","Description":"Multiplication sign"}
+    ,{"DEC":216,"OCT":"330","HEX":"D8","BIN":"11011000","HTMLNumber":"&#216;","HTMLName":"&Oslash;","Description":"Latin capital letter O with stroke"}
+    ,{"DEC":217,"OCT":"331","HEX":"D9","BIN":"11011001","HTMLNumber":"&#217;","HTMLName":"&Ugrave;","Description":"Latin capital letter U with grave"}
+    ,{"DEC":218,"OCT":"332","HEX":"DA","BIN":"11011010","HTMLNumber":"&#218;","HTMLName":"&Uacute;","Description":"Latin capital letter U with acute"}
+    ,{"DEC":219,"OCT":"333","HEX":"DB","BIN":"11011011","HTMLNumber":"&#219;","HTMLName":"&Ucirc;","Description":"Latin capital letter U with circumflex"}
+    ,{"DEC":220,"OCT":"334","HEX":"DC","BIN":"11011100","HTMLNumber":"&#220;","HTMLName":"&Uuml;","Description":"Latin capital letter U with diaeresis"}
+    ,{"DEC":221,"OCT":"335","HEX":"DD","BIN":"11011101","HTMLNumber":"&#221;","HTMLName":"&Yacute;","Description":"Latin capital letter Y with acute"}
+    ,{"DEC":222,"OCT":"336","HEX":"DE","BIN":"11011110","HTMLNumber":"&#222;","HTMLName":"&THORN;","Description":"Latin capital letter THORN"}
+    ,{"DEC":223,"OCT":"337","HEX":"DF","BIN":"11011111","HTMLNumber":"&#223;","HTMLName":"&szlig;","Description":"Latin small letter sharp s (eszett)"}
+    ,{"DEC":224,"OCT":"340","HEX":"E0","BIN":"11100000","HTMLNumber":"&#224;","HTMLName":"&agrave;","Description":"Latin small letter a with grave"}
+    ,{"DEC":225,"OCT":"341","HEX":"E1","BIN":"11100001","HTMLNumber":"&#225;","HTMLName":"&aacute;","Description":"Latin small letter a with acute"}
+    ,{"DEC":226,"OCT":"342","HEX":"E2","BIN":"11100010","HTMLNumber":"&#226;","HTMLName":"&acirc;","Description":"Latin small letter a with circumflex"}
+    ,{"DEC":227,"OCT":"343","HEX":"E3","BIN":"11100011","HTMLNumber":"&#227;","HTMLName":"&atilde;","Description":"Latin small letter a with tilde"}
+    ,{"DEC":228,"OCT":"344","HEX":"E4","BIN":"11100100","HTMLNumber":"&#228;","HTMLName":"&auml;","Description":"Latin small letter a with diaeresis"}
+    ,{"DEC":229,"OCT":"345","HEX":"E5","BIN":"11100101","HTMLNumber":"&#229;","HTMLName":"&aring;","Description":"Latin small letter a with ring above"}
+    ,{"DEC":230,"OCT":"346","HEX":"E6","BIN":"11100110","HTMLNumber":"&#230;","HTMLName":"&aelig;","Description":"Latin small ligature ae"}
+    ,{"DEC":231,"OCT":"347","HEX":"E7","BIN":"11100111","HTMLNumber":"&#231;","HTMLName":"&ccedil;","Description":"Latin small letter c with cedilla"}
+    ,{"DEC":232,"OCT":"350","HEX":"E8","BIN":"11101000","HTMLNumber":"&#232;","HTMLName":"&egrave;","Description":"Latin small letter e with grave"}
+    ,{"DEC":233,"OCT":"351","HEX":"E9","BIN":"11101001","HTMLNumber":"&#233;","HTMLName":"&eacute;","Description":"Latin small letter e with acute"}
+    ,{"DEC":234,"OCT":"352","HEX":"EA","BIN":"11101010","HTMLNumber":"&#234;","HTMLName":"&ecirc;","Description":"Latin small letter e with circumflex"}
+    ,{"DEC":235,"OCT":"353","HEX":"EB","BIN":"11101011","HTMLNumber":"&#235;","HTMLName":"&euml;","Description":"Latin small letter e with diaeresis"}
+    ,{"DEC":236,"OCT":"354","HEX":"EC","BIN":"11101100","HTMLNumber":"&#236;","HTMLName":"&igrave;","Description":"Latin small letter i with grave"}
+    ,{"DEC":237,"OCT":"355","HEX":"ED","BIN":"11101101","HTMLNumber":"&#237;","HTMLName":"&iacute;","Description":"Latin small letter i with acute"}
+    ,{"DEC":238,"OCT":"356","HEX":"EE","BIN":"11101110","HTMLNumber":"&#238;","HTMLName":"&icirc;","Description":"Latin small letter i with circumflex"}
+    ,{"DEC":239,"OCT":"357","HEX":"EF","BIN":"11101111","HTMLNumber":"&#239;","HTMLName":"&iuml;","Description":"Latin small letter i with diaeresis"}
+    ,{"DEC":240,"OCT":"360","HEX":"F0","BIN":"11110000","HTMLNumber":"&#240;","HTMLName":"&eth;","Description":"Latin small letter eth"}
+    ,{"DEC":241,"OCT":"361","HEX":"F1","BIN":"11110001","HTMLNumber":"&#241;","HTMLName":"&ntilde;","Description":"Latin small letter n with tilde"}
+    ,{"DEC":242,"OCT":"362","HEX":"F2","BIN":"11110010","HTMLNumber":"&#242;","HTMLName":"&ograve;","Description":"Latin small letter o with grave"}
+    ,{"DEC":243,"OCT":"363","HEX":"F3","BIN":"11110011","HTMLNumber":"&#243;","HTMLName":"&oacute;","Description":"Latin small letter o with acute"}
+    ,{"DEC":244,"OCT":"364","HEX":"F4","BIN":"11110100","HTMLNumber":"&#244;","HTMLName":"&ocirc;","Description":"Latin small letter o with circumflex"}
+    ,{"DEC":245,"OCT":"365","HEX":"F5","BIN":"11110101","HTMLNumber":"&#245;","HTMLName":"&otilde;","Description":"Latin small letter o with tilde"}
+    ,{"DEC":246,"OCT":"366","HEX":"F6","BIN":"11110110","HTMLNumber":"&#246;","HTMLName":"&ouml;","Description":"Latin small letter o with diaeresis"}
+    ,{"DEC":247,"OCT":"367","HEX":"F7","BIN":"11110111","HTMLNumber":"&#247;","HTMLName":"&divide;","Description":"Division sign"}
+    ,{"DEC":248,"OCT":"370","HEX":"F8","BIN":"11111000","HTMLNumber":"&#248;","HTMLName":"&oslash;","Description":"Latin small letter o with stroke"}
+    ,{"DEC":249,"OCT":"371","HEX":"F9","BIN":"11111001","HTMLNumber":"&#249;","HTMLName":"&ugrave;","Description":"Latin small letter u with grave"}
+    ,{"DEC":250,"OCT":"372","HEX":"FA","BIN":"11111010","HTMLNumber":"&#250;","HTMLName":"&uacute;","Description":"Latin small letter u with acute"}
+    ,{"DEC":251,"OCT":"373","HEX":"FB","BIN":"11111011","HTMLNumber":"&#251;","HTMLName":"&ucirc;","Description":"Latin small letter u with circumflex"}
+    ,{"DEC":252,"OCT":"374","HEX":"FC","BIN":"11111100","HTMLNumber":"&#252;","HTMLName":"&uuml;","Description":"Latin small letter u with diaeresis"}
+    ,{"DEC":253,"OCT":"375","HEX":"FD","BIN":"11111101","HTMLNumber":"&#253;","HTMLName":"&yacute;","Description":"Latin small letter y with acute"}
+    ,{"DEC":254,"OCT":"376","HEX":"FE","BIN":"11111110","HTMLNumber":"&#254;","HTMLName":"&thorn;","Description":"Latin small letter thorn"}
+    ,{"DEC":255,"OCT":"377","HEX":"FF","BIN":"11111111","HTMLNumber":"&#255;","HTMLName":"&yuml;","Description":"Latin small letter y with diaeresis"}
+    ,{"DEC":376,"OCT":"570","HEX":"178","BIN":"101111000","HTMLNumber":"&#376;","HTMLName":"&Yuml;","Description":"Latin capital letter Y with diaeresis"}
+]}
+        endContent
+
+        cAccentuation:=WebExHelper():StrReplaceEx(cAccentuation,{__cCHR13,""},{__cCHR10,""},{"  "," "})
+
+        jAccentuation:=JSONObject():New()
+        jAccentuation:FromJSON(cAccentuation)
+        cAccentuation:=""
+        aAccentuation:=jAccentuation["__JSONARRAY__"]
+
+        aNoAccent:={;
+            {chr(199),"C"},;
+            {chr(231),"c"},;
+            {chr(185),"1"},;
+            {chr(188),"1/4"},;
+            {chr(189),"1/2"},;
+            {chr(190),"3/4"},;
+            {chr(192),"A"},;
+            {chr(195),"A"},;
+            {chr(196),"A"},;
+            {chr(197),"A"},;
+            {chr(198),"AE"},;
+            {chr(224),"a"},;
+            {chr(225),"a"},;
+            {chr(226),"a"},;
+            {chr(227),"a"},;
+            {chr(228),"a"},;
+            {chr(229),"a"},;
+            {chr(230),"ae"},;
+            {chr(200),"E"},;
+            {chr(201),"E"},;
+            {chr(202),"E"},;
+            {chr(203),"E"},;
+            {chr(232),"e"},;
+            {chr(233),"e"},;
+            {chr(234),"e"},;
+            {chr(235),"e"},;
+            {chr(204),"I"},;
+            {chr(205),"I"},;
+            {chr(206),"I"},;
+            {chr(207),"I"},;
+            {chr(236),"i"},;
+            {chr(237),"i"},;
+            {chr(238),"i"},;
+            {chr(239),"i"},;
+            {chr(209),"N"},;
+            {chr(241),"n"},;
+            {chr(210),"O"},;
+            {chr(211),"O"},;
+            {chr(212),"O"},;
+            {chr(213),"O"},;
+            {chr(214),"O"},;
+            {chr(216),"O"},;
+            {chr(242),"o"},;
+            {chr(243),"o"},;
+            {chr(244),"o"},;
+            {chr(245),"o"},;
+            {chr(246),"o"},;
+            {chr(186),"o"},;
+            {chr(217),"U"},;
+            {chr(218),"U"},;
+            {chr(219),"U"},;
+            {chr(220),"U"},;
+            {chr(249),"u"},;
+            {chr(250),"u"},;
+            {chr(251),"u"},;
+            {chr(252),"u"},;
+            {chr(221),"Y"},;
+            {chr(376),"Y"},;
+            {chr(253),"y"},;
+            {chr(255),"y"},;
+            {chr(009),""},;
+            {chr(010),""},;
+            {chr(013),""},;
+            {chr(129),""},;
+            {chr(141),""},;
+            {chr(143),""},;
+            {chr(144),""},;
+            {chr(157),""},;
+            {chr(191),"?"};
+        }
+
+        nAccents:=Len(aAccentuation)
+        for nAccent:=1 to nAccents
+            cAccent:=CHR(aAccentuation[nAccent]["DEC"])
+            cWebAccentName:=aAccentuation[nAccent]["HTMLName"]
+            cWebAccentClean:=WebExHelper():StrReplaceEx(cWebAccentName,{"&",""},{";",""})
+            cWebAccentNumber:=aAccentuation[nAccent]["HTMLNumber"]
+            nNoAccent:=aScan(aNoAccent,{|x as array|x[1]==cAccent})
+            cNoAccent:=if(nNoAccent>0,aNoAccent[nNoAccent][2],"")
+            aAdd(__aAccentuation,{cAccent,cNoAccent,cWebAccentClean,cWebAccentName,cWebAccentNumber})
+        next nAccent
+
+        FWFreeArray(@aNoAccent)
+        FWFreeArray(@aAccentuation)
+        FreeObj(@jAccentuation)
+
+    endif
+
+    __nAccentuation:=Len(__aAccentuation)
+
+return(__aAccentuation)

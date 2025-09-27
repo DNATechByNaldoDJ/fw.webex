@@ -1,0 +1,428 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class FWMarkdown from FWWebEx.ClassBase
+
+    protected data cCRLF as character
+    protected data cOutput as character
+    protected data cBuffer as character
+
+    protected data lBufferEnabled as logical
+    protected data aFootnotes as array
+
+    public method New(lBufferEnabled as logical) as object
+    public method Clean() as object
+
+    public method Header(cText as character,nLevel as numeric) as object
+    public method Paragraph(cText as character) as object
+    public method ListItem(cText as character,nLevel as numeric,lOrdered as logical) as object
+    public method ListItemTask(cText as character,lChecked as logical,nLevel as numeric) as object
+    public method Bold(cText as character) as character
+    public method Italic(cText as character) as character
+    public method Strike(cText as character) as character
+    public method Highlight(cText as character) as character
+    public method Subscript(cText as character) as character
+    public method SuperScript(cText as character) as character
+    public method Link(cText as character,cUrl as character) as character
+    public method Image(cAlt as character,cUrl as character) as character
+    public method VideoEmbed(cUrl,nWidth,nHeight) as object
+    public method Code(cText as character) as character
+    public method Comment(cText as character,lHTML as logical) as character
+    public method CodeBlock(cText as character,cLang as character) as object
+    public method Quote(cText as character,nLevel as numeric) as object
+    public method Table(aHeader as array,aRows as array,aAlign as array) as object
+    public method DefinitionList(cTerm as character,cDef as character) as object
+    public method Rule() as object
+    public method FootnoteRef(cId as character) as character
+    public method FootnoteDef(cId as character,cText as character) as object
+    public method FrontMatter(jMeta as json) as object
+    public method Save(cFile as character) as logical
+
+end class
+
+// ------------------------------------------------------
+method New(lBufferEnabled) class FWMarkdown
+    paramtype 1 var lBufferEnabled as logical optional default .T.
+    ::cCRLF:=CRLF
+    ::cOutput:=""
+    ::cBuffer:=""
+    ::lBufferEnabled:=lBufferEnabled
+    ::aFootnotes:={}
+return(self)
+
+// ------------------------------------------------------
+method Clean() class FWMarkdown
+    ::cOutput:=""
+    ::cBuffer:=""
+    aSize(::aFootnotes,0)
+return(self)
+
+// ------------------------------------------------------
+method Header(cText,nLevel) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var nLevel as numeric optional default 1
+    ::cOutput:=Replicate("#",nLevel)+" "+cText
+    ::cOutput+=::cCRLF+::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method Paragraph(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:=cText+::cCRLF+::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+// Lista com suporte a multiplos niveis e ordenada/nao ordenada
+method ListItem(cText,nLevel,lOrdered) class FWMarkdown
+    local cIndent as character
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var nLevel as numeric optional default 1
+    paramtype 3 var lOrdered as logical optional default .F.
+    cIndent:=Space((nLevel-1)*3)
+    if (lOrdered)
+        ::cOutput:=cIndent+"1. "+cText+::cCRLF
+    else
+        ::cOutput:=cIndent+"- "+cText+::cCRLF
+    endif
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method ListItemTask(cText,lChecked,nLevel) class FWMarkdown
+    local cIndent as character
+    local cCheck as character
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var lChecked as logical optional default .F.
+    paramtype 3 var nLevel as numeric optional default 1
+    cIndent:=Space((nLevel-1)*3)
+    cCheck:=iif(lChecked,"[x]","[ ]")
+    ::cOutput:=cIndent+"- "+cCheck+" "+cText+::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method Bold(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="**"+cText+"**"
+return(::cOutput)
+
+// ------------------------------------------------------
+method Italic(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="*"+cText+"*"
+return(::cOutput)
+
+// ------------------------------------------------------
+method Strike(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="~~"+cText+"~~"
+return(::cOutput)
+
+// ------------------------------------------------------
+method Highlight(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="=="+cText+"=="
+return(::cOutput)
+
+// ------------------------------------------------------
+method Subscript(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="~"+cText+"~"
+return(::cOutput)
+
+// ------------------------------------------------------
+method SuperScript(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="^"+cText+"^"
+return(::cOutput)
+
+// ------------------------------------------------------
+method Link(cText,cUrl) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var cUrl as character optional default ""
+    ::cOutput:="["+cText+"]("+cUrl+")"
+return(::cOutput)
+
+// ------------------------------------------------------
+method Image(cAlt,cUrl) class FWMarkdown
+    paramtype 1 var cAlt as character optional default ""
+    paramtype 2 var cUrl as character optional default ""
+    ::cOutput:="!["+cAlt+"]("+cUrl+")"
+return(::cOutput)
+
+// ------------------------------------------------------
+method VideoEmbed(cUrl,nWidth,nHeight) class FWMarkdown
+
+    local cId as character
+    local cEmbedUrl as character
+
+    paramtype 1 var cUrl as character optional default ""
+    paramtype 2 var nWidth as numeric optional default 560
+    paramtype 3 var nHeight as numeric optional default 315
+
+    cEmbedUrl:=cUrl
+
+    if ("youtube.com/watch?v="$Lower(cUrl))
+        cId:=SubStr(cUrl,AT("v=",cUrl)+2)
+        if (AT("&",cId)>0)
+            cId:=SubStr(cId,1,AT("&",cId)-1)
+        endif
+        cEmbedUrl:="https://www.youtube.com/embed/"+cId
+    endif
+
+    // Embed em HTML
+    ::cOutput:=;
+        '<iframe width="'+cValToChar(nWidth)+;
+        '" height="'+cValToChar(nHeight)+;
+        '" src="'+cEmbedUrl+;
+        '" frameborder="0" allowfullscreen></iframe>'+::cCRLF
+
+    ::cOutput+=::cCRLF
+
+    // Fallback em Markdown
+    ::cOutput+="[Open video in Web browser]("+cUrl+")"+::cCRLF
+
+    ::cOutput+=::cCRLF
+
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+
+return(self)
+
+// ------------------------------------------------------
+method Code(cText) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    ::cOutput:="`"+cText+"`"
+return(::cOutput)
+
+// ------------------------------------------------------
+method Comment(cText,lHTML) class FWMarkdown
+
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var lHTML as logical optional default .F.
+
+    if (lHTML)
+        ::cOutput:="<!--"+::cCRLF
+        ::cOutput+=cText+::cCRLF
+        ::cOutput+="-->"+::cCRLF
+    else
+        ::cOutput:="[//]: # ("+cText+")"+::cCRLF
+    endif
+
+    ::cOutput+=::cCRLF
+
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+
+return(self)
+
+// ------------------------------------------------------
+method CodeBlock(cText,cLang) class FWMarkdown
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var cLang as character optional default ""
+    ::cOutput:="```"+cLang+::cCRLF
+    ::cOutput+=cText+::cCRLF
+    ::cOutput+="```"+::cCRLF
+    ::cOutput+=::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method Quote(cText,nLevel) class FWMarkdown
+    local aLines as array
+    local cPrefix as character
+    local i as numeric
+    paramtype 1 var cText as character optional default ""
+    paramtype 2 var nLevel as numeric optional default 1
+    cPrefix:=Replicate("> ",nLevel)
+    aLines:=StrTokArr2(cText,::cCRLF,.T.)
+    ::cOutput:=""
+    for i:=1 to Len(aLines)
+        ::cOutput+=cPrefix+aLines[i]+::cCRLF
+    next
+    ::cOutput+=::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method Table(aHeader,aRows,aAlign) class FWMarkdown
+
+    local cSep
+
+    local i as numeric
+    local j as numeric
+    local nCols as numeric
+
+    paramtype 1 var aHeader as array optional default {}
+    paramtype 2 var aRows as array optional default {}
+    paramtype 3 var aAlign as array optional default Array(Len(aHeader),"left")
+
+    nCols:=Len(aHeader)
+
+    // Cabecalho
+    ::cOutput:="|"
+    for i:=1 to nCols
+        ::cOutput+=" "+aHeader[i]+" |"
+    next i
+    ::cOutput+=::cCRLF
+
+    // Linha de separador
+    ::cOutput+="|"
+    for i:=1 to nCols
+        cSep:=Replicate("-",Max(Len(aHeader[i]),3))  // Minimo 3 para alinhamento
+        do case
+            case (aAlign[i]=="center")
+                ::cOutput+=" :"+SubStr(cSep,2,Len(cSep)-2)+": |"
+            case (aAlign[i]=="right")
+                ::cOutput+=" "+SubStr(cSep,1,Len(cSep)-1)+": |"
+            otherwise  // left or default
+                ::cOutput+=" :"+SubStr(cSep,1,Len(cSep)-1)+" |"
+        endcase
+    next i
+    ::cOutput+=::cCRLF
+
+    // Linhas
+    for i:=1 to Len( aRows )
+        ::cOutput+="|"
+        for j:=1 to nCols
+            ::cOutput+=" "+aRows[i][j]+" |"
+        next j
+        ::cOutput+=::cCRLF
+    next i
+
+    ::cOutput+=::cCRLF
+
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+
+return(self)
+
+// ------------------------------------------------------
+method DefinitionList(cTerm,cDef) class FWMarkdown
+    paramtype 1 var cTerm as character optional default ""
+    paramtype 2 var cDef as character optional default ""
+    ::cOutput:=cTerm+::cCRLF+": "+cDef+::cCRLF+::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method Rule() class FWMarkdown
+    ::cOutput:="---"+::cCRLF
+    ::cOutput+=::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method FootnoteRef(cId) class FWMarkdown
+    paramtype 1 var cId as character optional default ""
+    ::cOutput:="[^"+cId+"]"
+return(::cOutput)
+
+// ------------------------------------------------------
+method FootnoteDef(cId,cText) class FWMarkdown
+    paramtype 1 var cId as character optional default ""
+    paramtype 2 var cText as character optional default ""
+    aAdd(::aFootnotes,{cId,cText})
+return(self)
+
+// ------------------------------------------------------
+method FrontMatter(jMeta) class FWMarkdown
+
+    local aKeys as array
+
+    local cKey as character
+
+    local i as numeric
+
+    paramtype 1 var jMeta as json
+
+    aKeys:=jMeta:GetNames()
+    ::cOutput:="---"+::cCRLF
+    for i:=1 to Len(aKeys)
+        cKey:=aKeys[i]
+        ::cOutput+=cKey+": "+jMeta[cKey]+::cCRLF
+    next i
+    ::cOutput+="---"+::cCRLF
+    ::cOutput+=::cCRLF
+
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+
+return(self)
+
+// ------------------------------------------------------
+method Save(cFile,lEncodeUTF8) class FWMarkdown
+
+    local cSPDrive as character
+    local cSPPath as character
+    local cSPFile as character
+    local cSPExt as character
+    local cDirMake as character
+
+    local lSaveOK as logical
+
+    local i as numeric
+
+    paramtype 1 var cFile as character
+    paramtype 2 var lEncodeUTF8 as logical optional default .T.
+
+    SplitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
+
+    cDirMake:=cSPDrive
+    cDirMake+=cSPPath
+
+    lSaveOK:=lIsDir(cDirMake)
+    if (!lSaveOK)
+        lSaveOK:=FWMakeDir(cSPPath)
+    endif
+
+    ::cOutput:=::cBuffer
+    if (Len(::aFootnotes)>0)
+        ::cOutput+=::cCRLF+"---"+::cCRLF  // Separador opcional
+        for i:=1 to Len(::aFootnotes)
+            ::cOutput+="[^"+::aFootnotes[i][1]+"]: "+::aFootnotes[i][2]+::cCRLF
+        next i
+        ::cOutput+=::cCRLF
+    endif
+
+    if (lEncodeUTF8)
+        ::cOutput:=EncodeUTF8(::cOutput)
+    endif
+
+    lSaveOK:=((lSaveOK).and.(MemoWrite(cFile,::cOutput)))
+
+return(lSaveOK)

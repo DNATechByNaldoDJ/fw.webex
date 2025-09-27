@@ -1,0 +1,98 @@
+#include "totvs.ch"
+
+using namespace FWWebEx
+
+procedure u_TestaMD()
+
+    local cCRLF:=CRLF as character
+
+    local oMD:=FWMarkdown():New() as object
+    local oComment:=FWMarkdown():New(.T.) as object
+
+    // FrontMatter no topo
+    oMD:FrontMatter(;
+        {;
+             "title" : WebExHelper():Accentuation("Relat#1rio Teste","oacute");
+            ,"author" : "DNATech";
+            ,"date" : DToC(Date());
+        };
+    )
+
+    oMD:Header(WebExHelper():Accentuation("Relat#1rio Markdown","oacute"),1)
+    oMD:Paragraph("Gerado em ADVPL com suporte a **Markdown**.")
+
+    oMD:Header(WebExHelper():Accentuation("Lista hier#1rquica","aacute"),2)
+    oMD:ListItem("Item 1",1)
+    oMD:ListItem("Subitem 1.1",2)
+    oMD:ListItem("Subitem 1.1.1",3)
+    oMD:ListItem("Item 2",1)
+
+    oMD:Rule()
+
+    oMD:Header("Lista Ordenada Aninhada",2)
+    oMD:ListItem("Top 1",1,.T.)
+    oMD:ListItem("Sub 1",2,.T.)
+    oMD:ListItem("Sub 2",2,.T.)
+    oMD:ListItem("Top 2",1,.T.)
+
+    oMD:Rule()
+
+    oMD:Header("Lista de Tarefas",2)
+    oMD:ListItemTask("Tarefa pendente", .F., 1)
+    oMD:ListItemTask(WebExHelper():Accentuation("Tarefa conclu#1da","iacute"), .T., 1)
+
+    oMD:Rule()
+
+    oMD:Header(WebExHelper():Accentuation("Texto Avan#1ado","ccedil"),2)
+    oMD:Paragraph(oMD:Highlight("Destaque")+" com "+oMD:Subscript("sub")+" e "+oMD:SuperScript("super"))
+
+    oMD:Rule()
+
+    oMD:Header("Links e Imagens",2)
+    oMD:Paragraph("Veja o "+oMD:Link("GitHub","https://github.com"))
+    oMD:Paragraph(oMD:Image("Logo","https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true"))
+
+    oMd:Rule()
+
+    oMD:Header(WebExHelper():Accentuation("C#1digo","oacute"),2)
+    oMD:CodeBlock("User Function Hello()"+cCRLF+"   ConOut('Hello Markdown')"+cCRLF+"Return","advpl")
+
+    oMd:Rule()
+
+    oMD:Header(WebExHelper():Accentuation("Cita#1#2o","ccedil","atilde"),2)
+    oMD:Quote(WebExHelper():Accentuation("Markdown deixa a leitura mais agrad#1vel."+cCRLF+"E agora com multi-linha.","aacute"),1)
+    oMD:Quote(WebExHelper():Accentuation("Cita#1#2o aninhada.","ccedil","atilde"),2)
+
+    oMd:Rule()
+
+    oMD:Header("Tabela",2)
+    oMD:Table({"Produto","Qtde"},{{"A","10"},{"B","25"}},{"left","right"})
+
+    oMD:Rule()
+
+    oMD:Header(WebExHelper():Accentuation("Defini#1#2o","ccedil","atilde"),2)
+    oMD:DefinitionList("Termo",WebExHelper():Accentuation("Defini#1#2o aqui.","ccedil","atilde"))
+
+    oMD:Rule()
+
+    oMD:Header(WebExHelper():Accentuation("Rodap#1","eacute"),2)
+    oMD:Paragraph(WebExHelper():Accentuation("Texto com rodap#1","eacute")+oMD:FootnoteRef("1"))
+    oMD:FootnoteDef("1",WebExHelper():Accentuation("Nota de rodap#1.","eacute"))
+
+    oMD:Rule()
+
+    oMD:Header(WebExHelper():Accentuation("Relat#1rio com V#2deo","oacute","iacute"),1)
+    oMD:Paragraph(WebExHelper():Accentuation("Para ver, desabilite o coment#1rio abaixo:","aacute"))
+    oComment:VideoEmbed("https://www.youtube.com/watch?v=vZaldeUg6D0",640,360)
+    oMD:Comment(oComment:GetMemberData("cOutPut"),.T.)
+    oComment:Clean()
+
+    oMd:Rule()
+
+    oMD:Save("c:\tmp\relatorio.MD")
+
+    oMD:Clean()
+    FreeObj(@oMD)
+    FreeObj(@oComment)
+
+return
