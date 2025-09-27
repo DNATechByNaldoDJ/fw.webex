@@ -2,8 +2,20 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add search component to datatable and update filter panel)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor datatable search and improve string replace logic)"
 */
+
+2025-09-27 01:20 UTC naldodj (Refactor datatable search and improve string replace logic)
+  % Refactor datatable search and improve string replace logic
+    Moved utility templates to 'extra' directory.
+    Enhanced the ___WebExHelper____StrReplaceEx function to handle more substitution cases.
+    Improved datatable search component with debounced input, better local/server-side distinction, and proper filter reset.
+    Updated example to add 'RA_APELIDO' field and commented out 'RA_SEXO' filter.
+      * src/fw.webex/tools/fw.webex.helper.tlpp
+      * src/fw.webex/web/component/fw.webex.datatable.search.tlpp
+      * src/fw.webex.examples/020/fw.webex.example.020.tlpp
+      * src/tools/for.each.tlpp -> src/extra/for.each.tlpp
+      * src/tools/switch.tlpp -> src/extra/switch.tlpp
 
 2025-09-26 11:29 UTC naldodj (Add search component to datatable and update filter panel)
   + Add search component to datatable and update filter panel

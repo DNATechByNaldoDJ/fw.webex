@@ -58,39 +58,72 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
             .:SetAttr("aria-label","Search")
             // script: pesquisa local ou server-side
             beginContent var cScript
-                document.getElementById("FWWebExSearchValue___ID_SEARCH__").addEventListener("keyup", function(e) {
-                    let term = this.value.trim();
-                    if (!term) return;
+                (function(){
 
-                    if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
-                        let tbl = $("#__TARGET_TABLE_ID__").DataTable();
-                        let info = tbl.page.info();
+                    let searchTimer___ID_SEARCH__;
 
-                        // verifica se todos os registros ja estao carregados
-                        let allLoaded = (info.recordsDisplay === info.recordsTotal);
+                    const input = document.getElementById("FWWebExSearchValue___ID_SEARCH__");
 
-                        if (allLoaded) {
-                            // pesquisa local
-                            const rows = document.querySelectorAll("#__TARGET_TABLE_ID__ tbody tr");
-                            rows.forEach(row => {
-                                const text = row.textContent.toLowerCase();
-                                row.style.display = text.includes(term.toLowerCase()) ? '' : 'none';
-                            });
-                        } else {
-                            // pesquisa server-side: injeta termo em todos os campos
-                            let searchFilter = {};
-                            const fields = __FIELDS__;
-                            fields.fields.forEach(field => {
-                                searchFilter[field.name] = term;
-                            });
-
-                            tbl.settings()[0].oInit.Search = searchFilter;
-                            tbl.ajax.reload();
-                        }
-                    } else {
-                        console.warn("Target table #__TARGET_TABLE_ID__ not found to apply search.");
+                    if (!input) {
+                        return;
                     }
-                });
+
+                    input.addEventListener("keyup", function(e) {
+
+                        clearTimeout(searchTimer___ID_SEARCH__);
+
+                        searchTimer___ID_SEARCH__ = setTimeout(() => {
+
+                            let term = this.value.trim();
+
+                            if (!term) {
+                                table.settings()[0].oInit.Search = {}; // reset
+                                table.search('').page('first').draw();
+                                table.ajax.reload();
+                                return;
+                            }
+
+                            if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
+
+                                let table = $("#__TARGET_TABLE_ID__").DataTable();
+                                let tableInfo = table.page.info();
+
+                                // verifica se todos os registros ja estao carregados
+                                let rowsLoaded = table.rows({ page: 'all' }).data().length;
+                                let allLoaded = (rowsLoaded === tableInfo.recordsTotal);
+
+                                if (allLoaded) {
+                                    table.settings()[0].oInit.Search = {}; // reset
+                                    // pesquisa local
+                                    const rows = document.querySelectorAll("#__TARGET_TABLE_ID__ tbody tr");
+                                    rows.forEach(row => {
+                                        const text = row.textContent.toLowerCase();
+                                        row.style.display = text.includes(term.toLowerCase()) ? '' : 'none';
+                                    });
+                                } else {
+                                    if (term === "") {
+                                        table.settings()[0].oInit.Search = {}; // reset
+                                        table.search('').page('first').draw();
+                                    } else {
+                                        // pesquisa server-side: injeta termo em todos os campos
+                                        let searchFilter = {};
+                                        const fields = __FIELDS__;
+                                        fields.fields.forEach(field => {
+                                            searchFilter[field.name] = term;
+                                        });
+                                        table.settings()[0].oInit.Search = searchFilter;
+                                    }
+                                    table.ajax.reload();
+                                }
+                            } else {
+                                console.warn("Target table #__TARGET_TABLE_ID__ not found to apply search.");
+                            }
+
+                        }, 300); // debounce 300ms
+
+                    });
+
+                })();
             endContent
             cScript:=WebExHelper():StrReplaceEx(;
                 cScript;

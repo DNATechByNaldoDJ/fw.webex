@@ -250,20 +250,30 @@ static function ___WebExHelper____StrReplaceEx(cString as character,vSubstitutio
 
         for nStr:=1 to vSubstitutions:vCount
             uStr:=vSubstitutions:vArgs[nStr]
-            cType:=valtype(uStr)
+            cType:=ValType(uStr)
             if (cType=="C")
                 for nToken :=1 to nTokens
                     if (aTokens[nToken]$uStr)
                         uStr:=StrTokArr2(uStr,aTokens[nToken],.T.)
-                        cType:=valtype(uStr)
+                        cType:=ValType(uStr)
                         exit
                     endif
                 next nToken
             endif
             if ((cType=="A").and.(Len(uStr)==2))
-                while ((uStr[1]$cStrReplace).and.(!(uStr[1]==uStr[2])))
-                    cStrReplace:=StrTran(cStrReplace,uStr[1],uStr[2])
-                end while
+                if ((ValType(uStr[1])=="A").and.(ValType(uStr[2])=="C"))
+                    for nToken:=1 to Len(uStr[1])
+                        cStrReplace:=cTools():StrReplace(cStrReplace,{uStr[1][nToken],uStr[2]})
+                    next nToken
+                elseif ((ValType(uStr[1])=="A").and.(ValType(uStr[2])=="A"))
+                    for nToken:=1 to Min(Len(uStr[1]),Len(uStr[2]))
+                        cStrReplace:=cTools():StrReplace(cStrReplace,{uStr[1][nToken],uStr[2][nToken]})
+                    next nToken
+                elseif ((ValType(uStr[1])=="C").and.(ValType(uStr[2])=="C"))
+                    while ((uStr[1]$cStrReplace).and.(!(uStr[1]==uStr[2])))
+                        cStrReplace:=StrTran(cStrReplace,uStr[1],uStr[2])
+                    end while
+                endif
             elseif (cType=="J")
                 aNames:=aClone(uStr:GetNames())
                 nNames:=Len(aNames)

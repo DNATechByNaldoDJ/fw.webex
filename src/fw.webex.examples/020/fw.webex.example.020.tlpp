@@ -60,12 +60,14 @@ static procedure FWWebExExample_020(cHTML as character) as character
 
     aAdd(jTableFields["fields"],{"name":"RA_FILIAL","label":GetSX3Cache("RA_FILIAL","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_MAT","label":GetSX3Cache("RA_MAT","X3_TITULO")})
+    aAdd(jTableFields["fields"],{"name":"RA_APELIDO","label":GetSX3Cache("RA_APELIDO","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_CC","label":GetSX3Cache("RA_CC","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_SALARIO","label":GetSX3Cache("RA_SALARIO","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_ADTPOSE","label":GetSX3Cache("RA_ADTPOSE","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_CATFUNC","label":GetSX3Cache("RA_CATFUNC","X3_TITULO")})
     aAdd(jTableFields["fields"],{"name":"RA_DEPIR","label":GetSX3Cache("RA_DEPIR","X3_TITULO")})
-    aAdd(jTableFields["fields"],{"name":"RA_SEXO","label":GetSX3Cache("RA_SEXO","X3_TITULO")})
+    *Sexo Esta Fixo, nao permitir Filtrar
+    *aAdd(jTableFields["fields"],{"name":"RA_SEXO","label":GetSX3Cache("RA_SEXO","X3_TITULO")})
 
     beginContent var cPageStyle
 
