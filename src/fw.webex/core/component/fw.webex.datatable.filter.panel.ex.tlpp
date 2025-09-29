@@ -30,8 +30,8 @@ class WebExDataTableFilterPanelEx from WebExDiv
     protected data oPanelBody as object
     protected data oPanelBodyContainer as object
     protected data oPanelBodyControls as object
-    protected data oPanelBodyButtonFWWebExDataTableFilterPanelExAddCondition as object
-    protected data oPanelBodyButtonFWWebExDataTableFilterPanelExAddGroup as object
+    protected data oPanelBodyButtonAddCondition as object
+    protected data oPanelBodyButtonAddGroup as object
     protected data oPanelBodyPreview as object
     protected data oPanelBodyPreviewLabal as object
     protected data oPanelBodyPreviewTextArea as object
@@ -281,11 +281,11 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         END WEBEXOBJECT
                         WITH WEBEXOBJECT ::oPanelBodyControls CLASS WebExDiv
                             .:AddClass("mt-2")
-                            WITH WEBEXOBJECT ::oPanelBodyButtonFWWebExDataTableFilterPanelExAddCondition CLASS WebExButton ARGS "Add Condition","button"
+                            WITH WEBEXOBJECT ::oPanelBodyButtonAddCondition CLASS WebExButton ARGS "Add Condition","button"
                                 .:AddClass("btn btn-sm btn-outline-primary")
                                 .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddCondition_"+cIDContainer+"()")
                             END WEBEXOBJECT
-                            WITH WEBEXOBJECT ::oPanelBodyButtonFWWebExDataTableFilterPanelExAddGroup CLASS WebExButton ARGS "Add Group","button"
+                            WITH WEBEXOBJECT ::oPanelBodyButtonAddGroup CLASS WebExButton ARGS "Add Group","button"
                                 .:AddClass("btn btn-sm btn-outline-primary ms-2")
                                 .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddGroup_"+cIDContainer+"()")
                             END WEBEXOBJECT

@@ -2,8 +2,13 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Move FWWebExHasDataTables to control script)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Rename panel button variables for clarity)"
 */
+
+2025-09-29 19:50 UTC naldodj (Rename panel button variables for clarity)
+  ! Rename panel button variables for clarity
+    Renamed oPanelBodyButtonFWWebExDataTableFilterPanelExAddCondition and oPanelBodyButtonFWWebExDataTableFilterPanelExAddGroup to oPanelBodyButtonAddCondition and oPanelBodyButtonAddGroup for improved readability and maintainability.
+      * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
 
 2025-09-29 18:45 UTC naldodj (Add advanced filter panel and textarea component)
   + Add advanced filter panel and textarea component
