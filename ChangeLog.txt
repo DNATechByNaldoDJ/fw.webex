@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update placeholder text in search and filter fields)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Move FWWebExHasDataTables to control script)"
 */
+
+2025-09-29 13:41 UTC naldodj (Move FWWebExHasDataTables to control script)
+  Move FWWebExHasDataTables to control script
+    Relocated the FWWebExHasDataTables utility function from the page layout (fw.webex.page.tlpp) to the control layer (fw.webex.control.tlpp) for better encapsulation and reuse.
+    This change helps centralize DataTables-related utilities within the control logic.
+      * src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/core/layout/fw.webex.page.tlpp
 
 2025-09-29 05:13 UTC naldodj (Update placeholder text in search and filter fields)
   ! Update placeholder text in search and filter fields

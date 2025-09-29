@@ -393,10 +393,6 @@ method New(cPageTitle) class WebExPage
             function FWWebExShowComingSoon(route) {
                 alert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'));
             }
-            //FWWebExHasDataTables:Utilitario para verificar se jQuery + DataTables estao disponiveis
-            function FWWebExHasDataTables() {
-                return !!(window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable);
-            }
         endContent
         WITH WEBEXOBJECT CLASS WebExScript
             .:SetContent(cPageScript)

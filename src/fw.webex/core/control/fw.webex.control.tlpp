@@ -1086,6 +1086,8 @@ return(::lDataTableEnabled)
 
 method SetEnableDataTable(lDataTableEnabled) class WebExControl
 
+    local cScript as character
+
     paramtype 1 var lDataTableEnabled as logical optional default .T.
 
     if ((lDataTableEnabled).and.(!::lDataTableEnabled))
@@ -1440,6 +1442,18 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                 END WEBEXOBJECT NOADDCHILD
             //Select
         //DataTables Extensions
+        ***************************************************************************************************************************
+        //Scripts Tools
+            beginContent var cScript
+                //FWWebExHasDataTables:Utilitario para verificar se jQuery + DataTables estao disponiveis
+                function FWWebExHasDataTables() {
+                    return !!(window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable);
+                }
+            endContent
+            WITH WEBEXOBJECT CLASS WebExScript
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        //Scripts Tools
         ***************************************************************************************************************************
     elseif ((!lDataTableEnabled).and.((__jFeatures["lDataTableEnabled"]).or.(::lDataTableEnabled)))
         ::lDataTableEnabled:=lDataTableEnabled
