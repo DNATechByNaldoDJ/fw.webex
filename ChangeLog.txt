@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Enhance datatable filter and search UX)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update placeholder text in search and filter fields)"
 */
+
+2025-09-29 05:13 UTC naldodj (Update placeholder text in search and filter fields)
+  ! Update placeholder text in search and filter fields
+      Changed the placeholder text for the search input from 'Filtrar...' to 'Pesquisar...' and updated the filter input
+      placeholder to provide a more descriptive example format.
+        * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-29 02:22 UTC naldodj (Enhance datatable filter and search UX)
   % Enhance datatable filter and search UX
