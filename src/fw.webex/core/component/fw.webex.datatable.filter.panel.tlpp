@@ -92,7 +92,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                                 row.className = "input-group input-group-sm mb-2";
                                 row.innerHTML = `
                                 <select class="form-select FWWebExField___ID_CONTAINER__"></select>
-                                <input type="search" class="form-control FWWebExValue___ID_CONTAINER__" placeholder="value...">
+                                <input type="search" class="form-control FWWebExValue___ID_CONTAINER__" placeholder="...">
                                 <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">x</button>
                                 `;
                                 container.appendChild(row);

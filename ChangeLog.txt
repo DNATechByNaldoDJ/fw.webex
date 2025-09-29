@@ -2,8 +2,17 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor fw.webex: move components to core, add filter)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Enhance datatable filter and search UX)"
 */
+
+2025-09-29 02:22 UTC naldodj (Enhance datatable filter and search UX)
+  % Enhance datatable filter and search UX
+      Improved the filter and search components for datatables by adding debounced input event handling, better placeholder text, and clearer button labeling.
+      These changes provide a more responsive and user-friendly filtering experience, especially for both client-side and server-side DataTables.
+        * src/fw.webex/core/component/fw.webex.datatable.filter.panel.tlpp
+        * src/fw.webex/core/component/fw.webex.datatable.filter.tlpp
+        * src/fw.webex/core/component/fw.webex.datatable.search.tlpp
+        * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-29 01:11 UTC naldodj (Refactor fw.webex: move components to core, add filter)
   + Refactor fw.webex: move components to core, add filter

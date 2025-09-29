@@ -60,13 +60,13 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
             beginContent var cScript
                 (function(){
 
-                    let FWWebExSearchTimer___ID_SEARCH__;
-
                     const input = document.getElementById("FWWebExSearchValue___ID_SEARCH__");
 
                     if (!input) {
                         return;
                     }
+
+                    let FWWebExSearchTimer___ID_SEARCH__;
 
                     // Use 'input' event for better handling of changes (e.g., paste, clear)
                     input.addEventListener("input", function(e) {

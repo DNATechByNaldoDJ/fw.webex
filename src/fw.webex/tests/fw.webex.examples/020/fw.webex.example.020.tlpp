@@ -421,9 +421,12 @@ static procedure FWWebExExample_020(cHTML as character) as character
                             WITH WEBEXOBJECT oSBAdminCardBodyTable CLASS SBAdminCardBody
                                 // Adiciona o Campo para Pesquisa
                                 WITH WEBEXOBJECT oWebExDataTableSearch CLASS WebExDataTableSearch ARGS "FWWebExExample_020",jTableFilter
+                                    .:GetMemberData("oSearch"):SetInputPlaceHolder("Filtrar...")
                                 END WEBEXOBJECT
                                 // Adiciona o Campo para Filtro Customizado
                                 WITH WEBEXOBJECT oWebExDataTableFilter CLASS WebExDataTableFilter ARGS "FWWebExExample_020",jTableFilter
+                                    .:GetMemberData("oContainerGroupValue"):SetInputPlaceHolder("Filtrar...")
+                                    .:GetMemberData("oContainerGroupButton"):SetButtonLabel("Filtrar")
                                 END WEBEXOBJECT
                                 // Adiciona container de tabela
                                 WITH WEBEXOBJECT oWebExDivTableResult CLASS WebExDiv

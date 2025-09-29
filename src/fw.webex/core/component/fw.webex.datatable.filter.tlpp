@@ -74,27 +74,88 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableFilter
                 .:SetButtonIcon("fa-filter","fontawesome",.F.)
             END WEBEXOBJECT
             beginContent var cScript
-                function FWWebExFilterBuildSelectField___ID_CONTAINER__() {
-                    const fields = __BUILD__SELECT_FIELDS__;
-                    const select = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__");
-                    fields.fields.forEach(field => {
-                        const opt = document.createElement("option");
-                        opt.value = field.name.trim();
-                        opt.textContent = field.label.trim();
-                        select.appendChild(opt);
-                    });
-                }
-                document.getElementById("FWWebExDataTableFilterButton___ID_BUTTON__").addEventListener("click", function () {
-                    // garante que jQuery + DataTable estao carregados
-                    if (FWWebExHasDataTables()) {
-                        let table = $("#__ID_TARGET_TABLE__").DataTable();
-                        let filterFiled = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__").value;
-                        let filterValue = document.getElementById("FWWebExDataTableFilterValue___ID_VALUE__").value.trim();
-                        table.settings()[0].oInit.FWWebExFilter = (filterFiled && filterValue) ? { [filterFiled]: filterValue } : {};
-                        table.ajax.reload(); // recarrega o DataTable usando o novo filtro
+                (function(){
+
+                    const input = document.getElementById("FWWebExDataTableFilterValue___ID_VALUE__");
+
+                    if (!input) {
+                        return;
                     }
-                });
-                FWWebExFilterBuildSelectField___ID_CONTAINER__();
+
+                    let FWWebExFilterTimer___ID_VALUE__;
+
+                    function FWWebExFilterBuildSelectField___ID_CONTAINER__() {
+                        const fields = __BUILD__SELECT_FIELDS__;
+                        const select = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__");
+                        fields.fields.forEach(field => {
+                            const opt = document.createElement("option");
+                            opt.value = field.name.trim();
+                            opt.textContent = field.label.trim();
+                            select.appendChild(opt);
+                        });
+                    }
+
+                    document.getElementById("FWWebExDataTableFilterButton___ID_BUTTON__").addEventListener("click", function () {
+                        // garante que jQuery + DataTable estao carregados
+                        if (FWWebExHasDataTables()) {
+                            let table = $("#__ID_TARGET_TABLE__").DataTable();
+                            let FWWebExFilterFiled = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__").value;
+                            let FWWEbExFilterValue = document.getElementById("FWWebExDataTableFilterValue___ID_VALUE__").value.trim();
+                            table.settings()[0].oInit.FWWebExFilter = (FWWebExFilterFiled && FWWEbExFilterValue) ? { [FWWebExFilterFiled]: FWWEbExFilterValue } : {};
+                            table.ajax.reload(); // recarrega o DataTable usando o novo filtro
+                        }
+                    });
+
+                    FWWebExFilterBuildSelectField___ID_CONTAINER__();
+
+                    // Use 'input' event for better handling of changes (e.g., paste, clear)
+                    input.addEventListener("input", function(e) {
+
+                        clearTimeout(FWWebExFilterTimer___ID_VALUE__);
+
+                        FWWebExFilterTimer___ID_VALUE__ = setTimeout(() => {
+
+                            let term = this.value.trim().toLowerCase();
+
+                            // garante que jQuery + DataTable estao carregados
+                            if (FWWebExHasDataTables()) {
+                                if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
+                                    let table = $("#__ID_TARGET_TABLE__").DataTable();
+                                    let tableInfo = table.page.info();
+                                    let isServerSide = table.settings()[0].oFeatures.bServerSide;
+                                    // Reset search settings when term is empty
+                                    if (!term) {
+                                        table.settings()[0].oInit.FWWebExFilter = {}; // Clear custom filter
+                                        if (isServerSide) {
+                                            table.search('').columns().search('').page(0).draw(); // Reset global and column searches, go to first page
+                                            table.ajax.reload(); // Reload from server
+                                        } else {
+                                            table.search('').columns().search('').page(0).draw(); // Client-side reset
+                                        }
+                                        return;
+                                    }
+                                    // Handle server-side search
+                                    if (isServerSide) {
+                                        let FWWebExFilterFiled = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__").value;
+                                        let FWWEbExFilterValue = document.getElementById("FWWebExDataTableFilterValue___ID_VALUE__").value.trim();
+                                        table.settings()[0].oInit.FWWebExFilter = (FWWebExFilterFiled && FWWEbExFilterValue) ? { [FWWebExFilterFiled]: FWWEbExFilterValue } : {};
+                                        table.ajax.reload();
+                                    } else {
+                                        // Client-side search using DataTable's built-in global search
+                                        table.search(term).draw();
+                                    }
+                                } else {
+                                    console.warn("Target table #__ID_TARGET_TABLE__ not found to apply search.");
+                                }
+                            } else {
+                                console.error("DataTables plugin is not available. Please check if the JS file has been imported.");
+                            }
+
+                        }, 300); // Debounce 300ms
+
+                    });
+
+                })();
             endContent
             cScript:=WebExHelper():StrReplaceEx(;
                 cScript;
