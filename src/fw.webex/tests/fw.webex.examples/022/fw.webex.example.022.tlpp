@@ -278,7 +278,7 @@ static function SBAdminGetRightMenu()
       "id": "dashboard",
       "label": "Dashboard",
       "icon": "fas fa-tachometer-alt",
-      "url": "javascript:showComingSoon('/dashboard');",
+      "url": "javascript:FWWebExShowComingSoon('/dashboard');",
       "badge": {
         "label": "Novo",
         "class": "bg-success text-white"
@@ -288,7 +288,7 @@ static function SBAdminGetRightMenu()
           "id": "generalview",
           "label": "Vis&atilde;o Geral",
           "icon": "fas fa-chart-pie",
-          "url": "javascript:showComingSoon('/dashboard/overview');",
+          "url": "javascript:FWWebExShowComingSoon('/dashboard/overview');",
           "badge": {
             "label": "Novo",
             "class": "bg-success text-white"

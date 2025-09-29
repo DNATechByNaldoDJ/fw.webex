@@ -60,7 +60,7 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
             beginContent var cScript
                 (function(){
 
-                    let searchTimer___ID_SEARCH__;
+                    let FWWebExSearchTimer___ID_SEARCH__;
 
                     const input = document.getElementById("FWWebExSearchValue___ID_SEARCH__");
 
@@ -71,46 +71,47 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
                     // Use 'input' event for better handling of changes (e.g., paste, clear)
                     input.addEventListener("input", function(e) {
 
-                        clearTimeout(searchTimer___ID_SEARCH__);
+                        clearTimeout(FWWebExSearchTimer___ID_SEARCH__);
 
-                        searchTimer___ID_SEARCH__ = setTimeout(() => {
+                        FWWebExSearchTimer___ID_SEARCH__ = setTimeout(() => {
 
                             let term = this.value.trim().toLowerCase();
 
-                            if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
-
-                                let table = $("#__TARGET_TABLE_ID__").DataTable();
-                                let tableInfo = table.page.info();
-                                let isServerSide = table.settings()[0].oFeatures.bServerSide;
-
-                                // Reset search settings when term is empty
-                                if (!term) {
-                                    table.settings()[0].oInit.Search = {}; // Clear custom search filter
-                                    if (isServerSide) {
-                                        table.search('').columns().search('').page(0).draw(); // Reset global and column searches, go to first page
-                                        table.ajax.reload(); // Reload from server
-                                    } else {
-                                        table.search('').columns().search('').page(0).draw(); // Client-side reset
+                            // garante que jQuery + DataTable estao carregados
+                            if (FWWebExHasDataTables()) {
+                                if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
+                                    let table = $("#__ID_TARGET_TABLE__").DataTable();
+                                    let tableInfo = table.page.info();
+                                    let isServerSide = table.settings()[0].oFeatures.bServerSide;
+                                    // Reset search settings when term is empty
+                                    if (!term) {
+                                        table.settings()[0].oInit.FWWebExSearchFilter = {}; // Clear custom search filter
+                                        if (isServerSide) {
+                                            table.search('').columns().search('').page(0).draw(); // Reset global and column searches, go to first page
+                                            table.ajax.reload(); // Reload from server
+                                        } else {
+                                            table.search('').columns().search('').page(0).draw(); // Client-side reset
+                                        }
+                                        return;
                                     }
-                                    return;
-                                }
-
-                                // Handle server-side search
-                                if (isServerSide) {
-                                    let searchFilter = {};
-                                    const fields = __FIELDS__;
-                                    fields.fields.forEach(field => {
-                                        searchFilter[field.name] = term;
-                                    });
-                                    table.settings()[0].oInit.Search = searchFilter;
-                                    table.ajax.reload();
+                                    // Handle server-side search
+                                    if (isServerSide) {
+                                        let searchFilter = {};
+                                        const fields = __FIELDS__;
+                                        fields.fields.forEach(field => {
+                                            searchFilter[field.name] = term;
+                                        });
+                                        table.settings()[0].oInit.FWWebExSearchFilter = searchFilter;
+                                        table.ajax.reload();
+                                    } else {
+                                        // Client-side search using DataTable's built-in global search
+                                        table.search(term).draw();
+                                    }
                                 } else {
-                                    // Client-side search using DataTable's built-in global search
-                                    table.search(term).draw();
+                                    console.warn("Target table #__ID_TARGET_TABLE__ not found to apply search.");
                                 }
-
                             } else {
-                                console.warn("Target table #__TARGET_TABLE_ID__ not found to apply search.");
+                                console.error("DataTables plugin is not available. Please check if the JS file has been imported.");
                             }
 
                         }, 300); // Debounce 300ms
@@ -122,7 +123,7 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
             cScript:=WebExHelper():StrReplaceEx(;
                 cScript;
                 ,{"__ID_SEARCH__",cIDSearch};
-                ,{"__TARGET_TABLE_ID__",::cTargetTableID};
+                ,{"__ID_TARGET_TABLE__",::cTargetTableID};
                 ,{"__FIELDS__",jTargetTableFields:ToJSON()};
             )
             WITH WEBEXOBJECT CLASS WebExScript

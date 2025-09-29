@@ -383,15 +383,19 @@ method New(cPageTitle) class WebExPage
         ***************************************************************************************************************************
         //Scripts Tools
         beginContent var cPageScript
-            /*decodeHTMLEntities*/
-            function decodeHTMLEntities(text) {
+            /*FWWebExDecodeHTMLEntities*/
+            function FWWebExDecodeHTMLEntities(text) {
                 const txt = document.createElement("textarea");
                 txt.innerHTML = text;
                 return txt.value;
             }
-            /*showComingSoon*/
-            function showComingSoon(route) {
-                alert(decodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'));
+            /*FWWebExShowComingSoon*/
+            function FWWebExShowComingSoon(route) {
+                alert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'));
+            }
+            //FWWebExHasDataTables:Utilitario para verificar se jQuery + DataTables estao disponiveis
+            function FWWebExHasDataTables() {
+                return !!(window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable);
             }
         endContent
         WITH WEBEXOBJECT CLASS WebExScript

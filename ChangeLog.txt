@@ -2,8 +2,83 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add accentuation and Markdown utilities to WebEx)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor fw.webex: move components to core, add filter)"
 */
+
+2025-09-29 01:11 UTC naldodj (Refactor fw.webex: move components to core, add filter)
+  + Refactor fw.webex: move components to core, add filter
+    Moved all main/component, control, layout, page, and tools files to the core directory for better organization.
+    Added new WebExDataTableFilter component and updated datatable filter/search logic to use consistent naming and improved DataTables integration.
+    Updated example 020 to use new filter/search
+      + src/fw.webex/contrib/README.md
+      + src/fw.webex/core/component/fw.webex.datatable.filter.tlpp
+      * src/fw.webex/tests/fw.webex.examples/016/fw.webex.example.016.tlpp
+      * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+      * src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+      * src/fw.webex/main/component/fw.webex.alert.tlpp -> src/fw.webex/core/component/fw.webex.alert.tlpp
+      * src/fw.webex/main/component/fw.webex.back.url.button.tlpp -> src/fw.webex/core/component/fw.webex.back.url.button.tlpp
+      * src/fw.webex/main/component/fw.webex.button.tlpp -> src/fw.webex/core/component/fw.webex.button.tlpp
+      * src/fw.webex/main/component/fw.webex.card.tlpp -> src/fw.webex/core/component/fw.webex.card.tlpp
+      * src/fw.webex/main/component/fw.webex.cardkpi.tlpp -> src/fw.webex/core/component/fw.webex.cardkpi.tlpp
+      * src/fw.webex/main/component/fw.webex.checkbox.tlpp -> src/fw.webex/core/component/fw.webex.checkbox.tlpp
+      * src/fw.webex/main/component/fw.webex.comment.tlpp -> src/fw.webex/core/component/fw.webex.comment.tlpp
+      * src/fw.webex/main/component/fw.webex.container.tlpp -> src/fw.webex/core/component/fw.webex.container.tlpp
+      * src/fw.webex/main/component/fw.webex.datatable.filter.panel.tlpp -> src/fw.webex/core/component/fw.webex.datatable.filter.panel.tlpp
+      * src/fw.webex/main/component/fw.webex.datatable.search.tlpp -> src/fw.webex/core/component/fw.webex.datatable.search.tlpp
+      * src/fw.webex/main/component/fw.webex.field.group.tlpp -> src/fw.webex/core/component/fw.webex.field.group.tlpp
+      * src/fw.webex/main/component/fw.webex.field.tlpp -> src/fw.webex/core/component/fw.webex.field.tlpp
+      * src/fw.webex/main/component/fw.webex.fieldset.tlpp -> src/fw.webex/core/component/fw.webex.fieldset.tlpp
+      * src/fw.webex/main/component/fw.webex.form.tlpp -> src/fw.webex/core/component/fw.webex.form.tlpp
+      * src/fw.webex/main/component/fw.webex.gridsystem.tlpp -> src/fw.webex/core/component/fw.webex.gridsystem.tlpp
+      * src/fw.webex/main/component/fw.webex.icon.tlpp -> src/fw.webex/core/component/fw.webex.icon.tlpp
+      * src/fw.webex/main/component/fw.webex.iframe.tlpp -> src/fw.webex/core/component/fw.webex.iframe.tlpp
+      * src/fw.webex/main/component/fw.webex.input.group.tlpp -> src/fw.webex/core/component/fw.webex.input.group.tlpp
+      * src/fw.webex/main/component/fw.webex.input.tlpp -> src/fw.webex/core/component/fw.webex.input.tlpp
+      * src/fw.webex/main/component/fw.webex.label.tlpp -> src/fw.webex/core/component/fw.webex.label.tlpp
+      * src/fw.webex/main/component/fw.webex.legend.tlpp -> src/fw.webex/core/component/fw.webex.legend.tlpp
+      * src/fw.webex/main/component/fw.webex.navside.tlpp -> src/fw.webex/core/component/fw.webex.navside.tlpp
+      * src/fw.webex/main/component/fw.webex.navtop.tlpp -> src/fw.webex/core/component/fw.webex.navtop.tlpp
+      * src/fw.webex/main/component/fw.webex.rules.tlpp -> src/fw.webex/core/component/fw.webex.rules.tlpp
+      * src/fw.webex/main/component/fw.webex.script.tlpp -> src/fw.webex/core/component/fw.webex.script.tlpp
+      * src/fw.webex/main/component/fw.webex.sidebar.tlpp -> src/fw.webex/core/component/fw.webex.sidebar.tlpp
+      * src/fw.webex/main/component/fw.webex.strong.tlpp -> src/fw.webex/core/component/fw.webex.strong.tlpp
+      * src/fw.webex/main/component/fw.webex.table.tlpp -> src/fw.webex/core/component/fw.webex.table.tlpp
+      * src/fw.webex/main/control/fw.webex.control.tlpp -> src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/main/control/py/html2fwwebex.py -> src/fw.webex/core/control/py/html2fwwebex.py
+      * src/fw.webex/main/control/py/README.md -> src/fw.webex/core/control/py/README.md
+      * src/fw.webex/main/layout/fw.webex.main.tlpp -> src/fw.webex/core/layout/fw.webex.main.tlpp
+      * src/fw.webex/main/page/fw.webex.anchor.tlpp -> src/fw.webex/core/page/fw.webex.anchor.tlpp
+      * src/fw.webex/main/page/fw.webex.blockquote.tlpp -> src/fw.webex/core/page/fw.webex.blockquote.tlpp
+      * src/fw.webex/main/page/fw.webex.body.tlpp -> src/fw.webex/core/page/fw.webex.body.tlpp
+      * src/fw.webex/main/page/fw.webex.code.tlpp -> src/fw.webex/core/page/fw.webex.code.tlpp
+      * src/fw.webex/main/page/fw.webex.div.tlpp -> src/fw.webex/core/page/fw.webex.div.tlpp
+      * src/fw.webex/main/page/fw.webex.footer.tlpp -> src/fw.webex/core/page/fw.webex.footer.tlpp
+      * src/fw.webex/main/page/fw.webex.head.tlpp -> src/fw.webex/core/page/fw.webex.head.tlpp
+      * src/fw.webex/main/page/fw.webex.hlevel.tlpp -> src/fw.webex/core/page/fw.webex.hlevel.tlpp
+      * src/fw.webex/main/page/fw.webex.html.tlpp -> src/fw.webex/core/page/fw.webex.html.tlpp
+      * src/fw.webex/main/page/fw.webex.link.tlpp -> src/fw.webex/core/page/fw.webex.link.tlpp
+      * src/fw.webex/main/page/fw.webex.liststructure.tlpp -> src/fw.webex/core/page/fw.webex.liststructure.tlpp
+      * src/fw.webex/main/page/fw.webex.meta.tlpp -> src/fw.webex/core/page/fw.webex.meta.tlpp
+      * src/fw.webex/main/page/fw.webex.nav.tlpp -> src/fw.webex/core/page/fw.webex.nav.tlpp
+      * src/fw.webex/main/page/fw.webex.paragraph.tlpp -> src/fw.webex/core/page/fw.webex.paragraph.tlpp
+      * src/fw.webex/main/page/fw.webex.preformatted.tlpp -> src/fw.webex/core/page/fw.webex.preformatted.tlpp
+      * src/fw.webex/main/page/fw.webex.span.tlpp -> src/fw.webex/core/page/fw.webex.span.tlpp
+      * src/fw.webex/main/page/fw.webex.style.tlpp -> src/fw.webex/core/page/fw.webex.style.tlpp
+      * src/fw.webex/main/page/fw.webex.table.structure.tlpp -> src/fw.webex/core/page/fw.webex.table.structure.tlpp
+      * src/fw.webex/main/page/fw.webex.title.tlpp -> src/fw.webex/core/page/fw.webex.title.tlpp
+      * src/fw.webex/main/tools/extra/for.each.tlpp -> src/fw.webex/core/tools/extra/for.each.tlpp
+      * src/fw.webex/main/tools/extra/switch.tlpp -> src/fw.webex/core/tools/extra/switch.tlpp
+      * src/fw.webex/main/tools/fw.webex.class.base.tlpp -> src/fw.webex/core/tools/fw.webex.class.base.tlpp
+      * src/fw.webex/main/tools/fw.webex.context.tlpp -> src/fw.webex/core/tools/fw.webex.context.tlpp
+      * src/fw.webex/main/tools/fw.webex.file.tools.tlpp -> src/fw.webex/core/tools/fw.webex.file.tools.tlpp
+      * src/fw.webex/main/tools/fw.webex.helper.tlpp -> src/fw.webex/core/tools/fw.webex.helper.tlpp
+      * src/fw.webex/main/tools/fw.webex.jsonobject.clone.tlpp -> src/fw.webex/core/tools/fw.webex.jsonobject.clone.tlpp
+      * src/fw.webex/main/tools/fw.webex.markdown.tlpp -> src/fw.webex/core/tools/fw.webex.markdown.tlpp
+      * src/fw.webex/main/tools/fw.webex.url.tlpp -> src/fw.webex/core/tools/fw.webex.url.tlpp
+      * src/fw.webex/main/tools/fw.webex.user.tlpp -> src/fw.webex/core/tools/fw.webex.user.tlpp
+      * src/fw.webex/main/tools/fw.webex.webapp.auth.tlpp -> src/fw.webex/core/tools/fw.webex.webapp.auth.tlpp
+      * src/fw.webex/main/tools/fw.webex.webapp.tools.tlpp -> src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp
+      * src/fw.webex/main/layout/fw.webex.page.tlpp -> src/fw.webex/core/layout/fw.webex.page.tlpp
 
 2025-09-27 19:54 UTC naldodj (Add accentuation and Markdown utilities to WebEx)
   + Add accentuation and Markdown utilities to WebEx

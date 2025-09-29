@@ -1,0 +1,114 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExDataTableFilter from WebExDiv
+
+    protected data cTargetTableID as character
+    protected data jTargetTableFields as json
+
+    protected data oContainer as object
+    protected data oContainerGroup as object
+    protected data oContainerGroupField as object
+    protected data oContainerGroupValue as object
+    protected data oContainerGroupButton as object
+
+    public method New(cTargetTableID as character,jTargetTableFields as json) as object
+
+endclass
+
+method New(cTargetTableID,jTargetTableFields) class WebExDataTableFilter
+
+    local cScript as character
+    local cIDField as character
+    local cIDValue as character
+    local cIDButton as character
+    local cIDContainer as character
+
+    local cInputName:="FWWebExDataTableFilterValue"
+    local cInputType:="search"
+    local cInputPlaceHolder:="Filter..."
+    local cInputTitle:="FWWebExDataTableFilter"
+
+    paramtype 1 var cTargetTableID as character
+    paramtype 2 var jTargetTableFields as json
+
+    ::cTargetTableID:=cTargetTableID
+    ::jTargetTableFields:=jTargetTableFields
+
+    _Super:New()
+
+    ::oContainer:=self
+
+    WITH WEBEXOBJECT ::oContainer
+        cIDContainer:=.:GetID()
+        .:AddClass("datatable-filter-wrapper mb-2")
+        .:SetFixedID("FWWebExDataTableFilter_"+cIDContainer)
+        WITH WEBEXOBJECT ::oContainerGroup CLASS WebExInputGroup
+            .:AddClass("input-group-sm")
+            WITH WEBEXOBJECT ::oContainerGroupField CLASS WebExControl type select
+                cIDField:=.:GetID()
+                .:AddClass("form-select form-select-sm")
+                .:SetFixedID("FWWebExDataTableFilterField_"+cIDField)
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT ::oContainerGroupValue CLASS WebExInput ARGS cInputName,cInputType,cInputPlaceHolder,cInputTitle
+                cIDValue:=.:GetID()
+                .:SetAttr("aria-label","Filter")
+                .:SetFixedID("FWWebExDataTableFilterValue_"+cIDValue)
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT ::oContainerGroupButton CLASS WebExButton ARGS "Filter","button"
+                cIDButton:=.:GetID()
+                .:AddClass("btn btn-primary")
+                .:SetFixedID("FWWebExDataTableFilterButton_"+cIDButton)
+                .:SetButtonIcon("fa-filter","fontawesome",.F.)
+            END WEBEXOBJECT
+            beginContent var cScript
+                function FWWebExFilterBuildSelectField___ID_CONTAINER__() {
+                    const fields = __BUILD__SELECT_FIELDS__;
+                    const select = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__");
+                    fields.fields.forEach(field => {
+                        const opt = document.createElement("option");
+                        opt.value = field.name.trim();
+                        opt.textContent = field.label.trim();
+                        select.appendChild(opt);
+                    });
+                }
+                document.getElementById("FWWebExDataTableFilterButton___ID_BUTTON__").addEventListener("click", function () {
+                    // garante que jQuery + DataTable estao carregados
+                    if (FWWebExHasDataTables()) {
+                        let table = $("#__ID_TARGET_TABLE__").DataTable();
+                        let filterFiled = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__").value;
+                        let filterValue = document.getElementById("FWWebExDataTableFilterValue___ID_VALUE__").value.trim();
+                        table.settings()[0].oInit.FWWebExFilter = (filterFiled && filterValue) ? { [filterFiled]: filterValue } : {};
+                        table.ajax.reload(); // recarrega o DataTable usando o novo filtro
+                    }
+                });
+                FWWebExFilterBuildSelectField___ID_CONTAINER__();
+            endContent
+            cScript:=WebExHelper():StrReplaceEx(;
+                cScript;
+                ,{"__ID_FIELD__",cIDField};
+                ,{"__ID_VALUE__",cIDValue};
+                ,{"__ID_BUTTON__",cIDButton};
+                ,{"__ID_CONTAINER__",cIDContainer};
+                ,{"__ID_TARGET_TABLE__",::cTargetTableID};
+                ,{"__BUILD__SELECT_FIELDS__",::jTargetTableFields:ToJSON()};
+            )
+            WITH WEBEXOBJECT CLASS WebExScript
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+return(self)

@@ -82,21 +82,21 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         cIDContainer:=.:GetID()
                         .:SetFixedID(cIDContainer+"_rows")
                         WITH WEBEXOBJECT ::oPanelHeaderButtonClose CLASS WebExButton ARGS "+","button"
-                            .:SetAttr("onclick","addFilterRow_"+cIDContainer+"()")
+                            .:SetAttr("onclick","FWWebExAddFilterRow_"+cIDContainer+"()")
                             .:AddClass("btn btn-sm btn-outline-primary mt-2")
                         END WEBEXOBJECT
                         beginContent var cScript
-                            function addFilterRow___ID_CONTAINER__(){
+                            function FWWebExAddFilterRow___ID_CONTAINER__(){
                                 const container = document.getElementById("__ID_CONTAINER___rows");
                                 const row = document.createElement("div");
                                 row.className = "input-group input-group-sm mb-2";
                                 row.innerHTML = `
-                                <select class="form-select field__ID_CONTAINER__"></select>
-                                <input type="search" class="form-control value__ID_CONTAINER__" placeholder="value...">
+                                <select class="form-select FWWebExField___ID_CONTAINER__"></select>
+                                <input type="search" class="form-control FWWebExValue___ID_CONTAINER__" placeholder="value...">
                                 <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">x</button>
                                 `;
                                 container.appendChild(row);
-                                const select = row.querySelector(".field__ID_CONTAINER__");
+                                const select = row.querySelector(".FWWebExField___ID_CONTAINER__");
                                 const fields = __FIELDS__;
                                 fields.fields.forEach(function(field){
                                     const opt = document.createElement("option");
@@ -124,23 +124,28 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                     END WEBEXOBJECT
                     WITH WEBEXOBJECT ::oPanelFooterButtonApply CLASS WebExButton ARGS "Apply","button"
                         .:AddClass("btn btn-primary")
-                        .:SetAttr("onclick","applyFilters_"+cIDContainer+"()")
+                        .:SetAttr("onclick","FWWebExApplyFilters_"+cIDContainer+"()")
                     END WEBEXOBJECT
                     beginContent var cScript
-                        function applyFilters___ID_CONTAINER__(){
+                        function FWWebExApplyFilters___ID_CONTAINER__(){
                             let filters = {};
                             document.querySelectorAll("#__ID_CONTAINER___rows .input-group").forEach(row => {
-                                const field = row.querySelector(".field__ID_CONTAINER__").value;
-                                const value = row.querySelector(".value__ID_CONTAINER__").value;
+                                const field = row.querySelector(".FWWebExField___ID_CONTAINER__").value;
+                                const value = row.querySelector(".FWWebExValue___ID_CONTAINER__").value;
                                 if(field && value) filters[field] = value;
                             });
-                            // aplica direto na tabela
-                            if ($.fn.DataTable.isDataTable("#__TARGET_TABLE_ID__")) {
-                                let tbl = $("#__TARGET_TABLE_ID__").DataTable();
-                                tbl.settings()[0].oInit.Filter = filters;
-                                tbl.ajax.reload();
+                            // garante que jQuery + DataTable estao carregados
+                            if (FWWebExHasDataTables()) {
+                                // aplica direto na tabela
+                                if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
+                                    let table = $("#__ID_TARGET_TABLE__").DataTable();
+                                    table.settings()[0].oInit.FWWebExPanelFilter = filters;
+                                    table.ajax.reload();
+                                } else {
+                                    console.warn("Target table #__ID_TARGET_TABLE__ not found to apply filters.");
+                                }
                             } else {
-                                console.warn("Target table #__TARGET_TABLE_ID__ not found to apply filters.");
+                                console.error("DataTables plugin is not available. Please check if the JS file has been imported.");
                             }
                             bootstrap.Modal.getInstance(document.getElementById("__ID_PANEL__")).hide();
                         }
@@ -149,7 +154,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         cScript;
                         ,{"__ID_PANEL__",cIDPanel};
                         ,{"__ID_CONTAINER__",cIDContainer};
-                        ,{"__TARGET_TABLE_ID__",::cTargetTableID};
+                        ,{"__ID_TARGET_TABLE__",::cTargetTableID};
                     )
                     WITH WEBEXOBJECT CLASS WebExScript
                         .:SetContent(cScript)

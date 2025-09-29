@@ -645,9 +645,9 @@ static function RealTimeClockPage()
             // Data por extenso
             const dias = ['Domingo','Segunda-feira','Ter&ccedil;a-feira','Quarta-feira','Quinta-feira','Sexta-feira','S&aacute;bado'];
             const meses = ['janeiro','fevereiro','mar&ccedil;o','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-            const dia = decodeHTMLEntities(dias[now.getDay()]);
+            const dia = FWWebExDecodeHTMLEntities(dias[now.getDay()]);
             const numero = now.getDate();
-            const mes = decodeHTMLEntities(meses[now.getMonth()]);
+            const mes = FWWebExDecodeHTMLEntities(meses[now.getMonth()]);
             const ano = now.getFullYear();
             document.getElementById('date').textContent = `${dia}, ${numero} de ${mes} de ${ano}`;
         }
