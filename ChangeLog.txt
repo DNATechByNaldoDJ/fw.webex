@@ -5,6 +5,14 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Move FWWebExHasDataTables to control script)"
 */
 
+2025-09-29 18:45 UTC naldodj (Add advanced filter panel and textarea component)
+  + Add advanced filter panel and textarea component
+    Introduces WebExDataTableFilterPanelEx for advanced filter expression building and a new WebExTextArea control.
+    * Updates the example to support field types in filter definitions and integrates the advanced filter panel, including backend and UI changes to handle encoded filter expressions.
+      + src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
+      + src/fw.webex/core/page/fw.webex.textarea.tlpp
+      * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+
 2025-09-29 13:41 UTC naldodj (Move FWWebExHasDataTables to control script)
   Move FWWebExHasDataTables to control script
     Relocated the FWWebExHasDataTables utility function from the page layout (fw.webex.page.tlpp) to the control layer (fw.webex.control.tlpp) for better encapsulation and reuse.

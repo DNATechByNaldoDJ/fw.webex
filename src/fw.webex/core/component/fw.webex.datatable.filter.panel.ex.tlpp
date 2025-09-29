@@ -1,0 +1,351 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExDataTableFilterPanelEx from WebExDiv
+
+    protected data cTitle as character
+    protected data cTargetTableID as character
+    protected data jTargetTableFields as json
+
+    protected data oPanel as object
+    protected data oPanelContainer as object
+    protected data oPanelContent as object
+
+    protected data oPanelHeader as object
+    protected data oPanelHeaderTitle as object
+    protected data oPanelHeaderButtonClose as object
+
+    protected data oPanelBody as object
+    protected data oPanelBodyContainer as object
+    protected data oPanelBodyControls as object
+    protected data oPanelBodyButtonFWWebExDataTableFilterPanelExAddCondition as object
+    protected data oPanelBodyButtonFWWebExDataTableFilterPanelExAddGroup as object
+    protected data oPanelBodyPreview as object
+    protected data oPanelBodyPreviewLabal as object
+    protected data oPanelBodyPreviewTextArea as object
+
+    protected data oPanelFooter as object
+    protected data oPanelFooterButtonClose as object
+    protected data oPanelFooterButtonApply as object
+
+    public method New(cTitle as character,cTargetTableID as character,jTargetTableFields as json) as object
+
+endclass
+
+method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterPanelEx
+
+    local cScript as character
+    local cIDPanel as character
+    local cIDContainer as character
+
+    paramtype 1 var cTitle as character optional default "Advanced Filter"
+    paramtype 2 var cTargetTableID as character
+    paramtype 3 var jTargetTableFields as json
+
+    ::cTitle:=cTitle
+    ::cTargetTableID:=cTargetTableID
+    ::jTargetTableFields:=jTargetTableFields
+
+    _Super:New()
+
+    ::oPanel:=self
+
+    WITH WEBEXOBJECT ::oPanel
+        cIDPanel:=.:GetID()
+        .:SetAttr("tabindex","-1")
+        .:AddClass("modal fade")
+        WITH WEBEXOBJECT ::oPanelContainer CLASS WebExDiv
+            .:AddClass("modal-dialog modal-lg")
+            WITH WEBEXOBJECT ::oPanelContent CLASS WebExDiv
+                .:AddClass("modal-content")
+                WITH WEBEXOBJECT ::oPanelHeader CLASS WebExDiv
+                    .:AddClass("modal-header")
+                    WITH WEBEXOBJECT ::oPanelHeaderTitle CLASS WebExH5
+                        .:AddClass("modal-title")
+                        .:SetContent(::cTitle)
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT ::oPanelHeaderButtonClose CLASS WebExButton ARGS "","button"
+                        .:SetAttr("data-bs-dismiss","modal")
+                        .:AddClass("btn-close")
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT ::oPanelBody CLASS WebExDiv
+                    .:AddClass("modal-body")
+                    WITH WEBEXOBJECT ::oPanelBodyContainer CLASS WebExDiv
+                        cIDContainer:=.:GetID()
+                        .:SetFixedID(cIDContainer+"_rows")
+                        .:AddClass("conditions")
+                        beginContent var cScript
+                            const fields = __FIELDS__;
+                            const fieldTypes = {};
+                            fields.fields.forEach(field => {
+                                fieldTypes[field.name] = field.type;
+                            });
+                            const operatorsByType = {
+                                'C': ['=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'],
+                                'N': ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN'],
+                                'D': ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN'],
+                                'L': ['=', '!=']
+                            };
+
+                            function FWWebExDataTableFilterPanelExUpdateField(row) {
+                                const field = row.querySelector('.field').value;
+                                const type = fieldTypes[field];
+                                const selectOp = row.querySelector('.operator');
+                                selectOp.innerHTML = '';
+                                operatorsByType[type].forEach(op => {
+                                    const opt = document.createElement('option');
+                                    opt.value = op;
+                                    opt.textContent = op;
+                                    selectOp.appendChild(opt);
+                                });
+                                let valueInput = row.querySelector('.value');
+                                let newValue;
+                                if (type === 'L') {
+                                    const select = document.createElement('select');
+                                    select.className = 'form-select value';
+                                    select.innerHTML = `
+                                        <option value="T">True</option>
+                                        <option value="F">False</option>
+                                    `;
+                                    valueInput.replaceWith(select);
+                                    newValue = select;
+                                    newValue.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                } else {
+                                    const input = document.createElement('input');
+                                    input.className = 'form-control value';
+                                    input.placeholder = '...';
+                                    if (type === 'D') input.type = 'date';
+                                    else if (type === 'N') input.type = 'number';
+                                    else input.type = 'text';
+                                    valueInput.replaceWith(input);
+                                    newValue = input;
+                                    newValue.addEventListener('input', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                }
+                                FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
+                            }
+
+                            function FWWebExDataTableFilterPanelExAddCondition(container) {
+                                const row = document.createElement('div');
+                                row.className = 'filter-condition input-group input-group-sm mb-2';
+                                let html = '';
+                                if (container.children.length > 0) {
+                                    html += `
+                                        <select class="form-select connector" style="max-width: 95px;">
+                                            <option></option>
+                                            <option>AND</option>
+                                            <option>OR</option>
+                                        </select>
+                                    `;
+                                }
+                                html += `
+                                    <select class="form-select field"></select>
+                                    <select class="form-select operator"></select>
+                                    <input type="text" class="form-control value" placeholder="...">
+                                    <button class="btn btn-outline-danger remove-btn" type="button">x</button>
+                                `;
+                                row.innerHTML = html;
+                                container.appendChild(row);
+                                const selectField = row.querySelector('.field');
+                                fields.fields.forEach(field => {
+                                    const opt = document.createElement('option');
+                                    opt.value = field.name.trim();
+                                    opt.textContent = field.label.trim();
+                                    selectField.appendChild(opt);
+                                });
+                                selectField.addEventListener('change', () => { FWWebExDataTableFilterPanelExUpdateField(row); });
+                                const operatorSelect = row.querySelector('.operator');
+                                operatorSelect.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                const valueEl = row.querySelector('.value');
+                                valueEl.addEventListener('input', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                const connectorEl = row.querySelector('.connector');
+                                if (connectorEl) connectorEl.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                row.querySelector('.remove-btn').addEventListener('click', () => { row.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
+                                if (selectField.value) FWWebExDataTableFilterPanelExUpdateField(row);
+                                FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
+                            }
+
+                            function FWWebExDataTableFilterPanelExAddGroup(container) {
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'filter-group-wrapper mb-2';
+                                let html = '';
+                                if (container.children.length > 0) {
+                                    html += `
+                                        <select class="form-select connector" style="max-width: 95px;">
+                                            <option></option>
+                                            <option>AND</option>
+                                            <option>OR</option>
+                                        </select>
+                                    `;
+                                }
+                                wrapper.innerHTML = html;
+                                const group = document.createElement('div');
+                                group.className = 'filter-group border p-2';
+                                group.innerHTML = `
+                                    <div class="conditions"></div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-primary add-condition">Add Condition</button>
+                                        <button class="btn btn-sm btn-outline-primary add-group ms-1">Add Group</button>
+                                        <button class="btn btn-sm btn-outline-danger remove-group ms-1">Remove Group</button>
+                                    </div>
+                                `;
+                                wrapper.appendChild(group);
+                                container.appendChild(wrapper);
+                                const connectorEl = wrapper.querySelector('.connector');
+                                if (connectorEl) connectorEl.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                group.querySelector('.add-condition').addEventListener('click', () => { FWWebExDataTableFilterPanelExAddCondition(group.querySelector('.conditions')); });
+                                group.querySelector('.add-group').addEventListener('click', () => { FWWebExDataTableFilterPanelExAddGroup(group.querySelector('.conditions')); });
+                                group.querySelector('.remove-group').addEventListener('click', () => { wrapper.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
+                                FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
+                            }
+
+                            function FWWebExDataTableFilterPanelExBuildExpression(container) {
+                                const parts = [];
+                                Array.from(container.children).forEach(child => {
+                                    if (child.classList.contains('filter-condition')) {
+                                        const connectorEl = child.querySelector('.connector');
+                                        const connector = connectorEl ? ` ${connectorEl.value} ` : '';
+                                        const field = child.querySelector('.field').value;
+                                        const op = child.querySelector('.operator').value;
+                                        const valueEl = child.querySelector('.value');
+                                        let value = valueEl.value.trim();
+                                        const type = fieldTypes[field];
+                                        if (type === 'D' && value) {
+                                            value = value.replace(/-/g, '');
+                                        }
+                                        let cond;
+                                        if (op === 'LIKE' || op === 'NOT LIKE') {
+                                            value = `'%${value.replace(/'/g, "''")}%'`;
+                                            cond = `${field} ${op} ${value}`;
+                                        } else if (op === 'IN' || op === 'NOT IN') {
+                                            const values = value.split(',').map(v => v.trim()).filter(v => v);
+                                            const formatted = values.map(v => {
+                                                if (type === 'N') return v;
+                                                return `'${v.replace(/'/g, "''")}'`;
+                                            });
+                                            cond = `${field} ${op} (${formatted.join(', ')})`;
+                                        } else {
+                                            if (type !== 'N') {
+                                                value = `'${value.replace(/'/g, "''")}'`;
+                                            }
+                                            cond = `${field} ${op} ${value}`;
+                                        }
+                                        parts.push(connector + cond);
+                                    } else if (child.classList.contains('filter-group-wrapper')) {
+                                        const connectorEl = child.querySelector('.connector');
+                                        const connector = connectorEl ? ` ${connectorEl.value} ` : '';
+                                        const innerExpr = FWWebExDataTableFilterPanelExBuildExpression(child.querySelector('.conditions'));
+                                        if (innerExpr) {
+                                            parts.push(connector + `(${innerExpr})`);
+                                        }
+                                    }
+                                });
+                                return parts.join('');
+                            }
+
+                            function FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__() {
+                                const container = document.getElementById("__ID_CONTAINER___rows");
+                                const expression = FWWebExDataTableFilterPanelExBuildExpression(container);
+                                document.getElementById("__ID_CONTAINER___preview").value = expression;
+                            }
+
+                            function FWWebExDataTableFilterPanelExAddCondition___ID_CONTAINER__() {
+                                const container = document.getElementById("__ID_CONTAINER___rows");
+                                FWWebExDataTableFilterPanelExAddCondition(container);
+                            }
+
+                            function FWWebExDataTableFilterPanelExAddGroup___ID_CONTAINER__() {
+                                const container = document.getElementById("__ID_CONTAINER___rows");
+                                FWWebExDataTableFilterPanelExAddGroup(container);
+                            }
+                        endContent
+                        cScript:=WebExHelper():StrReplaceEx(;
+                             cScript;
+                            ,{"__ID_CONTAINER__",cIDContainer};
+                            ,{"__FIELDS__",jTargetTableFields:ToJSON()};
+                        )
+                        WITH WEBEXOBJECT CLASS WebExScript
+                            .:SetContent(cScript)
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT ::oPanelBodyControls CLASS WebExDiv
+                            .:AddClass("mt-2")
+                            WITH WEBEXOBJECT ::oPanelBodyButtonFWWebExDataTableFilterPanelExAddCondition CLASS WebExButton ARGS "Add Condition","button"
+                                .:AddClass("btn btn-sm btn-outline-primary")
+                                .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddCondition_"+cIDContainer+"()")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT ::oPanelBodyButtonFWWebExDataTableFilterPanelExAddGroup CLASS WebExButton ARGS "Add Group","button"
+                                .:AddClass("btn btn-sm btn-outline-primary ms-2")
+                                .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddGroup_"+cIDContainer+"()")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT ::oPanelBodyPreview CLASS WebExDiv
+                            .:AddClass("mt-3")
+                            WITH WEBEXOBJECT ::oPanelBodyPreviewLabal CLASS WebExLabel ARGS "Filter Expression Preview:","Filter Expression Preview:"
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT ::oPanelBodyPreviewTextArea CLASS WebExTextarea
+                                .:SetFixedID(cIDContainer+"_preview")
+                                .:AddClass("form-control")
+                                .:SetAttr("rows","4")
+                                .:SetAttr("readonly","true")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT ::oPanelFooter CLASS WebExDiv
+                    .:AddClass("modal-footer")
+                    WITH WEBEXOBJECT ::oPanelFooterButtonClose CLASS WebExButton ARGS "Close","button"
+                        .:SetAttr("data-bs-dismiss","modal")
+                        .:AddClass("btn btn-secondary")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT ::oPanelFooterButtonApply CLASS WebExButton ARGS "Apply","button"
+                        .:AddClass("btn btn-primary")
+                        .:SetAttr("onclick","FWWebExDataTableFilterPanelExApplyFilters_"+cIDContainer+"()")
+                    END WEBEXOBJECT
+                    beginContent var cScript
+                        function FWWebExDataTableFilterPanelExApplyFilters___ID_CONTAINER__(){
+                            const container = document.getElementById("__ID_CONTAINER___rows");
+                            const expression = FWWebExDataTableFilterPanelExBuildExpression(container);
+                            const encodedExpression = btoa(expression || '');
+                            // garante que jQuery + DataTable estao carregados
+                            if (FWWebExHasDataTables()) {
+                                // aplica direto na tabela
+                                if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
+                                    let table = $("#__ID_TARGET_TABLE__").DataTable();
+                                    table.settings()[0].oInit.FWWebExPanelFilterEx = { expression: encodedExpression };
+                                    table.ajax.reload();
+                                } else {
+                                    console.warn("Target table #__ID_TARGET_TABLE__ not found to apply filters.");
+                                }
+                            } else {
+                                console.error("DataTables plugin is not available. Please check if the JS file has been imported.");
+                            }
+                            bootstrap.Modal.getInstance(document.getElementById("__ID_PANEL__")).hide();
+                        }
+                    endContent
+                    cScript:=WebExHelper():StrReplaceEx(;
+                        cScript;
+                        ,{"__ID_PANEL__",cIDPanel};
+                        ,{"__ID_CONTAINER__",cIDContainer};
+                        ,{"__ID_TARGET_TABLE__",::cTargetTableID};
+                    )
+                    WITH WEBEXOBJECT CLASS WebExScript
+                        .:SetContent(cScript)
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+return(self)

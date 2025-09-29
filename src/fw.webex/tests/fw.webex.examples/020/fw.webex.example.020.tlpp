@@ -62,15 +62,15 @@ static procedure FWWebExExample_020(cHTML as character) as character
     jTableFields:=JSONObject():New()
     jTableFields["fields"]:=Array(0)
 
-    aAdd(jTableFields["fields"],{"name":"RA_FILIAL","label":GetSX3Title("RA_FILIAL")})
-    aAdd(jTableFields["fields"],{"name":"RA_MAT","label":GetSX3Title("RA_MAT")})
-    aAdd(jTableFields["fields"],{"name":"RA_APELIDO","label":GetSX3Title("RA_APELIDO")})
-    aAdd(jTableFields["fields"],{"name":"RA_CC","label":GetSX3Title("RA_CC")})
-    aAdd(jTableFields["fields"],{"name":"RA_SALARIO","label":GetSX3Title("RA_SALARIO")})
-    aAdd(jTableFields["fields"],{"name":"RA_ADTPOSE","label":GetSX3Title("RA_ADTPOSE")})
-    aAdd(jTableFields["fields"],{"name":"RA_CATFUNC","label":GetSX3Title("RA_CATFUNC")})
-    aAdd(jTableFields["fields"],{"name":"RA_DEPIR","label":GetSX3Title("RA_DEPIR")})
-    aAdd(jTableFields["fields"],{"name":"RA_SEXO","label":GetSX3Title("RA_SEXO")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_FILIAL","X3_TIPO"),"name":"RA_FILIAL","label":GetSX3Title("RA_FILIAL")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_MAT","X3_TIPO"),"name":"RA_MAT","label":GetSX3Title("RA_MAT")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_APELIDO","X3_TIPO"),"name":"RA_APELIDO","label":GetSX3Title("RA_APELIDO")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_CC","X3_TIPO"),"name":"RA_CC","label":GetSX3Title("RA_CC")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_SALARIO","X3_TIPO"),"name":"RA_SALARIO","label":GetSX3Title("RA_SALARIO")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_ADTPOSE","X3_TIPO"),"name":"RA_ADTPOSE","label":GetSX3Title("RA_ADTPOSE")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_CATFUNC","X3_TIPO"),"name":"RA_CATFUNC","label":GetSX3Title("RA_CATFUNC")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_DEPIR","X3_TIPO"),"name":"RA_DEPIR","label":GetSX3Title("RA_DEPIR")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_SEXO","X3_TIPO"),"name":"RA_SEXO","label":GetSX3Title("RA_SEXO")})
 
     cYesFields:=""
     aEval(jTableFields["fields"],{|jField|cYesFields+=jField["name"]+","})
@@ -200,6 +200,14 @@ static procedure FWWebExExample_020(cHTML as character) as character
                     const dynamicFilter = table.settings()[0].oInit.FWWebExFilter || {};
                     const extraFilter = table.settings()[0].oInit.FWWebExPanelFilter || {};
                     const searchFilter = table.settings()[0].oInit.FWWebExSearchFilter || {};
+                    const extendedFilter = table.settings()[0].oInit.FWWebExPanelFilterEx || {};
+                    const extendedFilterExpression = extendedFilter["expression"] || '';
+
+                    if (extendedFilter) {
+                        Object.keys(dynamicFilter).forEach(key => delete obj[key]);
+                        Object.keys(extraFilter).forEach(key => delete obj[key]);
+                        Object.keys(searchFilter).forEach(key => delete obj[key]);
+                    }
 
                     const request = {
                         ClassName: 'userRestCrudTLPPCoreFunction',
@@ -207,6 +215,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         codAlias: 'SRA',
                         yesFields: '__YES_FIELDS__',
                         Filter: Object.assign({}, baseFilter, dynamicFilter, extraFilter, searchFilter),
+                        Filter64: extendedFilterExpression,
                         PageNumber: pageNumber,
                         RowspPage: rowsPerPage,
                         cEmp: '99',
@@ -439,12 +448,18 @@ static procedure FWWebExExample_020(cHTML as character) as character
                             .:AddClass("d-flex w-100 align-items-center")
                             WITH WEBEXOBJECT oWebExDataTableFilterPanel CLASS WebExDataTableFilterPanel ARGS "Filtros","FWWebExExample_020",jTableFilter
                             END WEBEXOBJECT
+                            WITH WEBEXOBJECT oWebExDataTableFilterPanelEx CLASS WebExDataTableFilterPanelEx ARGS "Filtros Avan&ccedil;ados","FWWebExExample_020",jTableFilter
+                            END WEBEXOBJECT
                             //Botoes alinhados aa direita
                             WITH WEBEXOBJECT CLASS WebExDiv
                                 .:AddClass("ms-auto")
                                 WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtrar","button"
                                     .:SetButtonIcon("fa-filter","fontawesome",.F.)
                                     .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanel:GetID()+"').modal('show')")
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtros Avan&ccedil;ados","button"
+                                    .:SetButtonIcon("fa-filter","fontawesome",.F.)
+                                    .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanelEx:GetID()+"').modal('show')")
                                 END WEBEXOBJECT
                             END WEBEXOBJECT
                         END WEBEXOBJECT NOADDCHILD
