@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Pass cYesFields to SBAdminGetRightMenu in example 020)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add internal filter support to advanced datatable panel)"
 */
+
+2025-09-30 17:38 UTC naldodj (Add internal filter support to advanced datatable panel)
+  % Add internal filter support to advanced datatable panel
+    Introduces internal filter and field type parameters to WebExDataTableFilterPanelEx, allowing fixed filters to be combined with dynamic user filters.
+    Updates the filter application logic and example usage to support internal filters, and adds a utility for retrieving DataTable filters with safe defaults and extended filter handling.
+      * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
+      * src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-29 21:08 UTC naldodj (Pass cYesFields to SBAdminGetRightMenu in example 020)
   * Pass cYesFields to SBAdminGetRightMenu in example 020

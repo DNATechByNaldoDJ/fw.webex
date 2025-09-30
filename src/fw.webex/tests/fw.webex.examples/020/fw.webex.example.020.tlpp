@@ -49,6 +49,8 @@ static procedure FWWebExExample_020(cHTML as character) as character
 
     local jTableFields as json
     local jTableFilter as json
+    local jInternalFilter:={"RA_SEXO":"M"} as json
+    local jInternalFieldsTypes:=JSONObject():New() as json
 
     local nAT_RA_SEXO as numeric
 
@@ -80,6 +82,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
     //Sexo Esta Fixo no Filtro da Tabela, nao permitir Alterar no Filtro/Pesquisa.
     nAT_RA_SEXO:=aScan(jTableFilter["fields"],{|jField|jField["name"]=="RA_SEXO"})
     if (nAT_RA_SEXO>0)
+        jInternalFieldsTypes[jTableFilter["fields"][nAT_RA_SEXO]["name"]]:=jTableFilter["fields"][nAT_RA_SEXO]["type"]
         aDel(jTableFilter["fields"],nAT_RA_SEXO)
         aSize(jTableFilter["fields"],Len(jTableFilter["fields"])-1)
     endif
@@ -195,19 +198,25 @@ static procedure FWWebExExample_020(cHTML as character) as character
                     const pageNumber = Math.floor(data.start / data.length) + 1;
                     const rowsPerPage = data.length === -1 ? 999999 : data.length;
 
-                    // monta o filtro fixo + dinamico
-                    const baseFilter = { RA_SEXO: 'M' };
-                    const dynamicFilter = table.settings()[0].oInit.FWWebExFilter || {};
-                    const extraFilter = table.settings()[0].oInit.FWWebExPanelFilter || {};
-                    const searchFilter = table.settings()[0].oInit.FWWebExSearchFilter || {};
-                    const extendedFilter = table.settings()[0].oInit.FWWebExPanelFilterEx || {};
-                    const extendedFilterExpression = extendedFilter["expression"] || '';
+                    //Filtros Customizados Inicio
+                        // monta o filtro fixo + dinamico
+                        const filters = FWWebExGetDataTableFilters(table, [
+                            'FWWebExFilter',
+                            'FWWebExPanelFilter',
+                            'FWWebExSearchFilter',
+                            'FWWebExPanelFilterEx'
+                        ]);
 
-                    if (extendedFilter) {
-                        Object.keys(dynamicFilter).forEach(key => delete obj[key]);
-                        Object.keys(extraFilter).forEach(key => delete obj[key]);
-                        Object.keys(searchFilter).forEach(key => delete obj[key]);
-                    }
+                        const dynamicFilter  = filters.FWWebExFilter;
+                        const extraFilter    = filters.FWWebExPanelFilter;
+                        const searchFilter   = filters.FWWebExSearchFilter;
+                        const extendedFilter = filters.FWWebExPanelFilterEx;
+                        const extendedFilterExpression = extendedFilter["expression"] || '';
+
+                        //Internal Filter, quando extendedFilterExpression vira em extendedFilterExpression
+                        const baseFilter = extendedFilterExpression === '' ? JSON.parse('__INTERNAL_FILTER__') : {};
+
+                    //Filtros Customizados Fim
 
                     const request = {
                         ClassName: 'userRestCrudTLPPCoreFunction',
@@ -287,6 +296,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
     cScript:=WebExHelper():StrReplaceEx(;
         cScript;
         ,{"__YES_FIELDS__",cYesFields}; //__YES_FIELDS__ em request
+        ,{"__INTERNAL_FILTER__",jInternalFilter:ToJSON()}; //Filtro Interno
         ,{"__TABLE_RESULT__",TableResult(jTableFields)};
         ,{"__TABLE_FIELDS_RETURN__",TableFieldsReturn(jTableFields)};
     )
@@ -448,7 +458,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                             .:AddClass("d-flex w-100 align-items-center")
                             WITH WEBEXOBJECT oWebExDataTableFilterPanel CLASS WebExDataTableFilterPanel ARGS "Filtros","FWWebExExample_020",jTableFilter
                             END WEBEXOBJECT
-                            WITH WEBEXOBJECT oWebExDataTableFilterPanelEx CLASS WebExDataTableFilterPanelEx ARGS "Filtros Avan&ccedil;ados","FWWebExExample_020",jTableFilter
+                            WITH WEBEXOBJECT oWebExDataTableFilterPanelEx CLASS WebExDataTableFilterPanelEx ARGS "Filtros Avan&ccedil;ados","FWWebExExample_020",jTableFilter,jInternalFilter,jInternalFieldsTypes
                             END WEBEXOBJECT
                             //Botoes alinhados aa direita
                             WITH WEBEXOBJECT CLASS WebExDiv

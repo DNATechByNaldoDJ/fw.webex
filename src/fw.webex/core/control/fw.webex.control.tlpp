@@ -1449,6 +1449,50 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                 function FWWebExHasDataTables() {
                     return !!(window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable);
                 }
+                /**
+                * FWWebExGetDataTableFilters
+                *
+                * Retrieves custom filters from a DataTable instance.
+                * Validates if table exists, applies safe defaults,
+                * and clears other filters when ExtendedFilter is defined with expression.
+                *
+                * @param {object} table - DataTable instance.
+                * @param {Array<string>} filterNames - List of filter property names to retrieve.
+                * @param {object} defaults - Default values for each filter (optional).
+                * @returns {object} An object with the requested filters.
+                */
+                function FWWebExGetDataTableFilters(table, filterNames = [], defaults = {}) {
+
+                    if (!table || typeof table.settings !== 'function') {
+                        console.warn("FWWebExGetDataTableFilters: invalid or missing DataTable instance.");
+                        return {};
+                    }
+
+                    const oInit = table.settings()[0]?.oInit || {};
+
+                    // Build filters object with safe defaults
+                    const filters = filterNames.reduce((acc, name) => {
+                        const fallback = defaults[name] || {};
+                        const f = oInit[name];
+                        acc[name] = (f && typeof f === 'object') ? f : fallback;
+                        return acc;
+                    }, {});
+
+                    // ExtendedFilter logic
+                    const extendedFilter = filters['FWWebExPanelFilterEx'] || {};
+                    const extendedFilterExpression = extendedFilter["expression"] || '';
+
+                    if (Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
+                        // Clear all filters except ExtendedFilter itself
+                        Object.keys(filters).forEach(key => {
+                            if (key !== 'FWWebExPanelFilterEx') {
+                                Object.keys(filters[key]).forEach(k => delete filters[key][k]);
+                            }
+                        });
+                    }
+
+                    return filters;
+                }
             endContent
             WITH WEBEXOBJECT CLASS WebExScript
                 .:SetContent(cScript)

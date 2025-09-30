@@ -19,6 +19,9 @@ class WebExDataTableFilterPanelEx from WebExDiv
     protected data cTargetTableID as character
     protected data jTargetTableFields as json
 
+    protected data jInternalFilter as character
+    protected data jInternalFieldsTypes as json
+
     protected data oPanel as object
     protected data oPanelContainer as object
     protected data oPanelContent as object
@@ -40,11 +43,11 @@ class WebExDataTableFilterPanelEx from WebExDiv
     protected data oPanelFooterButtonClose as object
     protected data oPanelFooterButtonApply as object
 
-    public method New(cTitle as character,cTargetTableID as character,jTargetTableFields as json) as object
+    public method New(cTitle as character,cTargetTableID as character,jTargetTableFields as json,jInternalFilter as json,jInternalFieldsTypes as json) as object
 
 endclass
 
-method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterPanelEx
+method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFieldsTypes) class WebExDataTableFilterPanelEx
 
     local cScript as character
     local cIDPanel as character
@@ -53,10 +56,14 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
     paramtype 1 var cTitle as character optional default "Advanced Filter"
     paramtype 2 var cTargetTableID as character
     paramtype 3 var jTargetTableFields as json
+    paramtype 4 var jInternalFilter as json optional default JSONObject():New()
+    paramtype 5 var jInternalFieldsTypes as json optional default JSONObject():New()
 
     ::cTitle:=cTitle
     ::cTargetTableID:=cTargetTableID
     ::jTargetTableFields:=jTargetTableFields
+    ::jInternalFilter:=jInternalFilter
+    ::jInternalFieldsTypes:=jInternalFieldsTypes
 
     _Super:New()
 
@@ -89,9 +96,9 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         .:AddClass("conditions")
                         beginContent var cScript
                             const fields = __FIELDS__;
-                            const fieldTypes = {};
+                            const fieldsTypes = {};
                             fields.fields.forEach(field => {
-                                fieldTypes[field.name] = field.type;
+                                fieldsTypes[field.name] = field.type;
                             });
                             const operatorsByType = {
                                 'C': ['=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'],
@@ -102,7 +109,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
 
                             function FWWebExDataTableFilterPanelExUpdateField(row) {
                                 const field = row.querySelector('.field').value;
-                                const type = fieldTypes[field];
+                                const type = fieldsTypes[field];
                                 const selectOp = row.querySelector('.operator');
                                 selectOp.innerHTML = '';
                                 operatorsByType[type].forEach(op => {
@@ -221,7 +228,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                                         const op = child.querySelector('.operator').value;
                                         const valueEl = child.querySelector('.value');
                                         let value = valueEl.value.trim();
-                                        const type = fieldTypes[field];
+                                        const type = fieldsTypes[field];
                                         if (type === 'D' && value) {
                                             value = value.replace(/-/g, '');
                                         }
@@ -314,13 +321,84 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         .:SetAttr("onclick","FWWebExDataTableFilterPanelExApplyFilters_"+cIDContainer+"()")
                     END WEBEXOBJECT
                     beginContent var cScript
-                        function FWWebExDataTableFilterPanelExApplyFilters___ID_CONTAINER__(){
+                        function FWWebExDataTableFilterPanelExApplyFilters___ID_CONTAINER__() {
+
                             const container = document.getElementById("__ID_CONTAINER___rows");
                             const expression = FWWebExDataTableFilterPanelExBuildExpression(container);
-                            const encodedExpression = btoa(expression || '');
-                            // garante que jQuery + DataTable estao carregados
+
+                            // Helper function to convert jInternalFilter to SQL expression
+                            function buildInternalExpression(filter, fieldsTypes) {
+                                if (!fieldsTypes) {
+                                    console.warn("Field types not provided for internal filter. Skipping internal filter processing.");
+                                    return '';
+                                }
+                                const parts = [];
+                                for (const [field, value] of Object.entries(filter)) {
+                                    if (!fieldsTypes[field]) {
+                                        console.warn(`Field type for ${field} not found. Skipping this condition.`);
+                                        continue;
+                                    }
+                                    const type = fieldsTypes[field];
+                                    let formattedValue;
+
+                                    if (type === 'C') { // Character
+                                        formattedValue = `'${value.replace(/'/g, "''")}'`;
+                                    } else if (type === 'N') { // Numeric
+                                        formattedValue = value;
+                                    } else if (type === 'D') { // Date
+                                        // Assuming value is in a format like "YYYY-MM-DD" or similar
+                                        formattedValue = `'${value.replace(/-/g, '')}'`;
+                                    } else if (type === 'L') { // Logical
+                                        formattedValue = value === 'T' || value === true ? 'T' : 'F';
+                                    } else {
+                                        console.warn(`Unsupported field type ${type} for field ${field}. Skipping.`);
+                                        continue;
+                                    }
+
+                                    parts.push(`${field} = ${formattedValue}`);
+                                }
+                                return parts.join(' AND ');
+                            }
+
+                            // Parse and process jInternalFilter if provided
+                            let internalExpression = '';
+                            const jInternalFilter='__JSON_INTERNAL_FILTER__';
+                            const jInternalFieldsAndTypes='__JSON_INTERNAL_FIELDS_AND_TYPES__';
+
+                            if (jInternalFilter && jInternalFilter.trim() !== '') {
+                                try {
+                                    const internalFilter = JSON.parse(jInternalFilter);
+                                    if (Object.keys(internalFilter).length > 0) {
+                                        if (!jInternalFieldsAndTypes) {
+                                            console.error("jInternalFieldsAndTypes is required when jInternalFilter is provided.");
+                                            internalExpression = '';
+                                        } else {
+                                            const fieldsTypes = JSON.parse(jInternalFieldsAndTypes);
+                                            internalExpression = buildInternalExpression(internalFilter, fieldsTypes);
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.error("Error parsing jInternalFilter:", err.message);
+                                    internalExpression = '';
+                                }
+                            }
+
+                            // Combine internalExpression and expression
+                            let finalExpression = '';
+                            if (internalExpression && expression) {
+                                finalExpression = `(${internalExpression}) AND (${expression})`;
+                            } else if (internalExpression) {
+                                finalExpression = internalExpression;
+                            } else if (expression) {
+                                finalExpression = expression;
+                            }
+
+                            // Encode the final expression
+                            const encodedExpression = btoa(finalExpression || '');
+
+                            // Ensure jQuery + DataTable are loaded
                             if (FWWebExHasDataTables()) {
-                                // aplica direto na tabela
+                                // Apply directly to the table
                                 if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
                                     let table = $("#__ID_TARGET_TABLE__").DataTable();
                                     table.settings()[0].oInit.FWWebExPanelFilterEx = { expression: encodedExpression };
@@ -332,6 +410,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                                 console.error("DataTables plugin is not available. Please check if the JS file has been imported.");
                             }
                             bootstrap.Modal.getInstance(document.getElementById("__ID_PANEL__")).hide();
+
                         }
                     endContent
                     cScript:=WebExHelper():StrReplaceEx(;
@@ -339,6 +418,8 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         ,{"__ID_PANEL__",cIDPanel};
                         ,{"__ID_CONTAINER__",cIDContainer};
                         ,{"__ID_TARGET_TABLE__",::cTargetTableID};
+                        ,{"__JSON_INTERNAL_FILTER__",::jInternalFilter:ToJSON()};
+                        ,{"__JSON_INTERNAL_FIELDS_AND_TYPES__",::jInternalFieldsTypes:ToJSON()};
                     )
                     WITH WEBEXOBJECT CLASS WebExScript
                         .:SetContent(cScript)
