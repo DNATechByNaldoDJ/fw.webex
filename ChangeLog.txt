@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add internal filter support to advanced datatable panel)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve DataTable filter detection and handling)"
 */
+
+2025-09-30 19:45 UTC naldodj (Improve DataTable filter detection and handling)
+  % Improve DataTable filter detection and handling
+      Adds a dedicated flag to track the presence of extended filters in DataTable instances and introduces FWWebExHasDataTableFilters for robust filter state detection.
+      Updates filter application logic and example usage to rely on the new detection mechanism, improving reliability and clarity in filter management.
+        * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
+        * src/fw.webex/core/control/fw.webex.control.tlpp
+        * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-09-30 17:38 UTC naldodj (Add internal filter support to advanced datatable panel)
   % Add internal filter support to advanced datatable panel

@@ -213,9 +213,17 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         const extendedFilter = filters.FWWebExPanelFilterEx;
                         const extendedFilterExpression = extendedFilter["expression"] || '';
 
-                        //Internal Filter, quando extendedFilterExpression vira em extendedFilterExpression
-                        const baseFilter = extendedFilterExpression === '' ? JSON.parse('__INTERNAL_FILTER__') : {};
-
+                        //Internal Filter (internalFilter), quando extendedFilterExpression vira em extendedFilterExpression
+                        const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
+                        let internalFilter = {};
+                        if (!hasExtendedFilter.FWWebExPanelFilterEx) {
+                            try {
+                                internalFilter = JSON.parse('__INTERNAL_FILTER__');
+                            } catch (err) {
+                                console.warn("Invalid Interval Filter JSON:", err.message);
+                                internalFilter = {};
+                            }
+                        }
                     //Filtros Customizados Fim
 
                     const request = {
@@ -223,8 +231,8 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         FunctionName: 'dna.tech.codAliasPost',
                         codAlias: 'SRA',
                         yesFields: '__YES_FIELDS__',
-                        Filter: Object.assign({}, baseFilter, dynamicFilter, extraFilter, searchFilter),
-                        Filter64: extendedFilterExpression,
+                        Filter: Object.assign({}, internalFilter, dynamicFilter, extraFilter, searchFilter),
+                        Filter64: hasExtendedFilter.FWWebExPanelFilterEx ? extendedFilterExpression : '',
                         PageNumber: pageNumber,
                         RowspPage: rowsPerPage,
                         cEmp: '99',

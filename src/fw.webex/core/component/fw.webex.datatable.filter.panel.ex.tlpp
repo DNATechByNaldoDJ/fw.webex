@@ -384,12 +384,15 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                             }
 
                             // Combine internalExpression and expression
+                            let hasFilter = false;
                             let finalExpression = '';
                             if (internalExpression && expression) {
+                                hasFilter = true;
                                 finalExpression = `(${internalExpression}) AND (${expression})`;
                             } else if (internalExpression) {
                                 finalExpression = internalExpression;
                             } else if (expression) {
+                                hasFilter = true;
                                 finalExpression = expression;
                             }
 
@@ -402,6 +405,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
                                     let table = $("#__ID_TARGET_TABLE__").DataTable();
                                     table.settings()[0].oInit.FWWebExPanelFilterEx = { expression: encodedExpression };
+                                    table.settings()[0].oInit.FWWebExPanelFilterExHasFilter = hasFilter;
                                     table.ajax.reload();
                                 } else {
                                     console.warn("Target table #__ID_TARGET_TABLE__ not found to apply filters.");

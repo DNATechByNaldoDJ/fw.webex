@@ -1449,6 +1449,44 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                 function FWWebExHasDataTables() {
                     return !!(window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable);
                 }
+
+                /**
+                * FWWebExHasDataTableFilters
+                *
+                * Checks if custom filters exist in a DataTable instance.
+                * Validates if table exists and returns a map of filter names to boolean values.
+                * Uses FWWebExPanelFilterExHasFilter flag for ExtendedFilter state.
+                *
+                * @param {object} table - DataTable instance.
+                * @param {Array<string>} filterNames - List of filter property names to check.
+                * @param {object} defaults - Default boolean values for each filter (optional).
+                * @returns {object|false} An object with filter names mapped to true/false, or false if table is invalid.
+                */
+                function FWWebExHasDataTableFilters(table, filterNames = [], defaults = {}) {
+
+                    if (!table || typeof table.settings !== 'function') {
+                        console.warn("FWWebExHasDataTableFilters: invalid or missing DataTable instance.");
+                        return false;
+                    }
+
+                    const oInit = table.settings()[0]?.oInit || {};
+
+                    // Build hasFilter object with safe defaults
+                    const hasFilter = filterNames.reduce((acc, name) => {
+                        const fallback = defaults[name] ?? false;
+                        const f = oInit[name];
+                        acc[name] = (f && typeof f === 'object' && Object.keys(f).length > 0) ? true : fallback;
+                        return acc;
+                    }, {});
+
+                    // Use the dedicated flag for ExtendedFilter if available
+                    if ('FWWebExPanelFilterExHasFilter' in oInit) {
+                        hasFilter['FWWebExPanelFilterEx'] = !!oInit.FWWebExPanelFilterExHasFilter;
+                    }
+
+                    return hasFilter;
+                }
+
                 /**
                 * FWWebExGetDataTableFilters
                 *
@@ -1481,8 +1519,9 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                     // ExtendedFilter logic
                     const extendedFilter = filters['FWWebExPanelFilterEx'] || {};
                     const extendedFilterExpression = extendedFilter["expression"] || '';
+                    const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
 
-                    if (Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
+                    if (hasExtendedFilter.FWWebExPanelFilterEx && Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
                         // Clear all filters except ExtendedFilter itself
                         Object.keys(filters).forEach(key => {
                             if (key !== 'FWWebExPanelFilterEx') {
