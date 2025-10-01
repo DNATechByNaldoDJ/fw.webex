@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Enhance DataTable filter and search with multi-term support)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Enhance filter panel with validation and usability fixes)"
 */
+
+2025-10-01 20:34 UTC naldodj (Enhance filter panel with validation and usability fixes)
+  !Enhance filter panel with validation and usability fixes
+      Improves the DataTable filter panel by adding validation for logical connectors, preventing invalid filter expressions, and refactoring JavaScript for better context isolation.
+      Updates UI labels, fixes typos, and introduces a helper function FWWebExAllTrim for whitespace normalization.
+      Also improves error handling and user feedback for filter construction.
+        * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
+        * src/fw.webex/core/layout/fw.webex.page.tlpp
 
 2025-10-01 14:48 UTC naldodj (Enhance DataTable filter and search with multi-term support)
   % Enhance DataTable filter and search with multi-term support

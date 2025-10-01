@@ -381,7 +381,7 @@ method New(cPageTitle) class WebExPage
             .:SetContent(cPageScript)
         END WEBEXOBJECT
         ***************************************************************************************************************************
-        //Scripts Tools
+        //Helper Tools
         beginContent var cPageScript
             /*FWWebExDecodeHTMLEntities*/
             function FWWebExDecodeHTMLEntities(text) {
@@ -392,6 +392,19 @@ method New(cPageTitle) class WebExPage
             /*FWWebExShowComingSoon*/
             function FWWebExShowComingSoon(route) {
                 alert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'));
+            }
+            /**Helper function
+            * Removes all leading, trailing, and extra spaces between words in a string.
+            * @param {string} str - The input string to be trimmed.
+            * @returns {string} - The trimmed string with single spaces between words.
+            */
+            function FWWebExAllTrim(str) {
+                if (typeof str !== "string") {
+                    throw new TypeError("Input must be a string");
+                }
+                // Use trim() to remove leading and trailing spaces
+                // Use replace() with a regex to collapse multiple spaces into one
+                return str.trim().replace(/\s+/g, " ");
             }
         endContent
         WITH WEBEXOBJECT CLASS WebExScript

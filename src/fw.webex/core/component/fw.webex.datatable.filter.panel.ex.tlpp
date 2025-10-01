@@ -23,6 +23,7 @@ class WebExDataTableFilterPanelEx from WebExDiv
     protected data jInternalFieldsTypes as json
 
     protected data oPanel as object
+
     protected data oPanelContainer as object
     protected data oPanelContent as object
 
@@ -33,10 +34,12 @@ class WebExDataTableFilterPanelEx from WebExDiv
     protected data oPanelBody as object
     protected data oPanelBodyContainer as object
     protected data oPanelBodyControls as object
+
     protected data oPanelBodyButtonAddCondition as object
+
     protected data oPanelBodyButtonAddGroup as object
     protected data oPanelBodyPreview as object
-    protected data oPanelBodyPreviewLabal as object
+    protected data oPanelBodyPreviewLabel as object
     protected data oPanelBodyPreviewTextArea as object
 
     protected data oPanelFooter as object
@@ -95,24 +98,35 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                         .:SetFixedID(cIDContainer+"_rows")
                         .:AddClass("conditions")
                         beginContent var cScript
-                            const fields = __FIELDS__;
-                            const fieldsTypes = {};
-                            fields.fields.forEach(field => {
-                                fieldsTypes[field.name] = field.type;
-                            });
-                            const operatorsByType = {
-                                'C': ['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'],
-                                'N': ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN'],
-                                'D': ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN'],
-                                'L': ['=', '!=']
-                            };
+                            // Create a private context for this instance using an IIFE
+                            const FWWebExDataTableFilterPanelExContext___ID_CONTAINER__ = (function() {
+                                // Initialize fields and types for this instance
+                                const fields = __FIELDS__;
+                                const fieldsTypes = {};
+                                fields.fields.forEach(field => {
+                                    fieldsTypes[field.name] = field.type;
+                                });
+                                const operatorsByType = {
+                                    'C': ['=','!=','>','<','>=','<=','LIKE','NOT LIKE','IN','NOT IN'],
+                                    'N': ['=','!=','>','<','>=','<=','IN','NOT IN'],
+                                    'D': ['=','!=','>','<','>=','<=','IN','NOT IN'],
+                                    'L': ['=','!=']
+                                };
 
-                            function FWWebExDataTableFilterPanelExUpdateField(row) {
+                                // Return context accessor
+                                return function() {
+                                    return { fields,fieldsTypes,operatorsByType };
+                                };
+                            })();
+
+                            // Update field options based on selected field type
+                            function FWWebExDataTableFilterPanelExUpdateField___ID_CONTAINER__(row) {
+                                const context = FWWebExDataTableFilterPanelExContext___ID_CONTAINER__();
                                 const field = row.querySelector('.field').value;
-                                const type = fieldsTypes[field];
+                                const type = context.fieldsTypes[field];
                                 const selectOp = row.querySelector('.operator');
                                 selectOp.innerHTML = '';
-                                operatorsByType[type].forEach(op => {
+                                context.operatorsByType[type].forEach(op => {
                                     const opt = document.createElement('option');
                                     opt.value = op;
                                     opt.textContent = op;
@@ -129,7 +143,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                     `;
                                     valueInput.replaceWith(select);
                                     newValue = select;
-                                    newValue.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                    newValue.addEventListener('change',FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
                                 } else {
                                     const input = document.createElement('input');
                                     input.className = 'form-control value';
@@ -139,147 +153,195 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                     else input.type = 'text';
                                     valueInput.replaceWith(input);
                                     newValue = input;
-                                    newValue.addEventListener('input', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                    newValue.addEventListener('input',FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
                                 }
                                 FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
                             }
 
-                            function FWWebExDataTableFilterPanelExAddCondition(container) {
+                            // Handle connector change
+                            function FWWebExDataTableFilterPanelExHandleConnectorChange___ID_CONTAINER__(e) {
+                                const select = e.target;
+                                const newVal = select.value;
+                                if (newVal === '') {
+                                    const item = select.closest('.filter-condition, .filter-group-wrapper');
+                                    if (item && item.nextElementSibling) {
+                                        alert("Cannot delete/clear AND/OR unless the subsequent expression has been deleted.");
+                                        select.value = select.dataset.oldValue || 'AND';
+                                        return;
+                                    }
+                                }
+                                select.dataset.oldValue = newVal;
+                                FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
+                            }
+
+                            // Add a new condition row
+                            function FWWebExDataTableFilterPanelExAddCondition___ID_CONTAINER__(container) {
+                                const context = FWWebExDataTableFilterPanelExContext___ID_CONTAINER__();
+                                const children = Array.from(container.children);
+                                const preview = FWWebExAllTrim(FWWebExDataTableFilterPanelExGetPreview___ID_CONTAINER__());
+                                if (preview && children.length > 0) {
+                                    const lastChild = children[children.length - 1];
+                                    const lastConnector = lastChild.querySelector('.connector');
+                                    if (!lastConnector || lastConnector.value === '') {
+                                        alert("Inconsistency: there must be an AND or OR operator before adding a new condition or Group.");
+                                        return;
+                                    }
+                                }
                                 const row = document.createElement('div');
                                 row.className = 'filter-condition input-group input-group-sm mb-2';
-                                let html = '';
-                                if (container.children.length > 0) {
-                                    html += `
-                                        <select class="form-select connector" style="max-width: 95px;">
-                                            <option></option>
-                                            <option>AND</option>
-                                            <option>OR</option>
-                                        </select>
-                                    `;
-                                }
-                                html += `
-                                    <select class="form-select field"></select>
-                                    <select class="form-select operator"></select>
-                                    <input type="text" class="form-control value" placeholder="...">
+                                row.setAttribute("style", "display:flex; gap:1px; align-items:center;");
+                                let html = `
+                                    <select class="form-select field" style="max-width: 20ch;"></select>
+                                    <select class="form-select operator" style="max-width: 15ch;"></select>
+                                    <input type="text" class="form-control value" placeholder="..." style="flex:1;">
+                                    <select class="form-select connector" style="max-width: 95px;">
+                                        <option value=""></option>
+                                        <option>AND</option>
+                                        <option>OR</option>
+                                    </select>
                                     <button class="btn btn-outline-danger remove-btn" type="button">x</button>
                                 `;
                                 row.innerHTML = html;
                                 container.appendChild(row);
                                 const selectField = row.querySelector('.field');
-                                fields.fields.forEach(field => {
+                                context.fields.fields.forEach(field => {
                                     const opt = document.createElement('option');
                                     opt.value = field.name.trim();
                                     opt.textContent = field.label.trim();
                                     selectField.appendChild(opt);
                                 });
-                                selectField.addEventListener('change', () => { FWWebExDataTableFilterPanelExUpdateField(row); });
+                                selectField.addEventListener('change',() => { FWWebExDataTableFilterPanelExUpdateField___ID_CONTAINER__(row); });
                                 const operatorSelect = row.querySelector('.operator');
-                                operatorSelect.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                operatorSelect.addEventListener('change',FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
                                 const valueEl = row.querySelector('.value');
-                                valueEl.addEventListener('input', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
+                                valueEl.addEventListener('input',FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
                                 const connectorEl = row.querySelector('.connector');
-                                if (connectorEl) connectorEl.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
-                                row.querySelector('.remove-btn').addEventListener('click', () => { row.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
-                                if (selectField.value) FWWebExDataTableFilterPanelExUpdateField(row);
+                                if (connectorEl) connectorEl.addEventListener('change',FWWebExDataTableFilterPanelExHandleConnectorChange___ID_CONTAINER__);
+                                row.querySelector('.remove-btn').addEventListener('click',() => { row.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
+                                if (selectField.value) FWWebExDataTableFilterPanelExUpdateField___ID_CONTAINER__(row);
                                 FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
                             }
 
-                            function FWWebExDataTableFilterPanelExAddGroup(container) {
+                            // Add a new group
+                            function FWWebExDataTableFilterPanelExAddGroup___ID_CONTAINER__(container) {
+                                const children = Array.from(container.children);
+                                const preview = FWWebExAllTrim(FWWebExDataTableFilterPanelExGetPreview___ID_CONTAINER__());
+                                if (preview && children.length > 0) {
+                                    const lastChild = children[children.length - 1];
+                                    const lastConnector = lastChild.querySelector('.connector');
+                                    if (!lastConnector || lastConnector.value === '') {
+                                        alert("Inconsistency: there must be an AND or OR operator before adding a new condition or Group.");
+                                        return;
+                                    }
+                                }
                                 const wrapper = document.createElement('div');
                                 wrapper.className = 'filter-group-wrapper mb-2';
-                                let html = '';
-                                if (container.children.length > 0) {
-                                    html += `
-                                        <select class="form-select connector" style="max-width: 95px;">
-                                            <option></option>
-                                            <option>AND</option>
-                                            <option>OR</option>
-                                        </select>
-                                    `;
-                                }
-                                wrapper.innerHTML = html;
                                 const group = document.createElement('div');
                                 group.className = 'filter-group border p-2';
                                 group.innerHTML = `
                                     <div class="conditions"></div>
                                     <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-primary add-condition">Add Condition</button>
-                                        <button class="btn btn-sm btn-outline-primary add-group ms-1">Add Group</button>
-                                        <button class="btn btn-sm btn-outline-danger remove-group ms-1">Remove Group</button>
+                                        <button class="btn btn-sm btn-outline-primary add-condition">(+)Expr.</button>
+                                        <button class="btn btn-sm btn-outline-primary add-group ms-1">(+)(Expr.)</button>
+                                        <button class="btn btn-sm btn-outline-danger remove-group ms-1">(-)(Expr.)</button>
                                     </div>
                                 `;
                                 wrapper.appendChild(group);
                                 container.appendChild(wrapper);
                                 const connectorEl = wrapper.querySelector('.connector');
-                                if (connectorEl) connectorEl.addEventListener('change', FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
-                                group.querySelector('.add-condition').addEventListener('click', () => { FWWebExDataTableFilterPanelExAddCondition(group.querySelector('.conditions')); });
-                                group.querySelector('.add-group').addEventListener('click', () => { FWWebExDataTableFilterPanelExAddGroup(group.querySelector('.conditions')); });
-                                group.querySelector('.remove-group').addEventListener('click', () => { wrapper.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
+                                if (connectorEl) connectorEl.addEventListener('change',FWWebExDataTableFilterPanelExHandleConnectorChange___ID_CONTAINER__);
+                                group.querySelector('.add-condition').addEventListener('click',() => { FWWebExDataTableFilterPanelExAddCondition___ID_CONTAINER__(group.querySelector('.conditions')); });
+                                group.querySelector('.add-group').addEventListener('click',() => { FWWebExDataTableFilterPanelExAddGroup___ID_CONTAINER__(group.querySelector('.conditions')); });
+                                group.querySelector('.remove-group').addEventListener('click',() => { wrapper.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
                                 FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
                             }
 
-                            function FWWebExDataTableFilterPanelExBuildExpression(container) {
+                            // Build SQL-like expression from conditions
+                            function FWWebExDataTableFilterPanelExBuildExpression___ID_CONTAINER__(container) {
+                                const context = FWWebExDataTableFilterPanelExContext___ID_CONTAINER__();
                                 const parts = [];
-                                Array.from(container.children).forEach(child => {
+                                const children = Array.from(container.children);
+                                children.forEach((child,index) => {
                                     if (child.classList.contains('filter-condition')) {
                                         const connectorEl = child.querySelector('.connector');
-                                        const connector = connectorEl ? ` ${connectorEl.value} ` : '';
+                                        const connector = connectorEl ? connectorEl.value : '';
                                         const field = child.querySelector('.field').value;
                                         const op = child.querySelector('.operator').value;
                                         const valueEl = child.querySelector('.value');
                                         let value = valueEl.value.trim();
-                                        const type = fieldsTypes[field];
+                                        const type = context.fieldsTypes[field];
+
+                                        // Basic validation: skip incomplete conditions
+                                        if (!field || !op || !value) {
+                                            console.warn(`Incomplete condition ignored: field=${field},op=${op},value=${value}`);
+                                            return; // Skip to avoid invalid SQL
+                                        }
+
                                         if (type === 'D' && value) {
-                                            value = value.replace(/-/g, '');
+                                            value = value.replace(/-/g,'');
                                         }
                                         let cond;
                                         if (op === 'LIKE' || op === 'NOT LIKE') {
-                                            value = `'%${value.replace(/'/g, "''")}%'`;
+                                            value = `'%${value.replace(/'/g,"''")}%'`;
                                             cond = `${field} ${op} ${value}`;
                                         } else if (op === 'IN' || op === 'NOT IN') {
                                             const values = value.split(',').map(v => v.trim()).filter(v => v);
+                                            if (values.length === 0) {
+                                                console.warn(`Empty list in IN/NOT IN ignored for field=${field}`);
+                                                return; // Skip empty lists
+                                            }
                                             const formatted = values.map(v => {
                                                 if (type === 'N') return v;
-                                                return `'${v.replace(/'/g, "''")}'`;
+                                                return `'${v.replace(/'/g,"''")}'`;
                                             });
-                                            cond = `${field} ${op} (${formatted.join(', ')})`;
+                                            cond = `${field} ${op} (${formatted.join(',')})`;
                                         } else {
                                             if (type !== 'N') {
-                                                value = `'${value.replace(/'/g, "''")}'`;
+                                                value = `'${value.replace(/'/g,"''")}'`;
+                                            } else if (type === 'N' && isNaN(parseFloat(value))) {
+                                                console.warn(`Non-numeric value ignored for field=${field}`);
+                                                return; // Skip non-numeric values for numeric fields
                                             }
                                             cond = `${field} ${op} ${value}`;
                                         }
-                                        parts.push(connector + cond);
+                                        // Append connector only if not the last child and connector is valid
+                                        if (index < children.length - 1 && connector) {
+                                            parts.push(cond+' '+connector);
+                                        } else {
+                                            parts.push(cond);
+                                        }
                                     } else if (child.classList.contains('filter-group-wrapper')) {
                                         const connectorEl = child.querySelector('.connector');
-                                        const connector = connectorEl ? ` ${connectorEl.value} ` : '';
-                                        const innerExpr = FWWebExDataTableFilterPanelExBuildExpression(child.querySelector('.conditions'));
+                                        const connector = connectorEl ? connectorEl.value : '';
+                                        const innerExpr = FWWebExDataTableFilterPanelExBuildExpression___ID_CONTAINER__(child.querySelector('.conditions'));
                                         if (innerExpr) {
-                                            parts.push(connector + `(${innerExpr})`);
+                                            // Append connector only if not the last child and connector is valid
+                                            if (index < children.length - 1 && connector) {
+                                                parts.push(`(${innerExpr}) ${connector}`);
+                                            } else {
+                                                parts.push(`(${innerExpr})`);
+                                            }
                                         }
                                     }
                                 });
-                                return parts.join('');
+                                return parts.join(' ');
                             }
 
+                            // Update preview textarea with current expression
                             function FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__() {
                                 const container = document.getElementById("__ID_CONTAINER___rows");
-                                const expression = FWWebExDataTableFilterPanelExBuildExpression(container);
+                                const expression = FWWebExDataTableFilterPanelExBuildExpression___ID_CONTAINER__(container);
                                 document.getElementById("__ID_CONTAINER___preview").value = expression;
                             }
 
-                            function FWWebExDataTableFilterPanelExAddCondition___ID_CONTAINER__() {
-                                const container = document.getElementById("__ID_CONTAINER___rows");
-                                FWWebExDataTableFilterPanelExAddCondition(container);
+                            // Get preview textarea with current expression
+                            function FWWebExDataTableFilterPanelExGetPreview___ID_CONTAINER__() {
+                                return(document.getElementById("__ID_CONTAINER___preview").value);
                             }
 
-                            function FWWebExDataTableFilterPanelExAddGroup___ID_CONTAINER__() {
-                                const container = document.getElementById("__ID_CONTAINER___rows");
-                                FWWebExDataTableFilterPanelExAddGroup(container);
-                            }
                         endContent
                         cScript:=WebExHelper():StrReplaceEx(;
-                             cScript;
+                            cScript;
                             ,{"__ID_CONTAINER__",cIDContainer};
                             ,{"__FIELDS__",jTargetTableFields:ToJSON()};
                         )
@@ -288,24 +350,25 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                         END WEBEXOBJECT
                         WITH WEBEXOBJECT ::oPanelBodyControls CLASS WebExDiv
                             .:AddClass("mt-2")
-                            WITH WEBEXOBJECT ::oPanelBodyButtonAddCondition CLASS WebExButton ARGS "Add Condition","button"
+                            WITH WEBEXOBJECT ::oPanelBodyButtonAddCondition CLASS WebExButton ARGS "(+)Expr.","button"
                                 .:AddClass("btn btn-sm btn-outline-primary")
-                                .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddCondition_"+cIDContainer+"()")
+                                .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddCondition_"+cIDContainer+"(document.getElementById('"+cIDContainer+"_rows'))")
                             END WEBEXOBJECT
-                            WITH WEBEXOBJECT ::oPanelBodyButtonAddGroup CLASS WebExButton ARGS "Add Group","button"
+                            WITH WEBEXOBJECT ::oPanelBodyButtonAddGroup CLASS WebExButton ARGS "(+)(Expr.)","button"
                                 .:AddClass("btn btn-sm btn-outline-primary ms-2")
-                                .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddGroup_"+cIDContainer+"()")
+                                .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddGroup_"+cIDContainer+"(document.getElementById('"+cIDContainer+"_rows'))")
                             END WEBEXOBJECT
                         END WEBEXOBJECT
                         WITH WEBEXOBJECT ::oPanelBodyPreview CLASS WebExDiv
                             .:AddClass("mt-3")
-                            WITH WEBEXOBJECT ::oPanelBodyPreviewLabal CLASS WebExLabel ARGS "Filter Expression Preview:","Filter Expression Preview:"
+                            WITH WEBEXOBJECT ::oPanelBodyPreviewLabel CLASS WebExLabel ARGS "Filter Expression Preview:","Filter Expression Preview:"
                             END WEBEXOBJECT
                             WITH WEBEXOBJECT ::oPanelBodyPreviewTextArea CLASS WebExTextarea
                                 .:SetFixedID(cIDContainer+"_preview")
                                 .:AddClass("form-control")
                                 .:SetAttr("rows","4")
                                 .:SetAttr("readonly","true")
+                                .:SetAttr("style","margin-bottom: 8px;")
                             END WEBEXOBJECT
                         END WEBEXOBJECT
                     END WEBEXOBJECT
@@ -321,19 +384,38 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                         .:SetAttr("onclick","FWWebExDataTableFilterPanelExApplyFilters_"+cIDContainer+"()")
                     END WEBEXOBJECT
                     beginContent var cScript
+                        // Apply filters to the DataTable
                         function FWWebExDataTableFilterPanelExApplyFilters___ID_CONTAINER__() {
-
                             const container = document.getElementById("__ID_CONTAINER___rows");
-                            const expression = FWWebExDataTableFilterPanelExBuildExpression(container);
+                            const expression = FWWebExDataTableFilterPanelExBuildExpression___ID_CONTAINER__(container);
 
-                            // Helper function to convert jInternalFilter to SQL expression
-                            function buildInternalExpression(filter, fieldsTypes) {
+                            // Validate for missing connectors between conditions
+                            const invalidConnectorPattern = /\)\s*\w+\s*(?:=|\!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s*[^()]+(?=\s*(?:\(|$))/i;
+                            if (invalidConnectorPattern.test(expression)) {
+                                alert("Invalid filter expression: missing logical connector (AND/OR) between conditions.");
+                                return; // Prevent application if missing connectors
+                            }
+
+                            // Validate for starting with AND/OR
+                            if (FWWebExAllTrim(expression).startsWith('AND ') || FWWebExAllTrim(expression).startsWith('OR ')) {
+                                alert("Invalid filter expression: cannot start with AND or OR.");
+                                return; // Prevent application if invalid
+                            }
+
+                            // Validate for ending with AND/OR
+                            if (FWWebExAllTrim(expression).endsWith(' AND') || FWWebExAllTrim(expression).endsWith(' OR')) {
+                                alert("Invalid filter expression: cannot end with AND or OR.");
+                                return;
+                            }
+
+                            // Helper function to convert internal filter to SQL expression
+                            function buildInternalExpression(filter,fieldsTypes) {
                                 if (!fieldsTypes) {
                                     console.warn("Field types not provided for internal filter. Skipping internal filter processing.");
                                     return '';
                                 }
                                 const parts = [];
-                                for (const [field, value] of Object.entries(filter)) {
+                                for (const [field,value] of Object.entries(filter)) {
                                     if (!fieldsTypes[field]) {
                                         console.warn(`Field type for ${field} not found. Skipping this condition.`);
                                         continue;
@@ -342,12 +424,11 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                     let formattedValue;
 
                                     if (type === 'C') { // Character
-                                        formattedValue = `'${value.replace(/'/g, "''")}'`;
+                                        formattedValue = `'${value.replace(/'/g,"''")}'`;
                                     } else if (type === 'N') { // Numeric
                                         formattedValue = value;
                                     } else if (type === 'D') { // Date
-                                        // Assuming value is in a format like "YYYY-MM-DD" or similar
-                                        formattedValue = `'${value.replace(/-/g, '')}'`;
+                                        formattedValue = `'${value.replace(/-/g,'')}'`;
                                     } else if (type === 'L') { // Logical
                                         formattedValue = value === 'T' || value === true ? 'T' : 'F';
                                     } else {
@@ -360,10 +441,10 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 return parts.join(' AND ');
                             }
 
-                            // Parse and process jInternalFilter if provided
+                            // Parse and process internal filter if provided
                             let internalExpression = '';
-                            const jInternalFilter='__JSON_INTERNAL_FILTER__';
-                            const jInternalFieldsAndTypes='__JSON_INTERNAL_FIELDS_AND_TYPES__';
+                            const jInternalFilter = '__JSON_INTERNAL_FILTER__';
+                            const jInternalFieldsAndTypes = '__JSON_INTERNAL_FIELDS_AND_TYPES__';
 
                             if (jInternalFilter && jInternalFilter.trim() !== '') {
                                 try {
@@ -374,16 +455,16 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                             internalExpression = '';
                                         } else {
                                             const fieldsTypes = JSON.parse(jInternalFieldsAndTypes);
-                                            internalExpression = buildInternalExpression(internalFilter, fieldsTypes);
+                                            internalExpression = buildInternalExpression(internalFilter,fieldsTypes);
                                         }
                                     }
                                 } catch (err) {
-                                    console.error("Error parsing jInternalFilter:", err.message);
+                                    console.error("Error parsing jInternalFilter:",err.message);
                                     internalExpression = '';
                                 }
                             }
 
-                            // Combine internalExpression and expression
+                            // Combine internal and user expressions
                             let hasFilter = false;
                             let finalExpression = '';
                             if (internalExpression && expression) {
@@ -399,9 +480,8 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                             // Encode the final expression
                             const encodedExpression = btoa(finalExpression || '');
 
-                            // Ensure jQuery + DataTable are loaded
+                            // Apply to DataTable
                             if (FWWebExHasDataTables()) {
-                                // Apply directly to the table
                                 if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
                                     let table = $("#__ID_TARGET_TABLE__").DataTable();
                                     table.settings()[0].oInit.FWWebExPanelFilterEx = { expression: encodedExpression };
@@ -414,7 +494,6 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 console.error("DataTables plugin is not available. Please check if the JS file has been imported.");
                             }
                             bootstrap.Modal.getInstance(document.getElementById("__ID_PANEL__")).hide();
-
                         }
                     endContent
                     cScript:=WebExHelper():StrReplaceEx(;
