@@ -101,7 +101,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 fieldsTypes[field.name] = field.type;
                             });
                             const operatorsByType = {
-                                'C': ['=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'],
+                                'C': ['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'],
                                 'N': ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN'],
                                 'D': ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN'],
                                 'L': ['=', '!=']

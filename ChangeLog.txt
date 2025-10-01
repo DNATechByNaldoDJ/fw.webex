@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve DataTable filter detection and handling)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add comparison operators for character fields)"
 */
+
+2025-10-01 00:35 UTC naldodj (Add comparison operators for character fields)
+  Add comparison operators for character fields
+    Expanded the list of available operators for character ('C') field types to include '>', '<', '>=', and '<='.
+    This allows for more flexible filtering options in the datatable filter panel.
+      * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
 
 2025-09-30 19:45 UTC naldodj (Improve DataTable filter detection and handling)
   % Improve DataTable filter detection and handling
