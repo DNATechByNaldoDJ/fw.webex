@@ -8,7 +8,7 @@
 ![fwwebex_banner](https://github.com/user-attachments/assets/64a542a9-97f3-47b0-81f9-1655374a1a90)
 
 --
-**FWWebEX** é um microframework escrito em ADVPL/TLPP que permite criar interfaces web responsivas, modernas e funcionais **diretamente do seu código no Protheus**, sem precisar de Angular, React ou qualquer outra parafernália.
+**FWWebEX** é um microframework escrito em ADVPL/TLPP que permite criar interfaces web responsivas, modernas e funcionais **diretamente do seu código TOTVS (Microsiga) Protheus**, sem precisar de Angular, React ou qualquer outra parafernália.
 
 > **Do Protheus para o browser. Simples. Direto. Web.**
 
