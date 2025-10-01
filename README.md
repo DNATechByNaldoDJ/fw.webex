@@ -18,7 +18,7 @@
 
 A TOTVS está indo para o web. Mas o desenvolvedor ADVPL n&atilde;o precisa (re)aprender Angular ou TypeScript só pra fazer uma tela de cadastro ou uma tabela com ação.
 
-**FWWebEX** nasceu da ideia de manter o espírito do desenvolvimento no Protheus:
+**FWWebEX** nasceu da ideia de manter o espírito do desenvolvimento no TOTVS (Microsiga) Protheus:
 
 - Rápido
 - Sem burocracia
