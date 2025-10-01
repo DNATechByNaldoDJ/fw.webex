@@ -1,4 +1,4 @@
-# FWWebEX :: Framework Web Extensível para TOTVS (Microsiga) Protheus :: ADVPL/TLPP 🌟
+# FWWebEx :: Framework Web Extensível para TOTVS (Microsiga) Protheus :: ADVPL/TLPP 🌟
 
 ## ⭐Gostou do projeto? Deixa uma estrelinha(⭐) aí no topo! Isso ajuda muito!
 
@@ -8,7 +8,7 @@
 ![fwwebex_banner](https://github.com/user-attachments/assets/64a542a9-97f3-47b0-81f9-1655374a1a90)
 
 --
-**FWWebEX** é um microframework escrito em ADVPL/TLPP que permite criar interfaces web responsivas, modernas e funcionais **diretamente do seu código TOTVS (Microsiga) Protheus**, sem precisar de Angular, React ou qualquer outra parafernália.
+**FWWebEx** é um microframework escrito em ADVPL/TLPP que permite criar interfaces web responsivas, modernas e funcionais **diretamente do seu código TOTVS (Microsiga) Protheus**, sem precisar de Angular, React ou qualquer outra parafernália.
 
 > **Do TOTVS (Microsiga) Protheus para o browser. Simples. Direto. Web.**
 
@@ -18,7 +18,7 @@
 
 A TOTVS está indo para o web. Mas o desenvolvedor ADVPL n&atilde;o precisa (re)aprender Angular ou TypeScript só pra fazer uma tela de cadastro ou uma tabela com ação.
 
-**FWWebEX** nasceu da ideia de manter o espírito do desenvolvimento no TOTVS (Microsiga) Protheus:
+**FWWebEx** nasceu da ideia de manter o espírito do desenvolvimento no TOTVS (Microsiga) Protheus:
 
 - Rápido
 - Sem burocracia
@@ -268,7 +268,7 @@ Utilizamos padrão Harbour: [How to Participate](https://github.com/naldodj/nald
 ## ✨ Visão
 
 > Acreditamos que dá pra evoluir mantendo o que o Protheus tem de melhor: a produtividade.
-> FWWebEX é o passo que faltava pra quem quer ir pro web **sem perder a alma ADVPL**.
+> FWWebEx é o passo que faltava pra quem quer ir pro web **sem perder a alma ADVPL**.
 
 ---
 
