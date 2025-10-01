@@ -1,4 +1,4 @@
-# FWWebEX — Framework Web Extensível para TOTVS (Microsiga) Protheus :: ADVPL/TLPP 🌟
+# FWWebEX :: Framework Web Extensível para TOTVS (Microsiga) Protheus :: ADVPL/TLPP 🌟
 
 ## ⭐Gostou do projeto? Deixa uma estrelinha(⭐) aí no topo! Isso ajuda muito!
 
