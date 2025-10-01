@@ -216,7 +216,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         //Internal Filter (internalFilter), quando extendedFilterExpression vira em extendedFilterExpression
                         const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
                         let internalFilter = {};
-                        if (!hasExtendedFilter.FWWebExPanelFilterEx) {
+                        if (!hasExtendedFilter?.FWWebExPanelFilterEx) {
                             try {
                                 internalFilter = JSON.parse('__INTERNAL_FILTER__');
                             } catch (err) {
@@ -232,7 +232,7 @@ static procedure FWWebExExample_020(cHTML as character) as character
                         codAlias: 'SRA',
                         yesFields: '__YES_FIELDS__',
                         Filter: Object.assign({}, internalFilter, dynamicFilter, extraFilter, searchFilter),
-                        Filter64: hasExtendedFilter.FWWebExPanelFilterEx ? extendedFilterExpression : '',
+                        Filter64: hasExtendedFilter?.FWWebExPanelFilterEx ? extendedFilterExpression : '',
                         PageNumber: pageNumber,
                         RowspPage: rowsPerPage,
                         cEmp: '99',
@@ -1079,7 +1079,7 @@ static function TableResult(jTableFields as json) as character
     WITH WEBEXOBJECT oTableResult CLASS WebExTable ARGS "FWWebExExample_020"
         .:AddClass("display compact nowrap")
         .:SetFixedID("FWWebExExample_020")
-        aEval(jTableFields["fields"],{|jField|oTableResult:AddColumnHeader(jField["label"])})
+        aEval(jTableFields["fields"],{|jField|oTableResult:AddColumnHeader(jField["label"],jField["name"])})
         oTableResult:BuildHeader()
     END WEBEXOBJECT
     cTableResultHTML:=oTableResult:RenderHtml()

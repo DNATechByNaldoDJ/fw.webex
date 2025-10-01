@@ -175,10 +175,6 @@ method New(cType) class WebExControl
     ::jAttrs:=JSONObject():New()
     ::jChildren:=JSONObject():New()
     ::jContents:=JSONObject():New()
-    ::SetID(::NewID())
-    ::SetType(cType)
-    ::SetContent(FWWEBEX_WEB_NULL_CONTENT)
-    ::SetFWWebExTmpPath()
     ::lChartEnabled:=__jFeatures["lChartEnabled"]
     ::lIconsEnabled:=__jFeatures["lIconsEnabled"]
     ::lApexChartEnabled:=__jFeatures["lApexChartEnabled"]
@@ -188,6 +184,10 @@ method New(cType) class WebExControl
     ::lRenderChildren:=.T.
     ::lExternalAssets:=.F.
     _Super:New()
+    ::SetID(::NewID())
+    ::SetType(cType)
+    ::SetContent(FWWEBEX_WEB_NULL_CONTENT)
+    ::SetFWWebExTmpPath()
 return(self)
 
 method GetID() class WebExControl
@@ -343,9 +343,11 @@ method DelAttrValue(cAttr,cAttrValue,aAttr,lDelAttrValue) class WebExControl
 
     if (lDelAttrValue)
         cNewValue:=""
-        oForEach:=ForEach():New(aAttr,{|k as numeric,v as character,i as numeric|;
-            cNewValue+=if(!(v==cAttrValue),v,""),;
-            cNewValue+=if(!oForEach:__enumIsLast()," ","");
+        oForEach:=ForEach():New(;
+            aAttr;
+            ,{|k as numeric,v as character,i as numeric|;
+                cNewValue+=if(!(v==cAttrValue),v,""),;
+                cNewValue+=if(!oForEach:__enumIsLast()," ","");
             },;
             .F.;
         )
@@ -439,22 +441,25 @@ return(::cFWWebExTmpPath)
 method SetFWWebExTmpPath(cFWWebExTmpPath)  class WebExControl
     local aUserInfo as array
     local cEnvServer as character
+    local cBackSlash:=BACK_SLASH as character
+    local cFowardSlash:=FORWARD_SLASH as character
+
     local nUserInfo as numeric
     paramtype 1 var cFWWebExTmpPath as character optional default FWWEBEX_WEB_TMP_PATH
     ::cFWWebExTmpPath:=cFWWebExTmpPath
     if ((Type("cEmpAnt")=="C").and.(!Empty(cEmpAnt)))
-        if (Right(::cFWWebExTmpPath,1)!="\")
-            ::cFWWebExTmpPath+="\"
+        if (Right(::cFWWebExTmpPath,1)!=cBackSlash)
+            ::cFWWebExTmpPath+=cBackSlash
         endif
         ::cFWWebExTmpPath+=AllTrim(cEmpAnt)
-        ::cFWWebExTmpPath+="\"
+        ::cFWWebExTmpPath+=cBackSlash
     endif
     if ((Type("__cUserID")=="C").and.(!Empty(AllTrim(__cUserID))))
-        if (Right(::cFWWebExTmpPath,1)!="\")
-            ::cFWWebExTmpPath+="\"
+        if (Right(::cFWWebExTmpPath,1)!=cBackSlash)
+            ::cFWWebExTmpPath+=cBackSlash
         endif
         ::cFWWebExTmpPath+=AllTrim(__cUserID)
-        ::cFWWebExTmpPath+="\"
+        ::cFWWebExTmpPath+=cBackSlash
     endif
     if (Empty(__cTmpPathUserInfo))
         aUserInfo:=GetUserInfoArray()
@@ -476,21 +481,21 @@ method SetFWWebExTmpPath(cFWWebExTmpPath)  class WebExControl
             )
             if (nUserInfo>0)
                 __cTmpPathUserInfo:=AllTrim(aUserInfo[nUserInfo][2])
-                __cTmpPathUserInfo+="\"
+                __cTmpPathUserInfo+=cBackSlash
                 __cTmpPathUserInfo+=AllTrim(aUserInfo[nUserInfo][1])
-                __cTmpPathUserInfo+="\"
+                __cTmpPathUserInfo+=cBackSlash
             endif
         endif
         FWFreeArray(@aUserInfo)
     endif
     if (!Empty(__cTmpPathUserInfo))
-        if (Right(::cFWWebExTmpPath,1)!="\")
-            ::cFWWebExTmpPath+="\"
+        if (Right(::cFWWebExTmpPath,1)!=cBackSlash)
+            ::cFWWebExTmpPath+=cBackSlash
         endif
         ::cFWWebExTmpPath+=__cTmpPathUserInfo
     endif
     if (IsSrvUnix())
-        ::cFWWebExTmpPath:=StrTran(::cFWWebExTmpPath,"\","/")
+        ::cFWWebExTmpPath:=StrTran(::cFWWebExTmpPath,cBackSlash,cFowardSlash)
     endif
     ::cFWWebExTmpPath:=Lower(::cFWWebExTmpPath)
     if (!lIsDir(::cFWWebExTmpPath))
@@ -1521,7 +1526,7 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                     const extendedFilterExpression = extendedFilter["expression"] || '';
                     const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
 
-                    if (hasExtendedFilter.FWWebExPanelFilterEx && Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
+                    if (hasExtendedFilter?.FWWebExPanelFilterEx && Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
                         // Clear all filters except ExtendedFilter itself
                         Object.keys(filters).forEach(key => {
                             if (key !== 'FWWebExPanelFilterEx') {

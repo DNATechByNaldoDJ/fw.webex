@@ -12,25 +12,11 @@ Released to Public Domain.
 
     #DEFINE _FW_WEB_EX_TH
 
-    #xcommand WITH WEBEXOBJECT [<obj>] => [<obj>:=] WebExContext():ObjBegin([<obj>])
-    #xcommand WITH WEBEXOBJECT [<obj>] CLASS <class> [TYPE <*type*>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<(type)>]))
-    #xcommand WITH WEBEXOBJECT [<obj>] CLASS <class> [<arg: ARG, ARGS> <Args,...>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<Args>]))
-    #xcommand END WEBEXOBJECT [<noaddchild: NOADDCHILD>] => (WebExContext():ObjEnd(if(<.noaddchild.>,.F.,.T.)),if(Type("__oWebExContextObj__")=="O",(__oWebExContextObj__:=nil),nil))
-
-    #xcommand WEBEXOBJECT CLEAN => WebExContext():ObjClean()
-
-    #xtranslate .this => (__oWebExContextObj__:=WebExContext():ObjGet())
-    #xtranslate .:this => (__oWebExContextObj__:=WebExContext():ObjGet())
-    #xtranslate .:<property_method> => (__oWebExContextObj__:=WebExContext():ObjGet(),__oWebExContextObj__:<property_method>)
-
-    #define FWWEBEX_ID_MAX_SIZE 10
-
-    #define FWWEBEX_WEB_TMP_PATH "\web\fwwebex\tmp\"
-    #define FWWEBEX_WEB_NULL_CONTENT "__NULL__"
-    #define FWWEBEX_EXTERNAL_ASSETS_IS_ENABLED .T.
-
     #IFNDEF _PROTHEUS_CH
-        #include "totvs.ch"
+        #IFNDEF _TOTVS_CH
+            #DEFINE _TOTVS_CH
+            #include "totvs.ch"
+        #ENDIF
     #ENDIF
 
     #IFNDEF _DIRECTRY_CH
@@ -51,6 +37,34 @@ Released to Public Domain.
     #IFNDEF _PARMTYPE_CH
         #DEFINE _PARMTYPE_CH
         #include "parmtype.ch"
+    #ENDIF
+
+    #xcommand WITH WEBEXOBJECT [<obj>] => [<obj>:=] WebExContext():ObjBegin([<obj>])
+    #xcommand WITH WEBEXOBJECT [<obj>] CLASS <class> [TYPE <*type*>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<(type)>]))
+    #xcommand WITH WEBEXOBJECT [<obj>] CLASS <class> [<arg: ARG, ARGS> <Args,...>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<Args>]))
+    #xcommand END WEBEXOBJECT [<noaddchild: NOADDCHILD>] => (WebExContext():ObjEnd(if(<.noaddchild.>,.F.,.T.)),if(Type("__oWebExContextObj__")=="O",(__oWebExContextObj__:=nil),nil))
+
+    #xcommand WEBEXOBJECT CLEAN => WebExContext():ObjClean()
+
+    #xtranslate .this => (__oWebExContextObj__:=WebExContext():ObjGet())
+    #xtranslate .:this => (__oWebExContextObj__:=WebExContext():ObjGet())
+    #xtranslate .:<property_method> => (__oWebExContextObj__:=WebExContext():ObjGet(),__oWebExContextObj__:<property_method>)
+
+    #define FWWEBEX_ID_MAX_SIZE 10
+
+    #define FWWEBEX_WEB_TMP_PATH "\web\fwwebex\tmp\"
+    #define FWWEBEX_WEB_NULL_CONTENT "__NULL__"
+    #define FWWEBEX_EXTERNAL_ASSETS_IS_ENABLED .T.
+
+    #IFNDEF BACK_SLASH
+        #define BACK_SLASH chr(92)
+    #ENDIF
+
+    #IFNDEF FORWARD_SLASH
+        #define FORWARD_SLASH chr(47)
+        #IFNDEF SLASH
+            #define SLASH FORWARD_SLASH
+        #ENDIF
     #ENDIF
 
 #ENDIF

@@ -82,7 +82,9 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
                                 if ($.fn.DataTable.isDataTable("#__ID_TARGET_TABLE__")) {
                                     let table = $("#__ID_TARGET_TABLE__").DataTable();
                                     let tableInfo = table.page.info();
-                                    let isServerSide = table.settings()[0].oFeatures.bServerSide;
+                                    // Disable ServerSide if FWWebExPanelFilterEx
+                                    const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
+                                    let isServerSide = !hasExtendedFilter?.FWWebExPanelFilterEx && table.settings()[0].oFeatures.bServerSide;
                                     // Reset search settings when term is empty
                                     if (!term) {
                                         table.settings()[0].oInit.FWWebExSearchFilter = {}; // Clear custom search filter
@@ -104,8 +106,25 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
                                         table.settings()[0].oInit.FWWebExSearchFilter = searchFilter;
                                         table.ajax.reload();
                                     } else {
-                                        // Client-side search using DataTable's built-in global search
-                                        table.search(term).draw();
+                                        // Client-side search
+                                        // Split the search term by ";" into multiple tokens
+                                        const terms = term
+                                            .split(";")
+                                            .map(t => t.trim().toLowerCase())
+                                            .filter(t => t.length > 0); // remove empty entries
+
+                                        table.rows().every(function () {
+                                            const rowData = this.data();
+
+                                            // Check if any field in the row matches ANY of the terms (local filtering)
+                                            const match = Object.values(rowData).some(val => {
+                                                const strVal = String(val).toLowerCase();
+                                                return terms.some(t => strVal.includes(t));
+                                            });
+
+                                            // Show or hide the row locally based on the match result
+                                            $(this.node()).toggle(match);
+                                        });
                                     }
                                 } else {
                                     console.warn("Target table #__ID_TARGET_TABLE__ not found to apply search.");

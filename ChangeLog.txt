@@ -2,8 +2,20 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add comparison operators for character fields)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Enhance DataTable filter and search with multi-term support)"
 */
+
+2025-10-01 14:48 UTC naldodj (Enhance DataTable filter and search with multi-term support)
+  % Enhance DataTable filter and search with multi-term support
+      Improved client-side filtering and searching in DataTable components to support multiple search terms separated by semicolons.
+      Added data-field attribute to table headers for precise column filtering.
+      Refactored temporary path handling for better cross-platform compatibility and updated usages to handle optional chaining for extended filters.
+        * include/fw.webex.th
+        * src/fw.webex/core/component/fw.webex.datatable.filter.tlpp
+        * src/fw.webex/core/component/fw.webex.datatable.search.tlpp
+        * src/fw.webex/core/component/fw.webex.table.tlpp
+        * src/fw.webex/core/control/fw.webex.control.tlpp
+        * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
 
 2025-10-01 00:35 UTC naldodj (Add comparison operators for character fields)
   Add comparison operators for character fields

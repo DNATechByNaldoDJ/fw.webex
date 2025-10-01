@@ -38,7 +38,7 @@ class WebExTable from WebExControl
     protected data oTableScript as object
 
     public method New(cTableTitle) as object
-    public method AddColumnHeader(cTableColummLabel as character) as object
+    public method AddColumnHeader(cTableColummLabel as character,cTableColummFieldName as character) as object
     public method BuildHeader() as object
     public method AddCell(xTableCellValue as variant) as object
     public method BuildBodyRow() as object
@@ -67,10 +67,12 @@ method New(cTableTitle) class WebExTable
     ::SetTableTitle()
 return(self)
 
-method AddColumnHeader(cTableColummLabel) class WebExTable
+method AddColumnHeader(cTableColummLabel,cTableColummFieldName) class WebExTable
     local oTH:=WebExTH():New() as object
     paramtype 1 var cTableColummLabel as character
+    paramtype 2 var cTableColummFieldName as character optional default cTableColummLabel
     oTH:SetContent(cTableColummLabel)
+    oTH:SetAttr("data-field",cTableColummFieldName)
     ::jTableHeader[oTH:GetID()]:=oTH
 return(oTH)
 
