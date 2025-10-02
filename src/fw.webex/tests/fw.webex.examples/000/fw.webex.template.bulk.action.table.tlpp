@@ -128,7 +128,7 @@ method RenderHTML() class WebExTemplateBulkActionTable
                                 END WEBEXOBJECT
                                 for i:=1 To Len(::jTemplateBulkActionTableColumns)
                                     WITH WEBEXOBJECT CLASS WebExControl TYPE th
-                                        .:SetAttr("name",::jTemplateBulkActionTableColumns[i]["property"])
+                                        .:SetAttr("data-field",::jTemplateBulkActionTableColumns[i]["property"])
                                         .:SetContent(::jTemplateBulkActionTableColumns[i]["label"])
                                     END WEBEXOBJECT
                                 next i
