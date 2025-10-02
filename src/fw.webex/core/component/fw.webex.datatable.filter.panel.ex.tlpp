@@ -28,6 +28,7 @@ class WebExDataTableFilterPanelEx from WebExDiv
     protected data oPanelContent as object
 
     protected data oPanelHeader as object
+    protected data oPanelHeaderIcon as object
     protected data oPanelHeaderTitle as object
     protected data oPanelHeaderButtonClose as object
 
@@ -82,6 +83,9 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                 .:AddClass("modal-content")
                 WITH WEBEXOBJECT ::oPanelHeader CLASS WebExDiv
                     .:AddClass("modal-header")
+                    WITH WEBEXOBJECT ::oPanelHeaderIcon CLASS WebExIcon ARGS "fa-filter","fontawesome"
+                        .:AddClass("modal-title me-1")
+                    END WEBEXOBJECT
                     WITH WEBEXOBJECT ::oPanelHeaderTitle CLASS WebExH5
                         .:AddClass("modal-title")
                         .:SetContent(::cTitle)
@@ -165,7 +169,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 if (newVal === '') {
                                     const item = select.closest('.filter-condition, .filter-group-wrapper');
                                     if (item && item.nextElementSibling) {
-                                        alert("Cannot delete/clear AND/OR unless the subsequent expression has been deleted.");
+                                        FWWebExAlert("Cannot delete/clear AND/OR unless the subsequent expression has been deleted.", 'Alert', 'warning', { dismissible: true });
                                         select.value = select.dataset.oldValue || 'AND';
                                         return;
                                     }
@@ -179,11 +183,34 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 const context = FWWebExDataTableFilterPanelExContext___ID_CONTAINER__();
                                 const children = Array.from(container.children);
                                 const preview = FWWebExAllTrim(FWWebExDataTableFilterPanelExGetPreview___ID_CONTAINER__());
-                                if (preview && children.length > 0) {
+                                if (children.length > 0) {
                                     const lastChild = children[children.length - 1];
-                                    const lastConnector = lastChild.querySelector('.connector');
+                                    if (lastChild.classList.contains('filter-condition')) {
+                                        const field = lastChild.querySelector('.field').value;
+                                        const op = lastChild.querySelector('.operator').value;
+                                        const value = lastChild.querySelector('.value').value.trim();
+                                        if (!field || !op || !value) {
+                                            FWWebExAlert("Complete the previous condition before adding a new one.", 'Alert','warning', { dismissible: true });
+                                            return;
+                                        }
+                                    } else if (lastChild.classList.contains('filter-group-wrapper')) {
+                                        const innerConditions = lastChild.querySelector('.conditions');
+                                        if (innerConditions.children.length === 0) {
+                                            FWWebExAlert("Add at least one condition to the previous group before adding a new one.", 'Alert','warning', { dismissible: true });
+                                            return;
+                                        }
+                                    }
+                                }
+                                if ((preview && children.length > 0) || (!preview && children.length - 2 > 0)) {
+                                    const lastChild = children[children.length - 1];
+                                    let lastConnector;
+                                    if (lastChild.classList.contains('filter-condition')) {
+                                        lastConnector = lastChild.querySelector(':scope > .connector');
+                                    } else if (lastChild.classList.contains('filter-group-wrapper')) {
+                                        lastConnector = lastChild.querySelector('.mt-2 .connector');
+                                    }
                                     if (!lastConnector || lastConnector.value === '') {
-                                        alert("Inconsistency: there must be an AND or OR operator before adding a new condition or Group.");
+                                        FWWebExAlert("Inconsistency: there must be an AND or OR operator before adding a new condition or Group.", 'Alert','warning', { dismissible: true });
                                         return;
                                     }
                                 }
@@ -215,7 +242,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 operatorSelect.addEventListener('change',FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
                                 const valueEl = row.querySelector('.value');
                                 valueEl.addEventListener('input',FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__);
-                                const connectorEl = row.querySelector('.connector');
+                                const connectorEl = row.querySelector(':scope > .connector');
                                 if (connectorEl) connectorEl.addEventListener('change',FWWebExDataTableFilterPanelExHandleConnectorChange___ID_CONTAINER__);
                                 row.querySelector('.remove-btn').addEventListener('click',() => { row.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
                                 if (selectField.value) FWWebExDataTableFilterPanelExUpdateField___ID_CONTAINER__(row);
@@ -226,33 +253,63 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                             function FWWebExDataTableFilterPanelExAddGroup___ID_CONTAINER__(container) {
                                 const children = Array.from(container.children);
                                 const preview = FWWebExAllTrim(FWWebExDataTableFilterPanelExGetPreview___ID_CONTAINER__());
-                                if (preview && children.length > 0) {
+                                if (children.length > 0) {
                                     const lastChild = children[children.length - 1];
-                                    const lastConnector = lastChild.querySelector('.connector');
+                                    if (lastChild.classList.contains('filter-condition')) {
+                                        const field = lastChild.querySelector('.field').value;
+                                        const op = lastChild.querySelector('.operator').value;
+                                        const value = lastChild.querySelector('.value').value.trim();
+                                        if (!field || !op || !value) {
+                                            FWWebExAlert("Complete the previous condition before adding a new one.", 'Alert' ,'warning', { dismissible: true });
+                                            return;
+                                        }
+                                    } else if (lastChild.classList.contains('filter-group-wrapper')) {
+                                        const innerConditions = lastChild.querySelector('.conditions');
+                                        if (innerConditions.children.length === 0) {
+                                            FWWebExAlert("Add at least one condition to the previous group before adding a new one.", 'Alert' ,'warning', { dismissible: true });
+                                            return;
+                                        }
+                                    }
+                                }
+                                if ((preview && children.length > 0) || (!preview && children.length - 3 > 0)) {
+                                    const lastChild = children[children.length - 1];
+                                    let lastConnector;
+                                    if (lastChild.classList.contains('filter-condition')) {
+                                        lastConnector = lastChild.querySelector(':scope > .connector');
+                                    } else if (lastChild.classList.contains('filter-group-wrapper')) {
+                                        lastConnector = lastChild.querySelector('.mt-2 .connector');
+                                    }
                                     if (!lastConnector || lastConnector.value === '') {
-                                        alert("Inconsistency: there must be an AND or OR operator before adding a new condition or Group.");
+                                        FWWebExAlert("Inconsistency: there must be an AND or OR operator before adding a new condition or Group.", 'Alert' , 'warning', { dismissible: true });
                                         return;
                                     }
                                 }
                                 const wrapper = document.createElement('div');
                                 wrapper.className = 'filter-group-wrapper mb-2';
+                                wrapper.setAttribute("style", "display:flex; gap:1px; align-items:center;");
                                 const group = document.createElement('div');
                                 group.className = 'filter-group border p-2';
+                                group.setAttribute("style", "flex:1;");
                                 group.innerHTML = `
                                     <div class="conditions"></div>
-                                    <div class="mt-2">
+                                    <div class="mt-2 d-flex">
                                         <button class="btn btn-sm btn-outline-primary add-condition">(+)Expr.</button>
                                         <button class="btn btn-sm btn-outline-primary add-group ms-1">(+)(Expr.)</button>
-                                        <button class="btn btn-sm btn-outline-danger remove-group ms-1">(-)(Expr.)</button>
+                                        <select class="form-select connector ms-1" style="max-width: 95px;">
+                                            <option value=""></option>
+                                            <option>AND</option>
+                                            <option>OR</option>
+                                        </select>
+                                        <button class="btn btn-sm btn-outline-danger remove-btn ms-1">x</button>
                                     </div>
                                 `;
                                 wrapper.appendChild(group);
                                 container.appendChild(wrapper);
-                                const connectorEl = wrapper.querySelector('.connector');
-                                if (connectorEl) connectorEl.addEventListener('change',FWWebExDataTableFilterPanelExHandleConnectorChange___ID_CONTAINER__);
                                 group.querySelector('.add-condition').addEventListener('click',() => { FWWebExDataTableFilterPanelExAddCondition___ID_CONTAINER__(group.querySelector('.conditions')); });
                                 group.querySelector('.add-group').addEventListener('click',() => { FWWebExDataTableFilterPanelExAddGroup___ID_CONTAINER__(group.querySelector('.conditions')); });
-                                group.querySelector('.remove-group').addEventListener('click',() => { wrapper.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
+                                group.querySelector('.remove-btn').addEventListener('click',() => { wrapper.remove(); FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__(); });
+                                const connectorEl = group.querySelector('.mt-2 .connector');
+                                if (connectorEl) connectorEl.addEventListener('change',FWWebExDataTableFilterPanelExHandleConnectorChange___ID_CONTAINER__);
                                 FWWebExDataTableFilterPanelExUpdatePreview___ID_CONTAINER__();
                             }
 
@@ -263,7 +320,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 const children = Array.from(container.children);
                                 children.forEach((child,index) => {
                                     if (child.classList.contains('filter-condition')) {
-                                        const connectorEl = child.querySelector('.connector');
+                                        const connectorEl = child.querySelector(':scope > .connector');
                                         const connector = connectorEl ? connectorEl.value : '';
                                         const field = child.querySelector('.field').value;
                                         const op = child.querySelector('.operator').value;
@@ -311,7 +368,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                             parts.push(cond);
                                         }
                                     } else if (child.classList.contains('filter-group-wrapper')) {
-                                        const connectorEl = child.querySelector('.connector');
+                                        const connectorEl = child.querySelector('.mt-2 .connector');
                                         const connector = connectorEl ? connectorEl.value : '';
                                         const innerExpr = FWWebExDataTableFilterPanelExBuildExpression___ID_CONTAINER__(child.querySelector('.conditions'));
                                         if (innerExpr) {
@@ -392,19 +449,19 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                             // Validate for missing connectors between conditions
                             const invalidConnectorPattern = /\)\s*\w+\s*(?:=|\!=|>|<|>=|<=|LIKE|NOT LIKE|IN|NOT IN)\s*[^()]+(?=\s*(?:\(|$))/i;
                             if (invalidConnectorPattern.test(expression)) {
-                                alert("Invalid filter expression: missing logical connector (AND/OR) between conditions.");
+                                FWWebExAlert("Invalid filter expression: missing logical connector (AND/OR) between conditions.", 'Alert' , 'warning', { dismissible: true });
                                 return; // Prevent application if missing connectors
                             }
 
                             // Validate for starting with AND/OR
                             if (FWWebExAllTrim(expression).startsWith('AND ') || FWWebExAllTrim(expression).startsWith('OR ')) {
-                                alert("Invalid filter expression: cannot start with AND or OR.");
+                                FWWebExAlert("Invalid filter expression: cannot start with AND or OR.", 'Alert' ,'warning', { dismissible: true });
                                 return; // Prevent application if invalid
                             }
 
                             // Validate for ending with AND/OR
                             if (FWWebExAllTrim(expression).endsWith(' AND') || FWWebExAllTrim(expression).endsWith(' OR')) {
-                                alert("Invalid filter expression: cannot end with AND or OR.");
+                                FWWebExAlert("Invalid filter expression: cannot end with AND or OR.", 'Alert' ,'warning', { dismissible: true });
                                 return;
                             }
 

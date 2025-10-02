@@ -2,8 +2,18 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Use data-field attribute for table column headers)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Replace alert() with FWWebExAlert and improve filter panel UX)"
 */
+
+2025-10-02 20:11 UTC naldodj (Replace alert() with FWWebExAlert and improve filter panel UX)
+  * Replace alert() with FWWebExAlert and improve filter panel UX
+    Replaces all alert() calls with FWWebExAlert for consistent Bootstrap-styled modals.
+    Adds a new FWWebExAlert helper to fw.webex.page.tlpp.
+    Updates example 016 to use FWWebExAlert for invalid input notification.
+      * src/fw.webex/core/layout/fw.webex.page.tlpp
+      * src/fw.webex/tests/fw.webex.examples/016/fw.webex.example.016.tlpp
+    ! Improves filter panel logic in fw.webex.datatable.filter.panel.ex.tlpp to validate conditions and connectors before adding new ones, and updates UI for better usability.
+      * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
 
 2025-10-02 13:58 UTC naldodj (Use data-field attribute for table column headers)
   Use data-field attribute for table column headers

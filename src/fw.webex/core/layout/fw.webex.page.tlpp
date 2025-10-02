@@ -383,17 +383,170 @@ method New(cPageTitle) class WebExPage
         ***************************************************************************************************************************
         //Helper Tools
         beginContent var cPageScript
-            /*FWWebExDecodeHTMLEntities*/
+            /** Helper function
+            * Creates and displays a customizable modal dialog using Bootstrap styling, similar to WebExDataTableFilterPanelEx.
+            * @param {string} message - The message or HTML content to display in the modal body (short message or detailed text).
+            * @param {string} [title='Alert'] - The title to display in the modal header.
+            * @param {string} [type='primary'] - The modal type for styling (e.g., 'primary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'secondary').
+            * @param {Object} [options] - Optional configuration object.
+            * @param {boolean} [options.autoClose=false] - Whether the modal should close automatically.
+            * @param {number} [options.autoCloseDelay=5000] - Delay in milliseconds before auto-closing (if autoClose is true).
+            * @param {boolean} [options.dismissible=true] - Whether the modal includes a close button and is dismissible by backdrop/ESC.
+            * @param {HTMLElement} [options.target=document.body] - The DOM element where the modal will be appended.
+            * @param {boolean} [options.detailed=false] - Whether to display the message in a textarea for detailed content.
+            * @returns {HTMLElement} - The created modal element for further manipulation.
+            ********************************************************************************************************************************************
+            Example of usage:
+            // Link message example
+            FWWebExAlert('Alert with link <a href="#" class="alert-link">click here</a>.', 'Warning', 'warning', { dismissible: true });
+            // Short message example
+            FWWebExAlert('This is a test alert at 03:50 PM -03 on October 02, 2025!', 'Success Alert', 'success', { autoClose: true, autoCloseDelay: 3000 });
+            // Detailed message example
+            const detailedMessage = `This is a very long message to demonstrate the textarea feature. It includes multiple lines of text to show how the modal adapts to detailed content. You can add as much text as needed here, and it will be displayed in a resizable textarea for better readability. This is especially useful for error messages or detailed notifications.`;
+            FWWebExAlert(detailedMessage, 'Detailed Alert', 'info', { detailed: true });
+            ********************************************************************************************************************************************
+            */
+            function FWWebExAlert(message, title = 'Alert', type = 'primary', options = {}) {
+                // Default configurations
+                const defaultOptions = {
+                    autoClose: false,
+                    autoCloseDelay: 5000,
+                    dismissible: true,
+                    target: document.body,
+                    detailed: false
+                };
+                const settings = { ...defaultOptions, ...options };
+
+                // Validate input
+                if (!message || typeof message !== 'string') {
+                    console.error('FWWebExAlert: Message is required and must be a string.');
+                    return null;
+                }
+                if (!['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'].includes(type)) {
+                    console.warn(`FWWebExAlert: Invalid type '${type}'. Defaulting to 'primary'.`);
+                    type = 'primary';
+                }
+                if (!settings.target || !settings.target.appendChild) {
+                    console.error('FWWebExAlert: Invalid target element. Using document.body.');
+                    settings.target = document.body;
+                }
+
+                // Map alert types to Bootstrap icons
+                const iconMap = {
+                    primary: 'bi-info-circle-fill',
+                    secondary: 'bi-info-circle-fill',
+                    success: 'bi-check-circle-fill',
+                    danger: 'bi-exclamation-circle-fill',
+                    warning: 'bi-exclamation-triangle-fill',
+                    info: 'bi-info-circle-fill',
+                    light: 'bi-info-circle-fill',
+                    dark: 'bi-info-circle-fill'
+                };
+
+                try {
+                    // Generate unique ID for the modal
+                    const modalId = 'fwwebex-alert-modal-' + Date.now();
+                    const dialogId = modalId + '-dialog';
+                    const contentId = modalId + '-content';
+
+                    // Create the modal structure with larger size
+                    const modalDiv = document.createElement('div');
+                    modalDiv.id = modalId;
+                    modalDiv.className = `modal fade ${settings.dismissible ? '' : 'modal-static'}`;
+                    modalDiv.setAttribute('tabindex', '-1');
+                    modalDiv.setAttribute('role', 'dialog');
+                    modalDiv.style.display = 'block'; // Ensure visibility
+
+                    // Determine modal body content
+                    let modalBodyContent = '';
+                    if (settings.detailed && message.length > 100) { // Threshold for detailed view
+                        modalBodyContent = `
+                            <textarea class="form-control" rows="5" readonly>${message}</textarea>
+                        `;
+                    } else {
+                        modalBodyContent = `<p>${message}</p>`;
+                    }
+
+                    modalDiv.innerHTML = `
+                        <div class="modal-dialog modal-dialog-centered modal-lg" id="${dialogId}" role="document">
+                            <div class="modal-content" id="${contentId}">
+                                <div class="modal-header bg-${type} text-white">
+                                    <h5 class="modal-title"><i class="bi ${iconMap[type]} me-2"></i>${title}</h5>
+                                    ${settings.dismissible ? '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' : ''}
+                                </div>
+                                <div class="modal-body">
+                                    ${modalBodyContent}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-${type}" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add the modal to the DOM
+                    settings.target.appendChild(modalDiv);
+
+                    // Check if Bootstrap is available
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        // Initialize the modal
+                        const bsModal = new bootstrap.Modal(modalDiv, {
+                            backdrop: settings.dismissible ? 'static' : true,
+                            keyboard: settings.dismissible,
+                            focus: true
+                        });
+
+                        // Show the modal
+                        bsModal.show();
+
+                        // If autoClose is enabled, close the modal after the delay
+                        if (settings.autoClose) {
+                            setTimeout(() => {
+                                bsModal.hide();
+                            }, settings.autoCloseDelay);
+                        }
+
+                        // Listen for hidden event to remove from DOM
+                        modalDiv.addEventListener('hidden.bs.modal', () => {
+                            if (modalDiv.parentNode) {
+                                modalDiv.parentNode.removeChild(modalDiv);
+                            }
+                        });
+                    } else {
+                        console.warn('FWWebExAlert: Bootstrap JS not loaded. Modal will be static.');
+                        // Fallback: Show statically without Bootstrap functionality
+                        modalDiv.classList.add('show');
+                        modalDiv.style.display = 'block';
+                        document.body.classList.add('modal-open'); // Prevent body scroll
+                    }
+
+                    // Return the modal element for additional control, if needed
+                    return modalDiv;
+                } catch (error) {
+                    console.error('FWWebExAlert: Failed to create modal:', error);
+                    return null;
+                }
+            }
+
+            /*
+            ********************************************************************************************************************************************
+            FWWebExDecodeHTMLEntities*/
             function FWWebExDecodeHTMLEntities(text) {
                 const txt = document.createElement("textarea");
                 txt.innerHTML = text;
                 return txt.value;
             }
-            /*FWWebExShowComingSoon*/
+
+            /*
+            ********************************************************************************************************************************************
+            FWWebExShowComingSoon*/
             function FWWebExShowComingSoon(route) {
-                alert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'));
+                FWWebExAlert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'), 'Info' ,'info', { dismissible: true });
             }
-            /**Helper function
+
+            /*
+            ********************************************************************************************************************************************
+            * Helper function
             * Removes all leading, trailing, and extra spaces between words in a string.
             * @param {string} str - The input string to be trimmed.
             * @returns {string} - The trimmed string with single spaces between words.
@@ -847,7 +1000,15 @@ method RenderHTML() class WebExPage
         ***************************************************************************************************************************
         //ScriptBundle
         jPageScripts:=::oPage:GetPageScriptBundle()
-        aEval(jPageScripts:GetNames(),{|cName|if(!lExternalAssets,lExternalAssets:=jPageScripts[cName]:GetExternalAssets(),nil),::GetMemberData("oPage"):AddChild(jPageScripts[cName])})
+        aEval(;
+            jPageScripts:GetNames();
+            ,{|cName|;
+                if(;
+                    !lExternalAssets;
+                    ,lExternalAssets:=jPageScripts[cName]:GetExternalAssets(),nil);
+                    ,::GetMemberData("oPage"):AddChild(jPageScripts[cName]);
+            };
+        )
         ::lExternalAssets:=lExternalAssets
         .:SetExternalAssets(::lExternalAssets)
         if (::ExternalAssetsIsEnabled().and.(::lExternalAssets))

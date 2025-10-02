@@ -455,7 +455,7 @@ static function AlarmClockPage()
                 document.getElementById('alerta').textContent = '';
                 document.getElementById('stopButton').style.display = 'none';
             } else {
-                alert('Formato inv&aacute;lido! Use hh:mm:ss');
+                FWWebExAlert('Formato inv&aacute;lido! Use hh:mm:ss', 'Alert' ,'warning', { dismissible: true });
             }
         });
 
