@@ -1,6 +1,6 @@
 #  💡 Criando Componentes Personalizados no FWWebEx: Simples e Poderoso! 🚀
 
-O [FWWebEx](https://github.com/DNATechByNaldoDJ/fw.webex/) é um framework leve e flexível para construir aplicações web em AdvPL, permitindo criar elementos UI como modais, gráficos e tabelas com pouquíssimo esforço. Ele usa uma sintaxe intuitiva baseada em blocos WITH WEBEXOBJECT, o que torna o desenvolvimento ágil e legível.
+O [✨FWWebEx✨](https://github.com/DNATechByNaldoDJ/fw.webex/) é um framework leve e flexível para construir aplicações web em AdvPL, permitindo criar elementos UI como modais, gráficos e tabelas com pouquíssimo esforço. Ele usa uma sintaxe intuitiva baseada em blocos WITH WEBEXOBJECT, o que torna o desenvolvimento ágil e legível.
 
 ### Exemplo: [Implementando um Painel de Filtro para DataTable](https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/fw.webex/web/component/fw.webex.datatable.filter.panel.tlpp)
 
