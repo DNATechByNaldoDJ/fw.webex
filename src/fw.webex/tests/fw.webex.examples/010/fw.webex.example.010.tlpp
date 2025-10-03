@@ -119,10 +119,16 @@ static procedure FWWebExExample_010(cHTML as character) as character
 
     oFWWebExCol3:=WebExCol():New(6)
     oFWWebExCardKPI:=WebExCardKPI():New("Clientes Ativos","1.024","bg-info",WebExIcon():New("analytics","material",lSetIconBefore))
+    oFWWebExCardKPI:GetMemberData("oCardKPITitle"):SetAttr("style","display:flex; gap:1px; align-items:center;")
+    oFWWebExCardKPI:GetMemberData("oCardKPIIcon"):SetAttr("style","display:flex; gap:1px; align-items:center;")
+    oFWWebExCardKPI:SetAttr("style","display:flex; gap:1px; align-items:center;")
     oFWWebExCol3:AddChild(oFWWebExCardKPI)
 
     oFWWebExCol4:=WebExCol():New(6)
     oFWWebExCardKPI:=WebExCardKPI():New("Ticket M&eacute;dio","R$ 122,00","bg-warning",WebExIcon():New("insights","material",lSetIconBefore))
+    oFWWebExCardKPI:GetMemberData("oCardKPITitle"):SetAttr("style","display:flex; gap:1px; align-items:center;")
+    oFWWebExCardKPI:GetMemberData("oCardKPIIcon"):SetAttr("style","display:flex; gap:1px; align-items:center;")
+    oFWWebExCardKPI:SetAttr("style","display:flex; gap:1px; align-items:center;")
     oFWWebExCol4:AddChild(oFWWebExCardKPI)
 
     // Segunda linha com KPI

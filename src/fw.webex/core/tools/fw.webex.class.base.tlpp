@@ -36,6 +36,7 @@ class ClassBase
     protected method __CloneCompexData(xComplex as variant) as variant
 
     public method IsKindOf(cClass as character,lParentTree as logical) as logical
+    public method AmIReallyMe(xObj as variant) as logical
 
 endclass
 
@@ -84,6 +85,8 @@ method SetFromObject(oSource) class ClassBase
 
     local i as numeric
 
+    local lAmIReallyMe as logical
+
     local xValue as variant
 
     paramtype 1 var oSource as object
@@ -94,6 +97,7 @@ method SetFromObject(oSource) class ClassBase
     if (cTargetClass==cSourceClass)
         private __pFromObjSelf:=self as object
         private __pFromObjSource:=oSource as object
+        lAmIReallyMe:=MethIsMemberOf(__pFromObjSource,"AMIREALLYME",.T.)
         aMemberData:=aClone(ClassDataArr(oSource,.T.))
         for i:=1 to Len(aMemberData)
             cKey:=aMemberData[i][1]
@@ -101,6 +105,15 @@ method SetFromObject(oSource) class ClassBase
             cData+=":"
             cData+=cKey
             xValue:=&(cData)
+            if ((ValType(xValue)=="O"))
+                if (;
+                    ((lAmIReallyMe).and.(__pFromObjSource:AmIReallyMe(xValue)));
+                    .or.;
+                    (__pFromObjSource==xValue);
+                )
+                    loop
+                endif
+            endif
             __pFromObjSelf:SetMemberData(cKey,xValue,.T.)
         next i
         FWFreeArray(@aMemberData)
@@ -265,7 +278,6 @@ method __CloneCompexData(xComplex) class ClassBase
             next i
         endif
     case (cType=="O")
-        cClassName:=GetClassName(xComplex)
         if(;
             (!MethIsMemberOf(xComplex,"CLONE",.T.));
             .or.;
@@ -281,6 +293,12 @@ method __CloneCompexData(xComplex) class ClassBase
         xClone:=xComplex
     end case
 return(xClone)
+
+method AmIReallyMe(xObj) class ClassBase
+    //IsSameReference
+    local lAmIReallyMe as logical
+    lAmIReallyMe:=(ValType(xObj)==ValType(self)).and.(self==xObj)
+return(lAmIReallyMe)
 
 method IsKindOf(cClass,lParentTree) class ClassBase
 

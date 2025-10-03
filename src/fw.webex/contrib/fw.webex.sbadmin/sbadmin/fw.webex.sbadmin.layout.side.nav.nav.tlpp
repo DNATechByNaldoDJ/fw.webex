@@ -14,7 +14,7 @@ namespace FWWebEx
 
 #include "fw.webex.th"
 
-class SBAdminLayoutSideNavNav from WebExControl
+class SBAdminLayoutSideNavNav from WebExDiv
 
     protected data jSBAdminNavMenu as json
 
@@ -31,7 +31,7 @@ class SBAdminLayoutSideNavNav from WebExControl
     public method NavLoadJSONMenu(jSBAdminNavMenu as json) as object
 
     protected method BuildSideNav() as object
-    protected method BuildSideNavFooder() as object
+    protected method BuildSideNavFooter() as object
     protected method RenderMenuItems(aMenu as array) as object
     protected method RenderItem(jMenuItem as json,cParentID as character,nDepth as numeric,aRolesUser as array) as object
 
@@ -41,7 +41,7 @@ class SBAdminLayoutSideNavNav from WebExControl
 endclass
 
 method New() class SBAdminLayoutSideNavNav
-    _Super:New("div")
+    _Super:New()
     ::SetFixedID("layoutSidenav_nav")
     ::AddChild(::BuildSideNav())
 return(self)
@@ -80,11 +80,11 @@ method BuildSideNav() class SBAdminLayoutSideNavNav
     ::oMenuContainer:AddChild(::oNavDiv)
     ::oNav:AddChild(::oMenuContainer)
 
-    ::BuildSideNavFooder()
+    ::BuildSideNavFooter()
 
 return(::oNav)
 
-method BuildSideNavFooder() class SBAdminLayoutSideNavNav
+method BuildSideNavFooter() class SBAdminLayoutSideNavNav
 
     WITH WEBEXOBJECT ::oNav
         WITH WEBEXOBJECT ::oSideNavFooter CLASS WebExDiv

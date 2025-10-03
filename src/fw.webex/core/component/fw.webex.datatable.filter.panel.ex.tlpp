@@ -84,7 +84,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                 WITH WEBEXOBJECT ::oPanelHeader CLASS WebExDiv
                     .:AddClass("modal-header")
                     WITH WEBEXOBJECT ::oPanelHeaderIcon CLASS WebExIcon ARGS "fa-filter","fontawesome"
-                        .:AddClass("modal-title me-1")
+                        .:AddClass("modal-title")
                     END WEBEXOBJECT
                     WITH WEBEXOBJECT ::oPanelHeaderTitle CLASS WebExH5
                         .:AddClass("modal-title")

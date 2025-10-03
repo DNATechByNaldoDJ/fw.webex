@@ -39,6 +39,7 @@ method New(cIconName,cIconType,lIconBefore) class WebExIcon
     _Super:New("i")
     _Super:SetEnableIcons()
     ::SetIconName(cIconName,cIconType)
+    ::AddClass(if(::lIconBefore,"me-1","ms-1"))
 return(self)
 
 method SetIconType(cIconType) class WebExIcon

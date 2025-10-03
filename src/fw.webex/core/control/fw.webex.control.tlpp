@@ -11,7 +11,21 @@ Released to Public Domain.
 
 #include "fw.webex.th"
 
-static __aVoidTags:={"area","base","br","col","embed","hr","img","input","link","meta","source","track","wbr"} as array
+static __aVoidTags:={;
+    "area";
+   ,"base";
+   ,"br";
+   ,"col";
+   ,"embed";
+   ,"hr";
+   ,"img";
+   ,"input";
+   ,"link";
+   ,"meta";
+   ,"source";
+   ,"track";
+   ,"wbr";
+} as array
 
 static __cID as character
 static __cCRLF:=CRLF as character
@@ -46,6 +60,7 @@ class WebExControl from FWWebEx.ClassBase
     protected data jAttrs as json
     protected data jChildren as json
     protected data jContents as json
+    protected data jObjectsContainer as json
 
     protected data lChartEnabled as logical
     protected data lIconsEnabled as logical
@@ -86,6 +101,7 @@ class WebExControl from FWWebEx.ClassBase
     public method GetContents() as json
 
     public method SetContent(cContent as character,cContentLoadAfterID as character) as object
+    public method DelContent(cID as character) as object
 
     public method ContentIsNull(cContent as character) as logical
 
@@ -157,6 +173,7 @@ class WebExControl from FWWebEx.ClassBase
 
     public method Clean() as variant
     public method CleanChildren() as variant
+    public method CleanObjectsContainer()
 
     public method RemoveScripts() as variant
 
@@ -175,6 +192,7 @@ method New(cType) class WebExControl
     ::jAttrs:=JSONObject():New()
     ::jChildren:=JSONObject():New()
     ::jContents:=JSONObject():New()
+    ::jObjectsContainer:=JSONObject():New()
     ::lChartEnabled:=__jFeatures["lChartEnabled"]
     ::lIconsEnabled:=__jFeatures["lIconsEnabled"]
     ::lApexChartEnabled:=__jFeatures["lApexChartEnabled"]
@@ -424,6 +442,13 @@ method SetContent(cContent,cContentLoadAfterID) class WebExControl
     paramtype 1 var cContent as character
     paramtype 2 var cContentLoadAfterID as character optional default ::cID
     ::jContents[cContentLoadAfterID]:=cContent
+return(self)
+
+method DelContent(cID) class WebExControl
+    paramtype 1 var cID as character optional default ::cID
+    if (::jContents:HasProperty(cID))
+        ::jContents:DelName(cID)
+    endif
 return(self)
 
 method ContentIsNull(cContent) class WebExControl
@@ -1684,6 +1709,7 @@ method Clean() class WebExControl
     ::DelAssets()
     ::RemoveScripts()
     ::DisableFeatures()
+    ::CleanObjectsContainer()
     ::CleanChildren()
     aEval(;
          ::GetJSONChildren():GetNames();
@@ -1716,12 +1742,41 @@ method CleanChildren() class WebExControl
             if (::jChildren:HasProperty(cKey))
                 oChild:=::jChildren[cKey]
                 if (valType(oChild)=="O")
+                    oChild:CleanObjectsContainer()
                     oChild:CleanChildren()
                     FreeObj(@oChild)
                 endif
                 ::jChildren:DelName(cKey)
             endif
         next nChild
+    endif
+
+return(nil)
+
+method CleanObjectsContainer() class WebExControl
+
+    local aObjects:=::jObjectsContainer:GetNames() as array
+
+    local cKey as character
+
+    local nObject as numeric
+    local nObjects as numeric
+
+    local oObject as object
+
+    nObjects:=Len(aObjects)
+    if (nObjects>0)
+        for nObject:=1 to nObjects
+            cKey:=aObjects[nObject]
+            if (::jObjectsContainer:HasProperty(cKey))
+                oObject:=::jObjectsContainer[cKey]
+                if (valType(oObject)=="O")
+                    oObject:CleanObjectsContainer()
+                    FreeObj(@oObject)
+                endif
+                ::jObjectsContainer:DelName(cKey)
+            endif
+        next nObject
     endif
 
 return(nil)

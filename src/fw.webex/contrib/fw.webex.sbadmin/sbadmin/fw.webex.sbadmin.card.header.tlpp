@@ -49,7 +49,6 @@ method New(cCardHeader,cCardHeaderIcon,cCardHeaderIconType) class SBAdminCardHea
         WITH WEBEXOBJECT ::oCardHeader CLASS WebExDiv
             .:AddClass("card-header")
             WITH WEBEXOBJECT ::oCardHeaderIcon CLASS WebExIcon ARGS ::cCardHeaderIcon,::cCardHeaderIconType
-                .:AddClass("me-1")
             END WEBEXOBJECT
             ::SetCardHeader()
         END WEBEXOBJECT

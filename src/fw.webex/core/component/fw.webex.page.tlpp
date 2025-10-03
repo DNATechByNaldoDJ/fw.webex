@@ -76,490 +76,68 @@ method New(cPageTitle) class WebExPage
         WITH WEBEXOBJECT ::oPageHeader CLASS WebExHead
             ***************************************************************************************************************************
             //Title
-            WITH WEBEXOBJECT CLASS WebExTitle ARGS ::cPageTitle
+            WITH WEBEXOBJECT ::jObjectsContainer["title"] CLASS WebExTitle ARGS ::cPageTitle
             END WEBEXOBJECT
             ***************************************************************************************************************************
             //Meta
-            WITH WEBEXOBJECT CLASS WebExMeta
+            WITH WEBEXOBJECT ::jObjectsContainer["charset"] CLASS WebExMeta
                 .:SetAttr("charset","UTF-8")
             END WEBEXOBJECT
-            WITH WEBEXOBJECT CLASS WebExMeta
+            WITH WEBEXOBJECT ::jObjectsContainer["application-name"] CLASS WebExMeta
                 .:SetAttr("application-name","FWWebEx")
             END WEBEXOBJECT
-            WITH WEBEXOBJECT CLASS WebExMeta
+            WITH WEBEXOBJECT ::jObjectsContainer["meta-viewport"] CLASS WebExMeta
                 .:SetAttr("name","viewport")
                 .:SetAttr("content","width=device-width, initial-scale=1")
             END WEBEXOBJECT
             ***************************************************************************************************************************
-            //PO UI CSS
-                WITH WEBEXOBJECT CLASS WebExComment
-                    .:SetContent("PO UI CSS")
-                END WEBEXOBJECT
-                WITH WEBEXOBJECT CLASS WebExLink
-                    .:SetAttr("href","https://cdn.jsdelivr.net/npm/@po-ui/style/css/po-theme-default.min.css")
-                    .:SetAttr("rel","stylesheet")
-                END WEBEXOBJECT
-            //PO UI CSS
-            ***************************************************************************************************************************
             //Bootstrap CSS
-                WITH WEBEXOBJECT CLASS WebExComment
+                WITH WEBEXOBJECT ::jObjectsContainer["comment-bootstrap-css"] CLASS WebExComment
                     .:SetContent("Bootstrap CSS")
                 END WEBEXOBJECT
-                WITH WEBEXOBJECT CLASS WebExLink
+                WITH WEBEXOBJECT ::jObjectsContainer["link-bootstrap-css"] CLASS WebExLink
                     .:SetAttr("href","https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css")
                     .:SetAttr("rel","stylesheet")
                 END WEBEXOBJECT
             //Bootstrap CSS
             ***************************************************************************************************************************
             //Bootstrap Optional JavaScript
-                WITH WEBEXOBJECT CLASS WebExComment
-                    .:SetContent("Optional JavaScript")
-                END WEBEXOBJECT
-                WITH WEBEXOBJECT CLASS WebExComment
-                    .:SetContent("jQuery first, then Popper.js, then Bootstrap JS")
+                WITH WEBEXOBJECT ::jObjectsContainer["comment-bootstrap-script"] CLASS WebExComment
+                    .:SetContent("Optional JavaScript: jQuery first, then Popper.js, then Bootstrap JS")
                 END WEBEXOBJECT
                 //JQuery
-                    WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    WITH WEBEXOBJECT ::jObjectsContainer["script-jquery-slim"] CLASS WebExScript ARGS .F.
                         .:SetAttr("src","https://releases.jquery.com/git/jquery-git.slim.min.js")
                     END WEBEXOBJECT
-                    WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    WITH WEBEXOBJECT ::jObjectsContainer["script-jquery"] CLASS WebExScript ARGS .F.
                             .:SetAttr("src","https://releases.jquery.com/git/jquery-git.min.js")
                     END WEBEXOBJECT
                 //JQuery
                 //popperjs
-                    WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    WITH WEBEXOBJECT ::jObjectsContainer["script-popperjs"] CLASS WebExScript ARGS .F.
                         .:SetContent("https://cdn.jsdelivr.net/npm/@popperjs/core/dist/umd/popper.min.js")
                     END WEBEXOBJECT
                 //popperjs
                 //bootstrap
-                    WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    WITH WEBEXOBJECT ::jObjectsContainer["script-bootstrap"] CLASS WebExScript ARGS .F.
                         .:SetContent("https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.min.js")
                     END WEBEXOBJECT
                 //bootstrap
             //Bootstrap Optional JavaScript
             ***************************************************************************************************************************
+            //PO UI CSS
+                WITH WEBEXOBJECT ::jObjectsContainer["comment-poui-css"] CLASS WebExComment
+                    .:SetContent("PO UI CSS")
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT ::jObjectsContainer["link-poui-css"] CLASS WebExLink
+                    .:SetAttr("href","https://cdn.jsdelivr.net/npm/@po-ui/style/css/po-theme-default.min.css")
+                    .:SetAttr("rel","stylesheet")
+                END WEBEXOBJECT
+            //PO UI CSS
+            ***************************************************************************************************************************
         END WEBEXOBJECT
         ***************************************************************************************************************************
-        //Scripts FWWebExWaitForElementID
-        beginContent var cPageScript
-
-            /*FWWebExWaitForElementID*/
-            function FWWebExWaitForElementID(id, callback) {
-                const element = document.getElementById(id);
-                if (element) {
-                    callback(element);
-                } else {
-                    setTimeout(() => FWWebExWaitForElementID(id, callback), 100);
-                }
-            }
-
-        endContent
-        WITH WEBEXOBJECT CLASS WebExScript
-            .:SetContent(cPageScript)
-        END WEBEXOBJECT
-        ***************************************************************************************************************************
-        //Scripts FWWebEx.RequestHandler
-        beginContent var cPageScript
-            /***********************************************************************
-            * FWWebEx.RequestHandler (v2) - agora 100% compativel
-            * - Usa CustomEvent + event.detail (padrao DOM)
-            * - Mantem fallback para event.protheusResponse (legado)
-            * - Inclui logs de debug opcionais
-            **********************************************************************/
-            window.FWWebEx = window.FWWebEx || {};
-            FWWebEx.RequestHandler = (() => {
-                let _debug = true;
-                const log = (...args) => _debug && console.log('[FWWebEx]', ...args);
-
-                function startConnectingAnimation() {
-                    const status = document.getElementById('fwwebex-connection-status');
-                    if (!status) return () => {};
-                    const dots = [
-                        document.getElementById('fwwebex_connection_status_dot1'),
-                        document.getElementById('fwwebex_connection_status_dot2'),
-                        document.getElementById('fwwebex_connection_status_dot3')
-                    ];
-                    let step = 0;
-                    status.style.display = 'inline';
-                    const interval = setInterval(() => {
-                        dots.forEach((d, i) => d && (d.style.visibility = i <= step ? 'visible' : 'hidden'));
-                        step = (step + 1) % 3;
-                    }, 400);
-                    return () => {
-                        clearInterval(interval);
-                        status.style.display = 'none';
-                    };
-                }
-
-                function waitForConnection(maxRetries = 5, interval = 1000) {
-                    return new Promise((resolve, reject) => {
-                        let attempts = 0;
-                        const check = () => {
-                            log('Verificando conexao, tentativa:', attempts + 1, 'twebchannel:', twebchannel);
-                            if (twebchannel?.gotConnection) resolve(true);
-                            else if (++attempts >= maxRetries) reject(new Error('WebSocket/MessageChannel nao conectado.'));
-                            else setTimeout(check, interval);
-                        };
-                        check();
-                    });
-                }
-
-                function execute({ requestData, callbackEvent = 'CALLBACK_DATA_RESPONSE', execEvent = 'CALLBACK_EXEC', maxRetries = 5, interval = 1000, onResponse, onError }) {
-                    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    const stopAnimation = startConnectingAnimation();
-                    const handleResponse = (event) => {
-                        log('Evento recebido:', event);
-                        const data = event.detail ?? event.protheusResponse;
-                        if (!data) {
-                            log('Evento sem payload esperado ? ignorado');
-                            return;
-                        }
-                        try {
-                            onResponse?.(data);
-                        } catch (err) {
-                            console.error('[FWWebEx] Erro no onResponse:', err);
-                            onError?.(err);
-                        } finally {
-                            stopAnimation();
-                            twebchannel.eventTarget.removeEventListener(callbackEvent, handleResponse);
-                        }
-                    };
-
-                    waitForConnection(maxRetries, interval)
-                        .then(() => {
-                            twebchannel.eventTarget.addEventListener(callbackEvent, handleResponse);
-                            twebchannel.jsToAdvpl(execEvent, JSON.stringify({ ...requestData, requestId }));
-                        })
-                        .catch(err => {
-                            stopAnimation();
-                            console.error('[FWWebEx] Erro de conexao:', err);
-                            onError?.(err);
-                        });
-                }
-
-                function debug(flag = true) { _debug = !!flag; }
-                return { execute, waitForConnection, startConnectingAnimation, debug };
-            })();
-
-        endContent
-        WITH WEBEXOBJECT CLASS WebExScript
-            .:SetContent(cPageScript)
-        END WEBEXOBJECT
-        ***************************************************************************************************************************
-        //Scripts FWWebExExecute
-        beginContent var cPageScript
-
-            /**
-            * Executor generico FWWebEx para WS, REST Basic, REST OAuth2 e Link Direto
-            * Executa acao a partir de um link/menu/card
-            * @param {Object} options
-            *   type: 'ws' | 'rest-basic' | 'rest-oauth2' | 'link'
-            *   url: endpoint ou rota
-            *   data: payload (objeto)
-            *   target: seletor do elemento para renderizar ou 'overlay'
-            *   auth: { user, pass } para basic ou { token } para oauth2
-            *   ws: { action, callbackEvent, execEvent }
-            */
-            function FWWebExExecute(options) {
-                const { type, url, data, target, auth, ws } = options;
-
-                if (type === 'ws') {
-                    FWWebEx.RequestHandler.execute({
-                        requestData: { ...data },
-                        callbackEvent: ws?.callbackEvent || 'CALLBACK_DATA_RESPONSE',
-                        execEvent: ws?.execEvent || 'CALLBACK_EXEC',
-                        onResponse: (response) => FWWebExRenderResponse(response, target),
-                        onError: (err) => console.error('Erro WS:', err)
-                    });
-                }
-                else if (type === 'rest-basic') {
-                    fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': 'Basic ' + btoa(`${auth.user}:${auth.pass}`),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data || {})
-                    })
-                    .then(r => r.text())
-                    .then(content => FWWebExRenderResponse(content, target))
-                    .catch(err => console.error('Erro REST Basic:', err));
-                }
-                else if (type === 'rest-oauth2') {
-                    let token = auth?.token;
-
-                    // Busca automaticamente do ERPTOKEN se nao foi informado no menu/link
-                    if (!token) {
-                        try {
-                            const erpTokenData = JSON.parse(sessionStorage.getItem('ERPTOKEN') || '{}');
-                            if (erpTokenData?.access_token) {
-                                token = erpTokenData.access_token;
-                            }
-                        } catch (e) {
-                            console.warn('Nao foi possivel ler o ERPTOKEN:', e);
-                        }
-                    }
-
-                    if (!token) {
-                        console.error('Token OAuth2 nao encontrado! Verifique login ou configuracao.');
-                        return;
-                    }
-
-                    fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data || {})
-                    })
-                    .then(r => r.text())
-                    .then(content => FWWebExRenderResponse(content, target))
-                    .catch(err => console.error('Erro REST OAuth2:', err));
-                }
-                else if (type === 'link') {
-                    fetch(url)
-                        .then(r => r.text())
-                        .then(content => FWWebExRenderResponse(content, target))
-                        .catch(err => console.error('Erro Link Direto:', err));
-                }
-            }
-
-            /**
-            * Renderiza resposta no destino ou overlay
-            */
-            function FWWebExRenderResponse(content, target) {
-                if (target === 'overlay') {
-                    FWWebExShowOverlay(content);
-                } else if (target && document.querySelector(target)) {
-                    document.querySelector(target).innerHTML = content;
-                } else {
-                    console.warn('Destino nao encontrado:', target);
-                }
-            }
-
-            /**
-            * Mostra sobreposicao
-            */
-            function FWWebExShowOverlay(html) {
-                let overlay = document.getElementById('fwwebex-overlay');
-                if (!overlay) {
-                    overlay = document.createElement('div');
-                    overlay.id = 'fwwebex-overlay';
-                    overlay.style.cssText = `
-                        position: fixed; top:0; left:0; width:100%; height:100%;
-                        background: rgba(0,0,0,0.7); z-index: 99999; padding:2rem; overflow:auto;
-                    `;
-                    document.body.appendChild(overlay);
-                    overlay.addEventListener('click', e => {
-                        if (e.target.id === 'fwwebex-overlay') overlay.remove();
-                    });
-                }
-                overlay.innerHTML = `<div style="background:white;padding:1rem;border-radius:8px;">${html}</div>`;
-            }
-
-            /**
-            * Captura cliques em qualquer elemento com data-fwwebex-action-type
-            */
-            document.addEventListener('click', function (e) {
-                const el = e.target.closest('[data-fwwebex-action-type]');
-                if (el) {
-                    e.preventDefault();
-                    FWWebExExecute({
-                        type: el.dataset.fwwebexActionType,
-                        url: el.dataset.fwwebexUrl,
-                        target: el.dataset.fwwebexTarget || 'overlay',
-                        data: el.dataset.fwwebexPayload ? JSON.parse(el.dataset.fwwebexPayload) : {},
-                        auth: el.dataset.fwwebexAuth ? JSON.parse(el.dataset.fwwebexAuth) : {},
-                        ws: el.dataset.fwwebexWs ? JSON.parse(el.dataset.fwwebexWs) : {}
-                    });
-                }
-            });
-
-        endContent
-        WITH WEBEXOBJECT CLASS WebExScript
-            .:SetContent(cPageScript)
-        END WEBEXOBJECT
-        ***************************************************************************************************************************
-        //Helper Tools
-        beginContent var cPageScript
-            /** Helper function
-            * Creates and displays a customizable modal dialog using Bootstrap styling, similar to WebExDataTableFilterPanelEx.
-            * @param {string} message - The message or HTML content to display in the modal body (short message or detailed text).
-            * @param {string} [title='Alert'] - The title to display in the modal header.
-            * @param {string} [type='primary'] - The modal type for styling (e.g., 'primary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'secondary').
-            * @param {Object} [options] - Optional configuration object.
-            * @param {boolean} [options.autoClose=false] - Whether the modal should close automatically.
-            * @param {number} [options.autoCloseDelay=5000] - Delay in milliseconds before auto-closing (if autoClose is true).
-            * @param {boolean} [options.dismissible=true] - Whether the modal includes a close button and is dismissible by backdrop/ESC.
-            * @param {HTMLElement} [options.target=document.body] - The DOM element where the modal will be appended.
-            * @param {boolean} [options.detailed=false] - Whether to display the message in a textarea for detailed content.
-            * @returns {HTMLElement} - The created modal element for further manipulation.
-            ********************************************************************************************************************************************
-            Example of usage:
-            // Link message example
-            FWWebExAlert('Alert with link <a href="#" class="alert-link">click here</a>.', 'Warning', 'warning', { dismissible: true });
-            // Short message example
-            FWWebExAlert('This is a test alert at 03:50 PM -03 on October 02, 2025!', 'Success Alert', 'success', { autoClose: true, autoCloseDelay: 3000 });
-            // Detailed message example
-            const detailedMessage = `This is a very long message to demonstrate the textarea feature. It includes multiple lines of text to show how the modal adapts to detailed content. You can add as much text as needed here, and it will be displayed in a resizable textarea for better readability. This is especially useful for error messages or detailed notifications.`;
-            FWWebExAlert(detailedMessage, 'Detailed Alert', 'info', { detailed: true });
-            ********************************************************************************************************************************************
-            */
-            function FWWebExAlert(message, title = 'Alert', type = 'primary', options = {}) {
-                // Default configurations
-                const defaultOptions = {
-                    autoClose: false,
-                    autoCloseDelay: 5000,
-                    dismissible: true,
-                    target: document.body,
-                    detailed: false
-                };
-                const settings = { ...defaultOptions, ...options };
-
-                // Validate input
-                if (!message || typeof message !== 'string') {
-                    console.error('FWWebExAlert: Message is required and must be a string.');
-                    return null;
-                }
-                if (!['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'].includes(type)) {
-                    console.warn(`FWWebExAlert: Invalid type '${type}'. Defaulting to 'primary'.`);
-                    type = 'primary';
-                }
-                if (!settings.target || !settings.target.appendChild) {
-                    console.error('FWWebExAlert: Invalid target element. Using document.body.');
-                    settings.target = document.body;
-                }
-
-                // Map alert types to Bootstrap icons
-                const iconMap = {
-                    primary: 'bi-info-circle-fill',
-                    secondary: 'bi-info-circle-fill',
-                    success: 'bi-check-circle-fill',
-                    danger: 'bi-exclamation-circle-fill',
-                    warning: 'bi-exclamation-triangle-fill',
-                    info: 'bi-info-circle-fill',
-                    light: 'bi-info-circle-fill',
-                    dark: 'bi-info-circle-fill'
-                };
-
-                try {
-                    // Generate unique ID for the modal
-                    const modalId = 'fwwebex-alert-modal-' + Date.now();
-                    const dialogId = modalId + '-dialog';
-                    const contentId = modalId + '-content';
-
-                    // Create the modal structure with larger size
-                    const modalDiv = document.createElement('div');
-                    modalDiv.id = modalId;
-                    modalDiv.className = `modal fade ${settings.dismissible ? '' : 'modal-static'}`;
-                    modalDiv.setAttribute('tabindex', '-1');
-                    modalDiv.setAttribute('role', 'dialog');
-                    modalDiv.style.display = 'block'; // Ensure visibility
-
-                    // Determine modal body content
-                    let modalBodyContent = '';
-                    if (settings.detailed && message.length > 100) { // Threshold for detailed view
-                        modalBodyContent = `
-                            <textarea class="form-control" rows="5" readonly>${message}</textarea>
-                        `;
-                    } else {
-                        modalBodyContent = `<p>${message}</p>`;
-                    }
-
-                    modalDiv.innerHTML = `
-                        <div class="modal-dialog modal-dialog-centered modal-lg" id="${dialogId}" role="document">
-                            <div class="modal-content" id="${contentId}">
-                                <div class="modal-header bg-${type} text-white">
-                                    <h5 class="modal-title"><i class="bi ${iconMap[type]} me-2"></i>${title}</h5>
-                                    ${settings.dismissible ? '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' : ''}
-                                </div>
-                                <div class="modal-body">
-                                    ${modalBodyContent}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-${type}" data-bs-dismiss="modal">OK</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Add the modal to the DOM
-                    settings.target.appendChild(modalDiv);
-
-                    // Check if Bootstrap is available
-                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                        // Initialize the modal
-                        const bsModal = new bootstrap.Modal(modalDiv, {
-                            backdrop: settings.dismissible ? 'static' : true,
-                            keyboard: settings.dismissible,
-                            focus: true
-                        });
-
-                        // Show the modal
-                        bsModal.show();
-
-                        // If autoClose is enabled, close the modal after the delay
-                        if (settings.autoClose) {
-                            setTimeout(() => {
-                                bsModal.hide();
-                            }, settings.autoCloseDelay);
-                        }
-
-                        // Listen for hidden event to remove from DOM
-                        modalDiv.addEventListener('hidden.bs.modal', () => {
-                            if (modalDiv.parentNode) {
-                                modalDiv.parentNode.removeChild(modalDiv);
-                            }
-                        });
-                    } else {
-                        console.warn('FWWebExAlert: Bootstrap JS not loaded. Modal will be static.');
-                        // Fallback: Show statically without Bootstrap functionality
-                        modalDiv.classList.add('show');
-                        modalDiv.style.display = 'block';
-                        document.body.classList.add('modal-open'); // Prevent body scroll
-                    }
-
-                    // Return the modal element for additional control, if needed
-                    return modalDiv;
-                } catch (error) {
-                    console.error('FWWebExAlert: Failed to create modal:', error);
-                    return null;
-                }
-            }
-
-            /*
-            ********************************************************************************************************************************************
-            FWWebExDecodeHTMLEntities*/
-            function FWWebExDecodeHTMLEntities(text) {
-                const txt = document.createElement("textarea");
-                txt.innerHTML = text;
-                return txt.value;
-            }
-
-            /*
-            ********************************************************************************************************************************************
-            FWWebExShowComingSoon*/
-            function FWWebExShowComingSoon(route) {
-                FWWebExAlert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'), 'Info' ,'info', { dismissible: true });
-            }
-
-            /*
-            ********************************************************************************************************************************************
-            * Helper function
-            * Removes all leading, trailing, and extra spaces between words in a string.
-            * @param {string} str - The input string to be trimmed.
-            * @returns {string} - The trimmed string with single spaces between words.
-            */
-            function FWWebExAllTrim(str) {
-                if (typeof str !== "string") {
-                    throw new TypeError("Input must be a string");
-                }
-                // Use trim() to remove leading and trailing spaces
-                // Use replace() with a regex to collapse multiple spaces into one
-                return str.trim().replace(/\s+/g, " ");
-            }
-        endContent
+        cPageScript:=FWWebExScripts()
         WITH WEBEXOBJECT CLASS WebExScript
             .:SetContent(cPageScript)
         END WEBEXOBJECT
@@ -1062,3 +640,408 @@ method RenderHTML() class WebExPage
     FreeObj(@jPageScripts)
 
 return(cHTML)
+
+static function FWWebExScripts() as character
+
+    local cPageScript as character
+
+    //FWWebEx Scripts
+    beginContent var cPageScript
+
+        /*FWWebExWaitForElementID*/
+        function FWWebExWaitForElementID(id, callback) {
+            const element = document.getElementById(id);
+            if (element) {
+                callback(element);
+            } else {
+                setTimeout(() => FWWebExWaitForElementID(id, callback), 100);
+            }
+        }
+
+        /***********************************************************************
+        * FWWebEx.RequestHandler (v2) - agora 100% compativel
+        * - Usa CustomEvent + event.detail (padrao DOM)
+        * - Mantem fallback para event.protheusResponse (legado)
+        * - Inclui logs de debug opcionais
+        **********************************************************************/
+        window.FWWebEx = window.FWWebEx || {};
+        FWWebEx.RequestHandler = (() => {
+            let _debug = true;
+            const log = (...args) => _debug && console.log('[FWWebEx]', ...args);
+
+            function startConnectingAnimation() {
+                const status = document.getElementById('fwwebex-connection-status');
+                if (!status) return () => {};
+                const dots = [
+                    document.getElementById('fwwebex_connection_status_dot1'),
+                    document.getElementById('fwwebex_connection_status_dot2'),
+                    document.getElementById('fwwebex_connection_status_dot3')
+                ];
+                let step = 0;
+                status.style.display = 'inline';
+                const interval = setInterval(() => {
+                    dots.forEach((d, i) => d && (d.style.visibility = i <= step ? 'visible' : 'hidden'));
+                    step = (step + 1) % 3;
+                }, 400);
+                return () => {
+                    clearInterval(interval);
+                    status.style.display = 'none';
+                };
+            }
+
+            function waitForConnection(maxRetries = 5, interval = 1000) {
+                return new Promise((resolve, reject) => {
+                    let attempts = 0;
+                    const check = () => {
+                        log('Verificando conexao, tentativa:', attempts + 1, 'twebchannel:', twebchannel);
+                        if (twebchannel?.gotConnection) resolve(true);
+                        else if (++attempts >= maxRetries) reject(new Error('WebSocket/MessageChannel nao conectado.'));
+                        else setTimeout(check, interval);
+                    };
+                    check();
+                });
+            }
+
+            function execute({ requestData, callbackEvent = 'CALLBACK_DATA_RESPONSE', execEvent = 'CALLBACK_EXEC', maxRetries = 5, interval = 1000, onResponse, onError }) {
+                const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const stopAnimation = startConnectingAnimation();
+                const handleResponse = (event) => {
+                    log('Evento recebido:', event);
+                    const data = event.detail ?? event.protheusResponse;
+                    if (!data) {
+                        log('Evento sem payload esperado ? ignorado');
+                        return;
+                    }
+                    try {
+                        onResponse?.(data);
+                    } catch (err) {
+                        console.error('[FWWebEx] Erro no onResponse:', err);
+                        onError?.(err);
+                    } finally {
+                        stopAnimation();
+                        twebchannel.eventTarget.removeEventListener(callbackEvent, handleResponse);
+                    }
+                };
+
+                waitForConnection(maxRetries, interval)
+                    .then(() => {
+                        twebchannel.eventTarget.addEventListener(callbackEvent, handleResponse);
+                        twebchannel.jsToAdvpl(execEvent, JSON.stringify({ ...requestData, requestId }));
+                    })
+                    .catch(err => {
+                        stopAnimation();
+                        console.error('[FWWebEx] Erro de conexao:', err);
+                        onError?.(err);
+                    });
+            }
+
+            function debug(flag = true) { _debug = !!flag; }
+            return { execute, waitForConnection, startConnectingAnimation, debug };
+        })();
+
+        /**
+        * Executor generico FWWebEx para WS, REST Basic, REST OAuth2 e Link Direto
+        * Executa acao a partir de um link/menu/card
+        * @param {Object} options
+        *   type: 'ws' | 'rest-basic' | 'rest-oauth2' | 'link'
+        *   url: endpoint ou rota
+        *   data: payload (objeto)
+        *   target: seletor do elemento para renderizar ou 'overlay'
+        *   auth: { user, pass } para basic ou { token } para oauth2
+        *   ws: { action, callbackEvent, execEvent }
+        */
+        function FWWebExExecute(options) {
+            const { type, url, data, target, auth, ws } = options;
+
+            if (type === 'ws') {
+                FWWebEx.RequestHandler.execute({
+                    requestData: { ...data },
+                    callbackEvent: ws?.callbackEvent || 'CALLBACK_DATA_RESPONSE',
+                    execEvent: ws?.execEvent || 'CALLBACK_EXEC',
+                    onResponse: (response) => FWWebExRenderResponse(response, target),
+                    onError: (err) => console.error('Erro WS:', err)
+                });
+            }
+            else if (type === 'rest-basic') {
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(`${auth.user}:${auth.pass}`),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data || {})
+                })
+                .then(r => r.text())
+                .then(content => FWWebExRenderResponse(content, target))
+                .catch(err => console.error('Erro REST Basic:', err));
+            }
+            else if (type === 'rest-oauth2') {
+                let token = auth?.token;
+
+                // Busca automaticamente do ERPTOKEN se nao foi informado no menu/link
+                if (!token) {
+                    try {
+                        const erpTokenData = JSON.parse(sessionStorage.getItem('ERPTOKEN') || '{}');
+                        if (erpTokenData?.access_token) {
+                            token = erpTokenData.access_token;
+                        }
+                    } catch (e) {
+                        console.warn('Nao foi possivel ler o ERPTOKEN:', e);
+                    }
+                }
+
+                if (!token) {
+                    console.error('Token OAuth2 nao encontrado! Verifique login ou configuracao.');
+                    return;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data || {})
+                })
+                .then(r => r.text())
+                .then(content => FWWebExRenderResponse(content, target))
+                .catch(err => console.error('Erro REST OAuth2:', err));
+            }
+            else if (type === 'link') {
+                fetch(url)
+                    .then(r => r.text())
+                    .then(content => FWWebExRenderResponse(content, target))
+                    .catch(err => console.error('Erro Link Direto:', err));
+            }
+        }
+
+        /**
+        * Renderiza resposta no destino ou overlay
+        */
+        function FWWebExRenderResponse(content, target) {
+            if (target === 'overlay') {
+                FWWebExShowOverlay(content);
+            } else if (target && document.querySelector(target)) {
+                document.querySelector(target).innerHTML = content;
+            } else {
+                console.warn('Destino nao encontrado:', target);
+            }
+        }
+
+        /**
+        * Mostra sobreposicao
+        */
+        function FWWebExShowOverlay(html) {
+            let overlay = document.getElementById('fwwebex-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'fwwebex-overlay';
+                overlay.style.cssText = `
+                    position: fixed; top:0; left:0; width:100%; height:100%;
+                    background: rgba(0,0,0,0.7); z-index: 99999; padding:2rem; overflow:auto;
+                `;
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', e => {
+                    if (e.target.id === 'fwwebex-overlay') overlay.remove();
+                });
+            }
+            overlay.innerHTML = `<div style="background:white;padding:1rem;border-radius:8px;">${html}</div>`;
+        }
+
+        /**
+        * Captura cliques em qualquer elemento com data-fwwebex-action-type
+        */
+        document.addEventListener('click', function (e) {
+            const el = e.target.closest('[data-fwwebex-action-type]');
+            if (el) {
+                e.preventDefault();
+                FWWebExExecute({
+                    type: el.dataset.fwwebexActionType,
+                    url: el.dataset.fwwebexUrl,
+                    target: el.dataset.fwwebexTarget || 'overlay',
+                    data: el.dataset.fwwebexPayload ? JSON.parse(el.dataset.fwwebexPayload) : {},
+                    auth: el.dataset.fwwebexAuth ? JSON.parse(el.dataset.fwwebexAuth) : {},
+                    ws: el.dataset.fwwebexWs ? JSON.parse(el.dataset.fwwebexWs) : {}
+                });
+            }
+        });
+
+        /** Helper function
+        * Creates and displays a customizable modal dialog using Bootstrap styling, similar to WebExDataTableFilterPanelEx.
+        * @param {string} message - The message or HTML content to display in the modal body (short message or detailed text).
+        * @param {string} [title='Alert'] - The title to display in the modal header.
+        * @param {string} [type='primary'] - The modal type for styling (e.g., 'primary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'secondary').
+        * @param {Object} [options] - Optional configuration object.
+        * @param {boolean} [options.autoClose=false] - Whether the modal should close automatically.
+        * @param {number} [options.autoCloseDelay=5000] - Delay in milliseconds before auto-closing (if autoClose is true).
+        * @param {boolean} [options.dismissible=true] - Whether the modal includes a close button and is dismissible by backdrop/ESC.
+        * @param {HTMLElement} [options.target=document.body] - The DOM element where the modal will be appended.
+        * @param {boolean} [options.detailed=false] - Whether to display the message in a textarea for detailed content.
+        * @returns {HTMLElement} - The created modal element for further manipulation.
+        ********************************************************************************************************************************************
+        Example of usage:
+        // Link message example
+        FWWebExAlert('Alert with link <a href="#" class="alert-link">click here</a>.', 'Warning', 'warning', { dismissible: true });
+        // Short message example
+        FWWebExAlert('This is a test alert at 03:50 PM -03 on October 02, 2025!', 'Success Alert', 'success', { autoClose: true, autoCloseDelay: 3000 });
+        // Detailed message example
+        const detailedMessage = `This is a very long message to demonstrate the textarea feature. It includes multiple lines of text to show how the modal adapts to detailed content. You can add as much text as needed here, and it will be displayed in a resizable textarea for better readability. This is especially useful for error messages or detailed notifications.`;
+        FWWebExAlert(detailedMessage, 'Detailed Alert', 'info', { detailed: true });
+        ********************************************************************************************************************************************
+        */
+        function FWWebExAlert(message, title = 'Alert', type = 'primary', options = {}) {
+            // Default configurations
+            const defaultOptions = {
+                autoClose: false,
+                autoCloseDelay: 5000,
+                dismissible: true,
+                target: document.body,
+                detailed: false
+            };
+            const settings = { ...defaultOptions, ...options };
+
+            // Validate input
+            if (!message || typeof message !== 'string') {
+                console.error('FWWebExAlert: Message is required and must be a string.');
+                return null;
+            }
+            if (!['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'].includes(type)) {
+                console.warn(`FWWebExAlert: Invalid type '${type}'. Defaulting to 'primary'.`);
+                type = 'primary';
+            }
+            if (!settings.target || !settings.target.appendChild) {
+                console.error('FWWebExAlert: Invalid target element. Using document.body.');
+                settings.target = document.body;
+            }
+
+            // Map alert types to Bootstrap icons
+            const iconMap = {
+                primary: 'bi-info-circle-fill',
+                secondary: 'bi-info-circle-fill',
+                success: 'bi-check-circle-fill',
+                danger: 'bi-exclamation-circle-fill',
+                warning: 'bi-exclamation-triangle-fill',
+                info: 'bi-info-circle-fill',
+                light: 'bi-info-circle-fill',
+                dark: 'bi-info-circle-fill'
+            };
+
+            try {
+                // Generate unique ID for the modal
+                const modalId = 'fwwebex-alert-modal-' + Date.now();
+                const dialogId = modalId + '-dialog';
+                const contentId = modalId + '-content';
+
+                // Create the modal structure with larger size
+                const modalDiv = document.createElement('div');
+                modalDiv.id = modalId;
+                modalDiv.className = `modal fade ${settings.dismissible ? '' : 'modal-static'}`;
+                modalDiv.setAttribute('tabindex', '-1');
+                modalDiv.setAttribute('role', 'dialog');
+                modalDiv.style.display = 'block'; // Ensure visibility
+
+                // Determine modal body content
+                let modalBodyContent = '';
+                if (settings.detailed && message.length > 100) { // Threshold for detailed view
+                    modalBodyContent = `
+                        <textarea class="form-control" rows="5" readonly>${message}</textarea>
+                    `;
+                } else {
+                    modalBodyContent = `<p>${message}</p>`;
+                }
+
+                modalDiv.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered modal-lg" id="${dialogId}" role="document">
+                        <div class="modal-content" id="${contentId}">
+                            <div class="modal-header bg-${type} text-white">
+                                <h5 class="modal-title"><i class="bi ${iconMap[type]} me-2"></i>${title}</h5>
+                                ${settings.dismissible ? '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' : ''}
+                            </div>
+                            <div class="modal-body">
+                                ${modalBodyContent}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-${type}" data-bs-dismiss="modal">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Add the modal to the DOM
+                settings.target.appendChild(modalDiv);
+
+                // Check if Bootstrap is available
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    // Initialize the modal
+                    const bsModal = new bootstrap.Modal(modalDiv, {
+                        backdrop: settings.dismissible ? 'static' : true,
+                        keyboard: settings.dismissible,
+                        focus: true
+                    });
+
+                    // Show the modal
+                    bsModal.show();
+
+                    // If autoClose is enabled, close the modal after the delay
+                    if (settings.autoClose) {
+                        setTimeout(() => {
+                            bsModal.hide();
+                        }, settings.autoCloseDelay);
+                    }
+
+                    // Listen for hidden event to remove from DOM
+                    modalDiv.addEventListener('hidden.bs.modal', () => {
+                        if (modalDiv.parentNode) {
+                            modalDiv.parentNode.removeChild(modalDiv);
+                        }
+                    });
+                } else {
+                    console.warn('FWWebExAlert: Bootstrap JS not loaded. Modal will be static.');
+                    // Fallback: Show statically without Bootstrap functionality
+                    modalDiv.classList.add('show');
+                    modalDiv.style.display = 'block';
+                    document.body.classList.add('modal-open'); // Prevent body scroll
+                }
+
+                // Return the modal element for additional control, if needed
+                return modalDiv;
+            } catch (error) {
+                console.error('FWWebExAlert: Failed to create modal:', error);
+                return null;
+            }
+        }
+
+        /*
+        ********************************************************************************************************************************************
+        FWWebExDecodeHTMLEntities*/
+        function FWWebExDecodeHTMLEntities(text) {
+            const txt = document.createElement("textarea");
+            txt.innerHTML = text;
+            return txt.value;
+        }
+
+        /*
+        ********************************************************************************************************************************************
+        FWWebExShowComingSoon*/
+        function FWWebExShowComingSoon(route) {
+            FWWebExAlert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'), 'Info' ,'info', { dismissible: true });
+        }
+
+        /*
+        ********************************************************************************************************************************************
+        * Helper function
+        * Removes all leading, trailing, and extra spaces between words in a string.
+        * @param {string} str - The input string to be trimmed.
+        * @returns {string} - The trimmed string with single spaces between words.
+        */
+        function FWWebExAllTrim(str) {
+            if (typeof str !== "string") {
+                throw new TypeError("Input must be a string");
+            }
+            // Use trim() to remove leading and trailing spaces
+            // Use replace() with a regex to collapse multiple spaces into one
+            return str.trim().replace(/\s+/g, " ");
+        }
+    endContent
+
+return(cPageScript)

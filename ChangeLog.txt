@@ -2,8 +2,39 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Replace alert() with FWWebExAlert and improve filter panel UX)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements)"
 */
+
+2025-10-03 18:03 UTC naldodj (Multiple fixes and enhancements)
+  * Multiple fixes and enhancements
+    * src/fw.webex/tests/fw.webex.examples/010/fw.webex.example.010.tlpp
+    * src/fw.webex/tests/fw.webex.examples/011/fw.webex.example.011.tlpp
+    * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+    * src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.header.tlpp
+    * src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.page.tlpp
+    * src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp
+    * src/fw.webex/core/component/fw.webex.datatable.filter.tlpp
+  * Refactors field and fieldset components to use new naming conventions.
+    * src/fw.webex/core/component/fw.webex.field.tlpp
+    * src/fw.webex/core/component/fw.webex.fieldset.tlpp
+  ! Fixes typos and class inheritance in SBAdmin side nav. Minor style and method signature adjustments across components.
+    * src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.nav.tlpp
+  * Improves button icon handling and placement.
+    * src/fw.webex/core/component/fw.webex.button.tlpp
+  * Refactor component structure and icon handling
+    Updates icon class logic for spacing.
+      * src/fw.webex/core/component/fw.webex.icon.tlpp
+  * Renames and moves fw.webex.page.tlpp to component directory and refactors header asset management.
+    * src/fw.webex/core/layout/fw.webex.page.tlpp -> src/fw.webex/core/component/fw.webex.page.tlpp
+  * Renames and moves fw.webex.main.tlpp to page directory
+    * src/fw.webex/core/layout/fw.webex.main.tlpp -> src/fw.webex/core/page/fw.webex.main.tlpp
+  ! Introduces the AmIReallyMe method to ClassBase for reference equality checks.
+    Updates SetFromObject to use AmIReallyMe for object member assignment, improving handling of self-referential objects and preventing unnecessary copying.
+      * src/fw.webex/core/tools/fw.webex.class.base.tlpp
+  * Introduces the jObjectsContainer property to WebExControl for managing additional objects.
+    Adds methods for cleaning up and deleting objects from the container, and updates Clean and CleanChildren to recursively clean objects containers.
+    Also refactors __aVoidTags initialization for improved readability.
+      * src/fw.webex/core/control/fw.webex.control.tlpp
 
 2025-10-02 20:11 UTC naldodj (Replace alert() with FWWebExAlert and improve filter panel UX)
   * Replace alert() with FWWebExAlert and improve filter panel UX

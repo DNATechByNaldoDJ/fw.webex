@@ -18,6 +18,9 @@ class WebExButton from WebExControl
     protected data cButtonLabel as character
     protected data cButtonType as character
 
+    protected data lHasIcon as logical
+    protected data lIconBefore as logical
+
     protected data oButton as object
     protected data oButtonIcon as object
 
@@ -35,6 +38,8 @@ method New(cButtonLabel,cButtonType) class WebExButton
     paramtype 2 var cButtonType as character optional default "submit"
     ::cButtonLabel:=cButtonLabel
     ::cButtonType:=Lower(cButtonType)
+    ::lHasIcon:=.F.
+    ::lIconBefore:=.T.
     _Super:New("button")
     ::oButton:=self
     ::AddClass("btn")
@@ -46,7 +51,13 @@ return(self)
 method SetButtonLabel(cButtonLabel) class WebExButton
     paramtype 1 var cButtonLabel as character optional default ::cButtonLabel
     ::SetMemberData("cButtonLabel",cButtonLabel)
-    ::SetContent(::cButtonLabel)
+    if (::lHasIcon)
+        ::DelContent(::oButton:GetID())
+        ::DelContent(::oButtonIcon:GetID())
+        ::SetContent(::cButtonLabel,if(::lIconBefore,::oButtonIcon:GetID(),::oButton:GetID()))
+    else
+        ::SetContent(::cButtonLabel)
+    endif
 return(self)
 
 method SetButtonType(cButtonType) class WebExButton
@@ -58,9 +69,15 @@ return(self)
 method SetButtonIcon(cIconName,cIconType,lIconBefore) class WebExButton
     paramtype 1 var cIconName as character optional default "bootstrap"
     paramtype 2 var cIconType as character
-    paramtype 3 var lIconBefore as logical optional default .T.
+    paramtype 3 var lIconBefore as logical optional default ::lIconBefore
+    ::lHasIcon:=.T.
+    ::lIconBefore:=lIconBefore
     WITH WEBEXOBJECT ::oButton
         WITH WEBEXOBJECT ::oButtonIcon CLASS WebExIcon ARGS cIconName,cIconType,lIconBefore
         END WEBEXOBJECT
+        if (::lIconBefore)
+            .:DelContent(.:GetID())
+            .:SetContent(::cButtonLabel,::oButtonIcon:GetID())
+        endif
     END WEBEXOBJECT NOADDCHILD
 return(self)

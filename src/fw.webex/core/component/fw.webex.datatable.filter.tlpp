@@ -71,7 +71,7 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableFilter
                 cIDButton:=.:GetID()
                 .:AddClass("btn btn-primary")
                 .:SetFixedID("FWWebExDataTableFilterButton_"+cIDButton)
-                .:SetButtonIcon("fa-filter","fontawesome",.F.)
+                .:SetButtonIcon("fa-filter","fontawesome",.T.)
             END WEBEXOBJECT
             beginContent var cScript
                 (function(){

@@ -17,7 +17,7 @@ class WebExFieldSet from WebExControl
 
     protected data cFieldSetLegend as character
 
-    protected data oWebExLegendFieldSet as object
+    protected data oFieldSetLegend as object
 
     public method New(cFieldSetLegend as character) as object
 
@@ -29,12 +29,12 @@ method New(cFieldSetLegend) class WebExFieldSet
     paramtype 1 var cFieldSetLegend as character
     ::cFieldSetLegend:=cFieldSetLegend
     _Super:New("fieldset")
-    ::oWebExLegendFieldSet:=WebExLegend():New(::cFieldSetLegend)
-    ::AddChild(::oWebExLegendFieldSet)
+    ::oFieldSetLegend:=WebExLegend():New(::cFieldSetLegend)
+    ::AddChild(::oFieldSetLegend)
 return(self)
 
 method SetFieldSetLegend(cFieldSetLegend) class WebExFieldSet
     paramtype 1 var cFieldSetLegend as character optional default ::cFieldSetLegend
     ::SetMemberData("cFieldSetLegend",cFieldSetLegend)
-    ::oWebExLegendFieldSet:SetLegendContent(::cFieldSetLegend)
+    ::oFieldSetLegend:SetLegendContent(::cFieldSetLegend)
 return(self)

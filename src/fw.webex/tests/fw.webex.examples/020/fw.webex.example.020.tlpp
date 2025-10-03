@@ -472,11 +472,11 @@ static procedure FWWebExExample_020(cHTML as character) as character
                             WITH WEBEXOBJECT CLASS WebExDiv
                                 .:AddClass("ms-auto")
                                 WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtrar","button"
-                                    .:SetButtonIcon("fa-filter","fontawesome",.F.)
+                                    .:SetButtonIcon("fa-filter","fontawesome",.T.)
                                     .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanel:GetID()+"').modal('show')")
                                 END WEBEXOBJECT
                                 WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtros Avan&ccedil;ados","button"
-                                    .:SetButtonIcon("fa-filter","fontawesome",.F.)
+                                    .:SetButtonIcon("fa-filter","fontawesome",.T.)
                                     .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanelEx:GetID()+"').modal('show')")
                                 END WEBEXOBJECT
                             END WEBEXOBJECT

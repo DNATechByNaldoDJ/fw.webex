@@ -111,14 +111,20 @@ static procedure FWWebExExample_011(cHTML as character) as character
                     // KPI 1
                     WITH WEBEXOBJECT CLASS WebExCol ARGS 6
                         WITH WEBEXOBJECT CLASS WebExCardKPI ARGS "Clientes Ativos","1.024","bg-info",WebExIcon():New("analytics","material",.F.)
+                            .:SetAttr("style","display:flex; gap:1px; align-items:center;")
+                            .:GetMemberData("oCardKPITitle"):SetAttr("style","display:flex; gap:1px; align-items:center;")
+                            .:GetMemberData("oCardKPIIcon"):SetAttr("style","display:flex; gap:1px; align-items:center;")
                         END WEBEXOBJECT
                     END WEBEXOBJECT
                     // KPI 2
-                    WITH WEBEXOBJECT CLASS WebExCol ARGS 4
+                    WITH WEBEXOBJECT CLASS WebExCol ARGS 6
                         .:AddClass("border-start")
                         .:AddClass("border-secondary")
                         .:AddClass("ps-3")
                         WITH WEBEXOBJECT CLASS WebExCardKPI ARGS "Ticket M&eacute;dio","R$ 122,00","bg-warning",WebExIcon():New("insights","material",.F.)
+                            .:SetAttr("style","display:flex; gap:1px; align-items:center;")
+                            .:GetMemberData("oCardKPITitle"):SetAttr("style","display:flex; gap:1px; align-items:center;")
+                            .:GetMemberData("oCardKPIIcon"):SetAttr("style","display:flex; gap:1px; align-items:center;")
                         END WEBEXOBJECT
                     END WEBEXOBJECT
                 END WEBEXOBJECT

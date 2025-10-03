@@ -41,18 +41,18 @@ method New(cPageTitle) class SBAdminPage
     _Super:DisableDarkTheme(.T.)
 
     WITH WEBEXOBJECT ::oPageHeader
-        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+        WITH WEBEXOBJECT ::jObjectsContainer["script-fontawesome"] CLASS WebExScript ARGS .F.
             .:SetContent("https://use.fontawesome.com/releases/v6.3.0/js/all.js")
             .:SetAttr("crossorigin","anonymous")
             .:AddInHeader(.this)
         END WEBEXOBJECT NOADDCHILD
         if (FWSBAdminTools():SBAdminCheck(@cSBAdminPath))
-            WITH WEBEXOBJECT CLASS WebExLink()
+            WITH WEBEXOBJECT ::jObjectsContainer["link-sbadmin-css"] CLASS WebExLink()
                 .:SetAttr("href",cSBAdminPath+"css/styles.css")
                 .:SetAttr("rel","stylesheet")
                 .:AddInHeader(.this)
             END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            WITH WEBEXOBJECT ::jObjectsContainer["script-sbadmin"] CLASS WebExScript ARGS .F.
                 .:SetAttr("src",cSBAdminPath+"js/scripts.js")
             END WEBEXOBJECT
         endif
