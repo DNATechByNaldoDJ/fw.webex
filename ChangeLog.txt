@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add Markdown report example and update test path)"
 */
+
+2025-10-04 21:32 UTC naldodj (Add Markdown report example and update test path)
+  * Add Markdown report example and update test path
+    Added a new Markdown report example file 'relatorio.md' for testing purposes.
+    Updated the output path in 'testemd.tlpp' to save the generated Markdown file to the project directory instead of a temporary folder.
+      + src/fw.webex/tests/md/relatorio.md
+      * src/fw.webex/tests/md/testemd.tlpp
 
 2025-10-03 18:03 UTC naldodj (Multiple fixes and enhancements)
   * Multiple fixes and enhancements

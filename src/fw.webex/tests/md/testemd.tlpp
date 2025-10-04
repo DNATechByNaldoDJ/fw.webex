@@ -89,7 +89,7 @@ procedure u_TestaMD()
 
     oMd:Rule()
 
-    oMD:Save("c:\tmp\relatorio.MD")
+    oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\md\relatorio.md")
 
     oMD:Clean()
     FreeObj(@oMD)
