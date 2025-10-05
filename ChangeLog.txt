@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add Markdown report example and update test path)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add DataTable and JSON merge utility classes)"
 */
+
+2025-10-05 18:48 UTC naldodj (Add DataTable and JSON merge utility classes)
+  + Add DataTable and JSON merge utility classes
+      Introduces WebExDataTable for dynamic DataTable generation with custom columns, actions, and server-side options.
+        + src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.tlpp
+      Adds JSONObjectMerge utility for deep merging of JSON objects, supporting nested structures and arrays.
+        + src/fw.webex/core/tools/fw.webex.jsonobject.merge.tlpp
 
 2025-10-04 21:32 UTC naldodj (Add Markdown report example and update test path)
   * Add Markdown report example and update test path

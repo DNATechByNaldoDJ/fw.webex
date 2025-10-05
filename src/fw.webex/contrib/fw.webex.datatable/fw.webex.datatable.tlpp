@@ -1,0 +1,186 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExDataTable from WebExTable
+
+    protected data jDataTableColumns as json  // Colunas para DataTable (incluindo renderers customizados)
+    protected data jDataTableOptions as json  // Opcoes gerais para inicializacao do DataTable
+    protected data jActions as json           // Acoes/buttons por linha (para coluna de acoes)
+    protected data lServerSide as logical     // Flag para processamento server-side
+    protected data cAjaxFunction as character // Funcao AJAX customizada (como string JS)
+    protected data oDataTableScript as object // Script JS para inicializacao do DataTable
+
+    public method New(cTableTitle,lServerSide) as object
+    public method AddColumnHeader(cTableColumnLabel,cTableColumnFieldName,bRender) as object
+    public method AddActionButton(cLabel,cIcon,cOnClick,cClass) as object
+    public method SetDataTableOptions(jOptions) as object
+    public method SetAjaxFunction(cAjaxJS) as object
+    public method BuildColumns() as object
+    public method EnableServerSide(lEnable) as object
+    public method RenderHTML() as character
+    public method GetInitScript() as character
+
+    protected method GenerateActionsRender() as character
+
+endclass
+
+method New(cTableTitle,lServerSide) class WebExDataTable
+    paramtype 1 var cTableTitle as character optional
+    paramtype 2 var lServerSide as logical optional default .F.
+    ::jDataTableColumns:=JSONObject():New()
+    ::jDataTableOptions:=JSONObject():New()
+    ::jActions:=JSONObject():New()
+    ::lServerSide:=lServerSide
+    ::cAjaxFunction:=""
+    ::oDataTableScript:=WebExScript():New()
+    _Super:New(cTableTitle)
+    ::SetEnableDataTable(.T.)  // Ativa DataTable por padrao
+    // Opcoes padrao do DataTable
+    ::jDataTableOptions["processing"]:=.T.
+    ::jDataTableOptions["dom"]:='Blfrtip'
+    ::jDataTableOptions["lengthMenu"]:={5,10,25,50,100,-1}
+    ::jDataTableOptions["pageLength"]:=10
+    ::jDataTableOptions["language"]:={"url": "https://cdn.datatables.net/plug-ins/2.3.2/i18n/pt-BR.json"}
+return(self)
+
+method AddColumnHeader(cTableColumnLabel,cTableColumnFieldName,bRender) class WebExDataTable
+    local oTH:=_Super:AddColumnHeader(cTableColumnLabel,cTableColumnFieldName)
+    local jColumn:=JSONObject():New()
+    paramtype 1 var cTableColumnLabel as character
+    paramtype 2 var cTableColumnFieldName as character optional default cTableColumnLabel
+    paramtype 3 var bRender as block optional  // Codeblock para render customizado (gera JS string)
+    jColumn["data"]:=cTableColumnFieldName
+    jColumn["title"]:=cTableColumnLabel
+    if (ValType(bRender)=="B")
+        jColumn["render"]:=Eval(bRender)  // Assume que o codeblock retorna uma string JS para render
+    endif
+    ::jDataTableColumns[cTableColumnFieldName]:=jColumn
+return(oTH)
+
+method AddActionButton(cLabel,cIcon,cOnClick,cClass) class WebExDataTable
+    local jAction as json
+    local jActionsColumn as json
+    paramtype 1 var cLabel as character
+    paramtype 2 var cIcon as character optional
+    paramtype 3 var cOnClick as character optional  // String JS para onclick,e.g.,"myFunction(data)"
+    paramtype 4 var cClass as character optional default "btn btn-sm"
+    jAction:=JSONObject():New()
+    jAction["label"]:=cLabel
+    jAction["icon"]:=cIcon
+    jAction["onclick"]:=cOnClick
+    jAction["class"]:=cClass
+    ::jActions[::NewID()]:=jAction  // Adiciona como array-like
+    // Adiciona coluna de acoes se ainda nao existir
+    if (!::jDataTableColumns:HasProperty("actions"))
+        jActionsColumn:=JSONObject():New()
+        jActionsColumn["data"]:=NIL  // Coluna nao mapeada a dados
+        jActionsColumn["title"]:="Actions"
+        jActionsColumn["orderable"]:=.F.
+        jActionsColumn["searchable"]:=.F.
+        jActionsColumn["render"]:=::GenerateActionsRender()  // Gera funcao render JS
+        ::jDataTableColumns["actions"]:=jActionsColumn
+    endif
+return(self)
+
+method SetDataTableOptions(jOptions) class WebExDataTable
+    paramtype 1 var jOptions as json
+    ::jDataTableOptions:=JSONObjectMerge():MergeJSON(::jDataTableOptions,jOptions)
+return(self)
+
+method SetAjaxFunction(cAjaxJS) class WebExDataTable
+    paramtype 1 var cAjaxJS as character  // String com a funcao AJAX completa
+    ::cAjaxFunction:=cAjaxJS
+return(self)
+
+method BuildColumns() class WebExDataTable
+    // Constroi as colunas para DataTable JS
+    local aColumns:=Array(0)
+    aEval(::jDataTableColumns:GetNames(),{|cName|aAdd(aColumns,::jDataTableColumns[cName])})
+    ::jDataTableOptions["columns"]:=aColumns
+return(self)
+
+method EnableServerSide(lEnable) class WebExDataTable
+    paramtype 1 var lEnable as logical optional default .T.
+    ::lServerSide:=lEnable
+    ::jDataTableOptions["serverSide"]:=lEnable
+return(self)
+
+method RenderHTML() class WebExDataTable
+    local cHTML:=_Super:RenderHTML() as character
+    local cScript as character
+    // Gera o script de inicializacao se necessario
+    if (::lServerSide .and. !Empty(::cAjaxFunction))
+        ::jDataTableOptions["ajax"]:=::cAjaxFunction
+    endif
+    ::BuildColumns()  // Finaliza colunas
+    cScript:="document.addEventListener('DOMContentLoaded',function () {"
+    cScript += "const table_"+::GetFixedID()+" = new DataTable('#" + ::GetFixedID() + "'," + ::jDataTableOptions:ToJSON() + ");"
+    cScript += "});"
+    ::oDataTableScript:SetContent(cScript)
+    // Adiciona o script ao HTML (ou pode ser retornado separadamente)
+    cHTML+=::oDataTableScript:RenderHTML()
+return(cHTML)
+
+method GetInitScript() class WebExDataTable
+    local cScript as character
+    // Retorna apenas o script de inicializacao (para uso separado,como no exemplo)
+    ::BuildColumns()
+    cScript:="const table_"+::GetFixedID()+" = new DataTable('#" + ::GetFixedID() + "'," + ::jDataTableOptions:ToJSON() + ");"
+return(cScript)
+
+method GenerateActionsRender() class WebExDataTable
+    local aNames as array
+    local cRenderJS as character
+    local cRenderTmp as character
+    local cRenderBody:="" as character
+    local jAction as json
+    local i as numeric
+    aNames:=::jActions:GetNames()
+    beginContent var cRenderJS
+        function (data,type,row) {
+            let buttons = "";
+            __BODY_FUNCTION__
+            return buttons;
+        }
+    endContent
+    for i:=1 to Len(aNames)
+        cKey:=aNames[i]
+        jAction:=::jActions[cKey]
+        beginContent var cRenderTmp
+            buttons+='<button id="__ID__" class="__CLASS__" onclick="__ON_CLICK__">
+        endContent
+        cRenderBody+=::StrReplaceEx(;
+            cRenderTmp;
+            ,{"__ID__",::NewID()};
+            ,{"__CLASS__",jAction["class"]};
+            ,{"__ON_CLICK__",StrTran(jAction["onclick"],"data","row")};
+        )
+        if (!Empty(jAction["icon"]))
+            beginContent var cRenderTmp
+                <i id="__ID__" class="__ICON__"></i>
+            endContent
+            cRenderBody+=::StrReplaceEx(;
+                cRenderTmp;
+                ,{"__ID__",::NewID()};
+                ,{"__ICON__",jAction["icon"]};
+            )
+        endif
+        cRenderBody+=jAction["label"]+"</button>';"
+    next i
+    cRenderJS+=::StrReplaceEx(;
+        cRenderJS;
+        ,{"__BODY_FUNCTION__",cRenderBody};
+    )
+return(cRenderJS)
