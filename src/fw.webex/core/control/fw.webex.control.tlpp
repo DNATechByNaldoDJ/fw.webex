@@ -182,9 +182,6 @@ class WebExControl from FWWebEx.ClassBase
 
     public method DumpDOM(nLevel as numeric) as character
 
-    public method StrReplace(cTemplate as character,vSubstitutions as variant) as character
-    public method StrReplaceEx(cTemplate,vSubstitutions as variadic) as character
-
 endclass
 
 method New(cType) class WebExControl
@@ -1919,9 +1916,3 @@ method DumpDOM(nLevel) class WebExControl
     FWFreeArray(@aChildren)
 
 return(cDOM)
-
-method StrReplace(cTemplate,vSubstitutions) class WebExControl
-return(WebExHelper():StrReplace(cTemplate,vSubstitutions))
-
-method StrReplaceEx(cTemplate,vSubstitutions) class WebExControl
-return(WebExHelper():StrReplaceEx(cTemplate,vSubstitutions))

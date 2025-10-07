@@ -46,7 +46,7 @@ static procedure FWWebExExample_000()
     local nRight as numeric
 
     local nExample as numeric
-    local nExamples:=22 as numeric
+    local nExamples:=23 as numeric
 
     local oTDlg as object
     local oTMenu as object
@@ -57,6 +57,7 @@ static procedure FWWebExExample_000()
 
     jExamples["Forms"]:=JSONObject():New()
     jExamples["Tables"]:=JSONObject():New()
+    jExamples["DataTables"]:=JSONObject():New()
     jExamples["UIComponents"]:=JSONObject():New()
     jExamples["DashBoard"]:=JSONObject():New()
     jExamples["Nav"]:=JSONObject():New()
@@ -75,6 +76,8 @@ static procedure FWWebExExample_000()
             jExamples["Forms"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"001|002|006|007|008|009|018")
             jExamples["Tables"][cExample]:=&("{||"+cExample+"()}")
+        case (cRight$"023")
+            jExamples["DataTables"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"004")
             jExamples["UIComponents"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"010|011")

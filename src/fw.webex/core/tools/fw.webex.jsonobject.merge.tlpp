@@ -19,49 +19,9 @@ Released to Public Domain.
 namespace FWWebEx
 using namespace FWWebEx
 
-class JSONObjectMerge from FWWebEx.ClassBase
+class JSONObjectMerge from FWWebEx.JSONObjectTools
     static method MergeJSON(jTarget as json,jSource as json) as json
 end class
 
 static method MergeJSON(jTarget,jSource) class JSONObjectMerge
-
-    local aKeys as array
-
-    local cKey as character
-    local cType as character
-
-    local i as numeric
-    local j as numeric
-
-    local vValue as variant
-
-    paramtype jTarget as json
-    paramtype jSource as json
-
-    aKeys:=jSource:GetNames()
-    for i:=1 to Len(aKeys)
-        cKey:=aKeys[i]
-        vValue:=jSource[cKey]
-        cType:=ValType(vValue)
-        if (cType=="J")
-            jTarget[cKey]:=JSONObjectClone():CloneJSON(vValue)
-        elseif (cType=="A")
-            jTarget[cKey]:=Array(Len(vValue))
-            for j:=1 to Len(jTarget[cKey])
-                cType:=ValType(vValue[j])
-                if (cType=="J")
-                    jTarget[cKey][j]:=JSONObjectClone():CloneJSON(vValue[j])
-                elseif ((cType=="O").and.(MethIsMemberOf(vValue[j],"CLONE",.T.)))
-                    jTarget[cKey][j]:=vValue[j]:Clone()
-                else
-                    jTarget[cKey][j]:=vValue[j]
-                endif
-            next j
-        elseif ((cType=="O").and.(MethIsMemberOf(vValue[j],"CLONE",.T.)))
-            jTarget[cKey]:=vValue:Clone()
-        else
-            jTarget[cKey]:=vValue
-        endif
-    next i
-
-return(jTarget)
+return(JSONObjectTools():MergeJSON(jTarget,jSource))

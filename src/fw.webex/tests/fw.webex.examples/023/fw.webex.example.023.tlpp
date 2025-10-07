@@ -1,0 +1,1059 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+https://startbootstrap.com/template/sb-admin
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+
+procedure u_FWWebExExample_023()
+    local bExecute as codeblock
+    local bCallBack as codeblock
+    local bJSToAdvPL as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local cCallBackActRet as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_023(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.T.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        bCallBack:={|oTWebChannel as object,cCodeType as character,cCodeContent as character,aCallBackAct as array,oTWebEngine as object|u_callProcTLPPEx018(oTWebChannel,cCodeType,cCodeContent,aCallBackAct,oTWebEngine)}
+        bJSToAdvPL:={|oTWebChannel as object,cCodeType as character,cCodeContent as character|FWWebEx.WebApp():JSToAdvPL(oTWebChannel,cCodeType,cCodeContent)}
+        cCallBackActRet:="CALLBACK_EXEC:CALLBACK_RESPONSE"
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallBack,cCallBackActRet)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static procedure FWWebExExample_023(cHTML as character) as character
+
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+    local cSBAdminPath as character
+
+    local cUserID:=if((Type("__cUserID")=="C").and.(!Empty(__cUserID)),__cUserID,"000000")
+    local cScript as character
+    local cYesFields as character
+    local cPageStyle as character
+    local cPostInitJS as character
+    local cAjaxFunction as character
+    local cIDDataTable:=ProcName() as character
+
+    local jTableFields as json
+    local jTableFilter as json
+    local jInternalFilter:={"RA_SEXO":"M"} as json
+    local jInternalFieldsTypes:=JSONObject():New() as json
+
+    local nAT_RA_SEXO as numeric
+
+    local oFWWebExPage as object
+    local oFWWebExBody as object
+
+    if (!FWExampleTools():SBAdminCheck(@cSBAdminPath))
+        return("")
+    endif
+
+    jTableFields:=JSONObject():New()
+    jTableFields["fields"]:=Array(0)
+
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_FILIAL","X3_TIPO"),"name":"RA_FILIAL","label":GetSX3Title("RA_FILIAL")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_MAT","X3_TIPO"),"name":"RA_MAT","label":GetSX3Title("RA_MAT")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_APELIDO","X3_TIPO"),"name":"RA_APELIDO","label":GetSX3Title("RA_APELIDO")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_CC","X3_TIPO"),"name":"RA_CC","label":GetSX3Title("RA_CC")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_SALARIO","X3_TIPO"),"name":"RA_SALARIO","label":GetSX3Title("RA_SALARIO")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_ADTPOSE","X3_TIPO"),"name":"RA_ADTPOSE","label":GetSX3Title("RA_ADTPOSE")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_CATFUNC","X3_TIPO"),"name":"RA_CATFUNC","label":GetSX3Title("RA_CATFUNC")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_DEPIR","X3_TIPO"),"name":"RA_DEPIR","label":GetSX3Title("RA_DEPIR")})
+    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_SEXO","X3_TIPO"),"name":"RA_SEXO","label":GetSX3Title("RA_SEXO")})
+
+    cYesFields:=""
+    aEval(jTableFields["fields"],{|jField|cYesFields+=jField["name"]+","})
+    cYesFields:=SubStr(cYesFields,1,Len(cYesFields)-1)
+
+    jTableFilter:=JSONObjectClone():CloneJSON(jTableFields)
+    //Sexo Esta Fixo no Filtro da Tabela, nao permitir Alterar no Filtro/Pesquisa.
+    nAT_RA_SEXO:=aScan(jTableFilter["fields"],{|jField|jField["name"]=="RA_SEXO"})
+    if (nAT_RA_SEXO>0)
+        jInternalFieldsTypes[jTableFilter["fields"][nAT_RA_SEXO]["name"]]:=jTableFilter["fields"][nAT_RA_SEXO]["type"]
+        aDel(jTableFilter["fields"],nAT_RA_SEXO)
+        aSize(jTableFilter["fields"],Len(jTableFilter["fields"])-1)
+    endif
+
+    beginContent var cPageStyle
+
+        /* ApexChart Area */
+        #myBarApexChart, #myAreaApexChart {
+            width: 100%;
+            height: 200px;
+        }
+
+        #myPieChart, #myPieApexChart {
+            width: 100%;
+            height: 480px; /* ou a altura que quiser pra ficar proporcional ao Chart.js */
+            max-height: 520px; /* opcional, evita explodir se o conteudo for denso */
+            margin: 0 auto; /* centraliza se precisar */
+        }
+
+        /* Filtro Customizado */
+        .datatable-filter-wrapper {
+            display: inline-block;
+            width: 100%;
+            text-align: right; /* ou left */
+        }
+
+        /* Compactar linhas do DataTables */
+        table.dataTable.compact tbody tr {
+            height: 28px; /* Altura reduzida para linhas */
+            line-height: 28px; /* Alinhar texto verticalmente */
+        }
+
+        table.dataTable.compact tbody td,
+        table.dataTable.compact thead th {
+            padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
+            font-size: 12px; /* Tamanho de fonte menor */
+            margin: 0; /* Remover margens */
+        }
+
+        table.dataTable.compact thead th {
+            font-weight: bold; /* Manter destaque nos cabecalhos */
+        }
+
+        /* Garantir que a tabela nao tenha espacamentos extras */
+        table.dataTable.compact {
+            border-spacing: 0;
+            border-collapse: collapse;
+        }
+
+        /* Ajustar linhas vazias adicionadas pelo drawCallback */
+        table.dataTable.compact tr.empty-row td {
+            padding: 0;
+            height: 20px; /* Menor altura para linhas vazias */
+        }
+
+        /* Evitar quebras de linha e overflow */
+        table.dataTable.compact td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+    endContent
+
+    /*
+        Tabela do DOM (so pra referencia)
+        https://datatables.net/reference/option/dom
+        | Letra | Elemento que aparece           |
+        | ----- | ------------------------------ |
+        | **B** | Botoes (exportacao etc.)       |
+        | **l** | Seletor de "linhas por pagina" |
+        | **f** | Campo de busca (filtro)        |
+        | **r** | Texto "processing..."          |
+        | **t** | Tabela                         |
+        | **i** | Info de "Mostrando x a y de z" |
+        | **p** | Paginacao                      |
+    */
+    // Script com server-side pagination ativado
+    beginContent var cAjaxFunction
+        function (data, callback) {
+
+            const pageNumber = Math.floor(data.start / data.length) + 1;
+            const rowsPerPage = data.length === -1 ? 999999 : data.length;
+
+            //Filtros Customizados Inicio
+                // monta o filtro fixo + dinamico
+                const filters = FWWebExGetDataTableFilters(table, [
+                    'FWWebExFilter',
+                    'FWWebExPanelFilter',
+                    'FWWebExSearchFilter',
+                    'FWWebExPanelFilterEx'
+                ]);
+
+                const dynamicFilter  = filters.FWWebExFilter;
+                const extraFilter    = filters.FWWebExPanelFilter;
+                const searchFilter   = filters.FWWebExSearchFilter;
+                const extendedFilter = filters.FWWebExPanelFilterEx;
+                const extendedFilterExpression = extendedFilter["expression"] || '';
+
+                //Internal Filter (internalFilter), quando extendedFilterExpression vira em extendedFilterExpression
+                const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
+                let internalFilter = {};
+                if (!hasExtendedFilter?.FWWebExPanelFilterEx) {
+                    try {
+                        internalFilter = JSON.parse('__INTERNAL_FILTER__');
+                    } catch (err) {
+                        console.warn("Invalid Interval Filter JSON:", err.message);
+                        internalFilter = {};
+                    }
+                }
+            //Filtros Customizados Fim
+
+            const request = {
+                ClassName: 'userRestCrudTLPPCoreFunction',
+                FunctionName: 'dna.tech.codAliasPost',
+                codAlias: 'SRA',
+                yesFields: '__YES_FIELDS__',
+                Filter: Object.assign({}, internalFilter, dynamicFilter, extraFilter, searchFilter),
+                Filter64: hasExtendedFilter?.FWWebExPanelFilterEx ? extendedFilterExpression : '',
+                PageNumber: pageNumber,
+                RowspPage: rowsPerPage,
+                cEmp: '99',
+                cFil: '01',
+                lChkPrepEnv: false,
+                lHTTPCTLen: true,
+                lFWHTTpEncode: true,
+                cHTTPCTType: 'application/json; charset=UTF-8',
+                lHTTPCTType: true
+            };
+
+            FWWebEx.RequestHandler.execute({
+                requestData: request,
+                callbackEvent: 'CALLBACK_DATA_RESPONSE',
+                execEvent: 'CALLBACK_EXEC',
+                onResponse: (json) => {
+                    try {
+                        if (!json || !json.table || !json.table.items) throw new Error('Resposta incompleta');
+                        const rows = json.table.items.map(row => {
+                            const i = row.detail?.items || {};
+                            return __TABLE_FIELDS_RETURN__;
+                        });
+                        callback({
+                            data: rows,
+                            recordsTotal: json.TotalRows || rows.length,
+                            recordsFiltered: json.TotalRows || rows.length
+                        });
+                    } catch (err) {
+                        console.error('Erro ao processar dados:', err);
+                        callback({ data: [], recordsTotal: 0, recordsFiltered: 0 });
+                    } finally {
+                        $('#fwwebex-datatable-custom-loader').hide();
+                    }
+                },
+                onError: (err) => {
+                    console.warn('Erro ao executar request:', err.message);
+                    callback({ data: [], recordsTotal: 0, recordsFiltered: 0 });
+                }
+            });
+
+        }
+
+    endContent
+
+    cAjaxFunction:=WebExHelper():StrReplaceEx(;
+        cAjaxFunction;
+        ,{"__YES_FIELDS__",cYesFields}; //__YES_FIELDS__ em request
+        ,{"__INTERNAL_FILTER__",jInternalFilter:ToJSON()}; //Filtro Interno
+        ,{"__TABLE_FIELDS_RETURN__",TableFieldsReturn(jTableFields)};
+    )
+
+    beginContent var cPostInitJS
+
+        table.on('processing.dt', function (e, settings, processing) {
+            $('#fwwebex-datatable-custom-loader').toggle(processing);
+        });
+
+        // Definir advplToJs dentro do DOMContentLoaded, mas fora do ajax
+        twebchannel = window.twebchannel || {};
+        twebchannel.advplToJs = function (codeType, codeContent, objectName) {
+            if (codeType === 'CALLBACK_RESPONSE') {
+                try {
+                    const response = JSON.parse(codeContent);
+                    twebchannel.eventTarget.dispatchEvent(new CustomEvent('CALLBACK_DATA_RESPONSE', { detail: response }));
+                } catch (err) {
+                    console.error('[FWWebEx] Erro ao interpretar resposta:', err);
+                }
+            } else {
+                console.warn('[FWWebEx] Tipo inesperado:', codeType);
+            }
+        };
+
+    endContent
+
+    cScript:=""
+    //ChartSpripts
+    cScript+=ChartScripts()
+    //ApexChartSpripts
+    cScript+=ApexChartScripts()
+
+    oFWWebExScript:=WebExScript():New()
+    oFWWebExScript:SetExternalAssets(.F.)
+    oFWWebExScript:SetContent(cScript)
+
+    WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
+        .:SetAttr("class","sb-nav-fixed")
+        WITH WEBEXOBJECT CLASS SBAdminNav
+            .:NavRightLoadJSONMenu(SBAdminGetRightMenu(cYesFields))
+        END WEBEXOBJECT
+        //layoutSidenav
+        WITH WEBEXOBJECT CLASS SBAdminLayoutSideNav
+            WITH WEBEXOBJECT CLASS SBAdminLayoutSideNavNav
+                //Menu
+                .:NavLoadJSONMenu(SBAdminGetMenu(cSBAdminPath))
+                //Menu Footer
+                .:GetMemberData("oSideNavFooterDiv"):SetContent("Logged in as: "+FWGetUserName(cUserID))
+                .:GetMemberData("oSideNavFooter"):SetContent("SBAdmin :: FWWebEx",.:GetMemberData("oSideNavFooterDiv"):GetID())
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS SBAdminLayoutSideNavContent
+                WITH WEBEXOBJECT CLASS SBAdminMainContent
+                    WITH WEBEXOBJECT oSBAdminContainer CLASS SBAdminContainer
+                        WITH WEBEXOBJECT CLASS WebExH1
+                            .:AddClass("mt-4")
+                            .:SetContent("Dashboard")
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExOL
+                            .:AddClass("breadcrumb mb-4")
+                            WITH WEBEXOBJECT CLASS WebExLI
+                                .:AddClass("breadcrumb-item active")
+                                .:SetContent("Dashboard")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT oWebExRow1 CLASS WebExRow
+                            WITH WEBEXOBJECT CLASS SBAdminCardContainer
+                                WITH WEBEXOBJECT CLASS SBAdminCardWithLink ARGS "Primary Card","#","View Details"
+                                    .:AddClass("bg-primary text-white")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS SBAdminCardContainer
+                                WITH WEBEXOBJECT CLASS SBAdminCardWithLink ARGS "Warning Card","#","View Details"
+                                    .:AddClass("bg-warning text-white")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS SBAdminCardContainer
+                                WITH WEBEXOBJECT CLASS SBAdminCardWithLink ARGS "Success Card","#","View Details"
+                                    .:AddClass("bg-success text-white")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS SBAdminCardContainer
+                                WITH WEBEXOBJECT CLASS SBAdminCardWithLink ARGS "Danger Card","#","View Details"
+                                    .:AddClass("bg-danger text-white")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT oWebExRow2 CLASS WebExRow
+                            WITH WEBEXOBJECT oSBAdminChartArea CLASS WebExDiv
+                                .:AddClass("col-xl-6")
+                                WITH WEBEXOBJECT oSBAdminCardHeaderChartArea CLASS SBAdminCardHeader ARGS "Area Chart.js Example","fas fa-chart-area"
+                                    WITH WEBEXOBJECT oSBAdminCardBodyChartArea CLASS SBAdminCardBody
+                                        WITH WEBEXOBJECT oCanvasChartArea CLASS WebExControl ARGS "canvas"
+                                            .:SetFixedID("myAreaChart")
+                                            .:SetAttr("width","100%")
+                                            .:SetAttr("height","40")
+                                        END WEBEXOBJECT //oCanvasChartArea
+                                    END WEBEXOBJECT //oSBAdminCardBodyChartArea
+                                END WEBEXOBJECT //oSBAdminCardHeaderChartArea
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT oSBAdminChartBar CLASS WebExDiv
+                                .:AddClass("col-xl-6")
+                                WITH WEBEXOBJECT oSBAdminCardHeaderChartBar CLASS SBAdminCardHeader ARGS "Bar Chart.js Example","fas fa-chart-bar"
+                                    WITH WEBEXOBJECT oSBAdminCardBodyChartBar CLASS SBAdminCardBody
+                                        WITH WEBEXOBJECT oCanvasChartBar CLASS WebExControl ARGS "canvas"
+                                            .:SetFixedID("myBarChart")
+                                            .:SetAttr("width","100%")
+                                            .:SetAttr("height","40")
+                                        END WEBEXOBJECT //oCanvasChartBar
+                                    END WEBEXOBJECT //oSBAdminCardBodyChartBar
+                                END WEBEXOBJECT //oSBAdminCardHeaderChartBar
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT //oWebExRow2
+                        WITH WEBEXOBJECT oWebExRow3 CLASS WebExRow
+                            WITH WEBEXOBJECT oSBAdminChartPie CLASS WebExDiv
+                                .:AddClass("col-xl-12")
+                                WITH WEBEXOBJECT oSBAdminCardHeaderChartPie CLASS SBAdminCardHeader ARGS "Pie Chart.js Example","fas fa-chart-pie"
+                                    WITH WEBEXOBJECT oSBAdminCardBodyChartPie CLASS SBAdminCardBody
+                                        WITH WEBEXOBJECT oCanvasChartPie CLASS WebExControl ARGS "canvas"
+                                            .:SetFixedID("myPieChart")
+                                            .:SetAttr("width","100%")
+                                            .:SetAttr("height","40")
+                                        END WEBEXOBJECT //oCanvasChartPie
+                                    END WEBEXOBJECT //oSBAdminCardBodyChartPie
+                                END WEBEXOBJECT //oSBAdminCardHeaderChartPie
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT //oWebExRow3
+                        WITH WEBEXOBJECT oWebExRow4 CLASS WebExRow
+                            WITH WEBEXOBJECT oSBAdminApexChartArea CLASS WebExDiv
+                                .:AddClass("col-xl-6")
+                                WITH WEBEXOBJECT oSBAdminCardHeaderApexChartArea CLASS SBAdminCardHeader ARGS "Area ApexChart.js Example","fas fa-chart-area"
+                                    WITH WEBEXOBJECT oSBAdminCardBodyApexChartArea CLASS SBAdminCardBody
+                                        WITH WEBEXOBJECT oDivApexChartArea CLASS WebExDiv
+                                            .:SetFixedID("myAreaApexChart")
+                                        END WEBEXOBJECT //oDivApexChartArea
+                                    END WEBEXOBJECT //oSBAdminCardBodyApexChartArea
+                                END WEBEXOBJECT //oSBAdminCardHeaderApexChartArea
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT oSBAdminApexChartBar CLASS WebExDiv
+                                .:AddClass("col-xl-6")
+                                WITH WEBEXOBJECT oSBAdminCardHeaderApexChartBar CLASS SBAdminCardHeader ARGS "Bar ApexChart.js Example","fas fa-chart-bar"
+                                    WITH WEBEXOBJECT oSBAdminCardBodyApexChartBar CLASS SBAdminCardBody
+                                        WITH WEBEXOBJECT oDivApexChartBar CLASS WebExDiv
+                                            .:SetFixedID("myBarApexChart")
+                                        END WEBEXOBJECT //oDivApexChartBar
+                                    END WEBEXOBJECT //oSBAdminCardBodyApexChartBar
+                                END WEBEXOBJECT //oSBAdminCardHeaderApexChartBar
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT //oWebExRow4
+                        WITH WEBEXOBJECT oWebExRow5 CLASS WebExRow
+                            WITH WEBEXOBJECT oSBAdminApexChartPie CLASS WebExDiv
+                                .:AddClass("col-xl-12")
+                                WITH WEBEXOBJECT oSBAdminCardHeaderApexChartPie CLASS SBAdminCardHeader ARGS "Pie ApexChart.js Example","fas fa-chart-pie"
+                                    WITH WEBEXOBJECT oSBAdminCardBodyApexChartPie CLASS SBAdminCardBody
+                                        WITH WEBEXOBJECT oDivApexChartPie CLASS WebExDiv
+                                            .:SetFixedID("myPieApexChart")
+                                            .:SetAttr("style","width: 100%; height: 200px;")
+                                        END WEBEXOBJECT //oDivApexChartPie
+                                    END WEBEXOBJECT //oSBAdminCardBodyApexChartPie
+                                END WEBEXOBJECT //oSBAdminCardHeaderApexChartPie
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT //oWebExRow5
+                        WITH WEBEXOBJECT oSBAdminCardHeaderTable CLASS SBAdminCardHeader ARGS "Data Table","fa-table"
+                            WITH WEBEXOBJECT oSBAdminCardBodyTable CLASS SBAdminCardBody
+                                // Adiciona o Campo para Pesquisa
+                                WITH WEBEXOBJECT oWebExDataTableSearch CLASS WebExDataTableSearch ARGS cIDDataTable,jTableFilter
+                                    .:GetMemberData("oSearch"):SetInputPlaceHolder("Pesquisar...")
+                                END WEBEXOBJECT
+                                // Adiciona o Campo para Filtro Customizado
+                                WITH WEBEXOBJECT oWebExDataTableFilter CLASS WebExDataTableFilter ARGS cIDDataTable,jTableFilter
+                                    .:GetMemberData("oContainerGroupValue"):SetInputPlaceHolder("Filtrar ... [ ; ... ; ... ] ")
+                                    .:GetMemberData("oContainerGroupButton"):SetButtonLabel("Filtrar")
+                                END WEBEXOBJECT
+                                // Adiciona container de tabela
+                                WITH WEBEXOBJECT oWebExDivTableResult CLASS WebExDiv
+                                    //DataTable
+                                    WITH WEBEXOBJECT oWebExDataTable  CLASS WebExDataTable ARGS ProcName(),.T.
+                                        .:SetFixedID(cIDDataTable)
+                                        .:SetPostInitJS(cPostInitJS)
+                                        .:SetAjaxFunction(cAjaxFunction)
+                                        aEval(jTableFields["fields"],{|jField|oWebExDataTable:AddColumnHeader(jField["label"],jField["name"])})
+                                        .:AddActionButton("Visualisar","bi bi-eye","javascript:FWWebExShowComingSoon(\'/view\');")
+                                        .:AddActionButton("Alterar","bi bi-pencil-square","javascript:FWWebExShowComingSoon(\'/change\');")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT //oSBAdminCardBodyTable
+                        END WEBEXOBJECT //oSBAdminCardHeaderTable
+                        //Adiciona o Filtro
+                        WITH WEBEXOBJECT oSBAdminCardHeaderTable:GetMemberData("oCardHeader")
+                            .:AddClass("d-flex w-100 align-items-center")
+                            WITH WEBEXOBJECT oWebExDataTableFilterPanel CLASS WebExDataTableFilterPanel ARGS "Filtros",cIDDataTable,jTableFilter
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT oWebExDataTableFilterPanelEx CLASS WebExDataTableFilterPanelEx ARGS "Filtros Avan&ccedil;ados",cIDDataTable,jTableFilter,jInternalFilter,jInternalFieldsTypes
+                            END WEBEXOBJECT
+                            //Botoes alinhados aa direita
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("ms-auto")
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtrar","button"
+                                    .:SetButtonIcon("fa-filter","fontawesome",.T.)
+                                    .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanel:GetID()+"').modal('show')")
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtros Avan&ccedil;ados","button"
+                                    .:SetButtonIcon("fa-filter","fontawesome",.T.)
+                                    .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanelEx:GetID()+"').modal('show')")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT NOADDCHILD
+                    END WEBEXOBJECT //oSBAdminContainer
+                END WEBEXOBJECT
+                //Main
+                //Footer
+                    WITH WEBEXOBJECT CLASS SBAdminFooter
+                        .:SetCopyrightText("&copy; "+StrZero(Year(Date()),4)+" DNATech ")
+                        .:SetPrivacyPolicyHRef("https://github.com/DNATechByNaldoDJ/fw.webex")
+                        .:SetPrivacyPolicyText("FWWebEx")
+                        .:SetTermsAndConditionsHRef("https://mit-license.org/")
+                        .:SetTermsAndConditionsText("Licensed under MIT")
+                    END WEBEXOBJECT
+                //Footer
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWEbEx :: SBADMIN :: SBAdminNav")
+    oFWWebExPage:AddChild(oFWWebExBody)
+    oFWWebExPage:SetEnableDataTable(.T.)
+    oFWWebExPage:SetEnableChart(.T.)
+    oFWWebExPage:SetEnableApexChart(.T.)
+
+    WITH WEBEXOBJECT oFWWebExPage
+        WITH WEBEXOBJECT CLASS WebExStyle
+            .:SetContent(cPageStyle)
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    oFWWebExPage:Clean()
+
+    FreeObj(@oFWWebExPage)
+    FreeObj(@jTableFields)
+    FreeObj(@jTableFilter)
+
+return(cHTMLFile)
+
+static function SBAdminGetMenu(cSBAdminPath)
+
+    local cSBAdminNavMenu as character
+
+    local jSBAdminNavMenu as json
+
+    beginContent var cSBAdminNavMenu
+{
+    "menu": [
+        {
+            "id": "core",
+            "label": "Core",
+            "heading": true,
+            "badge": {
+                "label": "Novo",
+                "class": "bg-success text-white"
+            }
+        },
+        {
+            "id": "dashboard",
+            "label": "Dashboard",
+            "icon": "fas fa-tachometer-alt",
+            "url": "cSBAdminPath+index.html"
+        },
+        {
+            "id": "interface",
+            "label": "Interface",
+            "heading": true
+        },
+        {
+            "id": "layouts",
+            "label": "Layouts",
+            "icon": "fas fa-columns",
+            "url": "#",
+            "subItems": [
+                {
+                    "id": "static_navigation",
+                    "label": "Static Navigation",
+                    "url": "cSBAdminPath+layout-static.html",
+                    "badge": {
+                        "label": "Novo",
+                        "class": "bg-success text-white"
+                    }
+                },
+                {
+                    "id": "light_sidenav",
+                    "label": "Light Sidenav",
+                    "url": "cSBAdminPath+layout-sidenav-light.html"
+                }
+            ]
+        },
+        {
+            "id": "pages",
+            "label": "Pages",
+            "icon": "fas fa-book-open",
+            "url": "#",
+            "subItems": [
+                {
+                    "id": "pages_authentication",
+                    "label": "Authentication",
+                    "subItems": [
+                        {
+                            "id": "pages_authentication_login",
+                            "label": "Login",
+                            "url": "cSBAdminPath+login.html"
+                        },
+                        {
+                            "id": "pages_authentication_register",
+                            "label": "Register",
+                            "url": "cSBAdminPath+register.html"
+                        },
+                        {
+                            "id": "pages_authentication_password",
+                            "label": "Password",
+                            "url": "cSBAdminPath+password.html"
+                        }
+                    ]
+                },
+                {
+                    "id": "pages_error",
+                    "label": "Error",
+                    "subItems": [
+                        {
+                            "id": "pages_error_401",
+                            "label": "401 Page",
+                            "url": "cSBAdminPath+401.html"
+                        },
+                        {
+                            "id": "pages_error_404",
+                            "label": "404 Page",
+                            "url": "cSBAdminPath+404.html"
+                        },
+                        {
+                            "id": "pages_error_500",
+                            "label": "500 Page",
+                            "url": "cSBAdminPath+500.html"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "addons",
+            "label": "ADDONS",
+            "heading": true
+        },
+        {
+            "id": "charts",
+            "label": "Charts",
+            "icon": "fas fa-chart-area",
+            "url": "cSBAdminPath+charts.html"
+        },
+        {
+            "id": "tables",
+            "label": "Tables",
+            "icon": "fas fa-table",
+            "url": "cSBAdminPath+tables.html"
+        }
+    ]
+}
+    endContent
+    cSBAdminNavMenu:=StrTran(cSBAdminNavMenu,"cSBAdminPath+",cSBAdminPath)
+
+    jSBAdminNavMenu:=JSONObject():New()
+    jSBAdminNavMenu:FromJSON(cSBAdminNavMenu)
+
+return(jSBAdminNavMenu)
+
+static function SBAdminGetRightMenu(cYesFields as character)
+
+    local cSBAdminNavRightMenu as character
+
+    local jSBAdminNavRightMenu as json
+
+    beginContent var cSBAdminNavRightMenu
+{
+  "menu": [
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "icon": "fas fa-tachometer-alt",
+      "url": "javascript:FWWebExShowComingSoon('/dashboard');",
+      "badge": {
+        "label": "Novo",
+        "class": "bg-success text-white"
+      },
+      "subItems": [
+        {
+          "id": "generalview",
+          "label": "Vis&atilde;o Geral",
+          "icon": "fas fa-chart-pie",
+          "url": "javascript:FWWebExShowComingSoon('/dashboard/overview');",
+          "badge": {
+            "label": "Novo",
+            "class": "bg-success text-white"
+          },
+          "roles": ["000000"],
+          "subItems": []
+        }
+      ]
+    },
+    {
+      "divider": true
+    },
+    {
+      "id": "indicators",
+      "label": "Indicadores",
+      "icon": "fas fa-chart-line",
+      "url": "ws:KPIS_REQUEST:KPIS_RESPONSE",
+      "badge": {
+        "label": "Novo",
+        "class": "bg-success text-white"
+      },
+      "wsAction": {
+        "class": "userRestCrudTLPPCoreFunction",
+        "method": "dna.tech.codAliasPost",
+        "params": {
+          "codAlias": "SRA",
+          "filter": {
+            "RA_SEXO": "M"
+          },
+          "yesFields": "__YES_FIELDS__"
+        }
+      },
+      "subItems": []
+    }
+  ]
+}
+    endContent
+
+    cSBAdminNavRightMenu:=WebExHelper():StrReplaceEx(;
+        cSBAdminNavRightMenu;
+        ,{"__YES_FIELDS__",cYesFields};
+    )
+
+    jSBAdminNavRightMenu:=JSONObject():New()
+    jSBAdminNavRightMenu:FromJSON(cSBAdminNavRightMenu)
+
+return(jSBAdminNavRightMenu)
+
+static function ChartScripts() as character
+
+    local cScript as character
+
+    beginContent var cScript
+
+        /* ChartScripts */
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Area Chart
+            FWWebExWaitForElementID('myAreaChart', function (element) {
+                Chart.defaults.font.family = '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+                Chart.defaults.color = '#292b2c';
+
+                const ctxArea = document.getElementById("myAreaChart");
+                new Chart(ctxArea, {
+                    type: 'line',
+                    data: {
+                        labels: ["Mar 1", "Mar 2", "Mar 3", "Mar 4", "Mar 5", "Mar 6", "Mar 7", "Mar 8", "Mar 9", "Mar 10", "Mar 11", "Mar 12", "Mar 13"],
+                        datasets: [{
+                            label: "Sessions",
+                            tension: 0.3,
+                            fill: true, // <<< PREENCHE A AREA
+                            backgroundColor: "rgba(2,117,216,0.2)",
+                            borderColor: "rgba(2,117,216,1)",
+                            pointRadius: 5,
+                            pointBackgroundColor: "rgba(2,117,216,1)",
+                            pointBorderColor: "rgba(255,255,255,0.8)",
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: "rgba(2,117,216,1)",
+                            pointHitRadius: 50,
+                            pointBorderWidth: 2,
+                            data: [10000, 30162, 26263, 18394, 18287, 28682, 31274, 33259, 25849, 24159, 32651, 31984, 38451],
+                        }],
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 7 }
+                            },
+                            y: {
+                                min: 0,
+                                max: 40000,
+                                ticks: { maxTicksLimit: 5 },
+                                grid: { color: "rgba(0, 0, 0, .125)" }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            });
+
+            // Barra Chart
+            FWWebExWaitForElementID('myBarChart', function (element) {
+                Chart.defaults.font.family = '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+                Chart.defaults.color = '#292b2c';
+
+                const ctxBar = document.getElementById("myBarChart");
+                new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: ["January", "February", "March", "April", "May", "June"],
+                        datasets: [{
+                            label: "Revenue",
+                            backgroundColor: "rgba(2,117,216,1)",
+                            borderColor: "rgba(2,117,216,1)",
+                            data: [4215, 5312, 6251, 7841, 9821, 14984],
+                        }],
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 6 }
+                            },
+                            y: {
+                                min: 0,
+                                max: 15000,
+                                ticks: { maxTicksLimit: 5 },
+                                grid: { display: true }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            });
+
+            // Pizza Chart
+            FWWebExWaitForElementID('myPieChart', function (element) {
+                Chart.defaults.font.family = '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+                Chart.defaults.color = '#292b2c';
+
+                const ctxPie = document.getElementById("myPieChart");
+                new Chart(ctxPie, {
+                    type: 'pie',
+                    data: {
+                        labels: ["Blue", "Red", "Yellow", "Green"],
+                        datasets: [{
+                            data: [12.21, 15.58, 11.25, 8.32],
+                            backgroundColor: ['#007bff', '#dc3545', '#ffc107', '#28a745'],
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // <<< RESPEITA O TAMANHO DEFINIDO
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            });
+
+        });
+
+    endContent
+
+return(cScript)
+
+static function ApexChartScripts() as character
+
+    local cScript as character
+
+    beginContent var cScript
+
+        /* ApexChartSpripts */
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            FWWebExWaitForElementID('myBarApexChart', function (element) {
+                var options = {
+                    chart: {
+                        type: 'bar',
+                        fontFamily: '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif',
+                        foreColor: '#292b2c',
+                        toolbar: {
+                            show: false
+                        }
+                        },
+                        series: [{
+                            name: 'Revenue',
+                            data: [4215, 5312, 6251, 7841, 9821, 14984]
+                        }],
+                        xaxis: {
+                            categories: ['January', 'February', 'March', 'April', 'May', 'June'],
+                            labels: {
+                                maxItems: 6
+                            },
+                            axisBorder: {
+                                show: true
+                            },
+                            axisTicks: {
+                                show: true
+                            },
+                            grid: {
+                                show: false
+                            }
+                        },
+                        yaxis: {
+                            min: 0,
+                            max: 15000,
+                            tickAmount: 5,
+                            labels: {
+                                formatter: function (value) {
+                                    return Math.round(value);
+                                }
+                            }
+                        },
+                        colors: ['rgba(2,117,216,1)'],
+                        dataLabels: {
+                            enabled: false
+                        },
+                        plotOptions: {
+                            bar: {
+                                columnWidth: '70%'
+                            }
+                        },
+                    legend: {
+                        show: false
+                    },
+                    grid: {
+                        show: true,
+                        xaxis: {
+                            lines: {
+                            show: false
+                            }
+                        },
+                        yaxis: {
+                            lines: {
+                            show: true
+                            }
+                        }
+                    }
+                };
+
+                var chart = new ApexCharts(element, options);
+                chart.render();
+
+            });
+
+            FWWebExWaitForElementID('myAreaApexChart', function (element) {
+                var options = {
+                    chart: {
+                        type: 'area',
+                        fontFamily: '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif',
+                        foreColor: '#292b2c',
+                        toolbar: {
+                            show: false
+                        }
+                        },
+                        series: [{
+                            name: 'Sessions',
+                            data: [
+                                { x: new Date('2025-03-01').getTime(), y: 10000 },
+                                { x: new Date('2025-03-02').getTime(), y: 30162 },
+                                { x: new Date('2025-03-03').getTime(), y: 26263 },
+                                { x: new Date('2025-03-04').getTime(), y: 18394 },
+                                { x: new Date('2025-03-05').getTime(), y: 18287 },
+                                { x: new Date('2025-03-06').getTime(), y: 28682 },
+                                { x: new Date('2025-03-07').getTime(), y: 31274 },
+                                { x: new Date('2025-03-08').getTime(), y: 33259 },
+                                { x: new Date('2025-03-09').getTime(), y: 25849 },
+                                { x: new Date('2025-03-10').getTime(), y: 24159 },
+                                { x: new Date('2025-03-11').getTime(), y: 32651 },
+                                { x: new Date('2025-03-12').getTime(), y: 31984 },
+                                { x: new Date('2025-03-13').getTime(), y: 38451 }
+                            ]
+                        }],
+                        xaxis: {
+                        type: 'datetime',
+                        labels: {
+                            format: 'MMM d',
+                            maxItems: 7
+                        },
+                        axisBorder: {
+                            show: true
+                        },
+                        axisTicks: {
+                            show: true
+                        },
+                        grid: {
+                            show: false
+                        }
+                    },
+                    yaxis: {
+                        min: 0,
+                        max: 40000,
+                        tickAmount: 5,
+                        labels: {
+                            formatter: function (value) {
+                            return Math.round(value);
+                            }
+                        }
+                    },
+                    fill: {
+                        type: 'solid',
+                        opacity: 0.2,
+                        colors: ['rgba(2,117,216,0.2)']
+                    },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 2,
+                        colors: ['rgba(2,117,216,1)']
+                    },
+                    markers: {
+                        size: 5,
+                        colors: ['rgba(2,117,216,1)'],
+                        strokeColors: ['rgba(255,255,255,0.8)'],
+                        strokeWidth: 2,
+                        hover: {
+                            size: 5
+                        }
+                    },
+                    colors: ['rgba(2,117,216,1)'],
+                    dataLabels: {
+                        enabled: false
+                    },
+                    legend: {
+                        show: false
+                    },
+                    grid: {
+                        show: true,
+                        xaxis: {
+                            lines: {
+                                show: false
+                            }
+                        },
+                        yaxis: {
+                            lines: {
+                                show: true,
+                                strokeColor: 'rgba(0, 0, 0, 0.125)'
+                            }
+                        }
+                    }
+                };
+
+                var chart = new ApexCharts(element, options);
+                chart.render();
+
+            });
+
+            FWWebExWaitForElementID('myPieApexChart', function (element) {
+                var options = {
+                    chart: {
+                    width: '100%', // Define a largura como 100% para se ajustar ao conteiner
+                    height: 480,   // Define a altura fixa como 200px
+                    type: 'pie',
+                    fontFamily: '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif',
+                    foreColor: '#292b2c',
+                        toolbar: {
+                            show: false
+                        }
+                    },
+                    series: [12.21, 15.58, 11.25, 8.32],
+                    labels: ['Blue', 'Red', 'Yellow', 'Green'],
+                    colors: ['#007bff', '#dc3545', '#ffc107', '#28a745'],
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function (val) {
+                            return val.toFixed(2) + '%';
+                        }
+                    },
+                    legend: {
+                        show: true,
+                        position: 'bottom'
+                    },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: {
+                                width: '100%', // Mantem 100% para dispositivos menores
+                                height: 280    // Ajusta a altura para telas menores, se necessario
+                            },
+                            legend: {
+                            position: 'bottom'
+                        }
+                        }
+                    }]
+                };
+
+                var chart = new ApexCharts(element, options);
+                chart.render();
+
+            });
+
+        });
+
+    endContent
+
+return(cScript)
+
+static function TableFieldsReturn(jTableFields) as character
+    local cTableFieldsReturn:="[" as character
+    aEval(jTableFields["fields"],{|jField|cTableFieldsReturn+="i."+jField["name"]+" || '',"})
+    cTableFieldsReturn:=SubStr(cTableFieldsReturn,1,Len(cTableFieldsReturn)-1)
+    cTableFieldsReturn+="]"
+return(cTableFieldsReturn)
+
+static function GetSX3Title(cField) as character
+return(AllTrim(GetSX3Cache(cField,"X3_TITULO")))

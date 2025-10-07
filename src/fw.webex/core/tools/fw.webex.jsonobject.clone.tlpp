@@ -19,26 +19,9 @@ Released to Public Domain.
 namespace FWWebEx
 using namespace FWWebEx
 
-class JSONObjectClone from FWWebEx.ClassBase
-    protected data jObject as json
-    protected method New(jObject as json) as object
+class JSONObjectClone from FWWebEx.JSONObjectTools
     static method CloneJSON(jObject as json) as json
 end class
 
-method New(jObject) class JSONObjectClone
-    paramtype 1 var jObject as json
-    self:jObject:=jObject
-return(self)
-
 static method CloneJSON(jObject) class JSONObjectClone
-    local jTarget as json
-    local oSource as object
-    local oTarget as object
-    paramtype 1 var jObject as json
-    oSource:=JSONObjectClone():New(jObject)
-    oTarget:=JSONObjectClone():New(JSONObject():New())
-    oTarget:SetFromObject(oSource)
-    FreeObj(@oSource)
-    jTarget:=oTarget:GetMemberData("JOBJECT")
-    FreeObj(@oTarget)
-return(jTarget)
+return(JSONObjectTools():CloneJSON(jObject))

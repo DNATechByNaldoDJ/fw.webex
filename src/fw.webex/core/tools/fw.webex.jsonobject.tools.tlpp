@@ -1,0 +1,205 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+    The source code `fw.webex.jsonobject.tools.tlpp` is based on a more detailed and feature-rich
+    source code, `dna.tech.jsonobject.tools.tlpp`, and implements part of the functionalities
+    present in the latter.
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "totvs.ch"
+#include "parmtype.ch"
+
+namespace FWWebEx
+using namespace FWWebEx
+
+static __cJSFunctionToken__:=JSONObjectTools():GetJSFunctionToken() as character
+
+class JSONObjectTools from FWWebEx.ClassBase
+
+    protected data jObject as json
+    protected method New(jObject as json) as object
+
+    static method CloneJSON(jObject as json) as json
+    static method MergeJSON(jTarget as json,jSource as json) as json
+
+    static method ToJSFunctionToken(cJSFunction as character)
+    static method GetJSFunctionToken() as character
+
+    static method ToJSObjectString(xObject as variant) as character
+
+end class
+
+method New(jObject) class JSONObjectTools
+    paramtype 1 var jObject as json
+    self:jObject:=jObject
+return(self)
+
+static method CloneJSON(jObject) class JSONObjectTools
+    local jTarget as json
+    local oSource as object
+    local oTarget as object
+    paramtype 1 var jObject as json
+    oSource:=JSONObjectTools():New(jObject)
+    oTarget:=JSONObjectTools():New(JSONObject():New())
+    oTarget:SetFromObject(oSource)
+    FreeObj(@oSource)
+    jTarget:=oTarget:GetMemberData("JOBJECT")
+    FreeObj(@oTarget)
+return(jTarget)
+
+static method MergeJSON(jTarget,jSource) class JSONObjectTools
+
+    local aKeys as array
+
+    local cKey as character
+    local cType as character
+
+    local i as numeric
+    local j as numeric
+
+    local vValue as variant
+
+    paramtype 1 var jTarget as json
+    paramtype 2 var jSource as json
+
+    aKeys:=jSource:GetNames()
+    for i:=1 to Len(aKeys)
+        cKey:=aKeys[i]
+        vValue:=jSource[cKey]
+        cType:=ValType(vValue)
+        if (cType=="J")
+            jTarget[cKey]:=JSONObjectClone():CloneJSON(vValue)
+        elseif (cType=="A")
+            jTarget[cKey]:=Array(Len(vValue))
+            for j:=1 to Len(jTarget[cKey])
+                cType:=ValType(vValue[j])
+                if (cType=="J")
+                    jTarget[cKey][j]:=JSONObjectClone():CloneJSON(vValue[j])
+                elseif ((cType=="O").and.(MethIsMemberOf(vValue[j],"CLONE",.T.)))
+                    jTarget[cKey][j]:=vValue[j]:Clone()
+                else
+                    jTarget[cKey][j]:=vValue[j]
+                endif
+            next j
+        elseif ((cType=="O").and.(MethIsMemberOf(vValue[j],"CLONE",.T.)))
+            jTarget[cKey]:=vValue:Clone()
+        else
+            jTarget[cKey]:=vValue
+        endif
+    next i
+
+return(jTarget)
+
+static method GetJSFunctionToken() class JSONObjectTools
+return("__!JS_FUNCTION!__")
+
+static method ToJSFunctionToken(cJSFunction) class JSONObjectTools
+return(__cJSFunctionToken__+AllTrim(cJSFunction)+__cJSFunctionToken__)
+
+static method ToJSObjectString(xObject) class JSONObjectTools
+
+    local cType as character
+    local cJSObjectString:="" as character
+
+    paramtype 1 var xObject as array,json
+
+    cType:=ValType(xObject)
+
+    if (cType=="J")
+        cJSObjectString+=__JSONToJSObject(xObject)
+    elseif (cType=="A")
+        cJSObjectString+=__ArrayToJSObject(xObject)
+    endif
+
+return(cJSObjectString)
+
+static function __JSONToJSObject(jObject as json) as character
+
+    local aNames as array
+
+    local cType as character
+    local cJSObjectString:="{" as character
+
+    local i as numeric
+    local nNames as numeric
+
+    aNames:=jObject:GetNames()
+    nNames:=Len(aNames)
+    for i:=1 to nNames
+        cKey:=aNames[i]
+        cJSObjectString+=cKey
+        cJSObjectString+=":"
+        cType:=ValType(jObject[cKey])
+        if (cType=="A")
+            cJSObjectString+=__ArrayToJSObject(jObject[cKey])
+        elseif (cType=="J")
+            cJSObjectString+=__JSONToJSObject(jObject[cKey])
+        elseif (cType=="C")
+            cValue:=jObject:GetJSONText(cKey)
+            if (__cJSFunctionToken__$cValue)
+                cValue:=WebExHelper():StrReplace(;
+                    cValue;
+                    ,{__cJSFunctionToken__,""};
+                )
+                cJSObjectString+=cValue
+            else
+                cJSObjectString+='"'+cValue+'"'
+            endif
+        else
+            cValue:=jObject:GetJSONText(cKey)
+            cJSObjectString+=cValue
+        endif
+        if (i<nNames)
+            cJSObjectString+=","
+        endif
+    next i
+
+    cJSObjectString+="}"
+
+return(cJSObjectString)
+
+static function __ArrayToJSObject(aArray as array) as character
+
+    local cType as character
+    local cJSObjectString:="[" as character
+
+    local i as numeric
+    local nASize as numeric
+
+    nASize:=Len(aArray)
+    for i:=1 to nASize
+        cType:=ValType(aArray[i])
+        if (cType=="C")
+            cValue:=aArray[i]
+            if (__cJSFunctionToken__$cValue)
+                cValue:=WebExHelper():StrReplace(;
+                    cValue;
+                    ,{__cJSFunctionToken__,""};
+                )
+                cJSObjectString+=cValue
+            else
+                cJSObjectString+='"'+cValue+'"'
+            endif
+        elseif (cType=="A")
+            cJSObjectString+=__ArrayToJSObject(aArray[i])
+        elseif (cType=="J")
+            cJSObjectString+=__JSONToJSObject(aArray[i])
+        else
+            cValue:=cValToChar(aArray[i])
+            cJSObjectString+=cValue
+        endif
+        if (i<nASize)
+            cJSObjectString+=","
+        endif
+    next i
+
+    cJSObjectString+="]"
+
+return(cJSObjectString)

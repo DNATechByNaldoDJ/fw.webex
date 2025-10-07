@@ -2,8 +2,19 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add DataTable and JSON merge utility classes)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Change DataTable class and add JSON tools utility class)"
 */
+
+2025-10-07 03:25 UTC naldodj (Change DataTable class and add JSON tools utility class)
+  + src/fw.webex/core/tools/fw.webex.jsonobject.tools.tlpp
+  + src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+  + src/fw.webex/tests/fw.webex.examples/023/README.md
+  * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.tlpp
+  * src/fw.webex/core/control/fw.webex.control.tlpp
+  * src/fw.webex/core/tools/fw.webex.helper.tlpp
+  * src/fw.webex/core/tools/fw.webex.jsonobject.clone.tlpp
+  * src/fw.webex/core/tools/fw.webex.jsonobject.merge.tlpp
+  * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
 
 2025-10-05 18:48 UTC naldodj (Add DataTable and JSON merge utility classes)
   + Add DataTable and JSON merge utility classes
