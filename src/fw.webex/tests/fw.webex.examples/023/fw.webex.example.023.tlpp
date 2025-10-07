@@ -52,6 +52,7 @@ static procedure FWWebExExample_023(cHTML as character) as character
     local cIDDataTable:=cProcName as character
 
     local jLanguage as json
+    local jColumnDefs as json
     local jTableFields as json
     local jTableFilter as json
     local jInternalFilter:={"RA_SEXO":"M"} as json
@@ -299,13 +300,17 @@ static procedure FWWebExExample_023(cHTML as character) as character
             const rows = api.rows({ page: 'current' }).count();
             const pageSize = api.page.len();
             // Adicionar apenas linhas vazias necessarias, com altura minima
-            $('#FWWebExExample_020 tbody tr.empty-row').remove(); // Remover linhas vazias anteriores
+            $('#__ID_DATATABLE__ tbody tr.empty-row').remove(); // Remover linhas vazias anteriores
             for (let i = 0; i < pageSize - rows; i++) {
-                $('#FWWebExExample_020 tbody').append('<tr class="empty-row"><td colspan="9" style="height: 20px; padding: 0;"></td></tr>');
+                $('#__ID_DATATABLE__ tbody').append('<tr class="empty-row"><td colspan="11" style="height: 20px; padding: 0;"></td></tr>');
             }
             $('#fwwebex-datatable-custom-loader').hide();
         }
     endContent
+    cDrawCallback:=WebExHelper():StrReplaceEx(;
+        cDrawCallback;
+        ,{"__ID_DATATABLE__",cIDDataTable};
+    )
 
     WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
         .:SetAttr("class","sb-nav-fixed")
@@ -456,6 +461,12 @@ static procedure FWWebExExample_023(cHTML as character) as character
                                         .:SetDataTableOptions({"pageLength":10})
                                         .:SetDataTableOptions({"responsive":.F.})// Desativar responsividade para reduzir espaco (se nao for essencial)
                                         .:SetDataTableOptions({"className":"compact"})// Ja presente, mantido para reforcar
+                                        // Opcional: default para campos ausentes (se algum item faltar)
+                                        jColumnDefs:=JSONObject():New()
+                                        jColumnDefs["columnDefs"]:=Array(0)
+                                        aAdd(jColumnDefs["columnDefs"],{"defaultContent": "N/A", "targets": "_all" })
+                                        .:SetDataTableOptions(jColumnDefs)
+                                        FreeObj(@jColumnDefs)
                                         jLanguage:=JSONObject():New()
                                         jLanguage["language"]:=JSONObject():New()
                                         jLanguage["language"]["url"]:="https://cdn.datatables.net/plug-ins/2.3.2/i18n/pt-BR.json"
@@ -1081,13 +1092,6 @@ static function ApexChartScripts() as character
     endContent
 
 return(cScript)
-
-static function TableFieldsReturn(jTableFields) as character
-    local cTableFieldsReturn:="[" as character
-    aEval(jTableFields["fields"],{|jField|cTableFieldsReturn+="i."+jField["name"]+" || '',"})
-    cTableFieldsReturn:=SubStr(cTableFieldsReturn,1,Len(cTableFieldsReturn)-1)
-    cTableFieldsReturn+="]"
-return(cTableFieldsReturn)
 
 static function GetSX3Title(cField) as character
 return(AllTrim(GetSX3Cache(cField,"X3_TITULO")))
