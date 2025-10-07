@@ -48,8 +48,10 @@ static procedure FWWebExExample_023(cHTML as character) as character
     local cPageStyle as character
     local cPostInitJS as character
     local cAjaxFunction as character
-    local cIDDataTable:=ProcName() as character
+    local cDrawCallback as character
+    local cIDDataTable:=cProcName as character
 
+    local jLanguage as json
     local jTableFields as json
     local jTableFilter as json
     local jInternalFilter:={"RA_SEXO":"M"} as json
@@ -166,43 +168,40 @@ static procedure FWWebExExample_023(cHTML as character) as character
     // Script com server-side pagination ativado
     beginContent var cAjaxFunction
         function (data, callback) {
-
             const pageNumber = Math.floor(data.start / data.length) + 1;
             const rowsPerPage = data.length === -1 ? 999999 : data.length;
 
-            //Filtros Customizados Inicio
-                // monta o filtro fixo + dinamico
-                const filters = FWWebExGetDataTableFilters(table, [
-                    'FWWebExFilter',
-                    'FWWebExPanelFilter',
-                    'FWWebExSearchFilter',
-                    'FWWebExPanelFilterEx'
-                ]);
+            // Filtros Customizados Inicio (mantido igual)
+            const filters = FWWebExGetDataTableFilters(table, [
+                'FWWebExFilter',
+                'FWWebExPanelFilter',
+                'FWWebExSearchFilter',
+                'FWWebExPanelFilterEx'
+            ]);
 
-                const dynamicFilter  = filters.FWWebExFilter;
-                const extraFilter    = filters.FWWebExPanelFilter;
-                const searchFilter   = filters.FWWebExSearchFilter;
-                const extendedFilter = filters.FWWebExPanelFilterEx;
-                const extendedFilterExpression = extendedFilter["expression"] || '';
+            const dynamicFilter  = filters.FWWebExFilter;
+            const extraFilter    = filters.FWWebExPanelFilter;
+            const searchFilter   = filters.FWWebExSearchFilter;
+            const extendedFilter = filters.FWWebExPanelFilterEx;
+            const extendedFilterExpression = extendedFilter["expression"] || '';
 
-                //Internal Filter (internalFilter), quando extendedFilterExpression vira em extendedFilterExpression
-                const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
-                let internalFilter = {};
-                if (!hasExtendedFilter?.FWWebExPanelFilterEx) {
-                    try {
-                        internalFilter = JSON.parse('__INTERNAL_FILTER__');
-                    } catch (err) {
-                        console.warn("Invalid Interval Filter JSON:", err.message);
-                        internalFilter = {};
-                    }
+            const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
+            let internalFilter = {};
+            if (!hasExtendedFilter?.FWWebExPanelFilterEx) {
+                try {
+                    internalFilter = JSON.parse('__INTERNAL_FILTER__');
+                } catch (err) {
+                    console.warn("Invalid Interval Filter JSON:", err.message);
+                    internalFilter = {};
                 }
-            //Filtros Customizados Fim
+            }
+            // Filtros Customizados Fim
 
             const request = {
                 ClassName: 'userRestCrudTLPPCoreFunction',
                 FunctionName: 'dna.tech.codAliasPost',
                 codAlias: 'SRA',
-                yesFields: '__YES_FIELDS__',
+                yesFields: '__YES_FIELDS__',  // Certifique-se de que Todos os campos selecionados estao aqui
                 Filter: Object.assign({}, internalFilter, dynamicFilter, extraFilter, searchFilter),
                 Filter64: hasExtendedFilter?.FWWebExPanelFilterEx ? extendedFilterExpression : '',
                 PageNumber: pageNumber,
@@ -223,14 +222,21 @@ static procedure FWWebExExample_023(cHTML as character) as character
                 onResponse: (json) => {
                     try {
                         if (!json || !json.table || !json.table.items) throw new Error('Resposta incompleta');
+
+                        // MUDANCA PRINCIPAL: Mapeia e retorna o objeto plano (detail.items)
                         const rows = json.table.items.map(row => {
-                            const i = row.detail?.items || {};
-                            return __TABLE_FIELDS_RETURN__;
+                            const i = row.detail?.items || {};  // Objeto com RA_FILIAL, RA_MAT, etc.
+                            // Retorna o objeto COMPLETO achatado (substitui o placeholder)
+                            return i;  // Ou { ...i } se precisar de copia/clone
                         });
+
+                        // Debug opcional: Loga os dados achatados (remova em producao)
+                        //console.log("Dados achatados para DataTable:", rows);
+
                         callback({
-                            data: rows,
+                            data: rows,  // Array de objetos { RA_FILIAL: "01", ... }
                             recordsTotal: json.TotalRows || rows.length,
-                            recordsFiltered: json.TotalRows || rows.length
+                            recordsFiltered: json.TotalRows || rows.length  // Ajuste se houver filtros reais
                         });
                     } catch (err) {
                         console.error('Erro ao processar dados:', err);
@@ -244,7 +250,6 @@ static procedure FWWebExExample_023(cHTML as character) as character
                     callback({ data: [], recordsTotal: 0, recordsFiltered: 0 });
                 }
             });
-
         }
 
     endContent
@@ -253,7 +258,6 @@ static procedure FWWebExExample_023(cHTML as character) as character
         cAjaxFunction;
         ,{"__YES_FIELDS__",cYesFields}; //__YES_FIELDS__ em request
         ,{"__INTERNAL_FILTER__",jInternalFilter:ToJSON()}; //Filtro Interno
-        ,{"__TABLE_FIELDS_RETURN__",TableFieldsReturn(jTableFields)};
     )
 
     beginContent var cPostInitJS
@@ -288,6 +292,20 @@ static procedure FWWebExExample_023(cHTML as character) as character
     oFWWebExScript:=WebExScript():New()
     oFWWebExScript:SetExternalAssets(.F.)
     oFWWebExScript:SetContent(cScript)
+
+    beginContent var cDrawCallback
+        function () {
+            const api = this.api();
+            const rows = api.rows({ page: 'current' }).count();
+            const pageSize = api.page.len();
+            // Adicionar apenas linhas vazias necessarias, com altura minima
+            $('#FWWebExExample_020 tbody tr.empty-row').remove(); // Remover linhas vazias anteriores
+            for (let i = 0; i < pageSize - rows; i++) {
+                $('#FWWebExExample_020 tbody').append('<tr class="empty-row"><td colspan="9" style="height: 20px; padding: 0;"></td></tr>');
+            }
+            $('#fwwebex-datatable-custom-loader').hide();
+        }
+    endContent
 
     WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
         .:SetAttr("class","sb-nav-fixed")
@@ -428,13 +446,29 @@ static procedure FWWebExExample_023(cHTML as character) as character
                                 // Adiciona container de tabela
                                 WITH WEBEXOBJECT oWebExDivTableResult CLASS WebExDiv
                                     //DataTable
-                                    WITH WEBEXOBJECT oWebExDataTable  CLASS WebExDataTable ARGS ProcName(),.T.
+                                    WITH WEBEXOBJECT oWebExDataTable  CLASS WebExDataTable ARGS cIDDataTable,.T.
                                         .:SetFixedID(cIDDataTable)
                                         .:SetPostInitJS(cPostInitJS)
                                         .:SetAjaxFunction(cAjaxFunction)
+                                        .:SetDataTableOptions({"processing":.F.})
+                                        .:SetDataTableOptions({"dom":WebExHelper():StrReplaceEx("Blfrtip",{"f",""})})// Remove o Filtro do DataTable para usar Filtro Customizado
+                                        .:SetDataTableOptions({"lengthMenu":{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,20,25,30,35,40,45,50,100,-1}})
+                                        .:SetDataTableOptions({"pageLength":10})
+                                        .:SetDataTableOptions({"responsive":.F.})// Desativar responsividade para reduzir espaco (se nao for essencial)
+                                        .:SetDataTableOptions({"className":"compact"})// Ja presente, mantido para reforcar
+                                        jLanguage:=JSONObject():New()
+                                        jLanguage["language"]:=JSONObject():New()
+                                        jLanguage["language"]["url"]:="https://cdn.datatables.net/plug-ins/2.3.2/i18n/pt-BR.json"
+                                        jLanguage["language"]["lengthLabels"]:=JSONObject():New()
+                                        jLanguage["language"]["lengthLabels"]["'-1'"]:="Todos"
+                                        .:SetDataTableOptions(jLanguage)
+                                        FreeObj(@jLanguage)
+                                        .:SetDataTableOptions({"preDrawCallback":JSONObjectTools():ToJSFunctionToken("() => $('#fwwebex-datatable-custom-loader').show()")})
+                                        .:SetDataTableOptions({"drawCallback":JSONObjectTools():ToJSFunctionToken(cDrawCallback)})
                                         aEval(jTableFields["fields"],{|jField|oWebExDataTable:AddColumnHeader(jField["label"],jField["name"])})
-                                        .:AddActionButton("Visualisar","bi bi-eye","javascript:FWWebExShowComingSoon(\'/view\');")
-                                        .:AddActionButton("Alterar","bi bi-pencil-square","javascript:FWWebExShowComingSoon(\'/change\');")
+                                        .:AddActionButton("Visualisar","bi bi-eye","javascript:FWWebExShowComingSoon(\'/view\');","btn btn-primary")
+                                        .:AddActionButton("Alterar","bi bi-pencil-square","javascript:FWWebExShowComingSoon(\'/change\');","btn btn-primary")
+                                        .:BuildHeader()
                                     END WEBEXOBJECT
                                 END WEBEXOBJECT
                             END WEBEXOBJECT //oSBAdminCardBodyTable
