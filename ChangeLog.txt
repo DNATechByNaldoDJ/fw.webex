@@ -5,6 +5,11 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements)"
 */
 
+2025-10-08 02:17 UTC naldodj (Multiple fixes and enhancements)
+  * src/fw.webex/core/control/fw.webex.control.tlpp
+  * src/fw.webex/core/tools/fw.webex.helper.tlpp
+  * src/fw.webex/core/tools/fw.webex.jsonobject.tools.tlpp
+
 2025-10-07 22:26 UTC naldodj
   * src/fw.webex/contrib/README.md -> src/fw.webex/contrib/fw.webex.sbadmin/README.md
 

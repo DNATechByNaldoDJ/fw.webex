@@ -248,6 +248,7 @@ static function ___WebExHelper____StrReplaceEx(cString as character,vSubstitutio
     local nName as numeric
     local nNames as numeric
 
+    local nVarg as numeric
     local nToken as numeric
     local nTokens as numeric
 
@@ -289,15 +290,39 @@ static function ___WebExHelper____StrReplaceEx(cString as character,vSubstitutio
                     end while
                 endif
             elseif (cType=="J")
-                aNames:=aClone(uStr:GetNames())
-                nNames:=Len(aNames)
-                for nName:=1 to nNames
-                    cName:=aNames[nName]
-                    while ((cName$cStrReplace).and.(!(cName==uStr[cName])))
-                        cStrReplace:=StrTran(cStrReplace,cName,uStr[cName])
-                    end while
-                next nName
-                FWFreeArray(@aNames)
+                if (uStr:HasProperty("VARGS"))
+                    cType:=ValType(uStr["VARGS"])
+                    if (cType=="A")
+                        for nVArg:=1 to Len(uStr["VARGS"])
+                            cType:=ValType(uStr["VARGS"][nVArg])
+                            if ((cType=="A").and.(Len(uStr["VARGS"][nVArg])==2))
+                                if ((ValType(uStr["VARGS"][nVArg][1])=="A").and.(ValType(uStr["VARGS"][nVArg][2])=="C"))
+                                    for nToken:=1 to Len(uStr["VARGS"][nToken][1])
+                                        cStrReplace:=WebExHelper():StrReplaceEx(cStrReplace,{uStr["VARGS"][nVArg][1][nToken],uStr["VARGS"][nVArg][2]})
+                                    next nToken
+                                elseif ((ValType(uStr["VARGS"][nVArg][1])=="A").and.(ValType(uStr["VARGS"][nVArg][2])=="A"))
+                                    for nToken:=1 to Min(Len(uStr["VARGS"][nVArg][1]),Len(uStr["VARGS"][nVArg][2]))
+                                        cStrReplace:=WebExHelper():StrReplaceEx(cStrReplace,{uStr["VARGS"][nVArg][1][nToken],uStr["VARGS"][nVArg][2][nToken]})
+                                    next nToken
+                                elseif ((ValType(uStr["VARGS"][nVArg][1])=="C").and.(ValType(uStr["VARGS"][nVArg][2])=="C"))
+                                    while ((uStr["VARGS"][nVArg][1]$cStrReplace).and.(!(uStr["VARGS"][nVArg][1]==uStr["VARGS"][nVArg][2])))
+                                        cStrReplace:=StrTran(cStrReplace,uStr["VARGS"][nVArg][1],uStr["VARGS"][nVArg][2])
+                                    end while
+                                endif
+                            endif
+                        next nVArg
+                    endif
+                else
+                    aNames:=aClone(uStr:GetNames())
+                    nNames:=Len(aNames)
+                    for nName:=1 to nNames
+                        cName:=aNames[nName]
+                        while ((cName$cStrReplace).and.(!(cName==uStr[cName])))
+                            cStrReplace:=StrTran(cStrReplace,cName,uStr[cName])
+                        end while
+                    next nName
+                    FWFreeArray(@aNames)
+                endif
             endif
         next nStr
 

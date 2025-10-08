@@ -144,7 +144,7 @@ static function __JSONToJSObject(jObject as json) as character
         elseif (cType=="C")
             cValue:=jObject:GetJSONText(cKey)
             if (__cJSFunctionToken__$cValue)
-                cValue:=WebExHelper():StrReplace(;
+                cValue:=WebExHelper():StrReplaceEx(;
                     cValue;
                     ,{__cJSFunctionToken__,""};
                 )
@@ -179,7 +179,7 @@ static function __ArrayToJSObject(aArray as array) as character
         if (cType=="C")
             cValue:=aArray[i]
             if (__cJSFunctionToken__$cValue)
-                cValue:=WebExHelper():StrReplace(;
+                cValue:=WebExHelper():StrReplaceEx(;
                     cValue;
                     ,{__cJSFunctionToken__,""};
                 )
