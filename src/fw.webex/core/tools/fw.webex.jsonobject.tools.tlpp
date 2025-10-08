@@ -75,13 +75,13 @@ static method MergeJSON(jTarget,jSource) class JSONObjectTools
         vValue:=jSource[cKey]
         cType:=ValType(vValue)
         if (cType=="J")
-            jTarget[cKey]:=JSONObjectClone():CloneJSON(vValue)
+            jTarget[cKey]:=JSONObjectTools():CloneJSON(vValue)
         elseif (cType=="A")
             jTarget[cKey]:=Array(Len(vValue))
             for j:=1 to Len(jTarget[cKey])
                 cType:=ValType(vValue[j])
                 if (cType=="J")
-                    jTarget[cKey][j]:=JSONObjectClone():CloneJSON(vValue[j])
+                    jTarget[cKey][j]:=JSONObjectTools():CloneJSON(vValue[j])
                 elseif ((cType=="O").and.(MethIsMemberOf(vValue[j],"CLONE",.T.)))
                     jTarget[cKey][j]:=vValue[j]:Clone()
                 else

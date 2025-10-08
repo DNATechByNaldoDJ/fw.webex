@@ -108,7 +108,7 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 const fields = __FIELDS__;
                                 const fieldsTypes = {};
                                 fields.fields.forEach(field => {
-                                    fieldsTypes[field.name] = field.type;
+                                    fieldsTypes[field.data] = field.advplDataType;
                                 });
                                 const operatorsByType = {
                                     'C': ['=','!=','>','<','>=','<=','LIKE','NOT LIKE','IN','NOT IN'],
@@ -233,8 +233,8 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 const selectField = row.querySelector('.field');
                                 context.fields.fields.forEach(field => {
                                     const opt = document.createElement('option');
-                                    opt.value = field.name.trim();
-                                    opt.textContent = field.label.trim();
+                                    opt.value = field.data.trim();
+                                    opt.textContent = field.title.trim();
                                     selectField.appendChild(opt);
                                 });
                                 selectField.addEventListener('change',() => { FWWebExDataTableFilterPanelExUpdateField___ID_CONTAINER__(row); });

@@ -89,8 +89,8 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableFilter
                         const select = document.getElementById("FWWebExDataTableFilterField___ID_FIELD__");
                         fields.fields.forEach(field => {
                             const opt = document.createElement("option");
-                            opt.value = field.name.trim();
-                            opt.textContent = field.label.trim();
+                            opt.value = field.data.trim();
+                            opt.textContent = field.title.trim();
                             select.appendChild(opt);
                         });
                     }

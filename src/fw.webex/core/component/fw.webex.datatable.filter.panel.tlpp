@@ -100,8 +100,8 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                                 const fields = __FIELDS__;
                                 fields.fields.forEach(function(field){
                                     const opt = document.createElement("option");
-                                    opt.value = field.name.trim();
-                                    opt.textContent = field.label.trim();
+                                    opt.value = field.data.trim();
+                                    opt.textContent = field.title.trim();
                                     select.appendChild(opt);
                                 });
                             }

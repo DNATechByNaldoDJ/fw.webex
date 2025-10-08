@@ -62,6 +62,7 @@ class WebExControl from FWWebEx.ClassBase
     protected data jContents as json
     protected data jObjectsContainer as json
 
+    protected data lVisible as logical
     protected data lChartEnabled as logical
     protected data lIconsEnabled as logical
     protected data lExternalAssets as logical
@@ -153,6 +154,9 @@ class WebExControl from FWWebEx.ClassBase
     public method DelClass(cClass as character,/*@*/lDelClass as logical) as object
     public method DelClassRegex(cClassRegex as character,/*@*/lDelClass as logical) as object
 
+    public method IsVisible() as logical
+    public method SetVisible(lVisible as logical) as object
+
     public method GetEnableChart() as logical
     public method SetEnableChart(lChartEnabled as logical) as object
 
@@ -193,6 +197,7 @@ method New(cType) class WebExControl
     ::jChildren:=JSONObject():New()
     ::jContents:=JSONObject():New()
     ::jObjectsContainer:=JSONObject():New()
+    ::lVisible:=.T.
     ::lChartEnabled:=__jFeatures["lChartEnabled"]
     ::lIconsEnabled:=__jFeatures["lIconsEnabled"]
     ::lApexChartEnabled:=__jFeatures["lApexChartEnabled"]
@@ -977,6 +982,19 @@ return(self)
 
 method DelClassRegex(cClassRegex,lDelClass) class WebExControl
 return(::DelAttrValueRegex("class",cClassRegex,@lDelClass))
+
+method IsVisible() class WebExControl
+return(::lVisible)
+
+method SetVisible(lVisible) class WebExControl
+    paramtype 1 var lVisible as logical optional default .T.
+    ::lVisible:=lVisible
+    if (::lVisible)
+        ::DelClass("d-none")
+    else
+        ::AddClass("d-none")
+    endif
+return(self)
 
 method GetEnableChart() class WebExControl
 return(::lChartEnabled)

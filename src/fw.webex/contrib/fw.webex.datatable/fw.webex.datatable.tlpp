@@ -22,6 +22,7 @@ class WebExDataTable from WebExTable
     protected data cAjaxFunction as character   // Funcao AJAX customizada (como string JS)
 
     protected data jActions as json             // Acoes/buttons por linha (para coluna de acoes)
+    protected data jDataTableFields as json
     protected data jDataTableColumns as json    // Colunas para DataTable (incluindo renderers customizados)
     protected data jDataTableOptions as json    // Opcoes gerais para inicializacao do DataTable
 
@@ -30,16 +31,17 @@ class WebExDataTable from WebExTable
     protected data oDataTableScript as object   // Script JS para inicializacao do DataTable
 
     protected method __BuildColumns() as object
+    protected method __AddColumnsHeader(jDataTableFields as json) as json
     protected method __GenerateActionRender(cID as character) as character
 
     public method New(cTableTitle as character,lServerSide as logical) as object
 
-    public method AddColumnHeader(cTableColumnLabel as character,cTableColumnFieldName as character,bRender as codeblock) as object
     public method AddActionButton(cLabel as character,cIcon as character,cOnClick as character,cClass as character,cStyle as character) as object
 
     public method SetPreInitJS(cPreInitJS as character) as object
     public method SetPostInitJS(cPostInitJS as character) as object
     public method SetAjaxFunction(cAjaxFunction as character) as object
+    public method SetDataTableFields(jDataTableFields as json) as object
     public method SetDataTableOptions(jDataTableOptions as json) as object
 
     public method EnableServerSide(lEnable as logical) as object
@@ -110,6 +112,7 @@ method New(cTableTitle,lServerSide) class WebExDataTable
     ::cAjaxFunction:=""
 
     ::jActions:=JSONObject():New()
+    ::jDataTableFields:=JSONObject():New()
     ::jDataTableColumns:=JSONObject():New()
     ::jDataTableOptions:=JSONObject():New()
 
@@ -132,19 +135,52 @@ method New(cTableTitle,lServerSide) class WebExDataTable
 
 return(self)
 
-method AddColumnHeader(cTableColumnLabel,cTableColumnFieldName,bRender) class WebExDataTable
-    local oTH:=_Super:AddColumnHeader(cTableColumnLabel,cTableColumnFieldName)
-    local jColumn:=JSONObject():New()
-    paramtype 1 var cTableColumnLabel as character
-    paramtype 2 var cTableColumnFieldName as character optional default cTableColumnLabel
-    paramtype 3 var bRender as block optional  // Codeblock para render customizado (gera JS string)
-    jColumn["data"]:=cTableColumnFieldName
-    jColumn["title"]:=cTableColumnLabel
-    if (ValType(bRender)=="B")
-        jColumn["render"]:=JSONObjectTools():ToJSFunctionToken(Eval(bRender))  // Assume que o codeblock retorna uma string JS para render
+method __AddColumnsHeader(jDataTableFields) class WebExDataTable
+
+    local bRender as codeblock
+    local cTableColumnLabel as character
+    local cTableColumnFieldName as character
+
+    local jColumn as json
+
+    local nField as numeric
+    local nFields as numeric
+
+    local oTH as object
+
+    paramtype 1 var jDataTableFields as json
+
+    if (jDataTableFields:HasProperty("fields"))
+
+        aFields:=jDataTableFields["fields"]
+        nFields:=Len(aFields)
+        for nField:=1 to nFields
+            if (ValType(aFields[nField])!="J")
+                loop
+            endif
+            jColumn:=JSONObjectTools():CloneJSON(aFields[nField])
+            if (!jColumn:HasProperty("visible"))
+                jColumn["visible"]:=.T.
+            endif
+            cTableColumnLabel:=if(jColumn:HasProperty("title"),jColumn["title"],"col_"+::NewID())
+            jColumn["title"]:=cTableColumnLabel
+            cTableColumnFieldName:=if(jColumn:HasProperty("data"),jColumn["data"],cTableColumnLabel)
+            jColumn["data"]:=cTableColumnFieldName
+            oTH:=_Super:AddColumnHeader(cTableColumnLabel,cTableColumnFieldName)
+            oTH:SetVisible(jColumn["visible"])
+            if (jColumn:HasProperty("bRender"))
+                bRender:=jColumn["bRender"]
+                jColumn:DelName("bRender")
+                if (ValType(bRender)=="B")
+                    jColumn["render"]:=JSONObjectTools():ToJSFunctionToken(Eval(bRender,oTH:GetFixedID()))  // Assume que o codeblock retorna uma string JS para render
+                endif
+            endif
+            ::jDataTableColumns[oTH:GetID()]:=jColumn
+        next nField
+
     endif
-    ::jDataTableColumns[cTableColumnFieldName]:=jColumn
-return(oTH)
+
+return(::jDataTableColumns)
 
 method AddActionButton(cLabel,cIcon,cOnClick,cClass,cStyle) class WebExDataTable
     local cID as character
@@ -188,9 +224,15 @@ method SetAjaxFunction(cAjaxFunction) class WebExDataTable
     ::cAjaxFunction:=cAjaxFunction
 return(self)
 
+method SetDataTableFields(jDataTableFields) class WebExDataTable
+    paramtype 1 var jDataTableFields as json
+    ::jDataTableFields:=jDataTableFields
+    ::__AddColumnsHeader(::jDataTableFields)
+return(self)
+
 method SetDataTableOptions(jDataTableOptions) class WebExDataTable
     paramtype 1 var jDataTableOptions as json
-    ::jDataTableOptions:=JSONObjectMerge():MergeJSON(::jDataTableOptions,jDataTableOptions)
+    ::jDataTableOptions:=JSONObjectTools():MergeJSON(::jDataTableOptions,jDataTableOptions)
 return(self)
 
 method EnableServerSide(lEnable) class WebExDataTable

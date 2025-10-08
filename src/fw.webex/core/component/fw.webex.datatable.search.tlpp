@@ -101,7 +101,7 @@ method New(cTargetTableID,jTargetTableFields) class WebExDataTableSearch
                                         let searchFilter = {};
                                         const fields = __FIELDS__;
                                         fields.fields.forEach(field => {
-                                            searchFilter[field.name] = term;
+                                            searchFilter[field.data] = term;
                                         });
                                         table.settings()[0].oInit.FWWebExSearchFilter = searchFilter;
                                         table.ajax.reload();

@@ -64,25 +64,25 @@ static procedure FWWebExExample_020(cHTML as character) as character
     jTableFields:=JSONObject():New()
     jTableFields["fields"]:=Array(0)
 
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_FILIAL","X3_TIPO"),"name":"RA_FILIAL","label":GetSX3Title("RA_FILIAL")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_MAT","X3_TIPO"),"name":"RA_MAT","label":GetSX3Title("RA_MAT")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_APELIDO","X3_TIPO"),"name":"RA_APELIDO","label":GetSX3Title("RA_APELIDO")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_CC","X3_TIPO"),"name":"RA_CC","label":GetSX3Title("RA_CC")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_SALARIO","X3_TIPO"),"name":"RA_SALARIO","label":GetSX3Title("RA_SALARIO")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_ADTPOSE","X3_TIPO"),"name":"RA_ADTPOSE","label":GetSX3Title("RA_ADTPOSE")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_CATFUNC","X3_TIPO"),"name":"RA_CATFUNC","label":GetSX3Title("RA_CATFUNC")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_DEPIR","X3_TIPO"),"name":"RA_DEPIR","label":GetSX3Title("RA_DEPIR")})
-    aAdd(jTableFields["fields"],{"type":GetSX3Cache("RA_SEXO","X3_TIPO"),"name":"RA_SEXO","label":GetSX3Title("RA_SEXO")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_FILIAL","X3_TIPO"),"data":"RA_FILIAL","title":GetSX3Title("RA_FILIAL")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_MAT","X3_TIPO"),"data":"RA_MAT","title":GetSX3Title("RA_MAT")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_APELIDO","X3_TIPO"),"data":"RA_APELIDO","title":GetSX3Title("RA_APELIDO")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_CC","X3_TIPO"),"data":"RA_CC","title":GetSX3Title("RA_CC")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_SALARIO","X3_TIPO"),"data":"RA_SALARIO","title":GetSX3Title("RA_SALARIO")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_ADTPOSE","X3_TIPO"),"data":"RA_ADTPOSE","title":GetSX3Title("RA_ADTPOSE")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_CATFUNC","X3_TIPO"),"data":"RA_CATFUNC","title":GetSX3Title("RA_CATFUNC")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_DEPIR","X3_TIPO"),"data":"RA_DEPIR","title":GetSX3Title("RA_DEPIR")})
+    aAdd(jTableFields["fields"],{"advplDataType":GetSX3Cache("RA_SEXO","X3_TIPO"),"data":"RA_SEXO","title":GetSX3Title("RA_SEXO")})
 
     cYesFields:=""
-    aEval(jTableFields["fields"],{|jField|cYesFields+=jField["name"]+","})
+    aEval(jTableFields["fields"],{|jField|cYesFields+=jField["data"]+","})
     cYesFields:=SubStr(cYesFields,1,Len(cYesFields)-1)
 
     jTableFilter:=JSONObjectClone():CloneJSON(jTableFields)
     //Sexo Esta Fixo no Filtro da Tabela, nao permitir Alterar no Filtro/Pesquisa.
-    nAT_RA_SEXO:=aScan(jTableFilter["fields"],{|jField|jField["name"]=="RA_SEXO"})
+    nAT_RA_SEXO:=aScan(jTableFilter["fields"],{|jField|jField["data"]=="RA_SEXO"})
     if (nAT_RA_SEXO>0)
-        jInternalFieldsTypes[jTableFilter["fields"][nAT_RA_SEXO]["name"]]:=jTableFilter["fields"][nAT_RA_SEXO]["type"]
+        jInternalFieldsTypes[jTableFilter["fields"][nAT_RA_SEXO]["data"]]:=jTableFilter["fields"][nAT_RA_SEXO]["advplDataType"]
         aDel(jTableFilter["fields"],nAT_RA_SEXO)
         aSize(jTableFilter["fields"],Len(jTableFilter["fields"])-1)
     endif
@@ -1079,10 +1079,10 @@ static function TableResult(jTableFields as json) as character
     WITH WEBEXOBJECT oTableResult CLASS WebExTable ARGS "FWWebExExample_020"
         .:AddClass("display compact nowrap")
         .:SetFixedID("FWWebExExample_020")
-        aEval(jTableFields["fields"],{|jField|oTableResult:AddColumnHeader(jField["label"],jField["name"])})
+        aEval(jTableFields["fields"],{|jField|oTableResult:AddColumnHeader(jField["title"],jField["data"])})
         oTableResult:BuildHeader()
     END WEBEXOBJECT
-    cTableResultHTML:=oTableResult:RenderHtml()
+    cTableResultHTML:=oTableResult:RenderHTML()
     oTableResult:Clean()
     FreeObj(@oTableResult)
 
@@ -1090,7 +1090,7 @@ return(cTableResultHTML)
 
 static function TableFieldsReturn(jTableFields) as character
     local cTableFieldsReturn:="[" as character
-    aEval(jTableFields["fields"],{|jField|cTableFieldsReturn+="i."+jField["name"]+" || '',"})
+    aEval(jTableFields["fields"],{|jField|cTableFieldsReturn+="i."+jField["data"]+" || '',"})
     cTableFieldsReturn:=SubStr(cTableFieldsReturn,1,Len(cTableFieldsReturn)-1)
     cTableFieldsReturn+="]"
 return(cTableFieldsReturn)
