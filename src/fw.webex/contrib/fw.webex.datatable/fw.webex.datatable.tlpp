@@ -30,9 +30,9 @@ class WebExDataTable from WebExTable
 
     protected data oDataTableScript as object   // Script JS para inicializacao do DataTable
 
-    protected method __BuildColumns() as object
-    protected method __AddColumnsHeader(jDataTableFields as json) as json
-    protected method __GenerateActionRender(cID as character) as character
+    private method __BuildColumns() as object
+    private method __AddColumnsHeader(jDataTableFields as json) as object
+    private method __GenerateActionRender(cID as character) as character
 
     public method New(cTableTitle as character,lServerSide as logical) as object
 
@@ -150,7 +150,7 @@ method __AddColumnsHeader(jDataTableFields) class WebExDataTable
 
     paramtype 1 var jDataTableFields as json
 
-    if (jDataTableFields:HasProperty("fields"))
+    if ((jDataTableFields:HasProperty("fields").and.(ValType(jDataTableFields["fields"])=="A")))
 
         aFields:=jDataTableFields["fields"]
         nFields:=Len(aFields)
@@ -180,7 +180,7 @@ method __AddColumnsHeader(jDataTableFields) class WebExDataTable
 
     endif
 
-return(::jDataTableColumns)
+return(self)
 
 method AddActionButton(cLabel,cIcon,cOnClick,cClass,cStyle) class WebExDataTable
     local cID as character

@@ -152,6 +152,18 @@ static procedure FWWebExExample_023(cHTML as character) as character
             text-overflow: ellipsis;
         }
 
+        /* Estiliza o elemento select dentro da classe dt-length para garantir que a seta de expansao fique aa direita sem sobrepor o texto */
+        .dt-length select.form-select.form-select-sm {
+            min-width: 70px; /* Define largura minima para evitar corte do texto das opcoes */
+            padding-right: 1.5rem; /* Adiciona espaco aa direita para acomodar a seta personalizada */
+            appearance: none; /* Remove a aparencia padrao do navegador para personalizar a seta */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); /* Define uma seta personalizada usando SVG */
+            background-repeat: no-repeat; /* Evita repeticao da imagem da seta */
+            background-position: right 0.5rem center; /* Posiciona a seta aa direita do select, centralizada verticalmente */
+            background-size: 1rem; /* Define o tamanho da seta para consistencia visual */
+            box-sizing: border-box; /* Garante que padding e borda sejam incluidos na largura total */
+        }
+
     endContent
 
     /*

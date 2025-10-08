@@ -27,11 +27,9 @@ static __nAccentuation as numeric
 
 class WebExHelper
 
-    static method EscapeAll(cValue as character) as character
-
     static method EscapeHTMLScript(cHTML as character) as character
-    static method EscapeJavaScript(cCode as character) as character
-    static method EscapeHTMLAttribute(cValue as character) as character
+    static method EscapeJavaScript(cScript as character) as character
+    static method EscapeHTMLAttribute(cHTML as character) as character
 
     static method ConvertHeaderToJSObject(cHeaderString as character) as character
 
@@ -47,13 +45,6 @@ class WebExHelper
     static method WebAccentuationToAscii(cString as character) as character
 
 end class
-
-static method EscapeAll(cValue) class WebExHelper
-    paramtype 1 var cValue as character
-    cValue:=WebExHelper():EscapeHTMLScript(cValue)
-    cValue:=WebExHelper():EscapeHTMLAttribute(cValue)
-    cValue:=WebExHelper():EscapeJavaScript(cValue)
-return(cValue)
 
 static method EscapeHTMLScript(cHTML) class WebExHelper
     paramtype 1 var cHTML as character
@@ -71,10 +62,10 @@ static method EscapeHTMLScript(cHTML) class WebExHelper
     )
 return(cHTML)
 
-static method EscapeJavaScript(cCode) class WebExHelper
-    paramtype 1 var cCode as character
-    cCode:=WebExHelper():StrReplace(;
-        cCode;
+static method EscapeJavaScript(cScript) class WebExHelper
+    paramtype 1 var cScript as character
+    cScript:=WebExHelper():StrReplace(;
+        cScript;
        ,{;
              {"\\","\\\\"};
             ,{"'","\\'"};
@@ -83,12 +74,12 @@ static method EscapeJavaScript(cCode) class WebExHelper
             ,{__cCHR10,"\\n"};
        };
     )
-return(cCode)
+return(cScript)
 
-static method EscapeHTMLAttribute(cValue) class WebExHelper
-    paramtype 1 var cValue as character
-    cValue:=WebExHelper():StrReplace(;
-        cValue;
+static method EscapeHTMLAttribute(cHTML) class WebExHelper
+    paramtype 1 var cHTML as character
+    cHTML:=WebExHelper():StrReplace(;
+        cHTML;
        ,{;
              {"&","&amp;"};
             ,{'"','&quot;'};
@@ -97,7 +88,7 @@ static method EscapeHTMLAttribute(cValue) class WebExHelper
             ,{">","&gt;"};
        };
     )
-return(cValue)
+return(cHTML)
 
 static method ConvertHeaderToJSObject(cHeaderString) class WebExHelper
 

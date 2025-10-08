@@ -155,7 +155,7 @@ static procedure FWWebExExample_009(cHTML as character) as character
             };
         )
         cHTMLDrillDown:=oFWWebExTableDrillDown:RenderHTML()
-        cHTMLDrillDown:=WebExHelper():EscapeAll(cHTMLDrillDown)
+        cHTMLDrillDown:=WebExHelper():EscapeHTMLAttribute(cHTMLDrillDown)
         FreeObj(@oFWWebExTableDrillDown)
         oFWWebExTable:AddCell(aEmpresas[nEmpresa][1])
         oFWWebExTable:AddCell(aEmpresas[nEmpresa][2])
