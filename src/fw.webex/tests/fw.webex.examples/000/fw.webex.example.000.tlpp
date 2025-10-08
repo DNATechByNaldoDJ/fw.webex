@@ -109,13 +109,13 @@ static procedure FWWebExExample_000()
     nBottom:=oFWDefSize:aWindSize[3]
     nRight:=oFWDefSize:aWindSize[4]
 
-    if (lRedefineBottom)
+    if ((Type("lRedefineBottom")=="L".and.(lRedefineBottom)))
         nBottom-=50
     endif
 
     DEFINE MSDIALOG oTDlg TITLE cCadastro FROM nTop,nLeft TO nBottom,nRight PIXEL OF oWNDDefault
 
-        if (lRedefineBottom)
+        if ((Type("lRedefineBottom")=="L".and.(lRedefineBottom)))
             oTDlg:nTop+=7
             oTDlg:nLeft+=5
             oTDlg:nRight+=0
@@ -133,7 +133,7 @@ static procedure FWWebExExample_000()
         FWMsgRun(nil,{||oTMenu:=LoadMenu(@oTDlg,jExamples)},"Wait! Loading Menu",cCadastro)
 
         oTDlg:SetMenu(oTMenu)
-        oTDlg:lCentered:=(!lRedefineBottom)
+        oTDlg:lCentered:=((Type("lRedefineBottom")=="L".and.(!lRedefineBottom)))
 
     ACTIVATE DIALOG oTDlg
 

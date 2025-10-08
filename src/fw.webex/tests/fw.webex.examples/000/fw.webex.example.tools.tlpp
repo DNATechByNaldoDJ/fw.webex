@@ -135,7 +135,6 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
     local aButtons as array
 
     local bErrorBlock as codeblock
-    local bButtonAction as codeblock
 
     local cHTMLFileTmpFile as character
     local cHTMLFileServer as character
@@ -146,13 +145,7 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
     local cSPPFile as character
     local cSPPExt as character
 
-    local cButton as character
-
-    local jButtons as json
-
     local lAbrir as logical
-    local lIsDark:=WebApp():ThemeIsDark() as logical
-    local lHasTheme as logical
     local lTWebChannel as logical
 
     local nTop as numeric
@@ -160,21 +153,10 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
     local nBottom as numeric
     local nRight as numeric
 
-    local nBtnCol as numeric
-    local nButton as numeric
-    local nButtons as numeric
-    local nButtonCol as numeric
-    local nButtonSize as numeric
-
     local oDlg as object
-    local oGrp as object
-
     local oError as object
-    local oTheme as object
-
-    local oTWebEngine as object
-
     local oFWDefSize as object
+    local oTWebEngine as object
 
     paramtype 1 var cHTML as character
     paramtype 2 var cTitle as character
@@ -187,8 +169,6 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
     lTWebChannel:=(ValType(oTWebChannel)=="O")
 
     begin sequence
-
-        jButtons:=JSONObject():New()
 
         aButtons:=array(0)
         aAdd(aButtons,{"&Sair",{||oDlg:End()},OemToAnsi("Sair"),OemtoAnsi("Sair")})
@@ -236,17 +216,16 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 cHTMLFileTmpFile+=cSPPFile
                 cHTMLFileTmpFile+=cSPPExt
                 __CopyFile(cHTMLFile,cHTMLFileTmpFile)
-                aAdd(aButtons,{"Go&Forward",{||oTWebEngine:GoForward()},OemToAnsi("Go Forward"),OemtoAnsi("Go Forward")})
-                aAdd(aButtons,{"Go&Home",{||oTWebEngine:GoHome()},OemToAnsi("Go Home"),OemtoAnsi("Go Home")})
-                aAdd(aButtons,{"Go&Back",{||oTWebEngine:GoBack()},OemToAnsi("Go Back"),OemtoAnsi("Go Back")})
                 aAdd(aButtons,{"&Abrir",{||ShellExecute("open",cHTMLFileTmpFile,"","",SW_SHOWMAXIMIZED)},OemToAnsi("Abir"),OemtoAnsi("Abir")})
+                aAdd(aButtons,{"Go&Back",{||oTWebEngine:GoBack()},OemToAnsi("Go Back"),OemtoAnsi("Go Back")})
+                aAdd(aButtons,{"Go&Home",{||oTWebEngine:GoHome()},OemToAnsi("Go Home"),OemtoAnsi("Go Home")})
+                aAdd(aButtons,{"Go&Forward",{||oTWebEngine:GoForward()},OemToAnsi("Go Forward"),OemtoAnsi("Go Forward")})
             endif
         endif
 
         oFWDefSize:=FWDefSize():New(.F.,.F.)
         oFWDefSize:lLateral:=.F.
-        oFWDefSize:AddObject("TWebEngine",100,95,.T.,.T.)
-        oFWDefSize:AddObject("ButtonActions",100,05,.F.,.F.)
+        oFWDefSize:AddObject("TWebEngine",100,100,.T.,.T.)
 
         oFWDefSize:Process()
 
@@ -314,58 +293,13 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
             oTWebEngine:Align:=CONTROL_ALIGN_ALLCLIENT
             WebApp():SetTWebEngine(oTWebEngine)
 
-            nTop:=oFWDefSize:GetDimension("ButtonActions","LININI")
-            nBottom:=oFWDefSize:GetDimension("ButtonActions","LINEND")
-
-            if (oFWDefSize:aWindSize[3]>0)
-                if (lRedefineBottom)
-                    nTop-=25
-                    nBottom-=25
-                endif
-                nTop-=3
-                nRight+=3
-            endif
-
-            if (lIsDark)
-                @ nTop,03 GROUP oGrp TO nBottom+2,nRight PROMPT "" OF oDlg PIXEL
-            else
-                @ nTop,03 GROUP oGrp TO nBottom+2,nRight PROMPT "" OF oDlg COLOR 0,16777215 PIXEL
-            endif
-
-            nTop+=15
-            nRight+=5
-
-            try
-                oTheme:=totvs.framework.css.ProtheusTheme():New()
-                lHasTheme:=.T.
-            catch oError
-                lHasTheme:=.F.
-                FreeObj(@oError)
-            endtry
-
-            //Botoes (da direita pra a esquerda)
-            nBtnCol:=3
-            nButtonCol:=6
-            nButtonSize:=50
-            nButtons:=Len(aButtons)
-            for nButton:=1 to nButtons
-                cButton:=LTrim(Str(nButton))
-                nButtonCol+=nBtnCol
-                @ nTop,(nRight)-((nButtonSize*nButton)+nButtonCol) BUTTON jButtons[cButton] PROMPT aButtons[nButton][1] SIZE nButtonSize,08 OF oGrp PIXEL
-                bButtonAction:=&("{||Eval(aButtons["+cButton+"][2])}")
-                jButtons[cButton]:bAction:=bButtonAction
-                if (lHasTheme)
-                    jButtons[cButton]:SetCSS(oTheme:getPrimaryButtonCSS())
-                endif
-            next nButton
-
             oDlg:lEscClose:=.F.
 
             oTWebEngine:Navigate(cHTMLFileNavigate)
 
             oDlg:lCentered:=(!lRedefineBottom)
 
-        ACTIVATE MSDIALOG oDlg
+        ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{||oDlg:End()},{||oDlg:End()},nil,aButtons)
 
         if ((!lTWebChannel).and.(valType(oTWebChannel)=="O"))
             oTWebChannel:Disconnect()
@@ -391,10 +325,7 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
 
     FWFreeArray(@aButtons)
 
-    FreeObj(@oGrp)
     FreeObj(@oDlg)
-    FreeObj(@oTheme)
-    FreeObj(@jButtons)
     FreeObj(@oFWDefSize)
 
     FreeObj(@oTWebEngine)
