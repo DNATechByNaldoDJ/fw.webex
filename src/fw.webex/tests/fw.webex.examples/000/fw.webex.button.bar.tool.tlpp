@@ -1,0 +1,185 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+The source code `fw.webex.button.bar.tool.tlpp` is based on more detailed and feature-rich sources:
+    `dna.tech.button.bar.tool.tlpp`
+- and implements part of the functionalities present in these.
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx.Tools
+
+#include "fw.webex.th"
+
+class ButtonBar
+
+    static method BuildButtonBar(oDlg as object,aButtons as array,nTop as numeric,nRight as numeric,bOk as codeblock,bCancel as codeblock,nButtonCol as numeric,nButtonSize as numeric,nButtonHeight as numeric,lAddOkCancelButtons as logical,lTopBar as logical) as array
+    static method BuildTopButtonBar(oDlg as object,aButtons as array,nTop as numeric,nRight as numeric,bOk as codeblock,bCancel as codeblock,nButtonCol as numeric,nButtonSize as numeric,nButtonHeight as numeric,lAddOkCancelButtons as logical) as array
+
+    static method CleanButtonBar(aButtonBarRet as array) as variant
+
+    static method BuildButtonBarFolder(oTFolderButtons as object,aButtons as array,aDialogs as array,aPrompts as array,jFolderButtons as json,nTop as numeric,nRight as numeric,nButtonCol as numeric,nButtonSize as numeric,nButtonHeight as numeric) as array
+    static method CleanBuildButtonBarFolder(aButtonBarFolderRet as array) as variant
+
+end class
+
+static method BuildButtonBar(oDlg,aButtons,nTop,nRight,bOk,bCancel,nButtonCol,nButtonSize,nButtonHeight,lAddOkCancelButtons,lTopBar) class ButtonBar
+
+    local aNewButtons as array
+    local aButtonsObj as array
+
+    local nButton as numeric
+    local nButtons as numeric
+
+    local nBtnCol as numeric
+
+    local oTopBar
+
+    paramtype 1 var oDlg as object
+    paramtype 2 var aButtons as array optional
+    paramtype 3 var nTop as numeric
+    paramtype 4 var nRight as numeric
+    paramtype 5 var bOk as block optional default {||oDlg:End()}
+    paramtype 6 var bCancel as block optional default {||oDlg:End()}
+    paramtype 7 var nButtonCol as numeric optional default 3
+    paramtype 8 var nButtonSize as numeric optional default 55
+    paramtype 9 var nButtonHeight as numeric optional default 12
+    paramtype 10 var lAddOkCancelButtons as logical optional default .T.
+    paramtype 11 var lTopBar as logical optional default .F.
+
+    if (valType(aButtons)!="A")
+        lAddOkCancelButtons:=.T.
+        aButtons:=array(0)
+    endif
+
+    aNewButtons:=Array(0)
+
+    if (lAddOkCancelButtons)
+        aAdd(aNewButtons,{"Sair",bCancel,"&Sair"})
+        aAdd(aNewButtons,{"Confirmar",bOk,"&Confirmar"})
+    endif
+
+    nButtons:=Len(aButtons)
+
+    for nButton:=1 to nButtons
+        aAdd(aNewButtons,aButtons[nButton])
+    next nButton
+
+    nButtons:=Len(aNewButtons)
+    aButtonsObj:=Array(nButtons)
+
+    if (lTopBar)
+        oTopBar:=TBar():New(;
+            oDlg;           //[ oWnd ]
+            ,nButtonSize;   //[ nBtnWidth
+            ,nButtonHeight; //[ nBtnHeight ]
+            ,.T.;           //[ l3D ]
+            ,nil;           //[ uParam1 ]
+            ,nil;           //[ oCursor ]
+            ,nil;           //[ cResource ]
+            ,.T.;           //[ lNoAutoAdjust ]
+        )
+    endif
+
+    //Se !lTopBar Botoes (da direita pra a esquerda)
+    nBtnCol:=nButtonCol
+    for nButton:=1 to nButtons
+        nButtonCol+=nBtnCol
+        @ nTop,(nRight)-((nButtonSize*nButton)+nButtonCol) BUTTON aButtonsObj[nButton] PROMPT aNewButtons[nButton][1] SIZE nButtonSize,nButtonHeight OF if(lTopBar,oTopBar,oDlg) PIXEL
+        bButtonAction:=&("{||Eval(aNewButtons["+LTrim(Str(nButton))+"][2])}")
+        aButtonsObj[nButton]:bAction:=bButtonAction
+    next nButton
+
+return({aButtonsObj,aNewButtons})
+
+static method BuildTopButtonBar(oDlg,aButtons,nTop,nRight,bOk,bCancel,nButtonCol,nButtonSize,nButtonHeight,lAddOkCancelButtons) class ButtonBar
+    local lTopBar:=.T. as logical
+return(ButtonBar():BuildButtonBar(@oDlg,@aButtons,@nTop,@nRight,@bOk,@bCancel,@nButtonCol,@nButtonSize,@nButtonHeight,@lAddOkCancelButtons,@lTopBar))
+
+static method CleanButtonBar(aButtonBarRet)  class ButtonBar
+
+    paramtype 1 var aButtonBarRet as array
+
+    if (valType(@aButtonBarRet)=="A")
+        if (Len(aButtonBarRet)>=1)
+            aEval(aButtonBarRet[1],{|e|if(ValType(e)=="O",FreeObj(@e),nil)})
+            FWFreeArray(@aButtonBarRet[1])
+            if (Len(aButtonBarRet)>=2)
+                FWFreeArray(@aButtonBarRet[2])
+            endif
+        endif
+        FWFreeArray(@aButtonBarRet)
+    endif
+
+return
+
+static method BuildButtonBarFolder(oTFolderButtons,aButtons,aDialogs,aPrompts,jFolderButtons,nTop,nRight,nButtonCol,nButtonSize,nButtonHeight,oFont) class ButtonBar
+
+    local aButtonsObj as array
+
+    local lSetFont as logical
+
+    local nFolder as numeric
+    local nFolders as numeric
+
+    local nBtnCol as numeric
+    local nButton as numeric
+    local nButtonAT as numeric
+
+    paramtype 1 var oTFolderButtons as object
+    paramtype 2 var aButtons as array
+    paramtype 3 var aDialogs as array
+    paramtype 4 var aPrompts as array optional default aClone(aDialogs)
+    paramtype 4 var jFolderButtons as json
+    paramtype 5 var nTop as numeric default 2
+    paramtype 6 var nRight as numeric
+    paramtype 7 var nButtonCol as numeric optional default 2
+    paramtype 8 var nButtonSize as numeric optional default 75
+    paramtype 9 var nButtonHeight as numeric optional default 12
+    paramtype 10 var oFont as object optional
+
+    lSetFont:=(ValType(oFont)=="O")
+
+    nButtons:=Len(aButtons)
+    aButtonsObj:=Array(nButtons)
+
+    nBtnCol:=nButtonCol
+    nFolders:=Len(aPrompts)
+    for nFolder:=1 to nFolders
+        if (lSetFont)
+            oTFolderButtons:aDialogs[nFolder]:oFont:=oFont
+        endif
+        //Botoes (da direita pra a esquerda)
+        nButton:=0
+        nButtonAT:=0
+        nButtonCol:=nBtnCol
+        while ((nButtonAT:=aScan(aButtons,{|x|jFolderButtons[x[1]]==aPrompts[nFolder]},++nButtonAT))>0)
+            nButton++
+            @ nTop,(nRight)-((nButtonSize*nButton)+nButtonCol) BUTTON aButtonsObj[nButtonAT] PROMPT aButtons[nButtonAT][1] SIZE nButtonSize,nButtonHeight FONT oTFolderButtons:aDialogs[nFolder]:oFont OF oTFolderButtons:aDialogs[nFolder] PIXEL
+            bButtonAction:=&("{||Eval(aButtons["+cTools():NToS(nButtonAT)+"][2])}")
+            aButtonsObj[nButtonAT]:bAction:=bButtonAction
+            nButtonCol+=nBtnCol
+        end while
+    next nFolder
+
+return({aButtonsObj})
+
+static method CleanBuildButtonBarFolder(aButtonBarFolderRet)  class ButtonBar
+
+    paramtype 1 var aButtonBarFolderRet as array
+
+    if (valType(@aButtonBarFolderRet)=="A")
+        if (Len(aButtonBarFolderRet)>=1)
+            aEval(aButtonBarFolderRet[1],{|e|if(ValType(e)=="O",FreeObj(@e),nil)})
+            FWFreeArray(@aButtonBarFolderRet[1])
+        endif
+        FWFreeArray(@aButtonBarFolderRet)
+    endif
+
+return

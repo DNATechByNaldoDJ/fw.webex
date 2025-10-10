@@ -15,7 +15,10 @@ Released to Public Domain.
 --------------------------------------------------------------------------------------
 */
 
-namespace FWWebEx
+namespace FWWebEx.Tools
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 #include "fw.webex.th"
 
@@ -133,7 +136,9 @@ return
 static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallBack,cCallBackActRet) class FWExampleTools
 
     local aButtons as array
+    local aButtonsObj as array
 
+    local bDialogInit as codeblock
     local bErrorBlock as codeblock
 
     local cHTMLFileTmpFile as character
@@ -171,7 +176,6 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
     begin sequence
 
         aButtons:=array(0)
-        aAdd(aButtons,{"&Sair",{||oDlg:End()},OemToAnsi("Sair"),OemtoAnsi("Sair")})
         aAdd(aButtons,{"&Print",{||oTWebEngine:Print()},OemToAnsi("Print"),OemtoAnsi("Print")})
         aAdd(aButtons,{"Print PD&F",{||oTWebEngine:PrintPDF()},OemToAnsi("Print PDF"),OemtoAnsi("Print PDF")})
 
@@ -222,6 +226,8 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 aAdd(aButtons,{"Go&Forward",{||oTWebEngine:GoForward()},OemToAnsi("Go Forward"),OemtoAnsi("Go Forward")})
             endif
         endif
+
+        aAdd(aButtons,{"&Sair",{||oDlg:End()},OemToAnsi("Sair"),OemtoAnsi("Sair")})
 
         oFWDefSize:=FWDefSize():New(.F.,.F.)
         oFWDefSize:lLateral:=.F.
@@ -299,7 +305,11 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
 
             oDlg:lCentered:=(!lRedefineBottom)
 
-        ACTIVATE MSDIALOG oDlg ON INIT EnchoiceBar(oDlg,{||oDlg:End()},{||oDlg:End()},nil,aButtons)
+            bDialogInit:={||aButtonsObj:=FWWebEx.Tools.ButtonBar():BuildTopButtonBar(oDlg,aButtons,nTop,nRight,nil,nil,3/*nButtonCol*/,65/*nButtonSize*/,15/*nButtonHeight*/,.F./*lAddOkCancelButtons*/)}
+
+        ACTIVATE MSDIALOG oDlg ON INIT Eval(bDialogInit)
+
+        FWWebEx.Tools.ButtonBar():CleanButtonBar(@aButtonsObj)
 
         if ((!lTWebChannel).and.(valType(oTWebChannel)=="O"))
             oTWebChannel:Disconnect()

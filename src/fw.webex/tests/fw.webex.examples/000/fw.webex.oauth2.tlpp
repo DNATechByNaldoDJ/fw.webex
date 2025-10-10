@@ -1,6 +1,7 @@
 #include "tlpp-core.th"
 
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 //https://tdn.totvs.com/display/tec/onAuthNoCheckUri
 function u_NoCheckUri()

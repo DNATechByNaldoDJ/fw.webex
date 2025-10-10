@@ -28,6 +28,7 @@ Released to Public Domain.
 #include "fw.webex.th"
 
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_003()
     local bExecute as codeblock

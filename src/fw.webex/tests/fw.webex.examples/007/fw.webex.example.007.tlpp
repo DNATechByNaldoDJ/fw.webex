@@ -61,6 +61,7 @@ Released to Public Domain.
 #include "tlpp-rest.th"
 
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_007()
     local bExecute as codeblock

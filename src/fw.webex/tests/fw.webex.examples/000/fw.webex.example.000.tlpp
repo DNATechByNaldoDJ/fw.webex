@@ -12,6 +12,7 @@ Released to Public Domain.
 #include "fw.webex.th"
 
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 /*
     Obs.:   Para chamada atraves do Menu do Protheus inclua FWWeb000 como funcao de usuario

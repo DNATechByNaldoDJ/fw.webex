@@ -53,6 +53,7 @@ Modulo FWSBAdmin - componentes prontos baseados no template SB Admin 2
 #include "fw.webex.th"
 
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_014()
     local bExecute as codeblock

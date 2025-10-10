@@ -14,7 +14,10 @@ Released to Public Domain.
 --------------------------------------------------------------------------------------
 */
 
-namespace FWWebEx
+namespace FWWebEx.Tools
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 #include "fw.webex.th"
 
