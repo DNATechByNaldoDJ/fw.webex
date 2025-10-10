@@ -119,7 +119,6 @@ static function __Accentuation(lAsciiToWebAccentuation as logical,cString as cha
     local nAccentuation as numeric
 
     if ((ValType(vAccentuation)=="J").and.(vAccentuation:HasProperty("VARGS")))
-        private __cAcc_Args__:="" as character
         vAccentuation:GetJSONValue("VARGS",@aAccentuation)
         nAccentuation:=Len(aAccentuation)
         for nVArg:=1 to nAccentuation
@@ -128,7 +127,7 @@ static function __Accentuation(lAsciiToWebAccentuation as logical,cString as cha
     endif
     if (lAsciiToWebAccentuation)
         cNewString:=WebExHelper():AsciiToWebAccentuation(cNewString)
-        if ("&cr;"$cNewString.or."&NewLine;"$cNewString)
+        if (("&cr;"$cNewString).or.("&NewLine;"$cNewString))
             cNewString:=WebExHelper():StrReplaceEx(;
                 cNewString;
                 ,{"&cr;",""};
