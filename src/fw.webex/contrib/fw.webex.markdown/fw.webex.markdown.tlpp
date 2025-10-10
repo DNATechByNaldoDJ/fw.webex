@@ -9,9 +9,45 @@ Released to Public Domain.
 --------------------------------------------------------------------------------------
 */
 
+namespace FWWebEx
+
 #include "fw.webex.th"
 
-namespace FWWebEx
+class WebExMarkDown from WebExPre
+
+    public method New() as object
+
+    public method ConvertMD() as object
+
+endclass
+
+method New() class WebExMarkDown
+
+    _Super:New()
+    ::SetEnableMarkDown(.T.)
+    ::AddClass("markdown")
+
+return(self)
+
+method ConvertMD() class WebExMarkDown
+
+    local cMarkDownScript as character
+
+    beginContent var cMarkDownScript
+        document.addEventListener('DOMContentLoaded', function () {
+            FWWebExWaitForElementID("__ID__", function (element) {
+                MarkdownHighlightInFWWebExPage.convertMD(element.id);
+            });
+        });
+    endContent
+
+    cMarkDownScript:=::StrReplaceEx(cMarkDownScript,{"__ID__",::GetFixedID()})
+
+    WITH WEBEXOBJECT CLASS WebExScript
+        .:SetContent(cMarkDownScript)
+    END WEBEXOBJECT
+
+return(self)
 
 class FWMarkdown from FWWebEx.ClassBase
 
@@ -48,7 +84,8 @@ class FWMarkdown from FWWebEx.ClassBase
     public method FootnoteRef(cId as character) as character
     public method FootnoteDef(cId as character,cText as character) as object
     public method FrontMatter(jMeta as json) as object
-    public method Save(cFile as character) as logical
+    public method BuildOutPut(lEncodeUTF8 as logical) as character
+    public method Save(cFile as character,lEncodeUTF8 as logical) as logical
 
 end class
 
@@ -385,30 +422,11 @@ method FrontMatter(jMeta) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Save(cFile,lEncodeUTF8) class FWMarkdown
-
-    local cSPDrive as character
-    local cSPPath as character
-    local cSPFile as character
-    local cSPExt as character
-    local cDirMake as character
-
-    local lSaveOK as logical
+method BuildOutPut(lEncodeUTF8) class FWMarkdown
 
     local i as numeric
 
-    paramtype 1 var cFile as character
-    paramtype 2 var lEncodeUTF8 as logical optional default .T.
-
-    SplitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
-
-    cDirMake:=cSPDrive
-    cDirMake+=cSPPath
-
-    lSaveOK:=lIsDir(cDirMake)
-    if (!lSaveOK)
-        lSaveOK:=FWMakeDir(cSPPath)
-    endif
+    paramtype 1 var lEncodeUTF8 as logical optional default .T.
 
     ::cOutput:=::cBuffer
     if (Len(::aFootnotes)>0)
@@ -423,6 +441,36 @@ method Save(cFile,lEncodeUTF8) class FWMarkdown
         ::cOutput:=EncodeUTF8(::cOutput)
     endif
 
-    lSaveOK:=((lSaveOK).and.(MemoWrite(cFile,::cOutput)))
+return(::cOutput)
+
+// ------------------------------------------------------
+method Save(cFile,lEncodeUTF8) class FWMarkdown
+
+    local cSPDrive as character
+    local cSPPath as character
+    local cSPFile as character
+    local cSPExt as character
+    local cDirMake as character
+
+    local cOutput as character
+
+    local lSaveOK as logical
+
+    paramtype 1 var cFile as character
+    paramtype 2 var lEncodeUTF8 as logical optional default .T.
+
+    SplitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
+
+    cDirMake:=cSPDrive
+    cDirMake+=cSPPath
+
+    lSaveOK:=lIsDir(cDirMake)
+    if (!lSaveOK)
+        lSaveOK:=FWMakeDir(cSPPath)
+    endif
+
+    cOutput:=::BuildOutPut()
+
+    lSaveOK:=((lSaveOK).and.(MemoWrite(cFile,cOutput)))
 
 return(lSaveOK)

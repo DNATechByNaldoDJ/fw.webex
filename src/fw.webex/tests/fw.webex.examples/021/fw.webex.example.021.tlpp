@@ -436,7 +436,7 @@ static procedure FWWebExExample_021(cHTML as character) as character
         oScript2:=WebExControl():New("script")
         oScript2:SetAttr("src",cSBAdminPath+"js/scripts.js")
     oFWWebExBody:AddChild(oScript2)
-    oFWWebExPage:=SBAdminPage():New("fw.webex.example.021.tlpp :: FWWEbEx :: SBADMIN")
+    oFWWebExPage:=SBAdminPage():New("fw.webex.example.021.tlpp :: FWWebEx :: SBADMIN")
     oFWWebExPage:AddChild(oFWWebExBody)
     oFWWebExPage:AddChild(oFWWebExBody)
 

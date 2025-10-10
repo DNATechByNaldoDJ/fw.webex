@@ -123,7 +123,7 @@ static procedure FWWebExExample_022(cHTML as character) as character
         END WEBEXOBJECT
     END WEBEXOBJECT NOADDCHILD
 
-    oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWEbEx :: SBADMIN :: SBAdminNav")
+    oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWebEx :: SBADMIN :: SBAdminNav")
     oFWWebExPage:AddChild(oFWWebExBody)
     oFWWebExPage:SetEnableDataTable(.T.)
     oFWWebExPage:SetEnableChart(.F.)

@@ -37,6 +37,8 @@ static __jScripts:=JSONObject():New() as json
 static __jFeatures:={;
     "lChartEnabled":.F.;
    ,"lIconsEnabled":.F.;
+   ,"lJQueryEnabled":.F.;
+   ,"lMarkDownEnabled":.F.;
    ,"lApexChartEnabled":.F.;
    ,"lDataTableEnabled":.F.;
    ,"lMaterialDesignEnabled":.F.;
@@ -63,10 +65,13 @@ class WebExControl from FWWebEx.ClassBase
     protected data jObjectsContainer as json
 
     protected data lVisible as logical
-    protected data lChartEnabled as logical
-    protected data lIconsEnabled as logical
     protected data lExternalAssets as logical
     protected data lRenderChildren as logical
+
+    protected data lChartEnabled as logical
+    protected data lIconsEnabled as logical
+    protected data lJQueryEnabled as logical
+    protected data lMarkDownEnabled as logical
     protected data lApexChartEnabled as logical
     protected data lDataTableEnabled as logical
     protected data lMaterialDesignEnabled as logical
@@ -166,6 +171,12 @@ class WebExControl from FWWebEx.ClassBase
     public method GetEnableIcons() as logical
     public method SetEnableIcons(lIconsEnabled as logical) as object
 
+    public method GetEnableJQuery() as logical
+    public method SetEnableJQuery(lJQueryEnabled as logical) as object
+
+    public method GetEnableMarkDown() as logical
+    public method SetEnableMarkDown(lMarkDownEnabled as logical) as object
+
     public method GetEnableDataTable() as logical
     public method SetEnableDataTable(lDataTableEnabled as logical) as object
 
@@ -200,6 +211,8 @@ method New(cType) class WebExControl
     ::lVisible:=.T.
     ::lChartEnabled:=__jFeatures["lChartEnabled"]
     ::lIconsEnabled:=__jFeatures["lIconsEnabled"]
+    ::lJQueryEnabled:=__jFeatures["lJQueryEnabled"]
+    ::lMarkDownEnabled:=__jFeatures["lMarkDownEnabled"]
     ::lApexChartEnabled:=__jFeatures["lApexChartEnabled"]
     ::lDataTableEnabled:=__jFeatures["lDataTableEnabled"]
     ::lMaterialDesignEnabled:=__jFeatures["lMaterialDesignEnabled"]
@@ -1104,7 +1117,7 @@ method SetEnableIcons(lIconsEnabled) class WebExControl
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdnjs.cloudflare.com/ajax/libs/font-awesome/latest/css/all.min.css")
+                    .:SetAttr("href","https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css")
                     .:SetAttr("rel","stylesheet")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
@@ -1129,12 +1142,292 @@ method SetEnableIcons(lIconsEnabled) class WebExControl
 
 return(self)
 
+method GetEnableJQuery() class WebExControl
+return(::lJQueryEnabled)
+
+method SetEnableJQuery(lJQueryEnabled) class WebExControl
+
+    paramtype 1 var lJQueryEnabled as logical optional default .T.
+
+    if ((lJQueryEnabled).and.(!::lJQueryEnabled))
+        ::lJQueryEnabled:=.T.
+        __jFeatures["lJQueryEnabled"]:=::lJQueryEnabled
+***************************************************************************************************************************
+        //JQuery
+            WITH WEBEXOBJECT ::jObjectsContainer["script-jquery-slim"] CLASS WebExScript ARGS .F.
+                .:SetAttr("src","https://releases.jquery.com/git/jquery-git.slim.min.js")
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT ::jObjectsContainer["script-jquery"] CLASS WebExScript ARGS .F.
+                    .:SetAttr("src","https://releases.jquery.com/git/jquery-git.min.js")
+            END WEBEXOBJECT
+        //JQuery
+***************************************************************************************************************************
+    elseif ((!lJQueryEnabled).and.((__jFeatures["lJQueryEnabled"]).or.(::lJQueryEnabled)))
+        ::lJQueryEnabled:=lJQueryEnabled
+        __jFeatures["lJQueryEnabled"]:=::lJQueryEnabled
+    endif
+
+return(self)
+
+method GetEnableMarkDown() class WebExControl
+return(::lMarkDownEnabled)
+
+method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
+
+    local cMarkDownScript as character
+
+    paramtype 1 var lMarkDownEnabled as logical optional default .T.
+
+    if ((lMarkDownEnabled).and.(!::lMarkDownEnabled))
+        ::lMarkDownEnabled:=.T.
+        __jFeatures["lMarkDownEnabled"]:=::lMarkDownEnabled
+***************************************************************************************************************************
+            //FWWebEx MarkDown
+                //JQuery First
+                    ::SetEnableJQuery(.T.)
+                //JQuery
+                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                    .:SetContent("Embedding Markdown style in a FWWebEx HTML page")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Highlight CSS
+                WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                    .:SetAttr("href","https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css")
+                    .:SetAttr("rel","stylesheet")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Highlight.js
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Highlight.js
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/markdown.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // markdown-it
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-mark
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-mark/dist/markdown-it-mark.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-sub
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-sub/dist/markdown-it-sub.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-sup
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-sup/dist/markdown-it-sup.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-emoji
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-emoji/dist/markdown-it-emoji.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-task-lists
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-task-lists/dist/markdown-it-task-lists.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-container
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-container/dist/markdown-it-container.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-footnote
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-footnote/dist/markdown-it-footnote.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // Plugin markdown-it-multimd-table
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-multimd-table/dist/markdown-it-multimd-table.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                // TODO: Plugin markdown-it-blockquote-cite
+                /*WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD*/
+                // TODO: markdown-it-front-matter
+                /*WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD*/
+            //FWWebEx MarkDown
+***************************************************************************************************************************
+            WITH WEBEXOBJECT CLASS WebExStyle
+                .:SetContent("mark { background-color: yellow; } sub, sup { font-size: 0.8em; }")
+            END WEBEXOBJECT
+***************************************************************************************************************************
+        //Scripts Tools
+            beginContent var cMarkDownScript
+                var MarkdownHighlightInFWWebExPage = {};
+                MarkdownHighlightInFWWebExPage.unescapeHTML = function (html) {
+                    var htmlNode = document.createElement('DIV');
+                    htmlNode.innerHTML = html;
+                    if (htmlNode.innerText !== undefined)
+                        return htmlNode.innerText; // IE
+                    return htmlNode.textContent; // FF
+                };
+                MarkdownHighlightInFWWebExPage.convertMD = function (idOrElement) {
+                    try {
+                        if (typeof jQuery === 'undefined') {
+                            console.error('jQuery is not loaded. Markdown conversion aborted.');
+                            return;
+                        }
+                        if (typeof hljs === 'undefined') {
+                            console.warn('Highlight.js is not loaded. Code highlighting will be skipped.');
+                        }
+                        if (typeof window.markdownit === 'undefined') {
+                            console.error('markdown-it is not loaded. Markdown conversion aborted.');
+                            return;
+                        }
+                        // List of plugins
+                        const plugins = [
+                            'markdownitMark',
+                            'markdownitSub',
+                            'markdownitSup',
+                            'markdownitEmoji',
+                            'markdownitTaskLists',
+                            'markdownitContainer',
+                            'markdownitFootnote',
+                            'markdownitMultimdTable',
+                            'markdownitFrontMatter',
+                            'markdownitBlockquoteCite'
+                        ];
+                        // Filter available plugins
+                        const availablePlugins = plugins.filter(plugin => window[plugin]);
+                        const missingPlugins = plugins.filter(plugin => !window[plugin]);
+                        if (missingPlugins.length > 0) {
+                            console.warn(`Some markdown-it plugins are not loaded: ${missingPlugins.join(', ')}. Proceeding with available plugins.`);
+                        }
+                        // Normalize idOrElement to string (ID) or DOM element
+                        var id = typeof idOrElement === 'string' ? idOrElement : idOrElement.id;
+                        console.info('Converting markdown for ID: ' + id + ' using markdown-it');
+                        var md = window.markdownit({
+                            html: true,
+                            highlight: function (str, lang) {
+                                if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
+                                    try {
+                                        return hljs.highlight(str, { language: lang }).value;
+                                    } catch (__) {}
+                                }
+                                return '';
+                            }
+                        });
+                        // Add only available plugins
+                        availablePlugins.forEach(plugin => {
+                            md.use(window[plugin]);
+                        });
+                        // Process the element
+                        var block = typeof idOrElement === 'string' ? jQuery('#' + id) : jQuery(idOrElement);
+                        if (block.length === 0) {
+                            console.error('Element with ID ' + id + ' not found.');
+                            return;
+                        }
+                        if (!block.hasClass('markdown')) {
+                            console.warn('Element with ID ' + id + ' does not have class "markdown".');
+                        }
+                        var rawtext = MarkdownHighlightInFWWebExPage.unescapeHTML(block[0].innerHTML);
+                        // Extract frontmatter
+                        var env = {};
+                        md.render(rawtext, env);
+                        var frontmatter = env.frontMatter || {}; // Try to get from the plugin
+                        var content = env.content || rawtext; // Fallback to original text
+                        // If frontmatter was not extracted by the plugin, parse manually with regex (alternative)
+                        if (!frontmatter.title && !frontmatter.author && !frontmatter.date) {
+                            var fmMatch = rawtext.match(/^---\s*([\s\S]*?)\s*---/);
+                            if (fmMatch) {
+                                var fmText = fmMatch[1].trim(); // Extract content between ---
+                                var lines = fmText.split('\n');
+                                lines.forEach(line => {
+                                    var parts = line.split(':');
+                                    if (parts.length >= 2) {
+                                        var key = parts[0].trim();
+                                        var value = parts.slice(1).join(':').trim();
+                                        frontmatter[key] = value;
+                                    }
+                                });
+                                content = rawtext.replace(fmMatch[0], '').trim(); // Remove frontmatter from content
+                            }
+                        }
+                        // Render the frontmatter as a custom header (only once)
+                        var header = jQuery('<div class="report-header"></div>');
+                        header.append(`<h1>${frontmatter.title || 'No Title'}</h1>`);
+                        header.append(`<div class="meta-info"><p>Author: ${frontmatter.author || 'No Author'}</p><p>Date: ${frontmatter.date || 'No Date'}</p></div>`);
+                        // Render the remaining content
+                        var md_html = md.render(content);
+                        // Use a temporary wrapper to manipulate the rendered HTML
+                        var tempWrapper = jQuery('<div></div>');
+                        tempWrapper.html(md_html);
+                        // Remove any residual <h2> with frontmatter raw text (fallback)
+                        tempWrapper.find('h2:contains("title:")').remove();
+                        // Wrap tables in a responsive div and clean up alignment styles
+                        tempWrapper.find('table').each(function () {
+                            var $table = jQuery(this);
+                            $table.removeAttr('style'); // Remove inline styles
+                            //TODO: Remove inline styles from cells?
+                            $table.find('th, td').removeAttr('style'); // Remove inline styles from cells
+                            $table.wrap('<div class="table-responsive mt-4"></div>');
+                            $table.addClass('table table-bordered table-sm table-striped');
+                        });
+                        // Get the modified HTML
+                        md_html = tempWrapper.html();
+                        // Insert header and modified content as HTML string before the block
+                        block.before(header[0].outerHTML + md_html);
+                        block[0].hidden = true;
+                        // Inject CSS for styling
+                        var style = jQuery('<style>')
+                            .text(`
+                                .report-header {
+                                    padding: 15px;
+                                    margin-bottom: 20px;
+                                    border-radius: 5px;
+                                    border-left: 4px solid #007bff;
+                                    font-family: Arial, sans-serif;
+                                }
+                                .report-header h1 { margin: 0 0 10px 0; font-size: 1.5em; font-weight: bold; }
+                                .report-header .meta-info { display: flex; justify-content: space-between; font-size: 0.9em; opacity: 0.9; }
+                                .report-header .meta-info p { margin: 0; padding: 0; }
+                            `);
+                        jQuery('head').append(style);
+                        // Code highlighting, if available (after insertion to ensure elements are in DOM)
+                        if (typeof hljs !== 'undefined') {
+                            jQuery('pre code').each(function (i, block) {
+                                hljs.highlightElement(block);
+                            });
+                        }
+                    } catch (exc) {
+                        console.error('Markdown conversion error for ID ' + id + ':', exc);
+                    }
+                };
+            endContent
+            WITH WEBEXOBJECT CLASS WebExScript
+                .:SetContent(cMarkDownScript)
+            END WEBEXOBJECT
+        //Scripts Tools***************************************************************************************************************************
+    elseif ((!lMarkDownEnabled).and.((__jFeatures["lMarkDownEnabled"]).or.(::lMarkDownEnabled)))
+        ::lMarkDownEnabled:=lMarkDownEnabled
+        __jFeatures["lMarkDownEnabled"]:=::lMarkDownEnabled
+    endif
+
+return(self)
+
 method GetEnableDataTable() class WebExControl
 return(::lDataTableEnabled)
 
 method SetEnableDataTable(lDataTableEnabled) class WebExControl
 
-    local cScript as character
+    local cDataTableStyle as character
+    local cDataTableScript as character
 
     paramtype 1 var lDataTableEnabled as logical optional default .T.
 
@@ -1491,11 +1784,76 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
             //Select
         //DataTables Extensions
         ***************************************************************************************************************************
+        //DataTables Style
+            beginContent var cDataTableStyle
+
+                /* Filtro Customizado */
+                .datatable-filter-wrapper {
+                    display: inline-block;
+                    width: 100%;
+                    text-align: right; /* ou left */
+                }
+
+                /* Garantir que a tabela nao tenha espacamentos extras */
+                table.dataTable.compact {
+                    border-spacing: 0;
+                    border-collapse: collapse;
+                }
+
+                /* Ajustar linhas vazias adicionadas pelo drawCallback */
+                table.dataTable.compact tr.empty-row td {
+                    padding: 0;
+                    height: 20px; /* Menor altura para linhas vazias */
+                }
+
+                /* Evitar quebras de linha e overflow */
+                table.dataTable.compact td {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                table.dataTable.compact thead th {
+                    font-weight: bold; /* Manter destaque nos cabecalhos */
+                }
+
+                table.dataTable.compact tbody td,
+                table.dataTable.compact thead th {
+                    padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
+                    font-size: 12px; /* Tamanho de fonte menor */
+                    margin: 0; /* Remover margens */
+                }
+
+                /* Compactar linhas do DataTables */
+                table.dataTable.compact tbody tr {
+                    height: 28px; /* Altura reduzida para linhas */
+                    line-height: 28px; /* Alinhar texto verticalmente */
+                }
+
+                /* Estiliza o elemento select dentro da classe dt-length para garantir que a seta de expansao fique aa direita sem sobrepor o texto */
+                .dt-length select.form-select.form-select-sm {
+                    min-width: 70px; /* Define largura minima para evitar corte do texto das opcoes */
+                    padding-right: 1.5rem; /* Adiciona espaco aa direita para acomodar a seta personalizada */
+                    appearance: none; /* Remove a aparencia padrao do navegador para personalizar a seta */
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); /* Define uma seta personalizada usando SVG */
+                    background-repeat: no-repeat; /* Evita repeticao da imagem da seta */
+                    background-position: right 0.5rem center; /* Posiciona a seta aa direita do select, centralizada verticalmente */
+                    background-size: 1rem; /* Define o tamanho da seta para consistencia visual */
+                    box-sizing: border-box; /* Garante que padding e borda sejam incluidos na largura total */
+                }
+
+            endContent
+            WITH WEBEXOBJECT CLASS WebExStyle
+                .:SetContent(cDataTableStyle)
+            END WEBEXOBJECT
+        //DataTables Style
+        ***************************************************************************************************************************
         //Scripts Tools
-            beginContent var cScript
+            beginContent var cDataTableScript
+
                 //FWWebExHasDataTables:Utilitario para verificar se jQuery + DataTables estao disponiveis
                 function FWWebExHasDataTables() {
-                    return !!(window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable);
+                    return !!(FWWebExHasJQuery() && $?.fn && $.fn?.DataTable && $.fn.DataTable?.isDataTable);
                 }
 
                 /**
@@ -1582,7 +1940,7 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                 }
             endContent
             WITH WEBEXOBJECT CLASS WebExScript
-                .:SetContent(cScript)
+                .:SetContent(cDataTableScript)
             END WEBEXOBJECT
         //Scripts Tools
         ***************************************************************************************************************************
@@ -1653,9 +2011,9 @@ return(self)
 
 static function GetWebExBackURLButtonScript()
 
-    local cScript as character
+    local cBackURLButtonScript as character
 
-    beginContent var cScript
+    beginContent var cBackURLButtonScript
 
         /**
          * FWWebEx Custom History Stack
@@ -1720,7 +2078,7 @@ static function GetWebExBackURLButtonScript()
 
     endContent
 
-return(cScript)
+return(cBackURLButtonScript)
 
 method Clean() class WebExControl
     ::ResetID()

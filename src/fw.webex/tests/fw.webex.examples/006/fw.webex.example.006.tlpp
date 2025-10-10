@@ -75,7 +75,6 @@ static procedure FWWebExExample_006(cHTML as character) as character
     local cHTMLFile:=cProcName as character
 
     local oDivTable as object
-    local oTableStyle as object
 
     local oFWWebExPage as object
     local oFWWebExMain as object
@@ -84,46 +83,6 @@ static procedure FWWebExExample_006(cHTML as character) as character
     local oFWWebExForm as object
     local oFWWebExButton as object
     local oFWWebExScript as object
-
-    beginContent var cTableStyle
-        /* Compactar linhas do DataTables */
-        table.dataTable.compact tbody tr {
-            height: 28px; /* Altura reduzida para linhas */
-            line-height: 28px; /* Alinhar texto verticalmente */
-        }
-
-        table.dataTable.compact tbody td,
-        table.dataTable.compact thead th {
-            padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
-            font-size: 12px; /* Tamanho de fonte menor */
-            margin: 0; /* Remover margens */
-        }
-
-        table.dataTable.compact thead th {
-            font-weight: bold; /* Manter destaque nos cabecalhos */
-        }
-
-        /* Garantir que a tabela nao tenha espacamentos extras */
-        table.dataTable.compact {
-            border-spacing: 0;
-            border-collapse: collapse;
-        }
-
-        /* Ajustar linhas vazias adicionadas pelo drawCallback */
-        table.dataTable.compact tr.empty-row td {
-            padding: 0;
-            height: 20px; /* Menor altura para linhas vazias */
-        }
-
-        /* Evitar quebras de linha e overflow */
-        table.dataTable.compact td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    endContent
-    oTableStyle:=WebExStyle():New("style")
-    oTableStyle:SetContent(cTableStyle)
 
     //Campo para a Pesquisa do CEP
     oFWWebExForm:=WebExForm():New("Buscar CEP")
@@ -253,6 +212,5 @@ static procedure FWWebExExample_006(cHTML as character) as character
     FreeObj(@oFWWebExButton)
     FreeObj(@oFWWebExScript)
     FreeObj(@oDivTable)
-    FreeObj(@oTableStyle)
 
 return(cHTMLFile)

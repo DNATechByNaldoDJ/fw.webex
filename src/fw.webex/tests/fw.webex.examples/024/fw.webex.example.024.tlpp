@@ -1,0 +1,57 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+
+procedure u_FWWebExExample_024()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_024(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_024(cHTML as character) as character
+
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+
+    local oFWWebExPage as object
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS SBAdminPage ARGS cProcName+" :: FWWebEx :: SBADMIN :: Markdown"
+        WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
+            .:SetAttr("class","sb-nav-fixed")
+            WITH WEBEXOBJECT oSBAdminCardHeaderMarkDown CLASS SBAdminCardHeader ARGS "Markdown","fa-code"
+                WITH WEBEXOBJECT oSBAdminCardBodyMarkDown CLASS SBAdminCardBody
+                    WITH WEBEXOBJECT CLASS WebExMarkDown
+                        .:SetContent(u_TestaMD(.F.,.T.,.T.))
+                        .:ConvertMD()
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,GetTempPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)

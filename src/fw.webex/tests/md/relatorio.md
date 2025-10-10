@@ -1,7 +1,7 @@
 ---
 title: Relatório Teste
 author: DNATech
-date: 04/10/25
+date: 09/10/25
 ---
 
 # Relatório Markdown
@@ -65,10 +65,10 @@ Return
 
 ## Tabela
 
-| Produto | Qtde |
-| :------ | ---: |
-| A | 10 |
-| B | 25 |
+| Produto | Qtde | Valor | Tabela |
+| :------ | ---: | ----: | :----- |
+| A | 10 | 10.25 | A-1 |
+| B | 25 | 15.75 | B-2 |
 
 ---
 

@@ -109,61 +109,6 @@ static procedure FWWebExExample_023(cHTML as character) as character
             margin: 0 auto; /* centraliza se precisar */
         }
 
-        /* Filtro Customizado */
-        .datatable-filter-wrapper {
-            display: inline-block;
-            width: 100%;
-            text-align: right; /* ou left */
-        }
-
-        /* Compactar linhas do DataTables */
-        table.dataTable.compact tbody tr {
-            height: 28px; /* Altura reduzida para linhas */
-            line-height: 28px; /* Alinhar texto verticalmente */
-        }
-
-        table.dataTable.compact tbody td,
-        table.dataTable.compact thead th {
-            padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
-            font-size: 12px; /* Tamanho de fonte menor */
-            margin: 0; /* Remover margens */
-        }
-
-        table.dataTable.compact thead th {
-            font-weight: bold; /* Manter destaque nos cabecalhos */
-        }
-
-        /* Garantir que a tabela nao tenha espacamentos extras */
-        table.dataTable.compact {
-            border-spacing: 0;
-            border-collapse: collapse;
-        }
-
-        /* Ajustar linhas vazias adicionadas pelo drawCallback */
-        table.dataTable.compact tr.empty-row td {
-            padding: 0;
-            height: 20px; /* Menor altura para linhas vazias */
-        }
-
-        /* Evitar quebras de linha e overflow */
-        table.dataTable.compact td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Estiliza o elemento select dentro da classe dt-length para garantir que a seta de expansao fique aa direita sem sobrepor o texto */
-        .dt-length select.form-select.form-select-sm {
-            min-width: 70px; /* Define largura minima para evitar corte do texto das opcoes */
-            padding-right: 1.5rem; /* Adiciona espaco aa direita para acomodar a seta personalizada */
-            appearance: none; /* Remove a aparencia padrao do navegador para personalizar a seta */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); /* Define uma seta personalizada usando SVG */
-            background-repeat: no-repeat; /* Evita repeticao da imagem da seta */
-            background-position: right 0.5rem center; /* Posiciona a seta aa direita do select, centralizada verticalmente */
-            background-size: 1rem; /* Define o tamanho da seta para consistencia visual */
-            box-sizing: border-box; /* Garante que padding e borda sejam incluidos na largura total */
-        }
-
     endContent
 
     /*
@@ -220,8 +165,9 @@ static procedure FWWebExExample_023(cHTML as character) as character
                 Filter64: hasExtendedFilter?.FWWebExPanelFilterEx ? extendedFilterExpression : '',
                 PageNumber: pageNumber,
                 RowspPage: rowsPerPage,
-                cEmp: '99',
-                cFil: '01',
+                setEmptyFields: true, //Garante que mesmo os campos vazios sejam retornados
+                cEmp: '__COD_EMP__',
+                cFil: '__COD_FIL__',
                 lChkPrepEnv: false,
                 lHTTPCTLen: true,
                 lFWHTTpEncode: true,
@@ -272,6 +218,8 @@ static procedure FWWebExExample_023(cHTML as character) as character
         cAjaxFunction;
         ,{"__YES_FIELDS__",cYesFields}; //__YES_FIELDS__ em request
         ,{"__INTERNAL_FILTER__",jInternalFilter:ToJSON()}; //Filtro Interno
+        ,{"__COD_EMP__",cEmpAnt}; //Empresa
+        ,{"__COD_FIL__",cFilAnt}; //Filial
     )
 
     beginContent var cPostInitJS
@@ -478,6 +426,7 @@ static procedure FWWebExExample_023(cHTML as character) as character
                                         // Opcional: default para campos ausentes (se algum item faltar)
                                         jColumnDefs:=JSONObject():New()
                                         jColumnDefs["columnDefs"]:=Array(0)
+                                        aAdd(jColumnDefs["columnDefs"],{ "defaultContent": "", "targets": "_all" })
                                         .:SetDataTableOptions(jColumnDefs)
                                         FreeObj(@jColumnDefs)
                                         jLanguage:=JSONObject():New()
@@ -532,7 +481,7 @@ static procedure FWWebExExample_023(cHTML as character) as character
         END WEBEXOBJECT
     END WEBEXOBJECT NOADDCHILD
 
-    oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWEbEx :: SBADMIN :: SBAdminNav")
+    oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWebEx :: SBADMIN :: SBAdminNav")
     oFWWebExPage:AddChild(oFWWebExBody)
     oFWWebExPage:SetEnableDataTable(.T.)
     oFWWebExPage:SetEnableChart(.T.)

@@ -85,7 +85,6 @@ static procedure FWWebExExample_007(cHTML as character) as character
     local cRESTURL as character
     local cProcName:=ProcName() as character
     local cHTMLFile:=cProcName as character
-    local cTableStyle as character
     local cCredential:="" as character
     local cDNATechAuth as character
     local cAutorization as character
@@ -97,7 +96,6 @@ static procedure FWWebExExample_007(cHTML as character) as character
     local lUseCredential as logical
 
     local oDivTable as object
-    local oTableStyle as object
 
     local oFWWebExPage as object
     local oFWWebExMain as object
@@ -125,55 +123,6 @@ static procedure FWWebExExample_007(cHTML as character) as character
             cAutorization:=WebExHelper():ConvertHeaderToJSObject(cAutorization)
         endif
     endif
-
-    beginContent var cTableStyle
-
-        /* Filtro Customizado */
-        .datatable-filter-wrapper {
-            display: inline-block;
-            width: 100%;
-            text-align: right; /* ou left */
-        }
-
-        /* Compactar linhas do DataTables */
-        table.dataTable.compact tbody tr {
-            height: 28px; /* Altura reduzida para linhas */
-            line-height: 28px; /* Alinhar texto verticalmente */
-        }
-
-        table.dataTable.compact tbody td,
-        table.dataTable.compact thead th {
-            padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
-            font-size: 12px; /* Tamanho de fonte menor */
-            margin: 0; /* Remover margens */
-        }
-
-        table.dataTable.compact thead th {
-            font-weight: bold; /* Manter destaque nos cabecalhos */
-        }
-
-        /* Garantir que a tabela nao tenha espacamentos extras */
-        table.dataTable.compact {
-            border-spacing: 0;
-            border-collapse: collapse;
-        }
-
-        /* Ajustar linhas vazias adicionadas pelo drawCallback */
-        table.dataTable.compact tr.empty-row td {
-            padding: 0;
-            height: 20px; /* Menor altura para linhas vazias */
-        }
-
-        /* Evitar quebras de linha e overflow */
-        table.dataTable.compact td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-    endContent
-    oTableStyle:=WebExStyle():New()
-    oTableStyle:SetContent(cTableStyle)
 
     // Adiciona container de tabela
     oDivTable:=WebExDiv():New()
@@ -458,7 +407,6 @@ static procedure FWWebExExample_007(cHTML as character) as character
     FreeObj(@oFWWebExMain)
     FreeObj(@oFWWebExBody)
     FreeObj(@oFWWebExScript)
-    FreeObj(@oTableStyle)
     FreeObj(@oDivTable)
 
 return(cHTMLFile)

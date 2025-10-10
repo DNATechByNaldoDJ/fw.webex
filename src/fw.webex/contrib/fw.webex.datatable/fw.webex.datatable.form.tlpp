@@ -1,0 +1,319 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExDataTableForm from WebExForm
+
+    protected data aReadOnlyFields as array     // Campos que nao podem ser alterados mesmo em edit
+
+    protected data cMode as character           // "view" ou "edit"
+    protected data cDataTableID as character    // ID da DataTable associada
+    protected data cUpdateFunction as character // Funcao JS para atualizacao apos submit
+
+    protected data jFormConfig as json          // Configuracoes especificas do form (obrigatorios, lookups, etc.)
+    protected data jDataTableFields as json     // Campos da DataTable (visiveis e ocultos)
+    protected data lValidateRequired as logical // Ativar validacao de obrigatorios
+
+    protected data oModal as object             // Modal para exibir o form (opcional, se integrado com SBAdmin)
+
+    public method New(cFormTitle as character, jDataTableFields as json, cMode as character, aReadOnlyFields as array, lFormButtonsFirst as logical) as object
+
+    public method SetFormConfig(jFormConfig as json) as object          // Configura obrigatorios, lookups, etc.
+    public method SetDataTableID(cDataTableID as character) as object
+    public method SetUpdateFunction(cUpdateFunction as character) as object
+    public method SetValidateRequired(lValidateRequired as logical) as object
+
+    public method LoadFromDataTableRow(jRowData as json) as object      // Carrega dados de uma linha da DataTable
+    public method BuildFormLayout(nColsPerRow as numeric) as object     // Constroi layout com colunas otimizadas
+    public method AddLookupToField(cFieldName as character, cLookupType as character, cLookupSource as character) as object  // Adiciona lookup (lupa)
+    public method RenderHTMLWithModal() as character                    // Renderiza com modal para view/edit
+
+    public method GetJSValidationScript() as character  // Script JS para validacao de obrigatorios
+    public method GetJSUpdateScript() as character      // Script JS para atualizacao da DataTable apos submit
+
+endclass
+
+method New(cFormTitle, jDataTableFields, cMode, aReadOnlyFields, lFormButtonsFirst) class WebExDataTableForm
+
+    paramtype 1 var cFormTitle as character optional default "Formulario da DataTable"
+    paramtype 2 var jDataTableFields as json  // Ex: {"RA_FILIAL": {"type":"C", "label":"Filial", "visible":.T.}, ...}
+    paramtype 3 var cMode as character optional default "view"  // "view" ou "edit"
+    paramtype 4 var aReadOnlyFields as array optional default {}
+    paramtype 5 var lFormButtonsFirst as logical optional default .F.
+
+    ::jDataTableFields := jDataTableFields
+    ::cMode := Lower(cMode)
+    ::aReadOnlyFields := aReadOnlyFields
+    ::lValidateRequired := .T.
+    ::jFormConfig := JSONObject():New()
+    ::jFormConfig["required"] := {}  // Array de campos obrigatorios
+    ::jFormConfig["lookups"] := JSONObject():New()  // lookups por campo
+
+    _Super:New(cFormTitle, lFormButtonsFirst)
+
+    // Adiciona botoes padrao
+    if (::cMode == "edit")
+        ::AddButton(WebExButton():New("Salvar", "btn-primary", "submit"))
+        ::AddButton(WebExButton():New("Cancelar", "btn-secondary", "button", "closeModal();"))
+    else
+        ::AddButton(WebExButton():New("Fechar", "btn-secondary", "button", "closeModal();"))
+    endif
+
+return(self)
+
+method SetFormConfig(jFormConfig) class WebExDataTableForm
+    paramtype 1 var jFormConfig as json optional
+    if (ValType(jFormConfig) == "O")
+        ::jFormConfig := jFormConfig
+    endif
+return(self)
+
+method SetDataTableID(cDataTableID) class WebExDataTableForm
+    paramtype 1 var cDataTableID as character
+    ::cDataTableID := cDataTableID
+return(self)
+
+method SetUpdateFunction(cUpdateFunction) class WebExDataTableForm
+    paramtype 1 var cUpdateFunction as character
+    ::cUpdateFunction := cUpdateFunction
+return(self)
+
+method SetValidateRequired(lValidateRequired) class WebExDataTableForm
+    paramtype 1 var lValidateRequired as logical optional default .T.
+    ::lValidateRequired := lValidateRequired
+return(self)
+
+method LoadFromDataTableRow(jRowData) class WebExDataTableForm
+
+    local aFields := ::jDataTableFields:GetNames()
+    local nField, nFields := Len(aFields)
+    local cFieldName, jFieldInfo
+
+    paramtype 1 var jRowData as json  // Dados da linha: {"RA_FILIAL":"01", "RA_MAT":"000001", ...}
+
+    for nField := 1 to nFields
+        cFieldName := aFields[nField]
+        jFieldInfo := ::jDataTableFields[cFieldName]
+
+        // Adiciona campo ao form (mesmo se oculto na DataTable)
+        ::AddField(jFieldInfo["label"], cFieldName, jFieldInfo["type"], /*placeholder*/"")
+
+        // Preenche valor
+        ::oFormFieldWebExField:SetValue(jRowData[cFieldName])
+
+        // Modo view: readonly
+        if (::cMode == "view" .or. aScan(::aReadOnlyFields, cFieldName) > 0)
+            ::oFormFieldWebExField:SetAttr("readonly", "readonly")
+            ::oFormFieldWebExField:AddClass("form-control-plaintext")  // Estilo readonly Bootstrap
+        endif
+
+        // Obrigatorio: adiciona classe e atributo
+        if (aScan(::jFormConfig["required"], cFieldName) > 0)
+            ::oFormFieldWebExField:SetAttr("required", "required")
+            ::oFormFieldWebExField:AddClass("border-danger")  // Destaque visual
+        endif
+
+        // Lookup: adiciona botao lupa
+        if (::jFormConfig["lookups"]:HasProperty(cFieldName))
+            ::AddLookupToField(cFieldName, ::jFormConfig["lookups"][cFieldName]["type"], ::jFormConfig["lookups"][cFieldName]["source"])
+        endif
+    next
+
+    FWFreeArray(@aFields)
+
+return(self)
+
+method BuildFormLayout(nColsPerRow) class WebExDataTableForm
+
+    local aFields := ::jFormFieldWebExFields:GetNames()
+    local nField, nFields := Len(aFields)
+    local oRow as object
+    local nColCount := 0
+    local nColSize := Int(12 / nColsPerRow)  // Ex: 12/3 = 4 (col-md-4)
+
+    paramtype 1 var nColsPerRow as numeric optional default 3  // Colunas por linha para otimizacao
+
+    for nField := 1 to nFields
+        if (nColCount == 0 .or. nColCount >= nColsPerRow)
+            oRow := WebExRow():New()
+            ::AddChild(oRow)  // Adiciona row ao form
+            nColCount := 0
+        endif
+
+        // Adiciona campo em coluna
+        oCol := WebExCol():New(nColSize)
+        oCol:AddChild(::jFormFieldWebExFields[aFields[nField]])
+        oRow:AddChild(oCol)
+
+        nColCount++
+    next
+
+    FWFreeArray(@aFields)
+
+return(self)
+
+method AddLookupToField(cFieldName, cLookupType, cLookupSource) class WebExDataTableForm
+
+    local cJS := ""
+    local oFieldGroup := ::oFormFieldWebExFieldGroup  // Assume que o campo esta em um group
+    local oLookupButton := WebExButton():New(" ", "btn-outline-secondary", "button")
+
+    paramtype 1 var cFieldName as character
+    paramtype 2 var cLookupType as character  // "fixed" para valores fixos, "table" para tabela externa
+    paramtype 3 var cLookupSource as character  // Ex: "M=Masculino;F=Feminino" ou "SX5" (tabela)
+
+    oLookupButton:AddClass("bi-search")  // icone de lupa (Bootstrap Icons)
+
+    // JS para lookup
+    if (cLookupType == "fixed")
+        // Popup com select de valores fixos
+        cJS := "showFixedLookup('" + cFieldName + "', '" + cLookupSource + "');"
+    elseif (cLookupType == "table")
+        // Consulta API ou tabela externa (ex: centros de custo)
+        cJS := "showTableLookup('" + cFieldName + "', '" + cLookupSource + "');"
+    endif
+
+    oLookupButton:SetAttr("onclick", cJS)
+    oFieldGroup:AddChild(oLookupButton)  // Adiciona lupa ao grupo do campo
+
+return(self)
+
+method RenderHTMLWithModal() class WebExDataTableForm
+    // Cria modal (baseado em Bootstrap/SBAdmin)
+    ::oModal := WebExDiv():New()
+    ::oModal:AddClass("modal fade")
+    ::oModal:SetFixedID("dataTableFormModal")
+
+    local oModalDialog := WebExDiv():New()
+    oModalDialog:AddClass("modal-dialog modal-lg")  // Large modal
+    ::oModal:AddChild(oModalDialog)
+
+    local oModalContent := WebExDiv():New()
+    oModalContent:AddClass("modal-content")
+    oModalDialog:AddChild(oModalContent)
+
+    // Header
+    local oModalHeader := WebExDiv():New()
+    oModalHeader:AddClass("modal-header")
+    oModalHeader:AddChild(WebExH5():New(::cFormTitle))
+    oModalContent:AddChild(oModalHeader)
+
+    // Body com o form
+    local oModalBody := WebExDiv():New()
+    oModalBody:AddClass("modal-body")
+    oModalBody:AddChild(self)  // Adiciona o form ao body
+    oModalContent:AddChild(oModalBody)
+
+    // Footer com botoes (ja adicionados no form)
+
+    // Adiciona script de validacao se ativado
+    if (::lValidateRequired)
+        ::AddChild(WebExScript():New(::GetJSValidationScript()))
+    endif
+
+    // Script de update
+    if (::cMode == "edit" .and. !Empty(::cDataTableID))
+        ::AddChild(WebExScript():New(::GetJSUpdateScript()))
+    endif
+
+return(::oModal:RenderHTML())
+
+method GetJSValidationScript() class WebExDataTableForm
+    local cScript as character
+
+    beginContent var cScript
+        document.getElementById('__FORM_ID__').addEventListener('submit', function(e) {
+            let valid = true;
+            const requiredFields = document.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    valid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            if (!valid) {
+                e.preventDefault();
+                alert('Preencha todos os campos obrigatorios!');
+            }
+        });
+    endContent
+
+    cScript := WebExHelper():StrReplaceEx(cScript, {"__FORM_ID__", ::GetID()})
+
+return(cScript)
+
+method GetJSUpdateScript() class WebExDataTableForm
+    local cScript as character
+
+    beginContent var cScript
+        document.getElementById('__FORM_ID__').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            // Envia via AJAX para backend (ex: userRestCrudTLPPCoreFunction)
+            fetch('__UPDATE_ENDPOINT__', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Atualiza DataTable
+                    const table = $('#__DATATABLE_ID__').DataTable();
+                    table.ajax.reload();
+                    $('#dataTableFormModal').modal('hide');
+                } else {
+                    alert('Erro ao atualizar: ' + data.error);
+                }
+            }).catch(err => console.error(err));
+        });
+    endContent
+
+    cScript := WebExHelper():StrReplaceEx(cScript, {;
+        {"__FORM_ID__", ::GetID()},;
+        {"__DATATABLE_ID__", ::cDataTableID},;
+        {"__UPDATE_ENDPOINT__", ::cUpdateFunction};  // Endpoint para update, ex: DNA.Tech update function
+    })
+
+return(cScript)
+
+// Funcoes auxiliares para lookups (adicionar em WebExScript global)
+static function GetLookupScripts() as character
+    local cScript as character
+
+    beginContent var cScript
+        function showFixedLookup(fieldName, source) {
+            const values = source.split(';').map(v => v.split('='));
+            let options = '';
+            values.forEach(([key, val]) => options += `<option value="${key}">${val}</option>`);
+            const popup = window.open('', '', 'width=300,height=200');
+            popup.document.write(`<select onchange="opener.document.getElementsByName('${fieldName}')[0].value = this.value; window.close();">${options}</select>`);
+        }
+
+        function showTableLookup(fieldName, tableSource) {
+            // Consulta API ou tabela (ex: fetch para BrasilAPI ou ViaCEP, adaptado para tabelas TOTVS)
+            fetch(`__API_ENDPOINT__?table=${tableSource}`)
+                .then(res => res.json())
+                .then(data => {
+                    let options = '';
+                    data.items.forEach(item => options += `<option value="${item.code}">${item.description}</option>`);
+                    const popup = window.open('', '', 'width=400,height=300');
+                    popup.document.write(`<select onchange="opener.document.getElementsByName('${fieldName}')[0].value = this.value; window.close();">${options}</select>`);
+                });
+        }
+    endContent
+
+    cScript := WebExHelper():StrReplaceEx(cScript, {"__API_ENDPOINT__", "https://your-totvs-api.com/query"})  // Ajustar para endpoint real
+
+return(cScript)

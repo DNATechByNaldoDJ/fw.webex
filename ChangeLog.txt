@@ -5,6 +5,27 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements)"
 */
 
+2025-10-10 01:58 UTC naldodj (Multiple fixes and enhancements)
+  + src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp
+  + src/fw.webex/tests/fw.webex.examples/024/fw.webex.example.024.tlpp
+  + src/fw.webex/tests/fw.webex.examples/024/README.md
+  * src/fw.webex/core/component/fw.webex.page.tlpp
+  * src/fw.webex/core/control/fw.webex.control.tlpp
+  * src/fw.webex/core/control/py/html2fwwebex.py
+  * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+  * src/fw.webex/tests/fw.webex.examples/006/fw.webex.example.006.tlpp
+  * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+  * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+  * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+  * src/fw.webex/tests/fw.webex.examples/019/fw.webex.example.019.tlpp
+  * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+  * src/fw.webex/tests/fw.webex.examples/021/fw.webex.example.021.tlpp
+  * src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+  * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+  * src/fw.webex/tests/md/relatorio.md
+  * src/fw.webex/tests/md/testemd.tlpp
+  * src/fw.webex/core/tools/fw.webex.markdown.tlpp -> src/fw.webex/contrib/fw.webex.markdown/fw.webex.markdown.tlpp
+
 2025-10-08 21:26 UTC naldodj (Multiple fixes and enhancements)
   * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.tlpp
   * src/fw.webex/core/tools/fw.webex.helper.tlpp

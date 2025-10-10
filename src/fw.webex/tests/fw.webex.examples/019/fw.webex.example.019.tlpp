@@ -1774,7 +1774,7 @@ static procedure FWWebExExample_019(cHTML as character) as character
         oScript7:=WebExControl():New("script")
         oScript7:SetAttr("src",cSBAdminPath+"js/datatables-simple-demo.js")
     oFWWebExBody:AddChild(oScript7)
-    oFWWebExPage:=SBAdminPage():New("fw.webex.example.019.tlpp :: FWWEbEx :: SBADMIN")
+    oFWWebExPage:=SBAdminPage():New("fw.webex.example.019.tlpp :: FWWebEx :: SBADMIN")
     oFWWebExPage:AddChild(oFWWebExBody)
 
     oFWWebExPage:SetEnableDataTable()

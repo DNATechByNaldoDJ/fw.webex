@@ -105,13 +105,8 @@ method New(cPageTitle) class WebExPage
                 WITH WEBEXOBJECT ::jObjectsContainer["comment-bootstrap-script"] CLASS WebExComment
                     .:SetContent("Optional JavaScript: jQuery first, then Popper.js, then Bootstrap JS")
                 END WEBEXOBJECT
-                //JQuery
-                    WITH WEBEXOBJECT ::jObjectsContainer["script-jquery-slim"] CLASS WebExScript ARGS .F.
-                        .:SetAttr("src","https://releases.jquery.com/git/jquery-git.slim.min.js")
-                    END WEBEXOBJECT
-                    WITH WEBEXOBJECT ::jObjectsContainer["script-jquery"] CLASS WebExScript ARGS .F.
-                            .:SetAttr("src","https://releases.jquery.com/git/jquery-git.min.js")
-                    END WEBEXOBJECT
+                //JQuery First
+                    ::SetEnableJQuery(.T.)
                 //JQuery
                 //popperjs
                     WITH WEBEXOBJECT ::jObjectsContainer["script-popperjs"] CLASS WebExScript ARGS .F.
@@ -647,6 +642,11 @@ static function FWWebExScripts() as character
 
     //FWWebEx Scripts
     beginContent var cPageScript
+
+        /*FWWebExHasJQuery*/
+        function FWWebExHasJQuery() {
+            return window?.jQuery;
+        }
 
         /*FWWebExWaitForElementID*/
         function FWWebExWaitForElementID(id, callback) {

@@ -2,26 +2,30 @@
 
 using namespace FWWebEx
 
-procedure u_TestaMD()
+function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
 
     local cCRLF:=CRLF as character
+    local cOutPut as character
 
     local oMD:=FWMarkdown():New() as object
     local oComment:=FWMarkdown():New(.T.) as object
 
+    DEFAULT lSave:=.T.
+    DEFAULT lAsciiToWebAccentuation:=.F.
+
     // FrontMatter no topo
     oMD:FrontMatter(;
         {;
-             "title" : WebExHelper():Accentuation("Relat#1rio Teste","oacute");
+             "title" : __Accentuation(lAsciiToWebAccentuation,"Relat#1rio Teste","oacute");
             ,"author" : "DNATech";
             ,"date" : DToC(Date());
         };
     )
 
-    oMD:Header(WebExHelper():Accentuation("Relat#1rio Markdown","oacute"),1)
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Markdown","oacute"),1)
     oMD:Paragraph("Gerado em ADVPL com suporte a **Markdown**.")
 
-    oMD:Header(WebExHelper():Accentuation("Lista hier#1rquica","aacute"),2)
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Lista hier#1rquica","aacute"),2)
     oMD:ListItem("Item 1",1)
     oMD:ListItem("Subitem 1.1",2)
     oMD:ListItem("Subitem 1.1.1",3)
@@ -39,11 +43,11 @@ procedure u_TestaMD()
 
     oMD:Header("Lista de Tarefas",2)
     oMD:ListItemTask("Tarefa pendente", .F., 1)
-    oMD:ListItemTask(WebExHelper():Accentuation("Tarefa conclu#1da","iacute"), .T., 1)
+    oMD:ListItemTask(__Accentuation(lAsciiToWebAccentuation,"Tarefa conclu#1da","iacute"), .T., 1)
 
     oMD:Rule()
 
-    oMD:Header(WebExHelper():Accentuation("Texto Avan#1ado","ccedil"),2)
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Texto Avan#1ado","ccedil"),2)
     oMD:Paragraph(oMD:Highlight("Destaque")+" com "+oMD:Subscript("sub")+" e "+oMD:SuperScript("super"))
 
     oMD:Rule()
@@ -54,45 +58,82 @@ procedure u_TestaMD()
 
     oMd:Rule()
 
-    oMD:Header(WebExHelper():Accentuation("C#1digo","oacute"),2)
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"C#1digo","oacute"),2)
     oMD:CodeBlock("User Function Hello()"+cCRLF+"   ConOut('Hello Markdown')"+cCRLF+"Return","advpl")
 
     oMd:Rule()
 
-    oMD:Header(WebExHelper():Accentuation("Cita#1#2o","ccedil","atilde"),2)
-    oMD:Quote(WebExHelper():Accentuation("Markdown deixa a leitura mais agrad#1vel."+cCRLF+"E agora com multi-linha.","aacute"),1)
-    oMD:Quote(WebExHelper():Accentuation("Cita#1#2o aninhada.","ccedil","atilde"),2)
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Cita#1#2o","ccedil","atilde"),2)
+    oMD:Quote(__Accentuation(lAsciiToWebAccentuation,"Markdown deixa a leitura mais agrad#1vel."+cCRLF+"E agora com multi-linha.","aacute"),1)
+    oMD:Quote(__Accentuation(lAsciiToWebAccentuation,"Cita#1#2o aninhada.","ccedil","atilde"),2)
 
     oMd:Rule()
 
     oMD:Header("Tabela",2)
-    oMD:Table({"Produto","Qtde"},{{"A","10"},{"B","25"}},{"left","right"})
+    oMD:Table({"Produto","Qtde","Valor","Tabela"},{{"A","10","10.25","A-1"},{"B","25","15.75","B-2"}},{"left","right","right","left"})
 
     oMD:Rule()
 
-    oMD:Header(WebExHelper():Accentuation("Defini#1#2o","ccedil","atilde"),2)
-    oMD:DefinitionList("Termo",WebExHelper():Accentuation("Defini#1#2o aqui.","ccedil","atilde"))
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Defini#1#2o","ccedil","atilde"),2)
+    oMD:DefinitionList("Termo",__Accentuation(lAsciiToWebAccentuation,"Defini#1#2o aqui.","ccedil","atilde"))
 
     oMD:Rule()
 
-    oMD:Header(WebExHelper():Accentuation("Rodap#1","eacute"),2)
-    oMD:Paragraph(WebExHelper():Accentuation("Texto com rodap#1","eacute")+oMD:FootnoteRef("1"))
-    oMD:FootnoteDef("1",WebExHelper():Accentuation("Nota de rodap#1.","eacute"))
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Rodap#1","eacute"),2)
+    oMD:Paragraph(__Accentuation(lAsciiToWebAccentuation,"Texto com rodap#1","eacute")+oMD:FootnoteRef("1"))
+    oMD:FootnoteDef("1",__Accentuation(lAsciiToWebAccentuation,"Nota de rodap#1.","eacute"))
 
     oMD:Rule()
 
-    oMD:Header(WebExHelper():Accentuation("Relat#1rio com V#2deo","oacute","iacute"),1)
-    oMD:Paragraph(WebExHelper():Accentuation("Para ver, desabilite o coment#1rio abaixo:","aacute"))
-    oComment:VideoEmbed("https://www.youtube.com/watch?v=vZaldeUg6D0",640,360)
-    oMD:Comment(oComment:GetMemberData("cOutPut"),.T.)
-    oComment:Clean()
+    oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio com V#2deo","oacute","iacute"),1)
+    oMD:Paragraph(__Accentuation(lAsciiToWebAccentuation,"Para ver, desabilite o coment#1rio abaixo:","aacute"))
+    if (lSave)
+        oComment:VideoEmbed("https://www.youtube.com/watch?v=vZaldeUg6D0",640,360)
+        oMD:Comment(oComment:BuildOutPut(),.T.)
+        oComment:Clean()
+    else
+        oMD:VideoEmbed("https://www.youtube.com/watch?v=vZaldeUg6D0",640,360)
+    endif
 
     oMd:Rule()
 
-    oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\md\relatorio.md")
+    if (lSave)
+        oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\md\relatorio.md")
+    else
+        cOutPut:=oMD:BuildOutPut()
+    endif
 
     oMD:Clean()
     FreeObj(@oMD)
     FreeObj(@oComment)
 
-return
+return(cOutPut)
+
+static function __Accentuation(lAsciiToWebAccentuation as logical,cString as character,vAccentuation as variadic)
+
+    local aAccentuation as array
+
+    local cNewString:=cString as character
+
+    local nVArg as numeric
+    local nAccentuation as numeric
+
+    if ((ValType(vAccentuation)=="J").and.(vAccentuation:HasProperty("VARGS")))
+        private __cAcc_Args__:="" as character
+        vAccentuation:GetJSONValue("VARGS",@aAccentuation)
+        nAccentuation:=Len(aAccentuation)
+        for nVArg:=1 to nAccentuation
+            cNewString:=WebExHelper():Accentuation(cNewString,aAccentuation[nVArg])
+        next nVArg
+    endif
+    if (lAsciiToWebAccentuation)
+        cNewString:=WebExHelper():AsciiToWebAccentuation(cNewString)
+        if ("&cr;"$cNewString.or."&NewLine;"$cNewString)
+            cNewString:=WebExHelper():StrReplaceEx(;
+                cNewString;
+                ,{"&cr;",""};
+                ,{"&NewLine;",CRLF};
+            )
+        endif
+    endif
+return(cNewString)

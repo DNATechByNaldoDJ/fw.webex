@@ -87,64 +87,13 @@ static procedure FWWebExExample_018(cHTML as character) as character
     local cScript as character
     local cProcName:=ProcName() as character
     local cHTMLFile:=cProcName as character
-    local cTableStyle as character
 
     local oDivTable as object
-    local oTableStyle as object
 
     local oFWWebExPage as object
     local oFWWebExMain as object
     local oFWWebExBody as object
     local oFWWebExScript as object
-
-    beginContent var cTableStyle
-
-        /* Filtro Customizado */
-        .datatable-filter-wrapper {
-            display: inline-block;
-            width: 100%;
-            text-align: right; /* ou left */
-        }
-
-        /* Compactar linhas do DataTables */
-        table.dataTable.compact tbody tr {
-            height: 28px; /* Altura reduzida para linhas */
-            line-height: 28px; /* Alinhar texto verticalmente */
-        }
-
-        table.dataTable.compact tbody td,
-        table.dataTable.compact thead th {
-            padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
-            font-size: 12px; /* Tamanho de fonte menor */
-            margin: 0; /* Remover margens */
-        }
-
-        table.dataTable.compact thead th {
-            font-weight: bold; /* Manter destaque nos cabecalhos */
-        }
-
-        /* Garantir que a tabela nao tenha espacamentos extras */
-        table.dataTable.compact {
-            border-spacing: 0;
-            border-collapse: collapse;
-        }
-
-        /* Ajustar linhas vazias adicionadas pelo drawCallback */
-        table.dataTable.compact tr.empty-row td {
-            padding: 0;
-            height: 20px; /* Menor altura para linhas vazias */
-        }
-
-        /* Evitar quebras de linha e overflow */
-        table.dataTable.compact td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-    endContent
-    oTableStyle:=WebExStyle():New()
-    oTableStyle:SetContent(cTableStyle)
 
     // Adiciona container de tabela
     oDivTable:=WebExDiv():New()
