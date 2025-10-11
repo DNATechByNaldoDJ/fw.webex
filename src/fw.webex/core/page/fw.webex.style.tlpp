@@ -21,6 +21,7 @@ endclass
 
 method New() class WebExStyle
     _Super:New("style")
+    ::SetAttr("type","text/css")
 return(self)
 
 method SetContent(cStyleContent) class WebExStyle

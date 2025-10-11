@@ -706,16 +706,10 @@ return(oFWWebExPage)
 
 static function ZodiacSignsPage()
 
-    local aEmogis as array
-
     local cTitle:=(WebExHelper():GetEmojiHtmlCode("crystal_ball")+"Descubra seu Signo") as character
 
     local cStyle as character
     local cScript as character
-
-    local jEmojis as json
-
-    local i as numeric
 
     local oFWWebExPage as object
 
@@ -1030,16 +1024,7 @@ static function ZodiacSignsPage()
 
     endContent
 
-    jEmojis:=WebExHelper():GetEmojiHtmlJSON()
-    aEmogis:=jEmojis:GetNames()
-    for i:=1 to Len(aEmogis)
-        if (aEmogis[i]$cScript)
-            cScript:=StrTran(cScript,"__"+aEmogis[i]+"__",jEmojis[aEmogis[i]])
-        endif
-    next i
-
-    FWFreeArray(@aEmogis)
-    FreeObj(@jEmojis)
+    cScript:=WebExHelper():UpdEmojiHtmlCode(cScript)
 
     WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cTitle
         WITH WEBEXOBJECT CLASS WebExControl TYPE meta

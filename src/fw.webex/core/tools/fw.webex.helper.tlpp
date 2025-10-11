@@ -35,6 +35,7 @@ class WebExHelper
 
     static method GetEmojiHtmlJSON() as json
     static method GetEmojiHtmlCode(cName as character) as character
+    static method UpdEmojiHtmlCode(cString as character) as character
 
     static method StrReplace(cTemplate as character,vSubstitutions as variant) as character
     static method StrReplaceEx(cTemplate as character,vSubstitutions as variadic) as character
@@ -111,49 +112,54 @@ static method GetEmojiHtmlJSON() class WebExHelper
 
     if (__jEmojis==nil)
         __jEmojis:={;
-             "alarm_clock"      : "&#9200;";
-            ,"aquarius"         : "&#9810;";
-            ,"aries"            : "&#9800;";
-            ,"cancer"           : "&#9803;";
-            ,"calendar"         : "&#128197;";
-            ,"capricorn"        : "&#9809;";
-            ,"check"            : "&#10004;";
-            ,"clap"             : "&#128079;";
-            ,"clock"            : "&#128336;";
-            ,"clock_3"          : "&#128339;";
-            ,"clover"           : "&#127808;";
-            ,"cross"            : "&#10060;";
-            ,"crystal_ball"     : "&#128302;";
-            ,"date"             : "&#128197;";
-            ,"earth"            : "&#127757;";
-            ,"eyes"             : "&#128064;";
-            ,"fire"             : "&#128293;";
-            ,"gemini"           : "&#9802;";
-            ,"glowing_star"     : "&#127775;";
-            ,"heart"            : "&#10084;";
-            ,"heart_with_arrow" : "&#128152;";
-            ,"hourglass"        : "&#8987;";
-            ,"info"             : "&#8505;";
-            ,"leo"              : "&#9804;";
-            ,"libra"            : "&#9806;";
-            ,"lotus"            : "&#129763;";
-            ,"musical_note"     : "&#127925;";
-            ,"pisces"           : "&#9811;";
-            ,"rainbow"          : "&#127752;";
-            ,"rocket"           : "&#128640;";
-            ,"sagittarius"      : "&#9808;";
-            ,"scorpio"          : "&#9807;";
-            ,"smile"            : "&#128522;";
-            ,"star"             : "&#11088;";
-            ,"star_circle"      : "&#55368;&#56873;";
-            ,"sweat_drops"      : "&#128166;";
-            ,"taurus"           : "&#9801;";
-            ,"thinking"         : "&#129300;";
-            ,"thumbs_down"      : "&#128078;";
-            ,"thumbs_up"        : "&#128077;";
-            ,"tibetan_flower"   : "&#55141;";
-            ,"virgo"            : "&#9805;";
-            ,"warning"          : "&#9888;";
+             "alarm_clock"          : "&#9200;";
+            ,"aquarius"             : "&#9810;";
+            ,"aries"                : "&#9800;";
+            ,"cancer"               : "&#9803;";
+            ,"calendar"             : "&#128197;";
+            ,"capricorn"            : "&#9809;";
+            ,"check"                : "&#10004;";
+            ,"check_mark_button"    : "&#x2705;";
+            ,"clap"                 : "&#128079;";
+            ,"clock"                : "&#128336;";
+            ,"clock_3"              : "&#128339;";
+            ,"clover"               : "&#127808;";
+            ,"cross"                : "&#10060;";
+            ,"crystal_ball"         : "&#128302;";
+            ,"date"                 : "&#128197;";
+            ,"earth"                : "&#127757;";
+            ,"eyes"                 : "&#128064;";
+            ,"fire"                 : "&#128293;";
+            ,"gemini"               : "&#9802;";
+            ,"glowing_star"         : "&#127775;";
+            ,"heart"                : "&#10084;";
+            ,"heart_eyes"           : "&#128525;";
+            ,"heart_with_arrow"     : "&#128152;";
+            ,"hourglass"            : "&#8987;";
+            ,"info"                 : "&#8505;";
+            ,"laughing"             : "&#128514;";
+            ,"leo"                  : "&#9804;";
+            ,"libra"                : "&#9806;";
+            ,"lotus"                : "&#129763;";
+            ,"musical_note"         : "&#127925;";
+            ,"pisces"               : "&#9811;";
+            ,"rainbow"              : "&#127752;";
+            ,"rocket"               : "&#128640;";
+            ,"small_orange_diamond" : "&#128312;";
+            ,"sagittarius"          : "&#9808;";
+            ,"scorpio"              : "&#9807;";
+            ,"smile"                : "&#128522;";
+            ,"star"                 : "&#11088;";
+            ,"star_circle"          : "&#55368;&#56873;";
+            ,"sunglasses"           : "&#128526;";
+            ,"sweat_drops"          : "&#128166;";
+            ,"taurus"               : "&#9801;";
+            ,"thinking"             : "&#129300;";
+            ,"thumbs_down"          : "&#128078;";
+            ,"thumbs_up"            : "&#128077;";
+            ,"tibetan_flower"       : "&#55141;";
+            ,"virgo"                : "&#9805;";
+            ,"warning"              : "&#9888;";
         }
     endif
 
@@ -180,6 +186,24 @@ static method GetEmojiHtmlCode(cName) class WebExHelper
     FreeObj(@jEmojis)
 
 return(cEmojiHtmlCode)
+
+method UpdEmojiHtmlCode(cString) class WebExHelper
+    local aEmojis as array
+    local jEmojis as json
+    local i as numeric
+    paramtype 1 var cString as character
+    jEmojis:=WebExHelper():GetEmojiHtmlJSON()
+    aEmojis:=jEmojis:GetNames()
+    for i:=1 to Len(aEmojis)
+        if ("__"+aEmojis[i]+"__"$cString)
+            cString:=StrTran(cString,"__"+aEmojis[i]+"__",jEmojis[aEmojis[i]])
+        elseif (":"+aEmojis[i]+":"$cString)
+            cString:=StrTran(cString,":"+aEmojis[i]+":",jEmojis[aEmojis[i]])
+        endif
+    next i
+    FWFreeArray(@aEmojis)
+    FreeObj(@jEmojis)
+return(cString)
 
 method StrReplace(cTemplate,vSubstitutions) class WebExHelper
 

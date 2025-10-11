@@ -1174,6 +1174,7 @@ return(::lMarkDownEnabled)
 
 method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
 
+    local cMarkDownStyle as character
     local cMarkDownScript as character
 
     paramtype 1 var lMarkDownEnabled as logical optional default .T.
@@ -1263,9 +1264,156 @@ method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
                 END WEBEXOBJECT NOADDCHILD*/
             //FWWebEx MarkDown
 ***************************************************************************************************************************
+        //WebExMarkDown Style
+            beginContent var cMarkDownStyle
+
+                mark { background-color: yellow; } sub, sup { font-size: 0.8em; }
+
+                @page {
+                    @top-center { content: element(header); }
+                    @bottom-center { content: element(footer); }
+                }
+
+                @media print {
+
+                    /* Hide all content by default */
+                    body {
+                        visibility: hidden; /* Esconde navbar, sidebar, footer, etc. */
+                        margin: 0; /* Remove margens padrao do body */
+                    }
+
+                    /* Show only .print-only container with padding for header/footer */
+                    .print-only {
+                        visibility: visible !important;
+                        position: absolute; //static
+                        margin: 2cm 2cm 2cm 2cm; /* Margens gerais para a pagina */
+                        padding-top: 50px; /* Espaco abaixo do header fixo - ajuste conforme altura do header */
+                        padding-bottom: 50px; /* Espaco acima do footer fixo - ajuste conforme altura do footer */
+                        font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
+                        font-size: 12pt;
+                        color: #000;
+                        counter-reset: page 1; /* Inicializa contador de paginas */
+                    }
+
+                    /* Fixed header */
+                    .print-only.header {
+                        position: fixed;
+                        top: 0;
+                        width: 100%;
+                        text-align: center;
+                        font-size: 10pt;
+                        color: #555;
+                        visibility: visible;
+                        height: 40px; /* Altura fixa para consistencia */
+                        background-color: #f8f9fa; /* Fundo leve opcional */
+                    }
+
+                    /* Fixed footer with dynamic page numbers */
+                    .print-only.footer {
+                        position: fixed;
+                        bottom: 0;
+                        width: 100%;
+                        text-align: center;
+                        font-size: 10pt;
+                        color: #555;
+                        visibility: visible;
+                        height: 40px; /* Altura fixa para consistencia */
+                        background-color: #f8f9fa; /* Fundo leve opcional */
+                    }
+
+                    /* Auto page numbering in footer (using CSS counters) */
+                    .print-only.footer::after {
+                        content: "Pagina " counter(page) " de " attr(data-total-pages); /* 'data-total-pages' setado por JS */
+                        counter-increment: page; /* Incrementa o contador por pagina */
+                    }
+
+                    /* Style Markdown elements within .print-only */
+                    .print-only h1, .print-only h2, .print-only h3, .print-only h4, .print-only h5, .print-only h6 {
+                        page-break-after: avoid;
+                        page-break-inside: avoid;
+                        margin-bottom: 0.5cm;
+                        color: #000;
+                    }
+
+                    /* Estilizar elementos Markdown */
+                    h1, h2, h3, h4, h5, h6 {
+                        page-break-after: avoid;
+                        page-break-inside: avoid;
+                        margin-bottom: 0.5cm;
+                        color: #000;
+                    }
+
+                    p {
+                        margin: 0.5cm 0;
+                        page-break-inside: avoid;
+                    }
+
+                    ul, ol {
+                        margin: 0.5cm 0;
+                        padding-left: 1.5cm;
+                        page-break-inside: avoid;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        page-break-inside: avoid;
+                        margin: 0.5cm 0;
+                    }
+
+                    th, td {
+                        border: 1px solid #000;
+                        padding: 0.3cm;
+                        text-align: left;
+                    }
+
+                    th {
+                        background-color: #f0f0f0;
+                        font-weight: bold;
+                    }
+
+                    /* Suporte a quebras de pagina */
+                    .page-break {
+                        page-break-after: always;
+                        height: 0;
+                        visibility: hidden;
+                    }
+
+                    /* Suporte a emojis */
+                    * {
+                        font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
+                    }
+
+                    /* Esconder elementos desnecessarios*/
+                    .no-print {
+                        display: none !important;
+                    }
+
+                    /* Ajustar imagens */
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                        page-break-inside: avoid;
+                    }
+
+                    /* Esconder iframes (videos) */
+                    /*
+                    iframe {
+                        display: none;
+                    }*/
+
+                    /* Garantir que o report-header seja visivel */
+                    .report-header {
+                        visibility: visible !important;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                    }
+                }
+            endContent
             WITH WEBEXOBJECT CLASS WebExStyle
-                .:SetContent("mark { background-color: yellow; } sub, sup { font-size: 0.8em; }")
+                .:SetContent(cMarkDownStyle)
             END WEBEXOBJECT
+        //MarkDown Style
 ***************************************************************************************************************************
         //Scripts Tools
             beginContent var cMarkDownScript

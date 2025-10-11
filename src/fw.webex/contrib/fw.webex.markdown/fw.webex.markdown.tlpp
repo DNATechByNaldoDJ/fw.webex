@@ -26,6 +26,7 @@ method New() class WebExMarkDown
     _Super:New()
     ::SetEnableMarkDown(.T.)
     ::AddClass("markdown")
+    .:AddClass("print-only")
 
 return(self)
 
@@ -36,7 +37,7 @@ method ConvertMD() class WebExMarkDown
     beginContent var cMarkDownScript
         document.addEventListener('DOMContentLoaded', function () {
             FWWebExWaitForElementID("__ID__", function (element) {
-                MarkdownHighlightInFWWebExPage.convertMD(element.id);
+                MarkdownHighlightInFWWebExPage?.convertMD(element?.id);
             });
         });
     endContent
@@ -49,18 +50,32 @@ method ConvertMD() class WebExMarkDown
 
 return(self)
 
-class FWMarkdown from FWWebEx.ClassBase
+class FWMarkDown from FWWebEx.ClassBase
+
+    protected data aFootNotes as array
 
     protected data cCRLF as character
     protected data cOutput as character
     protected data cBuffer as character
 
+    protected data lHasEmojis as logical
+    protected data lEncodeUTF8 as logical
     protected data lBufferEnabled as logical
-    protected data aFootnotes as array
+    protected data lEscapeHTMLAttribute as logical
 
-    public method New(lBufferEnabled as logical) as object
+    // ------------------------------------------------------
+    public method New() as object
+
+    // ------------------------------------------------------
     public method Clean() as object
 
+    // ------------------------------------------------------
+    public method EnableUTF8(lEncodeUTF8 as logical) as object
+    public method EnableEmoji(lHasEmojis as logical) as object
+    public method EnableBuffer(lBufferEnabled as logical) as object
+    public method EnableEscapeHTMLAttribute(lEscapeHTMLAttribute as logical) as object
+
+    // ------------------------------------------------------
     public method Header(cText as character,nLevel as numeric) as object
     public method Paragraph(cText as character) as object
     public method ListItem(cText as character,nLevel as numeric,lOrdered as logical) as object
@@ -81,33 +96,66 @@ class FWMarkdown from FWWebEx.ClassBase
     public method Table(aHeader as array,aRows as array,aAlign as array) as object
     public method DefinitionList(cTerm as character,cDef as character) as object
     public method Rule() as object
-    public method FootnoteRef(cId as character) as character
-    public method FootnoteDef(cId as character,cText as character) as object
+    public method FootNoteRef(cId as character) as character
+    public method FootNoteDef(cId as character,cText as character) as object
     public method FrontMatter(jMeta as json) as object
-    public method BuildOutPut(lEncodeUTF8 as logical) as character
-    public method Save(cFile as character,lEncodeUTF8 as logical) as logical
+
+    // ------------------------------------------------------
+    public method PageHeader(cHeaderText as character) as object
+    public method PageFooter(cFooterText as character)
+    public method PageBreak(cPageBreak as character,cStyle as character) as object
+
+    // ------------------------------------------------------
+    public method BuildOutPut() as character
+    public method Save(cFile as character) as logical
 
 end class
 
 // ------------------------------------------------------
-method New(lBufferEnabled) class FWMarkdown
-    paramtype 1 var lBufferEnabled as logical optional default .T.
+method New() class FWMarkDown
     ::cCRLF:=CRLF
     ::cOutput:=""
     ::cBuffer:=""
-    ::lBufferEnabled:=lBufferEnabled
-    ::aFootnotes:={}
+    ::lHasEmojis:=.F.
+    ::lEncodeUTF8:=.F.
+    ::lBufferEnabled:=.T.
+    ::lEscapeHTMLAttribute:=.F.
+    ::aFootNotes:={}
 return(self)
 
 // ------------------------------------------------------
-method Clean() class FWMarkdown
+method Clean() class FWMarkDown
     ::cOutput:=""
     ::cBuffer:=""
-    aSize(::aFootnotes,0)
+    aSize(::aFootNotes,0)
 return(self)
 
 // ------------------------------------------------------
-method Header(cText,nLevel) class FWMarkdown
+method EnableUTF8(lEncodeUTF8) class FWMarkDown
+    paramtype 1 var lEncodeUTF8 as logical optional default ::lEncodeUTF8
+    ::lEncodeUTF8:=lEncodeUTF8
+return(self)
+
+// ------------------------------------------------------
+method EnableEmoji(lHasEmojis) class FWMarkDown
+    paramtype 1 var lHasEmojis as logical optional default ::lHasEmojis
+    ::lHasEmojis:=lHasEmojis
+return(self)
+
+// ------------------------------------------------------
+method EnableBuffer(lBufferEnabled) class FWMarkDown
+    paramtype 1 var lBufferEnabled as logical optional default ::lBufferEnabled
+    ::lBufferEnabled:=lBufferEnabled
+return(self)
+
+// ------------------------------------------------------
+method EnableEscapeHTMLAttribute(lEscapeHTMLAttribute) class FWMarkDown
+    paramtype 1 var lEscapeHTMLAttribute as logical optional default ::lEscapeHTMLAttribute
+    ::lEscapeHTMLAttribute:=lEscapeHTMLAttribute
+return(self)
+
+// ------------------------------------------------------
+method Header(cText,nLevel) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     paramtype 2 var nLevel as numeric optional default 1
     ::cOutput:=Replicate("#",nLevel)+" "+cText
@@ -118,7 +166,7 @@ method Header(cText,nLevel) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Paragraph(cText) class FWMarkdown
+method Paragraph(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:=cText+::cCRLF+::cCRLF
     if (::lBufferEnabled)
@@ -128,7 +176,7 @@ return(self)
 
 // ------------------------------------------------------
 // Lista com suporte a multiplos niveis e ordenada/nao ordenada
-method ListItem(cText,nLevel,lOrdered) class FWMarkdown
+method ListItem(cText,nLevel,lOrdered) class FWMarkDown
     local cIndent as character
     paramtype 1 var cText as character optional default ""
     paramtype 2 var nLevel as numeric optional default 1
@@ -145,7 +193,7 @@ method ListItem(cText,nLevel,lOrdered) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method ListItemTask(cText,lChecked,nLevel) class FWMarkdown
+method ListItemTask(cText,lChecked,nLevel) class FWMarkDown
     local cIndent as character
     local cCheck as character
     paramtype 1 var cText as character optional default ""
@@ -160,57 +208,57 @@ method ListItemTask(cText,lChecked,nLevel) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Bold(cText) class FWMarkdown
+method Bold(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="**"+cText+"**"
 return(::cOutput)
 
 // ------------------------------------------------------
-method Italic(cText) class FWMarkdown
+method Italic(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="*"+cText+"*"
 return(::cOutput)
 
 // ------------------------------------------------------
-method Strike(cText) class FWMarkdown
+method Strike(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="~~"+cText+"~~"
 return(::cOutput)
 
 // ------------------------------------------------------
-method Highlight(cText) class FWMarkdown
+method Highlight(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="=="+cText+"=="
 return(::cOutput)
 
 // ------------------------------------------------------
-method Subscript(cText) class FWMarkdown
+method Subscript(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="~"+cText+"~"
 return(::cOutput)
 
 // ------------------------------------------------------
-method SuperScript(cText) class FWMarkdown
+method SuperScript(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="^"+cText+"^"
 return(::cOutput)
 
 // ------------------------------------------------------
-method Link(cText,cUrl) class FWMarkdown
+method Link(cText,cUrl) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     paramtype 2 var cUrl as character optional default ""
     ::cOutput:="["+cText+"]("+cUrl+")"
 return(::cOutput)
 
 // ------------------------------------------------------
-method Image(cAlt,cUrl) class FWMarkdown
+method Image(cAlt,cUrl) class FWMarkDown
     paramtype 1 var cAlt as character optional default ""
     paramtype 2 var cUrl as character optional default ""
     ::cOutput:="!["+cAlt+"]("+cUrl+")"
 return(::cOutput)
 
 // ------------------------------------------------------
-method VideoEmbed(cUrl,nWidth,nHeight) class FWMarkdown
+method VideoEmbed(cUrl,nWidth,nHeight) class FWMarkDown
 
     local cId as character
     local cEmbedUrl as character
@@ -234,8 +282,13 @@ method VideoEmbed(cUrl,nWidth,nHeight) class FWMarkdown
         '<iframe width="'+cValToChar(nWidth)+;
         '" height="'+cValToChar(nHeight)+;
         '" src="'+cEmbedUrl+;
-        '" frameborder="0" allowfullscreen></iframe>'+::cCRLF
+        '" frameborder="0" allowfullscreen></iframe>'
 
+    if (::lEscapeHTMLAttribute)
+        ::cOutput:=WebExHelper():EscapeHTMLAttribute(::cOutput)
+    endif
+
+    ::cOutput+=::cCRLF
     ::cOutput+=::cCRLF
 
     // Fallback em Markdown
@@ -250,13 +303,13 @@ method VideoEmbed(cUrl,nWidth,nHeight) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Code(cText) class FWMarkdown
+method Code(cText) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     ::cOutput:="`"+cText+"`"
 return(::cOutput)
 
 // ------------------------------------------------------
-method Comment(cText,lHTML) class FWMarkdown
+method Comment(cText,lHTML) class FWMarkDown
 
     paramtype 1 var cText as character optional default ""
     paramtype 2 var lHTML as logical optional default .F.
@@ -278,7 +331,7 @@ method Comment(cText,lHTML) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method CodeBlock(cText,cLang) class FWMarkdown
+method CodeBlock(cText,cLang) class FWMarkDown
     paramtype 1 var cText as character optional default ""
     paramtype 2 var cLang as character optional default ""
     ::cOutput:="```"+cLang+::cCRLF
@@ -291,7 +344,7 @@ method CodeBlock(cText,cLang) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Quote(cText,nLevel) class FWMarkdown
+method Quote(cText,nLevel) class FWMarkDown
     local aLines as array
     local cPrefix as character
     local i as numeric
@@ -310,7 +363,7 @@ method Quote(cText,nLevel) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Table(aHeader,aRows,aAlign) class FWMarkdown
+method Table(aHeader,aRows,aAlign) class FWMarkDown
 
     local cSep
 
@@ -364,7 +417,7 @@ method Table(aHeader,aRows,aAlign) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method DefinitionList(cTerm,cDef) class FWMarkdown
+method DefinitionList(cTerm,cDef) class FWMarkDown
     paramtype 1 var cTerm as character optional default ""
     paramtype 2 var cDef as character optional default ""
     ::cOutput:=cTerm+::cCRLF+": "+cDef+::cCRLF+::cCRLF
@@ -374,7 +427,7 @@ method DefinitionList(cTerm,cDef) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method Rule() class FWMarkdown
+method Rule() class FWMarkDown
     ::cOutput:="---"+::cCRLF
     ::cOutput+=::cCRLF
     if (::lBufferEnabled)
@@ -383,20 +436,20 @@ method Rule() class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method FootnoteRef(cId) class FWMarkdown
+method FootNoteRef(cId) class FWMarkDown
     paramtype 1 var cId as character optional default ""
     ::cOutput:="[^"+cId+"]"
 return(::cOutput)
 
 // ------------------------------------------------------
-method FootnoteDef(cId,cText) class FWMarkdown
+method FootNoteDef(cId,cText) class FWMarkDown
     paramtype 1 var cId as character optional default ""
     paramtype 2 var cText as character optional default ""
-    aAdd(::aFootnotes,{cId,cText})
+    aAdd(::aFootNotes,{cId,cText})
 return(self)
 
 // ------------------------------------------------------
-method FrontMatter(jMeta) class FWMarkdown
+method FrontMatter(jMeta) class FWMarkDown
 
     local aKeys as array
 
@@ -422,29 +475,95 @@ method FrontMatter(jMeta) class FWMarkdown
 return(self)
 
 // ------------------------------------------------------
-method BuildOutPut(lEncodeUTF8) class FWMarkdown
+method PageHeader(cHeaderText) class FWMarkDown
+
+    local cHeader as character
+
+    paramtype 1 var cHeaderText as character
+
+    beginContent var cHeader
+        <div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">__HEADER_TEXT__</div>
+    endContent
+
+    cHeader:=WebExHelper():StrReplaceEx(cHeader,{"__HEADER_TEXT__",cHeaderText})
+    if (::lEscapeHTMLAttribute)
+        cHeader:=WebExHelper():EscapeHTMLAttribute(cHeader)
+    endif
+
+    ::Paragraph(cHeader)
+
+return(self)
+
+// ------------------------------------------------------
+method PageFooter(cFooterText) class FWMarkDown
+
+    local cFooter as character
+
+    paramtype 1 var cFooterText as character
+
+    beginContent var cFooter
+        <div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">__FOOTER_TEXT__</div>
+    endContent
+
+    cFooter:=WebExHelper():StrReplaceEx(cFooter,{"__FOOTER_TEXT__",cFooterText})
+    if (::lEscapeHTMLAttribute)
+        cFooter:=WebExHelper():EscapeHTMLAttribute(cFooter)
+    endif
+
+    ::Paragraph(cFooter)
+
+return(self)
+
+// ------------------------------------------------------
+method PageBreak(cPageBreak,cStyle) class FWMarkDown
+    if (Empty(cPageBreak))
+        paramtype 1 var cPageBreak as character optional default '<div class="page-break" style="__STYLE__"></div>'
+        if (Empty(cStyle))
+            paramtype 2 var cStyle as character optional default "page-break-after: always;"
+            cPageBreak:=WebExHelper():StrReplaceEx(cPageBreak,{"__STYLE__",cStyle})
+        endif
+    endif
+    if (::lEscapeHTMLAttribute)
+        ::cOutput:=WebExHelper():EscapeHTMLAttribute(cPageBreak)
+    else
+        ::cOutput:=cPageBreak
+    endif
+    // Fallback em Markdown
+    //'<!-- pagebreak -->') Alguns parsers (ex.: Pandoc) reconhecem isso como quebra
+    ::cOutput+=::cCRLF
+    ::cOutput+="<!-- pagebreak -->"
+    ::cOutput+=::cCRLF
+    if (::lBufferEnabled)
+        ::cBuffer+=::cOutput
+    endif
+return(self)
+
+// ------------------------------------------------------
+method BuildOutPut() class FWMarkDown
 
     local i as numeric
 
-    paramtype 1 var lEncodeUTF8 as logical optional default .T.
-
     ::cOutput:=::cBuffer
-    if (Len(::aFootnotes)>0)
+    if (Len(::aFootNotes)>0)
         ::cOutput+=::cCRLF+"---"+::cCRLF  // Separador opcional
-        for i:=1 to Len(::aFootnotes)
-            ::cOutput+="[^"+::aFootnotes[i][1]+"]: "+::aFootnotes[i][2]+::cCRLF
+        for i:=1 to Len(::aFootNotes)
+            ::cOutput+="[^"+::aFootNotes[i][1]+"]: "+::aFootNotes[i][2]+::cCRLF
         next i
         ::cOutput+=::cCRLF
     endif
 
-    if (lEncodeUTF8)
+    if (::lHasEmojis)
+        ::cOutput:=WebExHelper():UpdEmojiHtmlCode(::cOutput)
+    endif
+
+    if (::lEncodeUTF8)
         ::cOutput:=EncodeUTF8(::cOutput)
     endif
 
 return(::cOutput)
 
 // ------------------------------------------------------
-method Save(cFile,lEncodeUTF8) class FWMarkdown
+method Save(cFile) class FWMarkDown
 
     local cSPDrive as character
     local cSPPath as character
@@ -457,7 +576,6 @@ method Save(cFile,lEncodeUTF8) class FWMarkdown
     local lSaveOK as logical
 
     paramtype 1 var cFile as character
-    paramtype 2 var lEncodeUTF8 as logical optional default .T.
 
     SplitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
 

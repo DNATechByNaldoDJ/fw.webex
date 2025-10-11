@@ -4,11 +4,11 @@ author: DNATech
 date: 11/10/25
 ---
 
-# Relatório Markdown
+# &#128640; Relatório Markdown
 
 Gerado em ADVPL com suporte a **Markdown**.
 
-## Lista hierárquica
+## &#128312; Lista hierárquica
 
 - Item 1
    - Subitem 1.1
@@ -24,7 +24,7 @@ Gerado em ADVPL com suporte a **Markdown**.
 1. Top 2
 ---
 
-## Lista de Tarefas
+## &#x2705; Lista de Tarefas
 
 - [ ] Tarefa pendente
 - [x] Tarefa concluída
@@ -36,14 +36,30 @@ Gerado em ADVPL com suporte a **Markdown**.
 
 ---
 
-## Links e Imagens
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
+## Links
 
 Veja o [GitHub](https://github.com)
 
-![Logo](https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true)
-
 ---
 
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
+## Imagens
+
+![Logo](https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true)
+
+## Imagem Redimensionada
+
+<br/>
+
+<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true" alt="Sample Image" width="300">
+
+<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">
+
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
 ## Código
 
 ```advpl

@@ -42,9 +42,22 @@ static function FWWebExExample_024(cHTML as character) as character
             .:SetAttr("class","sb-nav-fixed")
             WITH WEBEXOBJECT oSBAdminCardHeaderMarkDown CLASS SBAdminCardHeader ARGS "Markdown","fa-code"
                 WITH WEBEXOBJECT oSBAdminCardBodyMarkDown CLASS SBAdminCardBody
+                    .:AddClass("print-only")
                     WITH WEBEXOBJECT CLASS WebExMarkDown
                         .:SetContent(u_TestaMD(.F.,.T.,.T.))
                         .:ConvertMD()
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                //Imprimir
+                WITH WEBEXOBJECT oSBAdminCardHeaderMarkDown:GetMemberData("oCardHeader")
+                    .:AddClass("d-flex w-100 align-items-center")
+                    //Imprimir alinhado aa direita
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("ms-auto")
+                        WITH WEBEXOBJECT CLASS WebExButton ARGS "Imprimir","button"
+                            .:SetButtonIcon("fa-print","fontawesome",.T.)
+                            .:SetAttr("onclick","window.print();")
+                        END WEBEXOBJECT
                     END WEBEXOBJECT
                 END WEBEXOBJECT
             END WEBEXOBJECT
