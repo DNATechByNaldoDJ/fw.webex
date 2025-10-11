@@ -1,10 +1,13 @@
-#include "totvs.ch"
+#include "fw.webex.th"
 
 using namespace FWWebEx
 
 function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
 
+    local cFS:=FORWARD_SLASH as character
     local cCRLF:=CRLF as character
+    local cLink1 as character
+    local cLink2 as character
     local cOutPut as character
 
     local oMD as object
@@ -84,14 +87,17 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
 
     // Add resized image
     oMD:Header("Imagem Redimensionada",2)
+    //cFS :: Renderizar xBase OK no GitHub
+    cLink1:='<img src="https:'+cFS+cFS+'github.com'+cFS+'DNATechByNaldoDJ'+cFS+'fw.webex'+cFS+'blob'+cFS+'main'+cFS+'src'+cFS+'resource'+cFS+'dna_tech_logo.png?raw=true" alt="Sample Image" width="300">'
+    cLink2:='<img src="https:'+cFS+cFS+'github.com'+cFS+'DNATechByNaldoDJ'+cFS+'fw.webex'+cFS+'blob'+cFS+'main'+cFS+'src'+cFS+'resource'+cFS+'dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">'
     if (lSave)
         oMD:Paragraph("<br/>")
-        oMD:Paragraph('<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true" alt="Sample Image" width="300">')
-        oMD:Paragraph('<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">')
+        oMD:Paragraph(cLink1)
+        oMD:Paragraph(cLink2)
     else
         oMD:Paragraph(WebExHelper():EscapeHTMLAttribute("<br/>"))
-        oMD:Paragraph(WebExHelper():EscapeHTMLAttribute('<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true" alt="Sample Image" width="300">'))
-        oMD:Paragraph(WebExHelper():EscapeHTMLAttribute('<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">'))
+        oMD:Paragraph(WebExHelper():EscapeHTMLAttribute(cLink1))
+        oMD:Paragraph(WebExHelper():EscapeHTMLAttribute(cLink2))
     endif
 
     oMD:PageBreak()
