@@ -38,11 +38,9 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
         };
     )
 
-    if ((!lSave).and.(.F.))
-        //TODO: Fix PageHeader and PageFooter
-        oMD:PageHeader(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Gerado em ","oacute")+DToC(Date()))
-        oMD:PageFooter(__Accentuation(lAsciiToWebAccentuation,"P#1gina __PAGE_NUMBER__ de __TOTAL_PAGES__ | Data: ","atilde")+DToC(Date()))
-    endif
+    //TODO: Fix PageHeader and PageFooter
+    oMD:PageHeader(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Gerado em ","oacute")+DToC(Date()))
+    oMD:PageFooter(__Accentuation(lAsciiToWebAccentuation,"DNATech. #1 Todos os direitos reservados","copy"))
 
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,":rocket: Relat#1rio Markdown","oacute"),1)
     oMD:Paragraph("Gerado em ADVPL com suporte a **Markdown**.")
@@ -61,7 +59,7 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     oMD:ListItem("Sub 2",2,.T.)
     oMD:ListItem("Top 2",1,.T.)
 
-    oMD:Rule()
+    oMD:PageBreak()
 
     oMD:Header(":check_mark_button: Lista de Tarefas",2)
     oMD:ListItemTask("Tarefa pendente", .F., 1)
@@ -87,15 +85,16 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
 
     // Add resized image
     oMD:Header("Imagem Redimensionada",2)
+    oMD:Paragraph(oMD:Image("Logo","https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true",300,300,"custom-size"))
+
+    oMD:Header("Imagem Tag",2)
     //cFS :: Renderizar xBase OK no GitHub
-    cLink1:='<img src="https:'+cFS+cFS+'github.com'+cFS+'DNATechByNaldoDJ'+cFS+'fw.webex'+cFS+'blob'+cFS+'main'+cFS+'src'+cFS+'resource'+cFS+'dna_tech_logo.png?raw=true" alt="Sample Image" width="300">'
-    cLink2:='<img src="https:'+cFS+cFS+'github.com'+cFS+'DNATechByNaldoDJ'+cFS+'fw.webex'+cFS+'blob'+cFS+'main'+cFS+'src'+cFS+'resource'+cFS+'dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">'
+    cLink1:='<img class="custom-size" src="https:'+cFS+cFS+'github.com'+cFS+'DNATechByNaldoDJ'+cFS+'fw.webex'+cFS+'blob'+cFS+'main'+cFS+'src'+cFS+'resource'+cFS+'dna_tech_logo.png?raw=true" alt="Sample Image" width="300">'
+    cLink2:='<img class="custom-size" src="https:'+cFS+cFS+'github.com'+cFS+'DNATechByNaldoDJ'+cFS+'fw.webex'+cFS+'blob'+cFS+'main'+cFS+'src'+cFS+'resource'+cFS+'dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">'
     if (lSave)
-        oMD:Paragraph("<br/>")
         oMD:Paragraph(cLink1)
         oMD:Paragraph(cLink2)
     else
-        oMD:Paragraph(WebExHelper():EscapeHTMLAttribute("<br/>"))
         oMD:Paragraph(WebExHelper():EscapeHTMLAttribute(cLink1))
         oMD:Paragraph(WebExHelper():EscapeHTMLAttribute(cLink2))
     endif

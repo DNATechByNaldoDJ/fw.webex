@@ -1286,13 +1286,12 @@ method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
                     .print-only {
                         visibility: visible !important;
                         position: absolute; //static
-                        margin: 2cm 2cm 2cm 2cm; /* Margens gerais para a pagina */
-                        padding-top: 50px; /* Espaco abaixo do header fixo - ajuste conforme altura do header */
-                        padding-bottom: 50px; /* Espaco acima do footer fixo - ajuste conforme altura do footer */
+                        margin: 1.5cm 1.5cm 1.5cm 1.5cm; /* Margens gerais para a pagina */
+                        padding-top: 0; /* Espaco abaixo do header fixo - ajuste conforme altura do header */
+                        padding-bottom: 18px; /* Espaco acima do footer fixo - ajuste conforme altura do footer */
                         font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
                         font-size: 12pt;
                         color: #000;
-                        counter-reset: page 1; /* Inicializa contador de paginas */
                     }
 
                     /* Fixed header */
@@ -1304,8 +1303,7 @@ method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
                         font-size: 10pt;
                         color: #555;
                         visibility: visible;
-                        height: 40px; /* Altura fixa para consistencia */
-                        background-color: #f8f9fa; /* Fundo leve opcional */
+                        height: .1px; /* Altura fixa para consistencia */
                     }
 
                     /* Fixed footer with dynamic page numbers */
@@ -1317,14 +1315,21 @@ method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
                         font-size: 10pt;
                         color: #555;
                         visibility: visible;
-                        height: 40px; /* Altura fixa para consistencia */
-                        background-color: #f8f9fa; /* Fundo leve opcional */
+                        height: .1px; /* Altura fixa para consistencia */
                     }
 
-                    /* Auto page numbering in footer (using CSS counters) */
-                    .print-only.footer::after {
-                        content: "Pagina " counter(page) " de " attr(data-total-pages); /* 'data-total-pages' setado por JS */
-                        counter-increment: page; /* Incrementa o contador por pagina */
+                    /* Style images within .print-only */
+                    .print-only img {
+                        max-width: 100%; /* Prevent overflow */
+                        height: auto; /* Maintain aspect ratio */
+                        page-break-inside: avoid; /* Avoid breaking images */
+                        width: 80%; /* Default width for printing */
+                    }
+
+                    /* Optional class for custom image sizes */
+                    .print-only img.custom-size {
+                        width: 500px; /* Example custom size */
+                        height: auto;
                     }
 
                     /* Style Markdown elements within .print-only */

@@ -1,8 +1,12 @@
 ---
 title: Relatório Teste
 author: DNATech
-date: 11/10/25
+date: 13/10/25
 ---
+
+<div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">Relatório Gerado em 13/10/25</div>
+
+<div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">DNATech. © Todos os direitos reservados</div>
 
 # &#128640; Relatório Markdown
 
@@ -22,8 +26,8 @@ Gerado em ADVPL com suporte a **Markdown**.
    1. Sub 1
    1. Sub 2
 1. Top 2
----
-
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
 ## &#x2705; Lista de Tarefas
 
 - [ ] Tarefa pendente
@@ -52,11 +56,13 @@ Veja o [GitHub](https://github.com)
 
 ## Imagem Redimensionada
 
-<br/>
+<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true" alt="Logo" width="300" height="300" class="custom-size">
 
-<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true" alt="Sample Image" width="300">
+## Imagem Tag
 
-<img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">
+<img class="custom-size" src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo.png?raw=true" alt="Sample Image" width="300">
+
+<img class="custom-size" src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/dna_tech_logo_menu_background.png?raw=true" alt="Sample Image" width="300">
 
 <div class="page-break" style="page-break-after: always;"></div>
 <!-- pagebreak -->

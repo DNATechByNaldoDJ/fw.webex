@@ -87,7 +87,7 @@ class FWMarkDown from FWWebEx.ClassBase
     public method Subscript(cText as character) as character
     public method SuperScript(cText as character) as character
     public method Link(cText as character,cUrl as character) as character
-    public method Image(cAlt as character,cUrl as character) as character
+    public method Image(cAlt as character,cURL as character,nWidth as numeric,nHeight as numeric,cClass as character) as character
     public method VideoEmbed(cUrl,nWidth,nHeight) as object
     public method Code(cText as character) as character
     public method Comment(cText as character,lHTML as logical) as character
@@ -251,10 +251,39 @@ method Link(cText,cUrl) class FWMarkDown
 return(::cOutput)
 
 // ------------------------------------------------------
-method Image(cAlt,cUrl) class FWMarkDown
-    paramtype 1 var cAlt as character optional default ""
-    paramtype 2 var cUrl as character optional default ""
-    ::cOutput:="!["+cAlt+"]("+cUrl+")"
+method Image(cAlt,cURL,nWidth,nHeight,cClass) class FWMarkdown
+
+    local cOutput:="" as character
+
+    paramtype 1 var cAlt as character
+    paramtype 2 var cURL as character
+    paramtype 3 var nWidth as numeric optional
+    paramtype 4 var nHeight as numeric optional
+    paramtype 5 var cClass as character optional
+
+    //Use HTML <img> tag if width, height, or class is provided
+    if ((ValType(nWidth)=="N").or.(ValType(nHeight)=="N").or.(!Empty(cClass)))
+        cOutput:='<img src="'+cURL+'" alt="'+cAlt+'"'
+        if (ValType(nWidth)=="N")
+            cOutput+=' width="'+cValToChar(nWidth)+'"'
+        endif
+        if (ValType(nHeight)=="N")
+            cOutput+=' height="'+cValToChar(nHeight)+'"'
+        endif
+        if (!Empty(cClass))
+            cOutput+=' class="'+cClass+'"'
+        endif
+        cOutput+='>'
+    else
+        cOutput:="!["+cAlt+"]("+cURL+")"
+    endif
+
+    if (::lEscapeHTMLAttribute)
+        ::cOutput:=WebExHelper():EscapeHTMLAttribute(cOutput)
+    else
+        ::cOutput:=cOutput
+    endif
+
 return(::cOutput)
 
 // ------------------------------------------------------
@@ -482,7 +511,7 @@ method PageHeader(cHeaderText) class FWMarkDown
     paramtype 1 var cHeaderText as character
 
     beginContent var cHeader
-        <div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">__HEADER_TEXT__</div>
+<div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">__HEADER_TEXT__</div>
     endContent
 
     cHeader:=WebExHelper():StrReplaceEx(cHeader,{"__HEADER_TEXT__",cHeaderText})
@@ -502,7 +531,7 @@ method PageFooter(cFooterText) class FWMarkDown
     paramtype 1 var cFooterText as character
 
     beginContent var cFooter
-        <div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">__FOOTER_TEXT__</div>
+<div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">__FOOTER_TEXT__</div>
     endContent
 
     cFooter:=WebExHelper():StrReplaceEx(cFooter,{"__FOOTER_TEXT__",cFooterText})
