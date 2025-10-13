@@ -56,7 +56,6 @@ class FWExampleTools
     static method GetUserPassWord(cUserPassWord as character) as character
     static method GetAuthorization(cUSR as character,cPDW as character,cRESTURLOAuth2 as character) as json
 
-
     //https://startbootstrap.com/template/sb-admin
     static method SBAdminCheck() as logical
 
@@ -70,6 +69,7 @@ static method Execute(bExecute,cTitle,lPrepareEnvironment,lChangeCompanyAndBranc
     local cFil as character
 
     local lMainWnd as logical
+    local lSetCentury:=__SetCentury("ON") as logical
 
     local oMainBmp as object
     local oMainPanel as object
@@ -100,6 +100,8 @@ static method Execute(bExecute,cTitle,lPrepareEnvironment,lChangeCompanyAndBranc
                 //Redefine modo Blind
                 __cInternet:=NIL
             endif
+            SetsDefault()
+            lSetCentury:=__SetCentury("ON")
         endif
             if (WebApp():WebAgentIsConnected())
                 private oMainWnd as object
@@ -129,6 +131,10 @@ static method Execute(bExecute,cTitle,lPrepareEnvironment,lChangeCompanyAndBranc
         else
             ApMsgAlert("WebAgent is not connected",ProcName())
         endif
+    endif
+
+    if (!lSetCentury)
+        __SetCentury("OFF")
     endif
 
 return

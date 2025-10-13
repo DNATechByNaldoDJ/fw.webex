@@ -1,10 +1,10 @@
 ---
 title: Relatório Teste
 author: DNATech
-date: 13/10/25
+date: 13/10/2025
 ---
 
-<div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">Relatório Gerado em 13/10/25</div>
+<div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">Relatório Gerado em 13/10/2025</div>
 
 <div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">DNATech. © Todos os direitos reservados</div>
 

@@ -10,6 +10,8 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     local cLink2 as character
     local cOutPut as character
 
+    local lSetCentury:=__SetCentury("ON") as logical
+
     local oMD as object
     local oComment as object
 
@@ -149,6 +151,10 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     oMD:Clean()
     FreeObj(@oMD)
     FreeObj(@oComment)
+
+    if (!lSetCentury)
+        __SetCentury("OFF")
+    endif
 
 return(cOutPut)
 
