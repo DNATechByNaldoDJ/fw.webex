@@ -179,7 +179,7 @@ static function LoadMenu(oTDlg as object,jExamples as json) as object
     MENU oTMenu IMAGE "" OF oTDlg
         MENU
             MENUITEM oTMenuItem PROMPT "FWWebEx Config"
-            oTMenuItem:bAction:={||FWWebEx.FWExampleTools():GetRESTCredential()}
+            oTMenuItem:bAction:={||FWWebEx.Tools.FWExampleTools():GetRESTCredential()}
         ENDMENU
         MENU
             MENUITEM oTMenuItem PROMPT cCadastro
