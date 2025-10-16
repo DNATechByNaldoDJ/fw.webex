@@ -1417,7 +1417,8 @@ method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
             endContent
             WITH WEBEXOBJECT CLASS WebExStyle
                 .:SetContent(cMarkDownStyle)
-            END WEBEXOBJECT
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
         //MarkDown Style
 ***************************************************************************************************************************
         //Scripts Tools

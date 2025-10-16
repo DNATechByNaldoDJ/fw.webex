@@ -40,10 +40,6 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
         };
     )
 
-    //TODO: Fix PageHeader and PageFooter
-    oMD:PageHeader(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Gerado em ","oacute")+DToC(Date()))
-    oMD:PageFooter(__Accentuation(lAsciiToWebAccentuation,"DNATech. #1 Todos os direitos reservados","copy"))
-
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,":rocket: Relat#1rio Markdown","oacute"),1)
     oMD:Paragraph("Gerado em ADVPL com suporte a **Markdown**.")
 
@@ -131,8 +127,8 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     oMD:Rule()
 
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio com V#2deo","oacute","iacute"),1)
-    oMD:Paragraph(__Accentuation(lAsciiToWebAccentuation,"Para ver, desabilite o coment#1rio abaixo:","aacute"))
     if (lSave)
+        oMD:Paragraph(__Accentuation(lAsciiToWebAccentuation,"Para ver, desabilite o coment#1rio abaixo:","aacute"))
         oComment:VideoEmbed("https://www.youtube.com/watch?v=vZaldeUg6D0",640,360)
         oMD:Comment(oComment:BuildOutPut(),.T.)
         oComment:Clean()
@@ -141,6 +137,10 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     endif
 
     oMd:Rule()
+
+    //TODO: Fix PageHeader and PageFooter
+    oMD:PageHeader(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Gerado em ","oacute")+DToC(Date()))
+    oMD:PageFooter(__Accentuation(lAsciiToWebAccentuation,"DNATech. #1 Todos os direitos reservados","copy"))
 
     if (lSave)
         oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\md\relatorio.md")
