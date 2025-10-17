@@ -80,9 +80,7 @@ return(self)
 
 method SetFormConfig(jFormConfig) class WebExDataTableForm
     paramtype 1 var jFormConfig as json optional
-    if (ValType(jFormConfig)=="O")
-        ::jFormConfig:=jFormConfig
-    endif
+    ::jFormConfig:=jFormConfig
 return(self)
 
 method SetDataTableID(cDataTableID) class WebExDataTableForm
@@ -191,6 +189,7 @@ return(self)
 method AddLookupToField(cFieldName,cLookupType,cLookupSource) class WebExDataTableForm
 
     local cJS:="" as character
+
     local oFieldGroup as object
     local oLookupButton as object
 
@@ -285,7 +284,7 @@ method GetJSValidationScript() class WebExDataTableForm
         });
     endContent
 
-    cScript:=WebExHelper():StrReplaceEx(cScript,{"__FORM_ID__",::GetID()})
+    cScript:=WebExHelper():StrReplaceEx(cScript,{"__FORM_ID__",::GetFixedID()})
 
 return(cScript)
 
@@ -316,7 +315,7 @@ method GetJSUpdateScript() class WebExDataTableForm
     endContent
 
     cScript:=WebExHelper():StrReplaceEx(cScript,{;
-        {"__FORM_ID__",::GetID()},;
+        {"__FORM_ID__",::GetFixedID()},;
         {"__DATATABLE_ID__",::cDataTableID},;
         {"__UPDATE_ENDPOINT__",::cUpdateFunction};  // Endpoint para update,ex: DNA.Tech update function
     })

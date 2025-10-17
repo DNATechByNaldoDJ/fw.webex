@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements: webex.markdown)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update form config and JS script ID handling)"
 */
+
+2025-10-17 21:33 UTC naldodj (Update form config and JS script ID handling)
+  Update form config and JS script ID handling
+    Simplifies SetFormConfig by removing type check and always assigning jFormConfig.
+    Updates JS validation and update script generation to use GetFixedID instead of GetID for form ID replacement.
+      * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp
 
 2025-10-16 19:14 UTC naldodj (Multiple fixes and enhancements: webex.markdown)
   * src/fw.webex/core/control/fw.webex.control.tlpp
