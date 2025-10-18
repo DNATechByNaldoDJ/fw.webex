@@ -40,6 +40,10 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
         };
     )
 
+    //TODO: Fix PageHeader and PageFooter
+    oMD:PageHeader(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Gerado em ","oacute")+DToC(Date()))
+    oMD:PageFooter(__Accentuation(lAsciiToWebAccentuation,"DNATech. #1 Todos os direitos reservados","copy"))
+
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,":rocket: Relat#1rio Markdown","oacute"),1)
     oMD:Paragraph("Gerado em ADVPL com suporte a **Markdown**.")
 
@@ -68,22 +72,23 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Texto Avan#1ado","ccedil"),2)
     oMD:Paragraph(oMD:Highlight("Destaque")+" com "+oMD:Subscript("sub")+" e "+oMD:SuperScript("super"))
 
-    oMD:Rule()
-
     oMD:PageBreak()
 
     oMD:Header("Links",2)
     oMD:Paragraph("Veja o "+oMD:Link("GitHub","https://github.com"))
-    oMD:Rule()
 
     oMD:PageBreak()
 
     oMD:Header("Imagens",2)
     oMD:Paragraph(oMD:Image("Logo","https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true"))
 
+    oMD:PageBreak()
+
     // Add resized image
     oMD:Header("Imagem Redimensionada",2)
     oMD:Paragraph(oMD:Image("Logo","https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true",300,300,"custom-size"))
+
+    oMD:PageBreak()
 
     oMD:Header("Imagem Tag",2)
     //cFS :: Renderizar xBase OK no GitHub
@@ -118,13 +123,13 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Defini#1#2o","ccedil","atilde"),2)
     oMD:DefinitionList("Termo",__Accentuation(lAsciiToWebAccentuation,"Defini#1#2o aqui.","ccedil","atilde"))
 
-    oMD:Rule()
+    oMD:PageBreak()
 
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Rodap#1","eacute"),2)
     oMD:Paragraph(__Accentuation(lAsciiToWebAccentuation,"Texto com rodap#1","eacute")+oMD:FootNoteRef("1"))
     oMD:FootNoteDef("1",__Accentuation(lAsciiToWebAccentuation,"Nota de rodap#1.","eacute"))
 
-    oMD:Rule()
+    oMD:PageBreak()
 
     oMD:Header(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio com V#2deo","oacute","iacute"),1)
     if (lSave)
@@ -135,12 +140,6 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     else
         oMD:VideoEmbed("https://www.youtube.com/watch?v=vZaldeUg6D0",640,360)
     endif
-
-    oMd:Rule()
-
-    //TODO: Fix PageHeader and PageFooter
-    oMD:PageHeader(__Accentuation(lAsciiToWebAccentuation,"Relat#1rio Gerado em ","oacute")+DToC(Date()))
-    oMD:PageFooter(__Accentuation(lAsciiToWebAccentuation,"DNATech. #1 Todos os direitos reservados","copy"))
 
     if (lSave)
         oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\md\relatorio.md")

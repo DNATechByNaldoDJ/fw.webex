@@ -58,6 +58,7 @@ class FWMarkDown from FWWebEx.ClassBase
     protected data cOutput as character
     protected data cBuffer as character
 
+    protected data lHasHeader as logical
     protected data lHasEmojis as logical
     protected data lEncodeUTF8 as logical
     protected data lBufferEnabled as logical
@@ -73,6 +74,7 @@ class FWMarkDown from FWWebEx.ClassBase
     public method EnableUTF8(lEncodeUTF8 as logical) as object
     public method EnableEmoji(lHasEmojis as logical) as object
     public method EnableBuffer(lBufferEnabled as logical) as object
+    public method EnableHeader(lHasHeader as logical) as object
     public method EnableEscapeHTMLAttribute(lEscapeHTMLAttribute as logical) as object
 
     // ------------------------------------------------------
@@ -116,6 +118,7 @@ method New() class FWMarkDown
     ::cCRLF:=CRLF
     ::cOutput:=""
     ::cBuffer:=""
+    ::lHasHeader:=.F.
     ::lHasEmojis:=.F.
     ::lEncodeUTF8:=.F.
     ::lBufferEnabled:=.T.
@@ -146,6 +149,12 @@ return(self)
 method EnableBuffer(lBufferEnabled) class FWMarkDown
     paramtype 1 var lBufferEnabled as logical optional default ::lBufferEnabled
     ::lBufferEnabled:=lBufferEnabled
+return(self)
+
+// ------------------------------------------------------
+method EnableHeader(lHasHeader) class FWMarkDown
+    paramtype 1 var lHasHeader as logical optional default ::lHasHeader
+    ::lHasHeader:=lHasHeader
 return(self)
 
 // ------------------------------------------------------
@@ -510,10 +519,14 @@ method PageHeader(cHeaderText) class FWMarkDown
 
     paramtype 1 var cHeaderText as character
 
+    ::EnableHeader(.T.)
+
     beginContent var cHeader
 <div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">__HEADER_TEXT__</div>
     endContent
 
+    //Fix mixed EOL types
+    cHeader:=WebExHelper():StrReplaceEx(cHeader,{CRLF,"__CRLF__"},{CHR(13),"__CRLF__"},{CHR(10),"__CRLF__"},{"__CRLF__",CRLF})
     cHeader:=WebExHelper():StrReplaceEx(cHeader,{"__HEADER_TEXT__",cHeaderText})
     if (::lEscapeHTMLAttribute)
         cHeader:=WebExHelper():EscapeHTMLAttribute(cHeader)
@@ -534,6 +547,8 @@ method PageFooter(cFooterText) class FWMarkDown
 <div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">__FOOTER_TEXT__</div>
     endContent
 
+    //Fix mixed EOL types
+    cFooter:=WebExHelper():StrReplaceEx(cFooter,{CRLF,"__CRLF__"},{CHR(13),"__CRLF__"},{CHR(10),"__CRLF__"},{"__CRLF__",CRLF})
     cFooter:=WebExHelper():StrReplaceEx(cFooter,{"__FOOTER_TEXT__",cFooterText})
     if (::lEscapeHTMLAttribute)
         cFooter:=WebExHelper():EscapeHTMLAttribute(cFooter)
@@ -565,6 +580,10 @@ method PageBreak(cPageBreak,cStyle) class FWMarkDown
     if (::lBufferEnabled)
         ::cBuffer+=::cOutput
     endif
+    if (::lHasHeader)
+        ::Paragraph("")
+        ::Rule()
+    endif
 return(self)
 
 // ------------------------------------------------------
@@ -578,7 +597,6 @@ method BuildOutPut() class FWMarkDown
         for i:=1 to Len(::aFootNotes)
             ::cOutput+="[^"+::aFootNotes[i][1]+"]: "+::aFootNotes[i][2]+::cCRLF
         next i
-        ::cOutput+=::cCRLF
     endif
 
     if (::lHasEmojis)

@@ -1,8 +1,14 @@
 ---
 title: Relatório Teste
 author: DNATech
-date: 16/10/2025
+date: 18/10/2025
 ---
+
+<div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">Relatório Gerado em 18/10/2025</div>
+
+
+<div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">DNATech. © Todos os direitos reservados</div>
+
 
 # &#128640; Relatório Markdown
 
@@ -24,6 +30,10 @@ Gerado em ADVPL com suporte a **Markdown**.
 1. Top 2
 <div class="page-break" style="page-break-after: always;"></div>
 <!-- pagebreak -->
+
+
+---
+
 ## &#x2705; Lista de Tarefas
 
 - [ ] Tarefa pendente
@@ -34,25 +44,41 @@ Gerado em ADVPL com suporte a **Markdown**.
 
 ==Destaque== com ~sub~ e ^super^
 
----
-
 <div class="page-break" style="page-break-after: always;"></div>
 <!-- pagebreak -->
+
+
+---
+
 ## Links
 
 Veja o [GitHub](https://github.com)
 
----
-
 <div class="page-break" style="page-break-after: always;"></div>
 <!-- pagebreak -->
+
+
+---
+
 ## Imagens
 
 ![Logo](https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true)
 
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
+
+
+---
+
 ## Imagem Redimensionada
 
 <img src="https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/resource/fwwebex_banner_linkedin.png?raw=true" alt="Logo" width="300" height="300" class="custom-size">
+
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
+
+
+---
 
 ## Imagem Tag
 
@@ -62,6 +88,10 @@ Veja o [GitHub](https://github.com)
 
 <div class="page-break" style="page-break-after: always;"></div>
 <!-- pagebreak -->
+
+
+---
+
 ## Código
 
 ```advpl
@@ -95,11 +125,19 @@ Return
 Termo
 : Definição aqui.
 
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
+
+
 ---
 
 ## Rodapé
 
 Texto com rodapé[^1]
+
+<div class="page-break" style="page-break-after: always;"></div>
+<!-- pagebreak -->
+
 
 ---
 
@@ -114,12 +152,6 @@ Para ver, desabilite o comentário abaixo:
 
 
 -->
-
----
-
-<div class="print-only header" style="position: fixed; top: 0; width: 100%; text-align: center;">Relatório Gerado em 16/10/2025</div>
-
-<div class="print-only footer" style="position: fixed; bottom: 0; width: 100%; text-align: center;">DNATech. © Todos os direitos reservados</div>
 
 
 ---

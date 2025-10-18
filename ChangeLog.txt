@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update form config and JS script ID handling)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements: webex.markdown)"
 */
+
+2025-10-18 13:43 UTC naldodj (Multiple fixes and enhancements: webex.markdown)
+  * src/fw.webex/contrib/fw.webex.markdown/fw.webex.markdown.tlpp
+  * src/fw.webex/tests/md/fw.webex.example_024.pdf
+  * src/fw.webex/tests/md/relatorio.md
+  * src/fw.webex/tests/md/relatorio.pdf
+  * src/fw.webex/tests/md/testemd.tlpp
 
 2025-10-17 21:33 UTC naldodj (Update form config and JS script ID handling)
   Update form config and JS script ID handling
