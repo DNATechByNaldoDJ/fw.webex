@@ -24,7 +24,7 @@ using namespace FWWebEx.Tools
 function u_ParamBoxLoadNew(/*@*/cLoad as character,lCanSave as logical,lUserSave as logical) as object
 return(ParamBoxLoad():New(@cLoad,@lCanSave,@lUserSave))
 
-class ParamBoxLoad
+class ParamBoxLoad from FWWebEx.ClassBase
 
     private data cLoad as character
 
@@ -44,8 +44,9 @@ class ParamBoxLoad
     public method SetUserSave(lUserSave as logical) as logical
     public method GetUserSave() as logical
 
-    public method ParamSave(aParametros,cBloq) as logical
-    public method ParamLoad(aParametros as array,nX as numeric,xDefault as variant,lDefault as logical) as variant
+    public method ParamSave(aPBoxPrm,cBloq) as logical
+    public method ParamLoad(aPBoxPrm as array,nX as numeric,xDefault as variant,lDefault as logical) as variant
+    public method ParamReLoad(aPBoxPrm as array,aPBoxRet as array,lDefault as logical,cStack as character) as object
 
 end class
 
@@ -106,40 +107,76 @@ return(self:lUserSave)
 method GetUserSave() class ParamBoxLoad
 return(self:lUserSave)
 
-method ParamSave(aParametros,cBloq) class ParamBoxLoad
+method ParamSave(aPBoxPrm,cBloq) class ParamBoxLoad
     local cLoad as character
-    paramtype 1 var aParametros as array
+    paramtype 1 var aPBoxPrm as array
     paramtype 2 var cBloq as character optional default "1" /*1=Save/UnBlock;2=Save/Block*/
     cLoad:=self:__GetParamLoad()
-return(ParamSave(@cLoad,@aParametros,@cBloq))
+return(ParamSave(@cLoad,@aPBoxPrm,@cBloq))
 
-method ParamLoad(aParametros,nX,xDefault,lDefault) class ParamBoxLoad
+method ParamLoad(aPBoxPrm,nX,xDefault,lDefault) class ParamBoxLoad
 
     local cLoad as character
 
     local xRet as variant
 
-    paramtype 1 var aParametros as array
+    paramtype 1 var aPBoxPrm as array
     paramtype 2 var nX as numeric
     paramtype 3 var xDefault as array,character,date,logical,numeric optional
     paramtype 4 var lDefault as logical optional
 
     cLoad:=self:__GetParamLoad()
 
-    xRet:=ParamLoad(@cLoad,@aParametros,@nX,@xDefault,@lDefault)
+    xRet:=ParamLoad(@cLoad,@aPBoxPrm,@nX,@xDefault,@lDefault)
 
 return(xRet)
 
-static function ParamSave(cLoad as character,aParametros as array,cBloq as character) as logical
+method ParamReLoad(aPBoxPrm,aPBoxRet,lDefault,cStack) class ParamBoxLoad
 
-    local cWrite:=(cBloq+"Arquivo de configuracao - Parambox Protheus "+CRLF) as character
-    local cBarra:=if(IsSrvUnix(), "/", "\") as character
+    local cMVPar:="MV_PAR00" as character
+
+    local i as numeric
+    local nPBoxRet as numeric
+
+    local xRet as variant
+    local xVal as variant
+
+    paramtype 1 var aPBoxPrm as array
+    paramtype 2 var aPBoxRet as array optional default Array(Len(aPBoxPrm))
+    paramtype 3 var lDefault as logical optional default .F.
+    paramtype 4 var cStack as character optional default ProcName(1)
+
+    nPBoxRet:=Len(aPBoxRet)
+    aSize(aPBoxRet,Len(aPBoxPrm))
+
+    for i:=1 to Len(aPBoxPrm)
+        cMVPar:=__Soma1(cMVPar)
+        xVal:=if(((nPBoxRet>=i).and.(aPBoxRet[i]!=nil)),aPBoxRet[i],if((Type(cMVPar)!="U"),&cMVPar,nil))
+        xRet:=::ParamLoad(aPBoxPrm,i,xVal/*xDefault*/,lDefault/*lDefault*/)
+        aPBoxRet[i]:=xRet
+        if (Type(cMVPar)=="U")
+            if (!empty(cStack))
+                _SetNamedPrvt(cMVPar,xRet,cStack)
+            else
+                _SetOwnerPrvt(cMVPar,xRet)
+            endif
+        else
+            &cMVPar:=xRet
+        endif
+    next i
+
+return(self)
+
+static function ParamSave(cLoad as character,aPBoxPrm as array,cBloq as character) as logical
+
+    local cWrite:=(cBloq+WebExHelper():Accentuation("Arquivo de configura#c#ao - Parambox Protheus ","ccedil","atilde")+CRLF) as character
+    local cSlash:=if(IsSrvUnix(),FORWARD_SLASH,BACK_SLASH) as character
 
     local lSave as logical
 
     local nX as numeric
 
-    for nX:=1 to Len(aParametros)
+    for nX:=1 to Len(aPBoxPrm)
         do case
             case ValType(&("MV_PAR"+AllTrim(STRZERO(nX,2,0))))=="C"
                 cWrite+= "C"+&("MV_PAR"+AllTrim(STRZERO(nX,2,0)))+CRLF
@@ -154,26 +191,26 @@ static function ParamSave(cLoad as character,aParametros as array,cBloq as chara
         endcase
     next
 
-    if (!ExistDir(cBarra+"PROFILE"))
-        MakeDir(cBarra+"PROFILE")
+    if (!ExistDir(cSlash+"PROFILE"))
+        MakeDir(cSlash+"PROFILE")
     endif
 
-    lSave:=MemoWrit(cBarra+"PROFILE"+cBarra+Alltrim(cLoad)+".PRB",cWrite)
+    lSave:=MemoWrit(cSlash+"PROFILE"+cSlash+Alltrim(cLoad)+".PRB",cWrite)
 
 return(lSave)
 
-static Function ParamLoad(cLoad as character,aParametros as array,nX as numeric,xDefault as variant,lDefault as logical)
+static Function ParamLoad(cLoad as character,aPBoxPrm as array,nX as numeric,xDefault as variant,lDefault as logical)
 
     local cLinha as character
-    local cBarra:=if(IsSrvUnix(), "/", "\") as character
+    local cSlash:=if(IsSrvUnix(),FORWARD_SLASH,BACK_SLASH) as character
     local cTypeData as character
 
     local nY as numeric
 
     DEFAULT lDefault:=.F.
 
-    if (File(cBarra+"PROFILE"+cBarra+Alltrim(cLoad)+".PRB"))
-        if (ft_fUse(cBarra+"PROFILE"+cBarra+Alltrim(cLoad)+".PRB")<>-1)
+    if (File(cSlash+"PROFILE"+cSlash+Alltrim(cLoad)+".PRB"))
+        if (ft_fUse(cSlash+"PROFILE"+cSlash+Alltrim(cLoad)+".PRB")<>-1)
             ft_fGoTop()
             if (nX==0)
                 cLinha:=ft_fReadLN()

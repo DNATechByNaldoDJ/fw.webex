@@ -2,8 +2,18 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Multiple fixes and enhancements: webex.markdown)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add environment-specific config support for WebEx tools)"
 */
+
+2025-10-23 17:16 UTC naldodj (Add environment-specific config support for WebEx tools)
+  Add environment-specific config support for WebEx tools
+    Updated WebEx core and example tools to read and write configuration parameters using environment-specific INI sections (FWWEBEX_<env>).
+    Refactored parameter box handling to support environment context and improved parameter reload/save logic.
+    Extended ParamBoxLoad class with ParamReLoad method and inheritance from FWWebEx.ClassBase for better modularity.
+      * src/fw.webex/core/tools/fw.webex.webapp.auth.tlpp
+      * src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.tools.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.parambox.tools.tlpp
 
 2025-10-18 13:43 UTC naldodj (Multiple fixes and enhancements: webex.markdown)
   * src/fw.webex/contrib/fw.webex.markdown/fw.webex.markdown.tlpp

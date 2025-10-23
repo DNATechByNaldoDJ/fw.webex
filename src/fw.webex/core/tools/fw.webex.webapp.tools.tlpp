@@ -426,10 +426,11 @@ return
 
 static method GetAPPRoot() class WebApp
 
+    local cEnvServer:=GetEnvServer() as character
     local cSRVIniName:=GetSrvIniName() as character
 
     //TODO: Rever a forma de Obter app-root
-    cAPPRootURI:=AllTrim(GetPvProfString("FWWEBEX","AppRootURI","",cSRVIniName))
+    cAPPRootURI:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"AppRootURI","",cSRVIniName))
     if (Right(cAPPRootURI,1)!="/")
         cAPPRootURI+="/"
     endif

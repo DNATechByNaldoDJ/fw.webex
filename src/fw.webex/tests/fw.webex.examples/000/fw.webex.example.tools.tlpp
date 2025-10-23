@@ -355,56 +355,60 @@ return
 
 static method GetRESTCredential(cUSR,cPDW,cRESTURL,cRESTURLOAuth2,jGetAuthorization,lUseOAuth2) class FWExampleTools
 
-    local aParamBox:=Array(0) as array
-    local aParamRet:=Array(0) as array
+    local aPBoxPrm:=Array(0) as array
+    local aPBoxRet:=Array(0) as array
 
+    local cStack:=ProcName() as character
     local cAppRootURI as character
 
     local cClientID as character
     local cClientSecret as character
+    local cEnvServer:=GetEnvServer() as character
     local cSRVIniName:=GetSrvIniName() as character
 
     local lChangeParameters as logical
     local lGetRESTCredential as logical
 
-    paramtype 1 var cUSR as character optional default AllTrim(GetPvProfString("FWWEBEX","UserName","",cSRVIniName))
-    paramtype 2 var cPDW as character optional default AllTrim(GetPvProfString("FWWEBEX","Password","",cSRVIniName))
-    paramtype 3 var cRESTURL as character optional default AllTrim(GetPvProfString("FWWEBEX","RestURL","",cSRVIniName))
-    paramtype 4 var cRESTURLOAuth2 as character optional default AllTrim(GetPvProfString("FWWEBEX","OAuth2URL","",cSRVIniName))
+    local oParamBoxLoad as object
+
+    paramtype 1 var cUSR as character optional default AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"UserName","",cSRVIniName))
+    paramtype 2 var cPDW as character optional default AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName))
+    paramtype 3 var cRESTURL as character optional default AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"RestURL","",cSRVIniName))
+    paramtype 4 var cRESTURLOAuth2 as character optional default AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"OAuth2URL","",cSRVIniName))
     paramtype 5 var jGetAuthorization as json optional
     paramtype 6 var lUseOAuth2 as logical optional default .F.
 
-    cAppRootURI:=AllTrim(GetPvProfString("FWWEBEX","AppRootURI","",cSRVIniName))
+    cAppRootURI:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"AppRootURI","",cSRVIniName))
     cAppRootURI:=PadR(cAppRootURI,200)
 
-    cClientID:=AllTrim(GetPvProfString("FWWEBEX","ClientID","",cSRVIniName))
+    cClientID:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"ClientID","",cSRVIniName))
     if (Empty(cClientID))
         cClientID:=__cUserID
     endif
     cClientID:=PadR(cClientID,100)
 
-    cClientSecret:=AllTrim(GetPvProfString("FWWEBEX","ClientSecret","",cSRVIniName))
+    cClientSecret:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"ClientSecret","",cSRVIniName))
     if (Empty(cClientSecret))
-        cClientSecret:=AllTrim(GetPvProfString("FWWEBEX","Password","",cSRVIniName))
+        cClientSecret:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName))
     endif
     cClientSecret:=PadR(cClientSecret,100)
 
     if (Empty(cUSR))
-        cUSR:=AllTrim(GetPvProfString("FWWEBEX","UserName","",cSRVIniName))
+        cUSR:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"UserName","",cSRVIniName))
     endif
     cUSR:=PadR(cUSR,100)
     if (Empty(cPDW))
-        cPDW:=AllTrim(GetPvProfString("FWWEBEX","Password","",cSRVIniName))
+        cPDW:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName))
     endif
 
     cPDW:=PadR(cPDW,100)
     if (Empty(cRESTURL))
-        cRESTURL:=AllTrim(GetPvProfString("FWWEBEX","RestURL","",cSRVIniName))
+        cRESTURL:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"RestURL","",cSRVIniName))
     endif
     cRESTURL:=PadR(cRESTURL,200)
 
     if (Empty(cRESTURLOAuth2))
-        cRESTURLOAuth2:=AllTrim(GetPvProfString("FWWEBEX","OAuth2URL","",cSRVIniName))
+        cRESTURLOAuth2:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"OAuth2URL","",cSRVIniName))
     endif
     cRESTURLOAuth2:=PadR(cRESTURLOAuth2,200)
 
@@ -412,93 +416,110 @@ static method GetRESTCredential(cUSR,cPDW,cRESTURL,cRESTURLOAuth2,jGetAuthorizat
 
         SaveInter()
             MV_PAR06:=.F.
-            aAdd(aParamBox,{1,"ClientID",cClientID,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
-            aAdd(aParamBox,{1,"ClientSecret",cClientSecret,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
-            aAdd(aParamBox,{1,"UserName",cUSR,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
-            aAdd(aParamBox,{1,"Password",cPDW,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
-            aAdd(aParamBox,{1,"URL REST",cRESTURL,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",200,.T.})
-            aAdd(aParamBox,{4,"OAuth2",MV_PAR06,"",100,"FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",.F.})
-            aAdd(aParamBox,{1,"URL REST OAuth2",cRESTURLOAuth2,"@","IF(MV_PAR06,NaoVazio(),FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters())","","MV_PAR06",200,.T.})
-            aAdd(aParamBox,{1,"APPRoot URI",cAppRootURI,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",200,.T.})
+            /*-----------------------------------------------------------------------------------------------------------------------------------*/
+            aAdd(aPBoxPrm,{1,"ClientID",cClientID,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
+            aAdd(aPBoxPrm,{1,"ClientSecret",cClientSecret,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
+            aAdd(aPBoxPrm,{1,"UserName",cUSR,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
+            aAdd(aPBoxPrm,{1,"Password",cPDW,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",100,.T.})
+            aAdd(aPBoxPrm,{1,"URL REST",cRESTURL,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",200,.T.})
+            aAdd(aPBoxPrm,{4,"OAuth2",MV_PAR06,"",100,"FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",.F.})
+            aAdd(aPBoxPrm,{1,"URL REST OAuth2",cRESTURLOAuth2,"@","IF(MV_PAR06,NaoVazio(),FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters())","","MV_PAR06",200,.T.})
+            aAdd(aPBoxPrm,{1,"APPRoot URI",cAppRootURI,"@","NaoVazio()","","FWWebEx.Tools.FWExampleTools():EnableRESTCredentialParameters()",200,.T.})
+            /*-----------------------------------------------------------------------------------------------------------------------------------*/
+            cStack+=("_"+cEnvServer)
+            oParamBoxLoad:=ParamBoxLoad():New(cStack/*cLoad*/,.T./*lCanSave*/,.T./*lUserSave*/)
+            MV_PAR01:=oParamBoxLoad:ParamLoad(aPBoxPrm,1,cClientID/*xDefault*/,.F./*lDefault*/)
+            MV_PAR02:=oParamBoxLoad:ParamLoad(aPBoxPrm,2,cClientSecret/*xDefault*/,.F./*lDefault*/)
+            MV_PAR03:=oParamBoxLoad:ParamLoad(aPBoxPrm,3,cUSR/*xDefault*/,.F./*lDefault*/)
+            MV_PAR04:=oParamBoxLoad:ParamLoad(aPBoxPrm,4,cPDW/*xDefault*/,.F./*lDefault*/)
+            MV_PAR05:=oParamBoxLoad:ParamLoad(aPBoxPrm,5,cRESTURL/*xDefault*/,.F./*lDefault*/)
+            MV_PAR06:=oParamBoxLoad:ParamLoad(aPBoxPrm,6,MV_PAR06/*xDefault*/,.F./*lDefault*/)
+            MV_PAR07:=oParamBoxLoad:ParamLoad(aPBoxPrm,7,cRESTURLOAuth2/*xDefault*/,.F./*lDefault*/)
+            MV_PAR08:=oParamBoxLoad:ParamLoad(aPBoxPrm,8,cAppRootURI/*xDefault*/,.F./*lDefault*/)
+            /*-----------------------------------------------------------------------------------------------------------------------------------*/
             lChangeParameters:=FWExampleTools():EnableRESTCredentialParameters()
-            lGetRESTCredential:=ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,nil,nil,.T.,nil,nil,nil,nil,lChangeParameters,lChangeParameters)
+            lGetRESTCredential:=ParamBox(@aPBoxPrm,"Selecione os Parametros",@aPBoxRet,/*bOk*/,/*aButtons*/,.T./*lCentered*/,/*nPosx*/,/*nPosy*/,/*oDlgWizard*/,oParamBoxLoad:GetParamLoad()/*cLoad*/,oParamBoxLoad:GetCanSave()/*lCanSave*/,oParamBoxLoad:GetUserSave()/*lUserSave*/)
+            if (lGetRESTCredential)
+                oParamBoxLoad:ParamSave(aPBoxPrm)
+                oParamBoxLoad:ParamReLoad(aPBoxPrm,@aPBoxRet,.F.)
+            endif
         RestInter()
 
         if (!lGetRESTCredential)
             break
         endif
 
-        cClientID:=AllTrim(aParamRet[__PARAM_CLIENT_ID__])
+        cClientID:=AllTrim(aPBoxRet[__PARAM_CLIENT_ID__])
         if (empty(cClientID))
             cClientID:=__cUserID
         endif
         if (lChangeParameters)
-            if (!(Upper(cClientID)==Upper(AllTrim(GetPvProfString("FWWEBEX","ClientID","",cSRVIniName)))))
-                WritePProString("FWWEBEX","ClientID",cClientID,cSRVIniName)
+            if (!(Upper(cClientID)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"ClientID","",cSRVIniName)))))
+                WritePProString("FWWEBEX_"+cEnvServer,"ClientID",cClientID,cSRVIniName)
             endif
         endif
         FWExampleTools():GetClientID(cClientID)
 
-        cClientSecret:=AllTrim(aParamRet[__PARAM_CLIENT_SECRET__])
+        cClientSecret:=AllTrim(aPBoxRet[__PARAM_CLIENT_SECRET__])
         if (empty(cClientSecret))
-            cClientSecret:=AllTrim(aParamRet[__PARAM_PASSWORD__])
+            cClientSecret:=AllTrim(aPBoxRet[__PARAM_PASSWORD__])
         endif
         if (lChangeParameters)
-            if (!(Upper(cClientSecret)==Upper(AllTrim(GetPvProfString("FWWEBEX","ClientSecret","",cSRVIniName)))))
-                WritePProString("FWWEBEX","ClientSecret",cClientSecret,cSRVIniName)
+            if (!(Upper(cClientSecret)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"ClientSecret","",cSRVIniName)))))
+                WritePProString("FWWEBEX_"+cEnvServer,"ClientSecret",cClientSecret,cSRVIniName)
             endif
         endif
         FWExampleTools():GetClientSecret(cClientSecret)
 
-        cUSR:=AllTrim(aParamRet[__PARAM_USER_NAME__])
+        cUSR:=AllTrim(aPBoxRet[__PARAM_USER_NAME__])
         if (lChangeParameters)
-            if (!(Upper(cUSR)==Upper(AllTrim(GetPvProfString("FWWEBEX","UserName","",cSRVIniName)))))
-                WritePProString("FWWEBEX","UserName",cUSR,cSRVIniName)
+            if (!(Upper(cUSR)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"UserName","",cSRVIniName)))))
+                WritePProString("FWWEBEX_"+cEnvServer,"UserName",cUSR,cSRVIniName)
             endif
         endif
         FWExampleTools():GetUserName(cUSR)
 
-        cPDW:=AllTrim(aParamRet[__PARAM_PASSWORD__])
+        cPDW:=AllTrim(aPBoxRet[__PARAM_PASSWORD__])
         if (lChangeParameters)
-            if (!(Upper(cPDW)==Upper(AllTrim(GetPvProfString("FWWEBEX","Password","",cSRVIniName)))))
-                WritePProString("FWWEBEX","Password",cPDW,cSRVIniName)
+            if (!(Upper(cPDW)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName)))))
+                WritePProString("FWWEBEX_"+cEnvServer,"Password",cPDW,cSRVIniName)
             endif
         endif
         FWExampleTools():GetUserPassWord(cPDW)
 
-        cRESTURL:=AllTrim(aParamRet[__PARAM_REST_URL__])
+        cRESTURL:=AllTrim(aPBoxRet[__PARAM_REST_URL__])
         if (Right(cRESTURL,1)!="/")
             cRESTURL+="/"
         endif
         if (lChangeParameters)
-            if (!(Upper(cRESTURL)==Upper(AllTrim(GetPvProfString("FWWEBEX","RestURL","",cSRVIniName)))))
-                WritePProString("FWWEBEX","RestURL",cRESTURL,cSRVIniName)
+            if (!(Upper(cRESTURL)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"RestURL","",cSRVIniName)))))
+                WritePProString("FWWEBEX_"+cEnvServer,"RestURL",cRESTURL,cSRVIniName)
             endif
         endif
 
-        lUseOAuth2:=aParamRet[__PARAM_USE_OAUTH2__]
+        lUseOAuth2:=aPBoxRet[__PARAM_USE_OAUTH2__]
         if (lUseOAuth2)
-            cRESTURLOAuth2:=AllTrim(aParamRet[__PARAM_REST_URL_OAUTH2__])
+            cRESTURLOAuth2:=AllTrim(aPBoxRet[__PARAM_REST_URL_OAUTH2__])
             lUseOAuth2:=(!Empty(cRESTURLOAuth2))
             if (lUseOAuth2)
                 if (Right(cRESTURLOAuth2,1)=="/")
                     cRESTURL:=SubStr(cRESTURLOAuth2,1,Len(cRESTURLOAuth2)-1)
                 endif
                 if (lChangeParameters)
-                    if (!(Upper(cRESTURLOAuth2)==Upper(AllTrim(GetPvProfString("FWWEBEX","OAuth2URL","",cSRVIniName)))))
-                        WritePProString("FWWEBEX","OAuth2URL",cRESTURLOAuth2,cSRVIniName)
+                    if (!(Upper(cRESTURLOAuth2)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"OAuth2URL","",cSRVIniName)))))
+                        WritePProString("FWWEBEX_"+cEnvServer,"OAuth2URL",cRESTURLOAuth2,cSRVIniName)
                     endif
                 endif
             endif
         endif
 
-        cAppRootURI:=AllTrim(aParamRet[__PARAM_APPROOT_URI__])
+        cAppRootURI:=AllTrim(aPBoxRet[__PARAM_APPROOT_URI__])
         if (Right(cAppRootURI,1)!="/")
             cAppRootURI+="/"
         endif
         if (lChangeParameters)
-            if (!(Upper(cAppRootURI)==Upper(AllTrim(GetPvProfString("FWWEBEX","AppRootURI","",cSRVIniName)))))
-                WritePProString("FWWEBEX","AppRootURI",cAppRootURI,cSRVIniName)
+            if (!(Upper(cAppRootURI)==Upper(AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"AppRootURI","",cSRVIniName)))))
+                WritePProString("FWWEBEX_"+cEnvServer,"AppRootURI",cAppRootURI,cSRVIniName)
             endif
         endif
 
@@ -506,8 +527,9 @@ static method GetRESTCredential(cUSR,cPDW,cRESTURL,cRESTURLOAuth2,jGetAuthorizat
 
     end sequence
 
-    FWFreeArray(@aParamBox)
-    FWFreeArray(@aParamRet)
+    FWFreeArray(@aPBoxPrm)
+    FWFreeArray(@aPBoxRet)
+    FreeObj(@oParamBoxLoad)
 
 return(lGetRESTCredential)
 
@@ -531,39 +553,47 @@ static method ParamsProvider() class FWExampleTools
 return(WebAuthorization():ParamsProvider())
 
 static method GetClientID(cUserID) class FWExampleTools
+    local cEnvServer:=GetEnvServer() as character
+    local cSRVIniName:=GetSrvIniName() as character
     if (!Empty(cUserID))
         __cUserID:=cUserID
     endif
     if (empty(__cUserID))
-        __cUserID:=GetPvProfString("FWWEBEX","ClientID","",GetSrvIniName())
+        __cUserID:=GetPvProfString("FWWEBEX_"+cEnvServer,"ClientID","",cSRVIniName)
     endif
 
 return(__cUserID)
 
 static method GetClientSecret(cClientSecret) class FWExampleTools
+    local cEnvServer:=GetEnvServer() as character
+    local cSRVIniName:=GetSrvIniName() as character
     if (!Empty(cClientSecret))
         __cClientSecret:=cClientSecret
     endif
     if (empty(__cClientSecret))
-        __cClientSecret:=GetPvProfString("FWWEBEX","ClientSecret","",GetSrvIniName())
+        __cClientSecret:=GetPvProfString("FWWEBEX_"+cEnvServer,"ClientSecret","",cSRVIniName)
     endif
 return(__cClientSecret)
 
 static method GetUserName(cUserName) class FWExampleTools
+    local cEnvServer:=GetEnvServer() as character
+    local cSRVIniName:=GetSrvIniName() as character
     if (!Empty(cUserName))
         __cUserName:=cUserName
     endif
     if (empty(__cUserName))
-        __cUserName:=GetPvProfString("FWWEBEX","UserName","",GetSrvIniName())
+        __cUserName:=GetPvProfString("FWWEBEX_"+cEnvServer,"UserName","",cSRVIniName)
     endif
 return(__cUserName)
 
 static method GetUserPassWord(cUserPassWord) class FWExampleTools
+    local cEnvServer:=GetEnvServer() as character
+    local cSRVIniName:=GetSrvIniName() as character
     if (!Empty(cUserPassWord))
         __cUserPassWord:=cUserPassWord
     endif
     if (empty(__cUserPassWord))
-        __cUserPassWord:=GetPvProfString("FWWEBEX","Password","",GetSrvIniName())
+        __cUserPassWord:=GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName)
     endif
 return(__cUserPassWord)
 
@@ -835,19 +865,12 @@ SELECT cSXBFields
                     lParamBox:=ApMsgYesNo("Empresa ("+MV_PAR01+") e/ou Filial ("+MV_PAR02+") Invalida(s). Deseja selecionar novamente?","ATENCAO")
                     if (lParamBox)
                         if (lParamBox:=ChangeCompanyAndBranch(MV_PAR01,MV_PAR02,.F.))
-                            aPBoxRet:=Array(Len(aPBoxPrm))
-                            MV_PAR01:=oParamBoxLoad:ParamLoad(aPBoxPrm,1,cCompany/*xDefault*/,.F./*lDefault*/)
-                            aPBoxRet[1]:=MV_PAR01
-                            MV_PAR02:=oParamBoxLoad:ParamLoad(aPBoxPrm,2,cBranch/*xDefault*/,.F./*lDefault*/)
-                            aPBoxRet[2]:=MV_PAR02
+                            oParamBoxLoad:ParamReLoad(aPBoxPrm,@aPBoxRet,.F.)
                             oParamBoxLoad:ParamSave(aPBoxPrm)
                         endif
                     endif
                 else
-                    MV_PAR01:=oParamBoxLoad:ParamLoad(aPBoxPrm,1,cCompany/*xDefault*/,.F./*lDefault*/)
-                    aPBoxRet[1]:=MV_PAR01
-                    MV_PAR02:=oParamBoxLoad:ParamLoad(aPBoxPrm,2,cBranch/*xDefault*/,.F./*lDefault*/)
-                    aPBoxRet[2]:=MV_PAR02
+                    oParamBoxLoad:ParamReLoad(aPBoxPrm,@aPBoxRet,.F.)
                 endif
                 oParamBoxLoad:ParamSave(aPBoxPrm)
                 if (lParamBox)

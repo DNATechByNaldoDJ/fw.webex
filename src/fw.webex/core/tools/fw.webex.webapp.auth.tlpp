@@ -26,12 +26,13 @@ end class
 
 //https://tdn.totvs.com/display/tec/onAuthparams
 static method ParamsProvider() class WebAuthorization
+    local cEnvServer:=GetEnvServer() as character
     local cSRVIniName:=GetSrvIniName() as character
     local jParams := {;
-         "client_id" : GetPvProfString("FWWEBEX","ClientID","",cSRVIniName); //string
-        ,"client_secret" : GetPvProfString("FWWEBEX","ClientSecret","",cSRVIniName);  // string
-        ,"username" : GetPvProfString("FWWEBEX","UserName","",cSRVIniName);   // string
-        ,"password" : GetPvProfString("FWWEBEX","Password","",cSRVIniName);   // string
+         "client_id" : GetPvProfString("FWWEBEX_"+cEnvServer,"ClientID","",cSRVIniName); //string
+        ,"client_secret" : GetPvProfString("FWWEBEX_"+cEnvServer,"ClientSecret","",cSRVIniName);  // string
+        ,"username" : GetPvProfString("FWWEBEX_"+cEnvServer,"UserName","",cSRVIniName);   // string
+        ,"password" : GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName);   // string
         ,"grant_type" : "password"; //string este conteudo deve ser fixo por enquanto
         ,"access_expires" : 36000000;   //integer tempo em milissegundos
         ,"refresh_expires" : Date()+1;  // ou para o caso de data fixa, o formato de data: "mm/dd/yyyy" -> "12/31/2021"
@@ -45,6 +46,7 @@ static method GetAuthorization(cUserName,cPassWord,cOAuth2URL) class WebAuthoriz
 
     local cOAuth2 as character
     local cBasicAuth as character
+    local cEnvServer:=GetEnvServer() as character
     local cSRVIniName:=GetSrvIniName() as character
 
     local joAuth2 as json
@@ -65,7 +67,7 @@ static method GetAuthorization(cUserName,cPassWord,cOAuth2URL) class WebAuthoriz
         begin sequence
 
             if (Empty(cUserName))
-                cUserName:=GetPvProfString("FWWEBEX","UserName","",cSRVIniName)
+                cUserName:=GetPvProfString("FWWEBEX_"+cEnvServer,"UserName","",cSRVIniName)
                 if (Empty(cUserName))
                     lContinue:=.F.
                     break
@@ -73,7 +75,7 @@ static method GetAuthorization(cUserName,cPassWord,cOAuth2URL) class WebAuthoriz
             endif
 
             if (Empty(cPassWord))
-                cPassWord:=GetPvProfString("FWWEBEX","Password","",cSRVIniName)
+                cPassWord:=GetPvProfString("FWWEBEX_"+cEnvServer,"Password","",cSRVIniName)
                 if (Empty(cPassWord))
                     lContinue:=.F.
                     break
@@ -83,7 +85,7 @@ static method GetAuthorization(cUserName,cPassWord,cOAuth2URL) class WebAuthoriz
             cBasicAuth:="Authorization: Basic "+Encode64(cUserName+":"+cPassWord)
 
             if (empty(cOAuth2URL))
-                cOAuth2URL:=GetPvProfString("FWWEBEX","OAuth2URL","",cSRVIniName)
+                cOAuth2URL:=GetPvProfString("FWWEBEX_"+cEnvServer,"OAuth2URL","",cSRVIniName)
                 if (empty(cOAuth2URL))
                     break
                 endif
