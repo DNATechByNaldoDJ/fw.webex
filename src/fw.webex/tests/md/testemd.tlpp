@@ -75,7 +75,7 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     oMD:PageBreak()
 
     oMD:Header("Links",2)
-    oMD:Paragraph("Veja o "+oMD:Link("GitHub","https://github.com"))
+    oMD:Paragraph("Veja o "+oMD:Link("GitHub :: FWMarkDown Report","https://github.com/DNATechByNaldoDJ/fw.webex/blob/main/src/fw.webex/tests/md/fw.webex.example_024.pdf"))
 
     oMD:PageBreak()
 
