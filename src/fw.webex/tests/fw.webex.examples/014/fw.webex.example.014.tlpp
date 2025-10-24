@@ -108,7 +108,7 @@ static function FWWebExExample_014(cHTML as character) as character
     oTextInBrand:SetContent("FWWebEx")
 
     oBrandText:=WebExDiv():New()
-    oBrandText:AddClass("mx-3")
+    oBrandText:AddClass("mx-4")
     oBrandText:AddChild(oTextInBrand)
 
     // Brand
@@ -137,19 +137,24 @@ static function FWWebExExample_014(cHTML as character) as character
     oMenuItem:AddClass("nav-item active")
     oMenuItem:AddChild(oMenuLink)
 
-    oSidebar:=WebExUL():New()
-    oSidebar:AddClass("nav flex-column bg-primary p-3")
+    oSidebar:=WebExNavSide():New()
+    oSidebar:SetType("div")
+    oSidebar:SetFixedID("webex-sidebar")
+    oSidebar:SetAttr("class","collapse show bg-primary")
+
     oSidebar:AddChild(oBrandLink)
     oSidebar:AddChild(oFWWebExHRDivider)
     oSidebar:AddChild(oMenuItem)
 
     oH1:=WebExControl():New("h1")
     oH1:AddClass("h4")
+    oH1:AddClass("mb-0")
+    oH1:AddClass("flex-grow-1")
     oH1:SetContent("Dashboard")
 
-    oTopBar:=WebExNav():New()
+    oTopBar:=WebExNavTop():New()
     oTopBar:AddClass("navbar shadow mb-3")
-    oTopBar:AddChild(oH1)
+    oTopBar:GetMemberData("oNavTopContainer"):AddChild(oH1)
 
     oFWWebExMain:=WebExMain():New()
     oFWWebExContainer:=WebExContainer():New(.T.)
@@ -174,6 +179,7 @@ static function FWWebExExample_014(cHTML as character) as character
     oWrapper:AddChild(oContentWrapper)
 
     oFWWebExBody:=WebExBody():New()
+    oFWWebExBody:DelClass("p-4")
     oFWWebExBody:AddChild(oWrapper)
 
     oFWWebExPage:=WebExPage():New("FWWebEx SBAdmin Clone")
