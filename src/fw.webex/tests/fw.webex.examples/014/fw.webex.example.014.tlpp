@@ -87,6 +87,7 @@ static function FWWebExExample_014(cHTML as character) as character
     local oBrandIcon as object
     local oBrandText as object
 
+    local oMenu as object
     local oMenuItem as object
     local oMenuLink as object
     local oMenuIcon as object
@@ -137,6 +138,9 @@ static function FWWebExExample_014(cHTML as character) as character
     oMenuItem:AddClass("nav-item active")
     oMenuItem:AddChild(oMenuLink)
 
+    oMenu:=WebExUL():New()
+    oMenu:AddChild(oMenuItem)
+
     oSidebar:=WebExNavSide():New()
     oSidebar:SetType("div")
     oSidebar:SetFixedID("webex-sidebar")
@@ -144,7 +148,7 @@ static function FWWebExExample_014(cHTML as character) as character
 
     oSidebar:AddChild(oBrandLink)
     oSidebar:AddChild(oFWWebExHRDivider)
-    oSidebar:AddChild(oMenuItem)
+    oSidebar:AddChild(oMenu)
 
     oH1:=WebExControl():New("h1")
     oH1:AddClass("h4")
@@ -179,7 +183,7 @@ static function FWWebExExample_014(cHTML as character) as character
     oWrapper:AddChild(oContentWrapper)
 
     oFWWebExBody:=WebExBody():New()
-    oFWWebExBody:DelClass("p-4")
+    oFWWebExBody:DelClass("p-4"):AddClass("p-1")
     oFWWebExBody:AddChild(oWrapper)
 
     oFWWebExPage:=WebExPage():New("FWWebEx SBAdmin Clone")
