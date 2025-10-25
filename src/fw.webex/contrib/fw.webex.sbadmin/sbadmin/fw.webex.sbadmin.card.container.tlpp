@@ -9,6 +9,7 @@
 Released to Public Domain.
 --------------------------------------------------------------------------------------
 */
+
 namespace FWWebEx
 
 #include "fw.webex.th"
@@ -44,7 +45,7 @@ method SetXLSize(nXLSize) class SBAdminCardContainer
     local cXLSize as character
     paramtype 1 var nXLSize as numeric optional default ::nXLSize
     nXLSize:=Min(Max(Int(nXLSize),1),12)
-    cXLSize:=LTrim(Str(nXLSize))
+    cXLSize:=tlpp.ToStr(nXLSize)
     ::DelClassRegex("col-xl-[0-9]+") // remove qualquer col-xl-* anterior (se tiver)
     ::AddClass("col-xl-"+cXLSize)
 return(self)
@@ -53,7 +54,7 @@ method SetMDSize(nMDSize) class SBAdminCardContainer
     local cMDSize as character
     paramtype 1 var nMDSize as numeric optional default ::nMDSize
     nMDSize:=Min(Max(Int(nMDSize),1),12)
-    cMDSize:=LTrim(Str(nMDSize))
+    cMDSize:=tlpp.ToStr(nMDSize)
     ::DelClassRegex("col-md-[0-9]+") // remove qualquer col-md-* anterior (se tiver)
     ::AddClass("col-md-"+cMDSize)
 return(self)

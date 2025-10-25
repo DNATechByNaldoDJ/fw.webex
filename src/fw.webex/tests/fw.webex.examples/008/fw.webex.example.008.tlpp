@@ -648,7 +648,7 @@ function u_callProcRestCrudTLPPEx008()
         jHeader:=JSONObject():New()
         jHeader["Content-Type"]:="application/json; charset=utf-8"
         jHeader["Cache-Control"]:="no-cache"
-        jHeader["Content-Length"]:=LTrim(Str(Len(cJSON)))
+        jHeader["Content-Length"]:=tlpp.ToStr(Len(cJSON))
         oRest:SetHeaderResponse(jHeader)
         oRest:SetResponse(cJSON)
     endif

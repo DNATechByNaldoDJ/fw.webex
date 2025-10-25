@@ -92,7 +92,7 @@ static method BuildButtonBar(oDlg,aButtons,nTop,nRight,bOk,bCancel,nButtonCol,nB
     for nButton:=1 to nButtons
         nButtonCol+=nBtnCol
         @ nTop,(nRight)-((nButtonSize*nButton)+nButtonCol) BUTTON aButtonsObj[nButton] PROMPT aNewButtons[nButton][1] SIZE nButtonSize,nButtonHeight OF if(lTopBar,oTopBar,oDlg) PIXEL
-        bButtonAction:=&("{||Eval(aNewButtons["+LTrim(Str(nButton))+"][2])}")
+        bButtonAction:=&("{||Eval(aNewButtons["+tlpp.ToStr(nButton)+"][2])}")
         aButtonsObj[nButton]:bAction:=bButtonAction
     next nButton
 

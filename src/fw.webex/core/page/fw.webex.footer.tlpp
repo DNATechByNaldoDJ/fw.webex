@@ -26,7 +26,7 @@ method New(cFooterContent) class WebExFooter
     beginContent var cDefault
 &copy; __YEAR__ <strong><a href="https://github.com/DNATechByNaldoDJ/fw.webex" target="_blank">FWWebEx</a></strong> (DNATech). Licensed under <strong><a href="https://mit-license.org/" target="_blank">MIT</a></strong>.
     endContent
-    cDefault:=WebExHelper():StrReplace(cDefault,{"__YEAR__":LTrim(Str(Year(Date())))})
+    cDefault:=WebExHelper():StrReplace(cDefault,{"__YEAR__":tlpp.ToStr(Year(Date()))})
     paramtype 1 var cFooterContent as character optional default cDefault
     ::cFooterContent:=cFooterContent
     _Super:New("footer")

@@ -402,7 +402,7 @@ static function ___WebExHelper____Accentuation(cString as character,vAccentuatio
             nAT+=(nATPos-1)
             cChar:=SubStr(cAccentuation,nAT,1)
             if (cChar=="#")
-                cIdx:=LTrim(Str(++nIdx))
+                cIdx:=tlpp.ToStr(++nIdx)
                 cAccentuation:=Stuff(cAccentuation,++nAT,1,cIdx)
             endif
         next nAT
@@ -445,7 +445,7 @@ return(cAccentuation)
         while ((nATPos:=AT(cAccent,cWebString))>0)
             cChar:=SubStr(cWebString,nATPos,nAccentLen)
             if (cChar==cAccent)
-                cIdx:=("#"+LTrim(Str(++nIdx)))
+                cIdx:=("#"+tlpp.ToStr(++nIdx))
                 cWebString:=Stuff(cWebString,nATPos,nAccentLen,cIdx)
                 cWebAccent:=__aAccentuation[nAccent][4]
                 aAdd(ai18n,cWebAccent)
@@ -488,7 +488,7 @@ static method WebAccentuationToAscii(cWebString) class WebExHelper
         while ((nATPos:=AT(cWebAccent,cString))>0)
             cChar:=SubStr(cString,nATPos,nWebAccentLen)
             if (cChar==cWebAccent)
-                cIdx:=("#"+LTrim(Str(++nIdx)))
+                cIdx:=("#"+tlpp.ToStr(++nIdx))
                 cString:=Stuff(cString,nATPos,nWebAccentLen,cIdx)
                 cAccent:=__aAccentuation[nAccent][1]
                 aAdd(ai18n,cAccent)

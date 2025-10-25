@@ -1671,28 +1671,32 @@ method SetEnableDataTable(lDataTableEnabled) class WebExControl
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/buttons/3.2.3/css/buttons.bootstrap5.min.css")
+                    .:SetAttr("href","https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.min.css")
                     .:SetAttr("rel","stylesheet")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.3/js/dataTables.buttons.min.js")
+                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.min.js")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.3/js/buttons.bootstrap5.min.js")
+                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.min.js")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.3/js/buttons.colVis.min.js")
+                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.bootstrap5.min.js")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.3/js/buttons.print.min.js")
+                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.3/js/buttons.html5.min.js")
+                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.print.min.js")
+                    .:AddInHeader(.this)
+                END WEBEXOBJECT NOADDCHILD
+                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js")
                     .:AddInHeader(.this)
                 END WEBEXOBJECT NOADDCHILD
             //Buttons

@@ -14,6 +14,7 @@ Released to Public Domain.
 */
 
 namespace FWWebEx
+
 using namespace FWWebEx
 
 #include "fw.webex.th"
@@ -228,7 +229,7 @@ method __CloneNewInstance() class ClassBase
             for nParam:=1 to nParams
                 cParam:=aClassMethArr[nATMethod][2][nParam]
                 nATParam:=aScan(__aClassDataArrValue__,{|aParam|aParam[1]==cParam})
-                cNewInstanceMethod+=if(nATParam>0,"__aClassDataArrValue__["+LTrim(Str(nATParam))+"][2]","nil")
+                cNewInstanceMethod+=if(nATParam>0,"__aClassDataArrValue__["+tlpp.ToStr(nATParam)+"][2]","nil")
                 if (nParam<nParams)
                     cNewInstanceMethod+=","
                 endif

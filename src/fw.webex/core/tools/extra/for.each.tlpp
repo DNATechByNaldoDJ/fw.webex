@@ -229,9 +229,9 @@ procedure u_ForEachTst()
     oForEach:=ForEach():New({"a","b","c"},{|k,v,i|;
         ConOut(;
             "Array :: Key: "+cValToChar(k);
-           +", __enumIndex: "+LTrim(Str(oForEach:__enumIndex()));
+           +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
            +", Valor: "+cValToChar(v);
-           +", Index i: "+LTrim(Str(i));
+           +", Index i: "+tlpp.ToStr(i);
         );
     },.T.)
 
@@ -243,9 +243,9 @@ procedure u_ForEachTst()
     oForEach:=ForEach():New({"a":"a","b":"b","c":"c"},{|k,v,i|;
         ConOut(;
             "JSON :: Key: "+cValToChar(k);
-           +", __enumIndex: "+LTrim(Str(oForEach:__enumIndex()));
+           +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
            +", Valor: "+cValToChar(v);
-           +", Index i: "+LTrim(Str(i));
+           +", Index i: "+tlpp.ToStr(i);
         );
     })
 
@@ -262,9 +262,9 @@ procedure u_ForEachTst()
     oForEach:=ForEach():New(oTHashMap,{|k,v,i|;
         ConOut(;
             "HASHMAP :: Key: "+cValToChar(k);
-           +", __enumIndex: "+LTrim(Str(oForEach:__enumIndex()));
+           +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
            +", Valor: "+cValToChar(v);
-           +", Index i: "+LTrim(Str(i));
+           +", Index i: "+tlpp.ToStr(i);
         );
     })
 
@@ -284,9 +284,9 @@ procedure u_ForEachTst()
         oForEach:=ForEach():New(oJSONArray,{|k,v,i|;
             ConOut(;
                 "JSONARRAY :: Key: "+cValToChar(k);
-                +", __enumIndex: "+LTrim(Str(oForEach:__enumIndex()));
+                +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
                 +", Valor: "+cValToChar(v);
-                +", Index i: "+LTrim(Str(i));
+                +", Index i: "+tlpp.ToStr(i);
             );
         })
 
@@ -302,9 +302,9 @@ procedure u_ForEachTst()
     oForEach:=ForEach():New("ForEach",{|k,v,i|;
         ConOut(;
             "STRING :: Key: "+cValToChar(k);
-            +", __enumIndex: "+LTrim(Str(oForEach:__enumIndex()));
+            +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
             +", Valor: "+cValToChar(v);
-            +", Index i: "+LTrim(Str(i));
+            +", Index i: "+tlpp.ToStr(i);
         );
     })
 

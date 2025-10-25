@@ -52,6 +52,7 @@ static procedure FWWebExExample_023(cHTML as character) as character
     local cDrawCallback as character
     local cIDDataTable:=cProcName as character
 
+    local jLayOut as json
     local jLanguage as json
     local jColumnDefs as json
     local jTableFields as json
@@ -437,6 +438,13 @@ static procedure FWWebExExample_023(cHTML as character) as character
                                         jLanguage["language"]["lengthLabels"]["'-1'"]:="Todos"
                                         .:SetDataTableOptions(jLanguage)
                                         FreeObj(@jLanguage)
+                                        //Visibility toggle buttons
+                                        jLayOut:=JSONObject():New()
+                                        jLayOut["layout"]:=JSONObject():New()
+                                        jLayOut["layout"]["topStart"]:=JSONObject():New()
+                                        jLayOut["layout"]["topStart"]["buttons"]:={"colvis"}
+                                        .:SetDataTableOptions(jLayOut)
+                                        FreeObj(@jLayOut)
                                         .:SetDataTableOptions({"preDrawCallback":JSONObjectTools():ToJSFunctionToken("() => $('#fwwebex-datatable-custom-loader').show()")})
                                         .:SetDataTableOptions({"drawCallback":JSONObjectTools():ToJSFunctionToken(cDrawCallback)})
                                         .:AddActionButton("Visualisar","bi bi-eye","javascript:FWWebExShowComingSoon(\'/view\');","btn btn-primary")

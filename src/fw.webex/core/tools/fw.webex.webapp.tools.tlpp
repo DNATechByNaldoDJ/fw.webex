@@ -199,8 +199,8 @@ static method GetTotvsTecParams() class WebApp
         endif
 
         // Monta os parametros que normalmente o TWebEngine injeta
-        jParams["totvstec_websocket_port"]:=LTrim(Str(oTWebChannel:nPort))
-        jParams["totvstec_remote_type"]:=LTrim(Str(nRemoteType))
+        jParams["totvstec_websocket_port"]:=tlpp.ToStr(oTWebChannel:nPort)
+        jParams["totvstec_remote_type"]:=tlpp.ToStr(nRemoteType)
         jParams["totvstec_remote_origin"]:=WebApp():GetRemoteOrigin()
 
     end sequence

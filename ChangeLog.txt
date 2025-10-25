@@ -2,8 +2,24 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Wrap sidebar menu items in UL element)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Refactor numeric to string conversion to use tlpp.ToStr)"
 */
+
+2025-10-25 17:48 UTC naldodj (Refactor numeric to string conversion to use tlpp.ToStr)
+  Refactor numeric to string conversion to use tlpp.ToStr
+    Replaces multiple instances of LTrim(Str(...)) with tlpp.ToStr(...) for numeric to string conversion across core, contrib, and test files.
+    Also updates DataTables Buttons CDN URLs to version 3.2.5 and adds DataTable visibility toggle button configuration in example 023.
+      * src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.card.container.tlpp
+      * src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/core/page/fw.webex.footer.tlpp
+      * src/fw.webex/core/tools/extra/for.each.tlpp
+      * src/fw.webex/core/tools/fw.webex.class.base.tlpp
+      * src/fw.webex/core/tools/fw.webex.helper.tlpp
+      * src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.button.bar.tool.tlpp
+      * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+      * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+      * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
 
 2025-10-25 11:08 UTC naldodj (Wrap sidebar menu items in UL element)
   Wrap sidebar menu items in UL element
