@@ -81,8 +81,11 @@ method SetFromObject(oSource) class ClassBase
     local cKey as character
     local cData as character
 
+    local cFromObjN as character
     local cSourceClass as character
     local cTargetClass as character
+    local cFromObjSelf as character
+    local cFromObjSource as character
 
     local i as numeric
 
@@ -96,26 +99,29 @@ method SetFromObject(oSource) class ClassBase
     cTargetClass:=GetClassName(self)
 
     if (cTargetClass==cSourceClass)
-        private __pFromObjSelf:=self as object
-        private __pFromObjSource:=oSource as object
-        lAmIReallyMe:=MethIsMemberOf(__pFromObjSource,"AMIREALLYME",.T.)
+        cFromObjN:=__GetObjN()
+        cFromObjSelf:="__pFromObjSelf_"+cFromObjN
+        cFromObjSource:="__pFromObjSource_"+cFromObjN
+        private &cFromObjSelf:=self as object
+        private &cFromObjSource:=oSource as object
+        lAmIReallyMe:=MethIsMemberOf(&cFromObjSource,"AMIREALLYME",.T.)
         aMemberData:=aClone(ClassDataArr(oSource,.T.))
         for i:=1 to Len(aMemberData)
             cKey:=aMemberData[i][1]
-            cData:="__pFromObjSource"
+            cData:=cFromObjSource
             cData+=":"
             cData+=cKey
             xValue:=&(cData)
             if ((ValType(xValue)=="O"))
                 if (;
-                    ((lAmIReallyMe).and.(__pFromObjSource:AmIReallyMe(xValue)));
+                    ((lAmIReallyMe).and.(&(cFromObjSource):AmIReallyMe(xValue)));
                     .or.;
-                    (__pFromObjSource==xValue);
+                    (oSource==xValue);
                 )
                     loop
                 endif
             endif
-            __pFromObjSelf:SetMemberData(cKey,xValue,.T.)
+            &(cFromObjSelf):SetMemberData(cKey,xValue,.T.)
         next i
         FWFreeArray(@aMemberData)
     endif
@@ -159,6 +165,7 @@ method SetMemberData(cMember,xValue,lSuperClass) class ClassBase
     local aJSON as array
     local cType as character
     local cData as character
+    local cSetMemberDataSelf as character
     local lSetMemberData as logical
     local i as numeric
     paramtype 1 var cMember as character
@@ -168,8 +175,9 @@ method SetMemberData(cMember,xValue,lSuperClass) class ClassBase
     paramtype 3 var lSuperClass as logical optional default .T.
     lSetMemberData:=AttIsMemberOf(self,cMember,lSuperClass)
     if (lSetMemberData)
-        private __pSetMemberDataSelf:=self as object
-        cData:="__pSetMemberDataSelf"
+        cSetMemberDataSelf:="__pSetMemberDataSelf_"+__GetObjN()
+        private &cSetMemberDataSelf:=self as object
+        cData:=cSetMemberDataSelf
         cData+=":"
         cData+=cMember
         cType:=ValType(xValue)
@@ -177,13 +185,13 @@ method SetMemberData(cMember,xValue,lSuperClass) class ClassBase
             if (((cType=="J")).and.(Len(xValue)>0))
                 aJSON:=Array(0)
                 for i:=1 to Len(xValue)
-                    aAdd(aJSON,__pSetMemberDataSelf:__CloneCompexData(xValue[i]))
+                    aAdd(aJSON,&(cSetMemberDataSelf):__CloneCompexData(xValue[i]))
                 next i
                 &(cData):=JSONObject():New()
                 &(cData):Set(aClone(aJSON))
                 FWFreeArray(@aJSON)
             else
-                xValue:=__pSetMemberDataSelf:__CloneCompexData(xValue)
+                xValue:=&(cSetMemberDataSelf):__CloneCompexData(xValue)
                 &(cData):=xValue
             endif
         else
@@ -333,3 +341,11 @@ method IsKindOf(cClass,lParentTree) class ClassBase
     endif
 
 return(lIsKindOf)
+
+static function __GetObjN()
+    static __cObjN__:=Replicate("0",15) as character
+    if (__cObjN__>=Replicate("Z",15))
+        __cObjN__:=Replicate("0",15)
+    endif
+    __cObjN__:=Soma1(__cObjN__)
+return(__cObjN__)
