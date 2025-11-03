@@ -30,6 +30,9 @@ procedure u_FWWeb000()
 return
 
 procedure u_FWWebExExample_000()
+    if ((GetSrvInfo()[1]=="DNA-TECH-01").and.(GetEnvServer()!="PROTHEUS_NGROK"))
+        Final(WebExHelper():Accentuation("Ambiente Inv#1lido.","aacute"),"Utilize o Ambiente: PROTHEUS_NGROK")
+    endif
     private cCadastro:="Exemplos FWWebEx"
     FWExampleTools():Execute({||FWWebExExample_000()},cCadastro,.T.)
 return
