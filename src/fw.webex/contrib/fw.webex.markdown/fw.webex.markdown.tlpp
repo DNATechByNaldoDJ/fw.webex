@@ -526,7 +526,7 @@ method PageHeader(cHeaderText) class FWMarkDown
     endContent
 
     //Fix mixed EOL types
-    cHeader:=WebExHelper():StrReplaceEx(cHeader,{CRLF,"__CRLF__"},{CHR(13),"__CRLF__"},{CHR(10),"__CRLF__"},{"__CRLF__",CRLF})
+    cHeader:=WebExHelper():StrReplaceEx(cHeader,{{CRLF,CHR(13),CHR(10)},"__CRLF__"},{"__CRLF__",CRLF})
     cHeader:=WebExHelper():StrReplaceEx(cHeader,{"__HEADER_TEXT__",cHeaderText})
     if (::lEscapeHTMLAttribute)
         cHeader:=WebExHelper():EscapeHTMLAttribute(cHeader)
@@ -548,7 +548,7 @@ method PageFooter(cFooterText) class FWMarkDown
     endContent
 
     //Fix mixed EOL types
-    cFooter:=WebExHelper():StrReplaceEx(cFooter,{CRLF,"__CRLF__"},{CHR(13),"__CRLF__"},{CHR(10),"__CRLF__"},{"__CRLF__",CRLF})
+    cFooter:=WebExHelper():StrReplaceEx(cFooter,{{CRLF,CHR(13),CHR(10)},"__CRLF__"},{"__CRLF__",CRLF})
     cFooter:=WebExHelper():StrReplaceEx(cFooter,{"__FOOTER_TEXT__",cFooterText})
     if (::lEscapeHTMLAttribute)
         cFooter:=WebExHelper():EscapeHTMLAttribute(cFooter)

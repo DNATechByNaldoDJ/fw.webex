@@ -48,7 +48,7 @@ method ClassName() class ClassBase
     local aClassName as array
     local cClassName:=::ClassFullName()
     aClassName:=StrTokArr2(cClassName,".",.T.)
-    cClassName:=aClassName[Len(aClassName)]
+    cClassName:=aTail(aClassName)
 return(cClassName)
 
 method ClassFullName() class ClassBase
