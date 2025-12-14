@@ -1,0 +1,1229 @@
+#include "totvs.ch"
+#include "parmtype.ch"
+
+namespace HQ
+using namespace HQ
+
+static __cID:="000000000000000" as character
+static __cCRLF:=CRLF
+
+/*
+
+ ___ | |_   ___   _ __  __      __  __ _ | |_   ___ | |__
+/ __|| __| / _ \ | '_ \ \ \ /\ / / / _` || __| / __|| '_ \
+\__ \| |_ | (_) || |_) | \ V  V / | (_| || |_ | (__ | | | |
+|___/ \__| \___/ | .__/   \_/\_/   \__,_| \__| \___||_| |_|
+                 |_|
+
+    The source code `fw.webex.stopwatch.tlpp` is based on a more detailed and feature-rich
+    source code, `dna.tech.stopwatch.tlpp`, and implements part of the functionalities
+    present in the latter.
+
+*/
+
+class StopWatch from FWWebEx.ClassBase
+
+    data cID as character
+    data cName as character
+
+    data cStartTime as character
+    data cFinishTime as character
+    data cElapsedTime as character
+
+    data jIntervals as json
+    data jStatistics as json
+
+    data dStartDate as date
+    data dFinishDate as date
+
+    data nStartTime as numeric
+    data nTotalElapsed as numeric
+
+    data nTimeOut as numeric
+
+    data lRunning as logical
+    data lHasStarted as logical
+
+    public method New(cName as character)
+
+    public method Start() as object
+    public method StartWithDate(dDate as date,cTime as character) as object
+    public method Stop() as object
+    public method StopWithDate(dDate as date,cTime as character) as object
+    public method Pause() as object
+    public method Resume() as object
+    public method Reset() as object
+    public method Restart() as object
+    public method SetTimeOut(nTimeOut) as object
+
+    // Controle de intervalos/subprocessos
+    public method HasInterval(cIntervalName as character) as logical
+    public method GetInterval(cIntervalName as character) as object
+    public method StartInterval(cIntervalName as character) as object
+    public method StopInterval(cIntervalName as character) as object
+    public method PauseInterval(cIntervalName as character) as object
+    public method ResumeInterval(cIntervalName as character) as object
+    public method GetIntervalElapsed(cIntervalName as character) as numeric
+
+    // Metodos de obtencao de tempo
+    public method GetTotalElapsedSeconds() as numeric
+    public method GetTotalElapsedMilliSeconds() as numeric
+    public method GetElapsedSecondsWithoutIntervals() as numeric
+    public method GetElapsedMilliSecondsWithoutIntervals() as numeric
+    public method GetCurrentElapsedSeconds() as numeric
+    public method GetCurrentElapsedMilliSeconds() as numeric
+    public method GetFormattedElapsed() as character
+
+    // Informacoes
+    public method GetID() as character
+    public method GetName() as character
+    public method GetStatistics() as json
+    public method IsRunning() as logical
+    public method GetIntervals() as array
+    public method GetStartTimeStamp() as numeric
+    public method GetDuration() as character
+
+    // Metodos utilitarios
+    public method ToJSON() as character
+    public method PrintReport() as character
+    public method PrintSummary() as character
+    public method PrintHierarchy() as character
+    public method PrintStatistics() as character
+
+    // Metodos Estatisticos
+    public method GenerateStatistics() as json
+
+    // Metodos staticos
+    static method __GetCurrentTimeStamp() as numeric
+    static method __ConvertToTimeStamp(dDate as date,cTime as character) as numeric
+    static method __FormatMilliSeconds(nMs as numeric) as character
+
+end class
+
+method New(cName) class StopWatch
+
+    paramtype 1 var cName as character optional default ("STOPWATCH_"+self:cID)
+
+    __cID:=__Soma1(__cID)
+
+    self:cID:=__cID
+    self:cName:=NormalizeName(cName)
+    self:dStartDate:=Date()
+    self:cStartTime:=Time()
+    self:dFinishDate:=CToD("")
+    self:cFinishTime:="00:00:00"
+    self:cElapsedTime:="00:00:00"
+    self:jIntervals:=JSONObject():New()
+    self:jStatistics:=JSONObject():New()
+    self:lRunning:=.F.
+    self:lHasStarted:=.F.
+    self:nTimeOut:=30000
+    self:nStartTime:=0
+    self:nTotalElapsed:=0
+
+return(self)
+
+method Start() class StopWatch
+    if (!self:lRunning)
+        if (!self:lHasStarted)
+            self:dStartDate:=Date()
+            self:cStartTime:=Time()
+            self:nStartTime:=self:__GetCurrentTimeStamp()
+            self:lHasStarted:=.T.
+        endif
+        self:lRunning:=.T.
+    endif
+return(self)
+
+method StartWithDate(dDate,cTime) class StopWatch
+
+    local nTimeStamp as numeric
+
+    paramtype 1 var dDate as date optional default Date()
+    paramtype 2 var cTime as character optional default Time()
+
+    if (!self:lRunning)
+        nTimeStamp:=self:__ConvertToTimeStamp(dDate,cTime)
+        if (!self:lHasStarted)
+            self:dStartDate:=dDate
+            self:cStartTime:=cTime
+            self:nStartTime:=nTimeStamp
+            self:lHasStarted:=.T.
+        endif
+        self:lRunning:=.T.
+    endif
+
+return(self)
+
+method Stop() class StopWatch
+
+    local aIntervals as array
+
+    local cIntervalName as character
+
+    local i as numeric
+    local nCurrentTime as numeric
+
+    if (self:lRunning)
+
+        // Para todos os intervalos que estiverem rodando
+        aIntervals:=self:jIntervals:GetNames()
+        for i:=1 to Len(aIntervals)
+            cIntervalName:=aIntervals[i]
+            if (;
+                    (ValType(self:jIntervals[cIntervalName])=="O");
+                    .and.;
+                    (self:jIntervals[cIntervalName]:lRunning);
+            )
+                self:jIntervals[cIntervalName]:Stop()
+            endif
+        next i
+
+        self:dFinishDate:=Date()
+        self:cFinishTime:=Time()
+        nCurrentTime:=self:__GetCurrentTimeStamp()
+        self:nTotalElapsed+=(nCurrentTime-self:nStartTime)
+        self:cElapsedTime:=self:__FormatMilliSeconds(self:nTotalElapsed)
+        self:lRunning:=.F.
+
+        FWFreeArray(@aIntervals)
+
+    endif
+
+return(self)
+
+method StopWithDate(dDate,cTime) class StopWatch
+
+    local aIntervals as array
+    local cIntervalName as character
+
+    local i as numeric
+    local nCurrentTime as numeric
+
+    paramtype 1 var dDate as date optional default Date()
+    paramtype 2 var cTime as character optional default Time()
+
+    if (self:lRunning)
+        // Para todos os intervalos que estiverem rodando
+        aIntervals:=self:jIntervals:GetNames()
+        for i:=1 to Len(aIntervals)
+            cIntervalName:=aIntervals[i]
+            if (;
+                (ValType(self:jIntervals[cIntervalName])=="O");
+                .and.;
+                (self:jIntervals[cIntervalName]:lRunning);
+            )
+                self:jIntervals[cIntervalName]:StopWithDate(dDate,cTime)
+            endif
+        next i
+
+        nCurrentTime:=self:__ConvertToTimeStamp(dDate,cTime)
+        self:dFinishDate:=dDate
+        self:cFinishTime:=cTime
+        self:nTotalElapsed+=(nCurrentTime-self:nStartTime)
+        self:cElapsedTime:=self:__FormatMilliSeconds(self:nTotalElapsed)
+        self:lRunning:=.F.
+
+        FWFreeArray(@aIntervals)
+
+    endif
+
+return(self)
+
+method Pause() class StopWatch
+
+    local aIntervals as array
+    local cIntervalName as character
+    local i as numeric
+    local nCurrentTime as numeric
+
+    if (self:lRunning)
+        // Pausa todos os intervalos ativos
+        aIntervals:=self:jIntervals:GetNames()
+        for i:=1 to Len(aIntervals)
+            cIntervalName:=aIntervals[i]
+            if (;
+                (ValType(self:jIntervals[cIntervalName])=="O");
+                .and.;
+                (self:jIntervals[cIntervalName]:lRunning);
+            )
+                self:jIntervals[cIntervalName]:Pause()
+            endif
+        next i
+
+        nCurrentTime:=self:__GetCurrentTimeStamp()
+        self:nTotalElapsed+=(nCurrentTime-self:nStartTime)
+        self:lRunning:=.F.
+
+        FWFreeArray(@aIntervals)
+
+    endif
+
+return(self)
+
+method Resume() class StopWatch
+
+    local aIntervals as array
+
+    local cIntervalName as character
+
+    local i as numeric
+
+    if ((!self:lRunning).and.(self:lHasStarted))
+        // Reseta os tempos de inicio dos intervalos que estavam ativos antes da pausa
+        aIntervals:=self:jIntervals:GetNames()
+        for i:=1 to Len(aIntervals)
+            cIntervalName:=aIntervals[i]
+            if (;
+                    (ValType(self:jIntervals[cIntervalName])=="O");
+                    .and.;
+                    (!self:jIntervals[cIntervalName]:lRunning);
+                )
+                self:jIntervals[cIntervalName]:Resume()
+            endif
+        next i
+
+        self:nStartTime:=self:__GetCurrentTimeStamp()
+        self:lRunning:=.T.
+
+        FWFreeArray(@aIntervals)
+
+    endif
+
+return(self)
+
+method Reset() class StopWatch
+
+    local aIntervalNames:=self:jIntervals:GetNames() as array
+    local aStatisticsNames:=self:jStatistics:GetNames() as array
+
+    local cIntervalName as character
+
+    local i as numeric
+
+    // Libera objetos de intervalos
+    for i:=1 to Len(aIntervalNames)
+        cIntervalName:=aIntervalNames[i]
+        if (ValType(self:jIntervals[cIntervalName])=="O")
+            self:jIntervals[cIntervalName]:Reset()
+            FreeObj(@self:jIntervals[cIntervalName])
+        endif
+        self:jIntervals:DelName(cIntervalName)
+    next i
+    FWFreeArray(@aIntervalNames)
+
+    // Libera objetos de Estatisticas
+    for i:=1 to Len(aStatisticsNames)
+        self:jStatistics:DelName(aStatisticsNames[i])
+    next i
+    FWFreeArray(@aStatisticsNames)
+
+    // Recria objeto JSON para estatisticas
+    FreeObj(@self:jStatistics)
+    self:jStatistics:=JSONObject():New()
+
+    // Recria objeto JSON para intervalos
+    FreeObj(@self:jIntervals)
+    self:jIntervals:=JSONObject():New()
+
+    self:dStartDate:=Date()
+    self:cStartTime:=Time()
+    self:dFinishDate:=CToD("")
+    self:cFinishTime:="00:00:00"
+    self:cElapsedTime:="00:00:00"
+    self:lRunning:=.F.
+    self:lHasStarted:=.F.
+    self:nStartTime:=0
+    self:nTotalElapsed:=0
+
+return(self)
+
+method Restart() class StopWatch
+    self:Reset()
+    self:Start()
+return(self)
+
+method SetTimeOut(nTimeOut) class StopWatch
+    paramtype 1 var nTimeOut as numeric optional default self:nTimeOut
+    self:nTimeOut:=nTimeOut
+return(self)
+
+method HasInterval(cIntervalName) class StopWatch
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+return(self:jIntervals:HasProperty(cIntervalName))
+
+method GetInterval(cIntervalName) class StopWatch
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+return(self:jIntervals[cIntervalName])
+
+method StartInterval(cIntervalName) class StopWatch
+
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+
+    if (self:lRunning)
+        // Verifica se o intervalo ja existe
+        if (;
+                (self:jIntervals:HasProperty(cIntervalName));
+                .and.;
+                (ValType(self:jIntervals[cIntervalName])=="O");
+            )
+            // Intervalo existe - retoma se estiver pausado
+            if (!self:jIntervals[cIntervalName]:lRunning)
+                self:jIntervals[cIntervalName]:Resume()
+            endif
+        else
+            // Cria novo intervalo
+            self:jIntervals[cIntervalName]:=StopWatch():New(cIntervalName)
+            self:jIntervals[cIntervalName]:Start()
+        endif
+    endif
+
+return(self:jIntervals[cIntervalName])
+
+method StopInterval(cIntervalName) class StopWatch
+
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+
+    if ((self:lRunning).and.(self:jIntervals:HasProperty(cIntervalName)))
+        if (;
+                (ValType(self:jIntervals[cIntervalName])=="O");
+                .and.;
+                (self:jIntervals[cIntervalName]:lRunning);
+            )
+            self:jIntervals[cIntervalName]:Stop()
+        endif
+    endif
+return(self:jIntervals[cIntervalName])
+
+method PauseInterval(cIntervalName) class StopWatch
+
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+
+    if ((self:lRunning).and.(self:jIntervals:HasProperty(cIntervalName)))
+        if (;
+                (ValType(self:jIntervals[cIntervalName])=="O");
+                .and.;
+                (self:jIntervals[cIntervalName]:lRunning);
+            )
+            self:jIntervals[cIntervalName]:Pause()
+        endif
+    endif
+return(self:jIntervals[cIntervalName])
+
+method ResumeInterval(cIntervalName) class StopWatch
+
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+
+    if ((self:lRunning).and.(self:jIntervals:HasProperty(cIntervalName)))
+        if (;
+                (ValType(self:jIntervals[cIntervalName])=="O");
+                .and. ;
+                (!self:jIntervals[cIntervalName]:lRunning);
+            )
+            self:jIntervals[cIntervalName]:Resume()
+        endif
+    endif
+return(self:jIntervals[cIntervalName])
+
+method GetIntervalElapsed(cIntervalName) class StopWatch
+
+    local nElapsed:=0 as numeric
+    local nCurrentTime as numeric
+
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+
+    if (;
+            (self:jIntervals:HasProperty(cIntervalName));
+            .and.;
+            (ValType(self:jIntervals[cIntervalName])=="O");
+        )
+        if (self:jIntervals[cIntervalName]:lRunning)
+            nCurrentTime:=self:__GetCurrentTimeStamp()
+            nElapsed:=self:jIntervals[cIntervalName]:nTotalElapsed+(nCurrentTime-self:jIntervals[cIntervalName]:nStartTime)
+        else
+            nElapsed:=self:jIntervals[cIntervalName]:nTotalElapsed
+        endif
+    endif
+
+return(nElapsed)
+
+method GetTotalElapsedSeconds() class StopWatch
+    local nElapsed:=self:GetTotalElapsedMilliSeconds() as numeric
+    nElapsed/=1000
+return(nElapsed)
+
+method GetTotalElapsedMilliSeconds() class StopWatch
+
+    local nElapsed as numeric
+    local nCurrentTime as numeric
+
+    if (self:lRunning)
+        nCurrentTime:=self:__GetCurrentTimeStamp()
+        nElapsed:=self:nTotalElapsed+(nCurrentTime-self:nStartTime)
+    else
+        nElapsed:=self:nTotalElapsed
+    endif
+
+return(nElapsed)
+
+method GetElapsedSecondsWithoutIntervals() class StopWatch
+return(self:GetElapsedMilliSecondsWithoutIntervals()/1000)
+
+method GetElapsedMilliSecondsWithoutIntervals() class StopWatch
+
+    local aIntervals as array
+
+    local cIntervalName as character
+
+    local i as numeric
+    local nElapsed as numeric
+    local nCurrentTime as numeric
+    local nIntervalElapsed:=0 as numeric
+
+    // Calcula tempo total dos intervalos
+    aIntervals:=self:jIntervals:GetNames()
+    for i:=1 to Len(aIntervals)
+        cIntervalName:=aIntervals[i]
+        nIntervalElapsed+=self:GetIntervalElapsed(cIntervalName)
+    next i
+
+    if (self:lRunning)
+        nCurrentTime:=self:__GetCurrentTimeStamp()
+        nElapsed:=self:nTotalElapsed+(nCurrentTime-self:nStartTime)
+    else
+        nElapsed:=self:nTotalElapsed
+    endif
+
+    // Subtrai o tempo dos intervalos
+    nElapsed-=nIntervalElapsed
+
+    if (nElapsed<0)
+        nElapsed:=0
+    endif
+
+    FWFreeArray(@aIntervals)
+
+return(nElapsed)
+
+method GetCurrentElapsedSeconds() class StopWatch
+return(self:GetCurrentElapsedMilliSeconds()/1000)
+
+method GetCurrentElapsedMilliSeconds() class StopWatch
+
+    local nElapsed as numeric
+
+    if (self:lRunning)
+        nElapsed:=self:nTotalElapsed+(self:__GetCurrentTimeStamp()-self:nStartTime)
+    else
+        nElapsed:=self:nTotalElapsed
+    endif
+
+return(nElapsed)
+
+method GetFormattedElapsed() class StopWatch
+    local nMs:=self:GetTotalElapsedMilliSeconds() as numeric
+return(self:__FormatMilliSeconds(nMs))
+
+method GetDuration() class StopWatch
+return(self:cElapsedTime)
+
+method IsRunning() class StopWatch
+return(self:lRunning)
+
+method GetID() class StopWatch
+return(self:cID)
+
+method GetName() class StopWatch
+return(self:cName)
+
+method GetStatistics() class StopWatch
+return(self:jStatistics)
+
+method GetIntervals() class StopWatch
+
+    local aIntervals:=self:jIntervals:GetNames() as array
+    local aResult:={} as array
+
+    local i as numeric
+    local cIntervalName as character
+
+    for i:=1 to Len(aIntervals)
+        cIntervalName:=aIntervals[i]
+        if (ValType(self:jIntervals[cIntervalName])=="O")
+            aAdd(aResult,self:jIntervals[cIntervalName])
+        endif
+    next i
+
+    FWFreeArray(@aIntervals)
+
+return(aResult)
+
+method GetStartTimeStamp() class StopWatch
+return(self:nStartTime)
+
+method ToJSON() class StopWatch
+
+    local aIntervals as array
+    local aIntervalArray as array
+    local cIntervalName as character
+    local jStopWatch:=JSONObject():New() as json
+    local jIntervalArray as json
+    local i as numeric
+
+    jStopWatch["ID"]:=self:cID
+    jStopWatch["Name"]:=self:cName
+    jStopWatch["Running"]:=self:lRunning
+    jStopWatch["TotalElapsedSeconds"]:=self:GetTotalElapsedSeconds()
+    jStopWatch["TotalElapsedMilliseconds"]:=self:GetTotalElapsedMilliSeconds()
+    jStopWatch["FormattedElapsed"]:=self:GetFormattedElapsed()
+    jStopWatch["Duration"]:=self:cElapsedTime
+    jStopWatch["StartTimeStamp"]:=self:nStartTime
+    jStopWatch["StartDate"]:=DToC(self:dStartDate)
+    jStopWatch["StartTime"]:=self:cStartTime
+    jStopWatch["FinishDate"]:=if(Empty(self:dFinishDate),"",DToC(self:dFinishDate))
+    jStopWatch["FinishTime"]:=self:cFinishTime
+
+    aIntervalArray:=Array(0)
+    aIntervals:=self:jIntervals:GetNames()
+    for i:=1 to Len(aIntervals)
+        cIntervalName:=aIntervals[i]
+        if (ValType(self:jIntervals[cIntervalName])=="O")
+            jIntervalArray:=JSONObject():New()
+            jIntervalArray:FromJSON(self:jIntervals[cIntervalName]:ToJSON())
+            aAdd(aIntervalArray,jIntervalArray)
+        endif
+    next i
+    FWFreeArray(@aIntervals)
+
+    jStopWatch["Intervals"]:=aIntervalArray
+    jStopWatch["StatisticalAnalysis"]:=self:GenerateStatistics()
+
+return(jStopWatch:ToJSON())
+
+method PrintReport(nLevel) class StopWatch
+
+    local aIntervals as array
+
+    local cIdent as character
+    local cReport:="" as character
+    local cSubProc as character
+    local cIntervalName as character
+
+    local i as numeric
+    local nIntervals as numeric
+    local nTotalInterval:=0 as numeric
+
+    paramtype 1 var nLevel as numeric optional default 0
+
+    cIdent:=if(nLevel>0,Replicate("  ",nLevel),"")
+
+    cReport+=cIdent+"===================================================================================="+__cCRLF
+    cReport+=cIdent+"PERFORMANCE REPORT: "+AllTrim(self:cName)+" (ID: "+self:cID+")"+__cCRLF
+    cReport+=cIdent+"===================================================================================="+__cCRLF
+    cReport+=cIdent+"Start: "+DToC(self:dStartDate)+" - "+self:cStartTime+__cCRLF
+    cReport+=cIdent+"End: "+if(Empty(self:dFinishDate),"IN PROGRESS",DToC(self:dFinishDate))+" - "+self:cFinishTime+__cCRLF
+    cReport+=cIdent+"Time elapsed: "+self:GetFormattedElapsed()+__cCRLF
+    cReport+=cIdent+"Status: "+if(self:lRunning,"RUNNING","STOPPED")+__cCRLF
+    cReport+=cIdent+"Total Time: "+tlpp.ToStr(self:GetTotalElapsedSeconds())+" seconds"+__cCRLF
+    cReport+=cIdent+"Main Time (without subprocesses): "+tlpp.ToStr(self:GetElapsedSecondsWithoutIntervals())+" seconds"+__cCRLF
+    cReport+=cIdent+"------------------------------------------------------------------------------------"+__cCRLF
+
+    aIntervals:=self:jIntervals:GetNames()
+    nIntervals:=Len(aIntervals)
+    if (nIntervals>0)
+
+        cReport+=cIdent+"SUBPROCESSES: "+tlpp.ToStr(Len(aIntervals))+__cCRLF
+        cReport+=cIdent+"------------------------------------------------------------------------------------"+__cCRLF
+
+        for i:=1 to Len(aIntervals)
+            cIntervalName:=aIntervals[i]
+            if (ValType(self:jIntervals[cIntervalName])=="O")
+                nTotalInterval+=self:jIntervals[cIntervalName]:GetTotalElapsedSeconds()
+                cReport+=cIdent+"["+tlpp.ToStr(i)+"] "
+                cReport+=AllTrim(self:jIntervals[cIntervalName]:cName)
+                cReport+=" (ID: "+self:cID+"): "
+                cReport+=tlpp.ToStr(self:jIntervals[cIntervalName]:GetTotalElapsedSeconds())+"s"
+                cReport+=" ("+if(self:jIntervals[cIntervalName]:lRunning,"RUNNING","STOPPED")+")"+__cCRLF
+                if (Len(self:jIntervals[cIntervalName]:GetIntervals())>0)
+                    cSubProc:=self:jIntervals[cIntervalName]:PrintReport(nLevel+1)
+                    cReport+=cSubProc
+                endif
+            endif
+        next i
+        FWFreeArray(@aIntervals)
+
+        cReport+=cIdent+"------------------------------------------------------------------------------------"+__cCRLF
+        cReport+=cIdent+"TOTAL SUBPROCESSES: "+tlpp.ToStr(nTotalInterval)+" seconds"+__cCRLF
+        cReport+=cIdent+"------------------------------------------------------------------------------------"+__cCRLF
+
+        cReport+=cIdent+"===================================================================================="+__cCRLF
+        cReport+=cIdent+"STATISTICAL ANALYSIS"+__cCRLF
+        cReport+=cIdent+"===================================================================================="+__cCRLF
+        cReport+=self:PrintStatistics(nLevel)
+        cReport+=cIdent+"===================================================================================="+__cCRLF
+
+    endif
+
+    ConOut(cReport)
+
+return(cReport)
+
+method PrintSummary() class StopWatch
+
+    local cSummary:="" as character
+
+    cSummary:="["+self:cID+"] "+AllTrim(self:cName)+": "+self:GetFormattedElapsed()
+    cSummary+=" ("+if(self:lRunning,"RUNNING","STOPPED")+")"
+
+    ConOut(cSummary)
+
+return(cSummary)
+
+method PrintHierarchy(nLevel) class StopWatch
+
+    local aIntervals as array
+
+    local cIdent as character
+    local cHierarchy:="" as character
+
+    local i as numeric
+
+    paramtype 1 var nLevel as numeric optional default 0
+
+    cIdent:=if(nLevel>0,Replicate("  ",nLevel),"")
+
+    cHierarchy+=cIdent+self:GetName()+": "+self:GetFormattedElapsed()+__cCRLF
+
+    aIntervals:=self:GetIntervals()
+    for i:=1 to Len(aIntervals)
+        cHierarchy+=aIntervals[i]:PrintHierarchy(nLevel+1)+__cCRLF
+    next i
+    FWFreeArray(@aIntervals)
+
+return(cHierarchy)
+
+method PrintStatistics(nLevel) class StopWatch
+
+    local aIntervals as array
+
+    local jStatistics as json
+
+    local cIdent as character
+    local cStatistics:="" as character
+
+    local i as numeric
+    local nIntervals as numeric
+
+    paramtype 1 var nLevel as numeric optional default 0
+
+    aIntervals:=self:GetIntervals()
+    nIntervals:=Len(aIntervals)
+
+    if (nIntervals>0)
+
+        jStatistics:=self:GenerateStatistics()
+
+        cIdent:=if(nLevel>0,Replicate("  ",nLevel),"")
+
+        cStatistics+=cIdent+"------------------------------------------------------------------------------------"
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"ID: "+self:jStatistics["ID"]
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"Name: "+self:jStatistics["Name"]
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"NumberOfIntervals: "+tlpp.ToStr(self:jStatistics["NumberOfIntervals"])
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"SumOfTimes: "+tlpp.ToStr(self:jStatistics["SumOfTimes"])
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"MoreFast: "+self:jStatistics["MoreFast"]
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"MoreSlower: "+self:jStatistics["MoreSlower"]
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"MoreFastTime: "+tlpp.ToStr(self:jStatistics["MoreFastTime"])
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"MoreSlowerTime: "+tlpp.ToStr(self:jStatistics["MoreSlowerTime"])
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"Average: "+tlpp.ToStr(self:jStatistics["Average"])
+        cStatistics+=__cCRLF
+        cStatistics+=cIdent+"------------------------------------------------------------------------------------"
+        cStatistics+=__cCRLF
+
+        for i:=1 to Len(aIntervals)
+            cStatistics+=aIntervals[i]:PrintStatistics(nLevel+1)
+        next i
+    endif
+
+    FWFreeArray(@aIntervals)
+
+return(cStatistics)
+
+method GenerateStatistics() class StopWatch
+
+    local aIntervals:=self:GetIntervals() as array
+
+    local cFast:="" as character
+    local cSlower:="" as character
+
+    local i as numeric
+    local nTime as numeric
+    local nAverage as numeric
+    local nTimeouts:=0 as numeric
+    local nMoreFast:=999999999999999 as numeric
+    local nIntervals as numeric
+    local nMoreSlower:=0 as numeric
+    local nSumOfTimes:=0 as numeric
+    local nSuccessRate as numeric
+
+    nIntervals:=Len(aIntervals)
+
+    self:jStatistics["ID"]:=self:cID
+    self:jStatistics["Name"]:=self:cName
+    self:jStatistics["Intervals"]:=Array(0)
+    self:jStatistics["NumberOfIntervals"]:=nIntervals
+
+    for i:=1 to nIntervals
+
+        nTime:=aIntervals[i]:GetTotalElapsedMilliSeconds()
+        nSumOfTimes+=nTime
+
+        if (nTime<nMoreFast)
+            nMoreFast:=nTime
+            cFast:=aIntervals[i]:GetName()
+        endif
+
+        if (nTime>nMoreSlower)
+            nMoreSlower:=nTime
+            cSlower:=aIntervals[i]:GetName()
+        endif
+
+        if (nTime>self:nTimeOut)
+            nTimeouts++
+        endif
+
+        /*
+        if (Len(aIntervals[i]:GetIntervals())>0)
+            aAdd(self:jStatistics["Intervals"],aIntervals[i]:GenerateStatistics())
+        endif
+        */
+
+    next i
+
+    nAverage:=if(nIntervals>0,nSumOfTimes/nIntervals,0)
+    nSuccessRate:=if(nIntervals>0,((nIntervals-nTimeouts)/nIntervals)*100,100)
+
+    self:jStatistics["MoreFast"]:=cFast
+    self:jStatistics["MoreSlower"]:=cSlower
+    self:jStatistics["MoreFastTime"]:=nMoreFast
+    self:jStatistics["MoreSlowerTime"]:=nMoreSlower
+    self:jStatistics["Average"]:=nAverage
+    self:jStatistics["SumOfTimes"]:=nSumOfTimes
+    self:jStatistics["SuccessRate"]:=nSuccessRate
+
+return(self:jStatistics)
+
+// Metodos Estaticos
+static method __GetCurrentTimeStamp() class StopWatch
+return(TimeCounter())
+
+static method __ConvertToTimeStamp(dDate,cTime) class StopWatch
+
+    local aTime as array
+
+    local nHour as numeric
+    local nMinute as numeric
+    local nSecond as numeric
+    local nMilliseconds:=0 as numeric
+
+    paramtype 1 var dDate as date optional default Date()
+    paramtype 2 var cTime as character optional default Time()
+
+    if (":"$cTime)
+        aTime:=StrTokArr2(cTime,":",.T.)
+        nHour:=if(Len(aTime)>=1,Val(aTime[1]),0)
+        nMinute:=if(Len(aTime)>=2,Val(aTime[2]),0)
+        nSecond:=if(Len(aTime)>=3,Val(aTime[3]),0)
+        if (Len(aTime)>=4)
+            nMilliseconds:=Val(aTime[4])
+        endif
+        FWFreeArray(@aTime)
+    else
+        nHour:=0; nMinute:=0; nSecond:=0
+    endif
+
+    // Converte para timestamp em milisseconds
+return(((dDate-CToD("01/01/1970"))*86400000)+(nHour*3600000)+(nMinute*60000)+(nSecond*1000)+nMilliseconds)
+
+static method __FormatMilliSeconds(nMs) class StopWatch
+
+    local cFormatted:=""
+
+    local nHours as numeric
+    local nMinutes as numeric
+    local nSeconds as numeric
+    local nRemainingMs as numeric
+    local nTotalSeconds as numeric
+
+    paramtype nMs as numeric optional default 0
+
+    nTotalSeconds:=(nMs/1000)
+    nHours:=Int(nTotalSeconds/3600)
+    nMinutes:=Int((nTotalSeconds%3600)/60)
+    nSeconds:=(nTotalSeconds%60)
+    nRemainingMs:=(nMs%1000)
+
+    cFormatted+=StrZero(nHours,Max(2,Len(tlpp.ToStr(nHours))))+"h "
+    cFormatted+=StrZero(nMinutes,2)+"m "
+    cFormatted+=StrZero(nSeconds,2)+"s "
+    cFormatted+=tlpp.ToStr(nRemainingMs)+"ms"
+
+return(cFormatted)
+
+// ---------------------------------------- Helper Functions ----------------------------------------
+static function NormalizeName(cName) as character
+    cName:=FWNoAccent(cName)
+    cName:=Upper(AllTrim(cName))
+    cName:=StrTran(cName," ","_")
+    cName:=StrTran(cName,"/","_")
+    cName:=StrTran(cName,"\","_")
+    cName:=StrTran(cName,"{","_")
+    cName:=StrTran(cName,"}","_")
+    cName:=StrTran(cName,"(","_")
+    cName:=StrTran(cName,")","_")
+    cName:=StrTran(cName,"!","_")
+    cName:=StrTran(cName,"`","_")
+    cName:=StrTran(cName,"´","_")
+    cName:=StrTran(cName,"'","_")
+    cName:=StrTran(cName,"@","_")
+    cName:=StrTran(cName,"#","_")
+    cName:=StrTran(cName,"$","_")
+    cName:=StrTran(cName,"%","_")
+    cName:=StrTran(cName,"&","_")
+    cName:=StrTran(cName,"*","_")
+    cName:=StrTran(cName,"+","_")
+    cName:=StrTran(cName,"=","_")
+    cName:=StrTran(cName,"[","_")
+    cName:=StrTran(cName,"]","_")
+    cName:=StrTran(cName,";","_")
+    cName:=StrTran(cName,":","_")
+    cName:=StrTran(cName,",","_")
+    cName:=StrTran(cName,".","_")
+    cName:=StrTran(cName,"<","_")
+    cName:=StrTran(cName,">","_")
+    cName:=StrTran(cName,"?","_")
+    cName:=StrTran(cName,"|","_")
+return(cName)
+
+// ---------------------------------------- NOVOS EXEMPLOS PRATICOS ----------------------------------------
+
+procedure U_StopWathExamples()
+    ConOut("","====================================================================================","")
+    u_AnaliseDesempenhoFuncoes()
+    ConOut("","====================================================================================","")
+    u_ProcessoStopWatchBatchComCheckpoints()
+    ConOut("","====================================================================================","")
+    u_MonitoramentoAPI()
+    ConOut("","====================================================================================","")
+    u_SistemaHierarquico()
+    ConOut("","====================================================================================","")
+return
+
+// EXEMPLO 1: Analise de Desempenho de Funcoes
+function u_AnaliseDesempenhoFuncoes()
+return(FWMsgRun(nil,{||AnaliseDesempenhoFuncoes()},ProcName(),"Processando..."))
+static procedure AnaliseDesempenhoFuncoes()
+
+    local aFuncoes:={} as array
+
+    local i as numeric
+
+    local oStopWatchAnalise:=StopWatch():New("ANALISE_FUNCOES") as object
+
+    // Lista de funcoes para analisar
+    aAdd(aFuncoes,{"CALCULO_IMPOSTOS",{||Sleep(1500)}})
+    aAdd(aFuncoes,{"GERACAO_RELATORIO",{||Sleep(2300)}})
+    aAdd(aFuncoes,{"PROCESSAMENTO_LOTES",{||Sleep(800)}})
+    aAdd(aFuncoes,{"VALIDACAO_DADOS",{||Sleep(1200)}})
+
+    oStopWatchAnalise:Start()
+
+    for i:=1 to Len(aFuncoes)
+        oStopWatchAnalise:StartInterval(aFuncoes[i][1]):StartInterval("Teste")
+        Eval(aFuncoes[i][2])
+        oStopWatchAnalise:StopInterval(aFuncoes[i][1])
+        // Log intermediario
+        ConOut("Funcao "+aFuncoes[i][1]+" concluida: "+tlpp.ToStr(oStopWatchAnalise:GetIntervalElapsed(aFuncoes[i][1]))+"s")
+    next i
+
+    oStopWatchAnalise:Stop()
+
+    // Relatorio comparativo
+    ConOut("",oStopWatchAnalise:PrintReport(),"")
+
+    // Analise estatistica
+    ConOut("STATISTICAL ANALYSIS:")
+    ConOut("Faster function: "+__GetFasterProcess(oStopWatchAnalise))
+    ConOut("Slower function: "+__GetSlowerProcess(oStopWatchAnalise))
+    ConOut("Average time per function: "+tlpp.ToStr(oStopWatchAnalise:GetTotalElapsedSeconds()/Len(aFuncoes))+"s")
+
+    FreeObj(@oStopWatchAnalise)
+    FWFreeArray(@aFuncoes)
+
+return
+
+static function __GetFasterProcess(oStopWatch)
+
+    local aIntervals:=oStopWatch:GetIntervals() as array
+
+    local cMaisRapida:="" as character
+
+    local i as numeric
+    local nMenorTempo:=999999999999999 as numeric
+
+    for i:=1 to Len(aIntervals)
+        if (aIntervals[i]:GetTotalElapsedSeconds() < nMenorTempo)
+            nMenorTempo:=aIntervals[i]:GetTotalElapsedSeconds()
+            cMaisRapida:=aIntervals[i]:GetName()
+        endif
+    next i
+
+    FWFreeArray(@aIntervals)
+
+return cMaisRapida+" ("+tlpp.ToStr(nMenorTempo)+"s)"
+
+static function __GetSlowerProcess(oStopWatch)
+    local aIntervals:=oStopWatch:GetIntervals() as array
+    local cMaisLenta:="" as character
+    local nMaiorTempo:=0 as numeric
+    local i as numeric
+
+    for i:=1 to Len(aIntervals)
+        if (aIntervals[i]:GetTotalElapsedSeconds() > nMaiorTempo)
+            nMaiorTempo:=aIntervals[i]:GetTotalElapsedSeconds()
+            cMaisLenta:=aIntervals[i]:GetName()
+        endif
+    next i
+
+return cMaisLenta+" ("+tlpp.ToStr(nMaiorTempo)+"s)"
+
+// EXEMPLO 2: Processo Batch com Checkpoints
+function u_ProcessoStopWatchBatchComCheckpoints()
+return(FWMsgRun(nil,{||ProcessoStopWatchBatchComCheckpoints()},ProcName(),"Processando..."))
+static procedure ProcessoStopWatchBatchComCheckpoints()
+
+    local aIntervalos as array
+    local oStopWatchBatch:=StopWatch():New("PROCESSO_BATCH") as object
+    local i
+    local nTotalRegistros:=1000 as numeric
+    local nRegistroAtual:=0 as numeric
+    local nLote:=100 as numeric
+
+    oStopWatchBatch:Start()
+
+    while nRegistroAtual < nTotalRegistros
+        oStopWatchBatch:StartInterval("LOTE_"+StrZero(Int(nRegistroAtual/nLote)+1,3))
+
+        // Simula processamento de lote
+        Sleep(300)
+
+        nRegistroAtual+=nLote
+        if (nRegistroAtual > nTotalRegistros)
+            nRegistroAtual:=nTotalRegistros
+        endif
+
+        oStopWatchBatch:StopInterval("LOTE_"+StrZero(Int((nRegistroAtual-1)/nLote)+1,3))
+
+        // Checkpoint a cada 300 registros
+        if (Mod(nRegistroAtual,300)==0)
+            ConOut("Checkpoint: "+tlpp.ToStr(nRegistroAtual)+"/"+tlpp.ToStr(nTotalRegistros)+;
+                   " registros processados")
+            ConOut("Tempo parcial: "+oStopWatchBatch:GetFormattedElapsed())
+        endif
+    enddo
+
+    oStopWatchBatch:Stop()
+
+    // Relatorio final
+    ConOut("PROCESSO BATCH FINALIZADO")
+    ConOut("Total de registros: "+tlpp.ToStr(nTotalRegistros))
+    ConOut("Tempo total: "+oStopWatchBatch:GetFormattedElapsed())
+    ConOut("Taxa media: "+;
+           tlpp.ToStr(nTotalRegistros/oStopWatchBatch:GetTotalElapsedSeconds())+" regs/segundo")
+
+    // Detalhamento por lote
+    aIntervalos:=oStopWatchBatch:GetIntervals()
+    ConOut("Detalhamento por lote:")
+    for i:=1 to Len(aIntervalos)
+        ConOut("  "+aIntervalos[i]:GetName()+": "+aIntervalos[i]:GetFormattedElapsed())
+    next i
+
+    FWFreeArray(@aIntervalos)
+
+    FreeObj(@oStopWatchBatch)
+return
+
+// EXEMPLO 3: Monitoramento de API com Timeouts
+function u_MonitoramentoAPI()
+return(FWMsgRun(nil,{||MonitoramentoAPI()},ProcName(),"Processando..."))
+static procedure MonitoramentoAPI()
+
+    local oStopWatchMonitorAPI:=StopWatch():New("MONITORAMENTO_API") as object
+    local aEndpoints:={} as array
+    local i as numeric
+    local nTimeResposta
+    local cJSON as character
+
+    // Endpoints para monitorar
+    aAdd(aEndpoints,{"API_LOGIN","https://api.exemplo.com/login"})
+    aAdd(aEndpoints,{"API_CLIENTES","https://api.exemplo.com/clientes"})
+    aAdd(aEndpoints,{"API_PRODUTOS","https://api.exemplo.com/produtos"})
+    aAdd(aEndpoints,{"API_PEDIDOS","https://api.exemplo.com/pedidos"})
+
+    oStopWatchMonitorAPI:Start()
+
+    for i:=1 to Len(aEndpoints)
+        oStopWatchMonitorAPI:StartInterval(aEndpoints[i][1])
+        // Simula chamada HTTP (em producao seria HTTPGet ou similar)
+        nTimeResposta:=Randomize(500,3000) // 0.5 a 3 seconds
+        Sleep(nTimeResposta)
+        // Verifica timeout
+        if (oStopWatchMonitorAPI:GetIntervalElapsed(aEndpoints[i][1]) > 2000) // 2 seconds
+            ConOut("ALERTA: Timeout em "+aEndpoints[i][1]+" - "+;
+                   aEndpoints[i][2])
+        endif
+        oStopWatchMonitorAPI:StopInterval(aEndpoints[i][1])
+    next i
+
+    oStopWatchMonitorAPI:Stop()
+
+    // Relatorio de saúde da API
+    ConOut("RELATORIO DE SAUDE DA API")
+    ConOut("Tempo total de monitoramento: "+oStopWatchMonitorAPI:GetFormattedElapsed())
+
+    cStatistics:=oStopWatchMonitorAPI:PrintStatistics()
+    ConOut(cStatistics)
+
+    // Exporta para JSON para dashboard
+    cJSON:=oStopWatchMonitorAPI:ToJSON()
+    ConOut(cJSON)
+    MemoWrite("api_monitor_"+DToS(Date())+".json",cJSON)
+
+    FreeObj(@oStopWatchMonitorAPI)
+    FWFreeArray(@aEndpoints)
+
+return nil
+
+static function __CalculateStatistics(oStopWatch) as array
+
+    local aIntervals:=oStopWatch:GetIntervals() as array
+
+    local cSlower:="" as character
+    local cFast:="" as character
+
+    local i as numeric
+    local nTime as numeric
+    local nAverage as numeric
+    local nTimeouts:=0 as numeric
+    local nMoreSlower:=0 as numeric
+    local nSumOfTimes:=0 as numeric
+    local nMoreFast:=999999999999999 as numeric
+    local nSuccessRate as numeric
+
+    for i:=1 to Len(aIntervals)
+
+        nTime:=aIntervals[i]:GetTotalElapsedMilliSeconds()
+        nSumOfTimes+=nTime
+
+        if (nTime<nMoreFast)
+            nMoreFast:=nTime
+            cFast:=aIntervals[i]:GetName()
+        endif
+
+        if (nTime>nMoreSlower)
+            nMoreSlower:=nTime
+            cSlower:=aIntervals[i]:GetName()
+        endif
+
+        if (nTime>2000) // Considera timeout acima de 2 seconds
+            nTimeouts++
+        endif
+
+    next i
+
+    nAverage:=if(Len(aIntervals)>0,nSumOfTimes/Len(aIntervals),0)
+    nSuccessRate:=if(Len(aIntervals)>0,;
+                          ((Len(aIntervals)-nTimeouts)/Len(aIntervals))*100,100)
+
+return({nAverage,cFast,cSlower,nSuccessRate})
+
+// EXEMPLO 4: Sistema com Hierarquia Profunda
+function u_SistemaHierarquico()
+return(FWMsgRun(nil,{||SistemaHierarquico()},ProcName(),"Processando..."))
+static function SistemaHierarquico()
+
+    local oStopWatch:=StopWatch():New("SISTEMA_INTEGRADO") as object
+
+    oStopWatch:Start()
+
+    // Modulo 1: Autenticacao
+    oStopWatch:StartInterval("MODULO_AUTENTICACAO")
+
+    oStopWatch:StartInterval("SUB_VALIDACAO_USUARIO")
+    Sleep(400)
+    oStopWatch:StopInterval("SUB_VALIDACAO_USUARIO")
+
+    oStopWatch:StartInterval("SUB_VERIFICACAO_PERMISSOES")
+    Sleep(300)
+    oStopWatch:StopInterval("SUB_VERIFICACAO_PERMISSOES")
+
+    oStopWatch:StopInterval("MODULO_AUTENTICACAO")
+
+    // Modulo 2: Processamento de Dados
+    oStopWatch:StartInterval("MODULO_PROCESSAMENTO")
+
+    oStopWatch:StartInterval("SUB_LEITURA_BANCO")
+    Sleep(1200)
+    oStopWatch:StopInterval("SUB_LEITURA_BANCO")
+
+    oStopWatch:StartInterval("SUB_TRANSFORMACAO_DADOS")
+    Sleep(1800)
+    oStopWatch:StopInterval("SUB_TRANSFORMACAO_DADOS")
+
+    oStopWatch:StartInterval("SUB_VALIDACAO_REGRA_NEGOCIO")
+    Sleep(900)
+    oStopWatch:StopInterval("SUB_VALIDACAO_REGRA_NEGOCIO")
+
+    oStopWatch:StopInterval("MODULO_PROCESSAMENTO")
+
+    // Modulo 3: Geracao de Saida
+    oStopWatch:StartInterval("MODULO_SAIDA"):StartInterval("MODULO_SAIDA_HIERARQUIA")
+        Sleep(600)
+    oStopWatch:GetInterval("MODULO_SAIDA"):StopInterval("MODULO_SAIDA_HIERARQUIA")
+
+    oStopWatch:StartInterval("SUB_GERACAO_RELATORIO")
+    Sleep(1500)
+    oStopWatch:StopInterval("SUB_GERACAO_RELATORIO")
+
+    oStopWatch:StartInterval("SUB_ENVIO_EMAIL")
+    Sleep(600)
+    oStopWatch:StopInterval("SUB_ENVIO_EMAIL")
+
+    oStopWatch:StopInterval("MODULO_SAIDA")
+
+    oStopWatch:Stop()
+
+    // Gera relatorio hierarquico completo
+    __ImprimeHierarquia(oStopWatch,0)
+
+    FreeObj(@oStopWatch)
+
+return nil
+
+static procedure __ImprimeHierarquia(oStopWatch,nLevel)
+    ConOut(oStopWatch:PrintHierarchy(nLevel))
+return
