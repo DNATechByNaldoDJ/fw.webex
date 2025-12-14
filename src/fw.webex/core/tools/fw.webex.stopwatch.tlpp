@@ -1,8 +1,8 @@
 #include "totvs.ch"
 #include "parmtype.ch"
 
-namespace HQ
-using namespace HQ
+namespace FWWebEx
+using namespace FWWebEx
 
 static __cID:="000000000000000" as character
 static __cCRLF:=CRLF
