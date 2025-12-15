@@ -647,7 +647,7 @@ method PrintReport(nLevel) class StopWatch
                 nTotalInterval+=self:jIntervals[cIntervalName]:GetTotalElapsedSeconds()
                 cReport+=cIdent+"["+tlpp.ToStr(i)+"] "
                 cReport+=AllTrim(self:jIntervals[cIntervalName]:cName)
-                cReport+=" (ID: "+self:cID+"): "
+                cReport+=" (ID: "+self:jIntervals[cIntervalName]:cID+"): "
                 cReport+=tlpp.ToStr(self:jIntervals[cIntervalName]:GetTotalElapsedSeconds())+"s"
                 cReport+=" ("+if(self:jIntervals[cIntervalName]:lRunning,"RUNNING","STOPPED")+")"+__cCRLF
                 if (Len(self:jIntervals[cIntervalName]:GetIntervals())>0)
@@ -757,6 +757,7 @@ method PrintStatistics(nLevel) class StopWatch
         for i:=1 to Len(aIntervals)
             cStatistics+=aIntervals[i]:PrintStatistics(nLevel+1)
         next i
+
     endif
 
     FWFreeArray(@aIntervals)
@@ -1101,7 +1102,7 @@ static procedure MonitoramentoAPI()
 
     oStopWatchMonitorAPI:Stop()
 
-    // Relatorio de saúde da API
+    // Relatorio de saude da API
     ConOut("RELATORIO DE SAUDE DA API")
     ConOut("Tempo total de monitoramento: "+oStopWatchMonitorAPI:GetFormattedElapsed())
 
