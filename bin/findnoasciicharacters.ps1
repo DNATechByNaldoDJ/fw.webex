@@ -1,13 +1,26 @@
-param( [string] $File)
+param(
+    [Parameter(Mandatory = $true)]
+    [string] $File
+)
 
-function findNoASCIICharacters {
+function Find-NoASCIICharacters {
 
     param(
-            [parameter(Mandatory = $true)] [string] $File
+        [Parameter(Mandatory = $true)]
+        [string] $File
     )
 
-    Get-Content $File | Where-Object {$_ -cmatch '[^\x20-\x7F]'}
+    $lineNumber = 0
 
+    Get-Content $File | ForEach-Object {
+        $lineNumber++
+        if ($_ -cmatch '[^\x20-\x7F]') {
+            [PSCustomObject]@{
+                Line    = $lineNumber
+                Content = $_
+            }
+        }
+    }
 }
 
-findNoASCIICharacters $File
+Find-NoASCIICharacters $File
