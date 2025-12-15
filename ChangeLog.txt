@@ -2,8 +2,11 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Fix Interval ID on Print report)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Remove ASCII Character)"
 */
+
+2025-12-15 10:35 UTC naldodj (Remove non ASCII Character)
+  * src/fw.webex/core/tools/fw.webex.stopwatch.tlpp
 
 2025-12-15 10:09 UTC naldodj (Fix Interval ID on Print report)
   * src/fw.webex/core/tools/fw.webex.stopwatch.tlpp

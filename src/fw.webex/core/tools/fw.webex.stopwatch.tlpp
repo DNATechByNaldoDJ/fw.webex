@@ -898,7 +898,7 @@ static function NormalizeName(cName) as character
     cName:=StrTran(cName,")","_")
     cName:=StrTran(cName,"!","_")
     cName:=StrTran(cName,"`","_")
-    cName:=StrTran(cName,"´","_")
+    cName:=StrTran(cName,Chr(180),"_")
     cName:=StrTran(cName,"'","_")
     cName:=StrTran(cName,"@","_")
     cName:=StrTran(cName,"#","_")
