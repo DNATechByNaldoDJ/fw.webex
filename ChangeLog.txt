@@ -2,8 +2,12 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Remove ASCII Character)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (TimeCounter() returns different time units on Windows vs Linux AppServer)"
 */
+
+2025-12-18 00:56 UTC naldodj (TimeCounter() returns different time units on Windows vs Linux AppServer)
+  TimeCounter() returns different time units on Windows vs Linux AppServer
+    * src/fw.webex/core/tools/fw.webex.stopwatch.tlpp
 
 2025-12-15 10:35 UTC naldodj (Remove non ASCII Character)
   * src/fw.webex/core/tools/fw.webex.stopwatch.tlpp

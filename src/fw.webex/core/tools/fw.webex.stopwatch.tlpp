@@ -830,7 +830,8 @@ return(self:jStatistics)
 
 // Metodos Estaticos
 static method __GetCurrentTimeStamp() class StopWatch
-return(TimeCounter())
+//TimeCounter() returns different time units on Windows vs Linux AppServer
+return(if(IsSrvUnix(),(TimeCounter()*1000),TimeCounter()))
 
 static method __ConvertToTimeStamp(dDate,cTime) class StopWatch
 
