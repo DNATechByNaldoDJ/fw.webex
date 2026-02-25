@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (TimeCounter() returns different time units on Windows vs Linux AppServer)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add WebFileTools.CopyFile wrapper and use it)"
 */
+
+2026-02-25 10:47 UTC naldodj (Add WebFileTools.CopyFile wrapper and use it)
+  Introduce a static CopyFile(cFileSource,cFileTarget) method in WebFileTools that delegates to the existing __CopyFile function.
+    Replace direct calls to __CopyFile with WebFileTools():CopyFile in HTMLAssetsToFile and the test example HtmlFileShow to encapsulate file-copy logic and centralize usage.
+      * src/fw.webex/core/tools/fw.webex.file.tools.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.tools.tlpp
 
 2025-12-18 00:56 UTC naldodj (TimeCounter() returns different time units on Windows vs Linux AppServer)
   TimeCounter() returns different time units on Windows vs Linux AppServer

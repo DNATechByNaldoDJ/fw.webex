@@ -18,6 +18,7 @@ class WebFileTools
     static method HTMLDumpDOMFromControl(oFWWebExControl as object,cHTMLFilePath as character,cHTMLFileName as character,cHTMLContent as character,lEncodeUTF8 as logical) as logical
     static method HTMLAssetsToFile(cAssetID as character,cAssetType as character,cAssetContent as character,cAssetFilePath as character,/*<@>*/cExternalAssetsPath,/*<@>*/cLocalAssetsFilePath) as logical
     static method ObliterateFWWebExTmpFiles(lNoMercy as logical) as logical
+    static method CopyFile(cFileSource as character,cFileTarget as character) as logical
 end class
 
 static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLContent,lEncodeUTF8) class WebFileTools
@@ -402,7 +403,7 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
         cLocalAssetsFilePath+=cSPPFile
         cLocalAssetsFilePath+=cSPPExt
 
-        lHTMLAssetsToFile:=__CopyFile(cHTMLAssetFileName,cLocalAssetsFilePath)
+        lHTMLAssetsToFile:=WebFileTools():CopyFile(cHTMLAssetFileName,cLocalAssetsFilePath)
         if (!lHTMLAssetsToFile)
             break
         endif
@@ -426,3 +427,11 @@ static method ObliterateFWWebExTmpFiles(lNoMercy) class WebFileTools
     oFWWebExControl:ObliterateFWWebExTmpFiles(lNoMercy)
     FreeObj(@oFWWebExControl)
 return(.T.)
+
+static method CopyFile(cFileSource,cFileTarget) class WebFileTools
+    local cEvalCopy:="__CopyFile" as character
+    local lCopyFile as logical
+    paramtype 1 var cFileSource as character
+    paramtype 2 var cFileTarget as character
+    lCopyFile:=&cEvalCopy.(cFileSource,cFileTarget)
+return(lCopyFile)

@@ -225,7 +225,7 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 cHTMLFileTmpFile:=GetTempPath()
                 cHTMLFileTmpFile+=cSPPFile
                 cHTMLFileTmpFile+=cSPPExt
-                __CopyFile(cHTMLFile,cHTMLFileTmpFile)
+                WebFileTools():CopyFile(cHTMLFile,cHTMLFileTmpFile)
                 aAdd(aButtons,{"&Abrir",{||ShellExecute("open",cHTMLFileTmpFile,"","",SW_SHOWMAXIMIZED)},OemToAnsi("Abir"),OemtoAnsi("Abir")})
                 aAdd(aButtons,{"Go&Back",{||oTWebEngine:GoBack()},OemToAnsi("Go Back"),OemtoAnsi("Go Back")})
                 aAdd(aButtons,{"Go&Home",{||oTWebEngine:GoHome()},OemToAnsi("Go Home"),OemtoAnsi("Go Home")})
