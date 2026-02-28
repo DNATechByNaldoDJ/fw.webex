@@ -19,6 +19,9 @@ using namespace FWWebEx
 
 #include "fw.webex.th"
 
+static __cStackMax__:=Replicate("Z",15) as character
+static __cStackMin__:=Replicate("0",15) as character
+
 class ClassBase
 
     public method New() as object
@@ -343,9 +346,9 @@ method IsKindOf(cClass,lParentTree) class ClassBase
 return(lIsKindOf)
 
 static function __GetObjN()
-    static __cObjN__:=Replicate("0",15) as character
-    if (__cObjN__>=Replicate("Z",15))
-        __cObjN__:=Replicate("0",15)
+    static __cObjN__:=__cStackMin__ as character
+    if (__cObjN__>=__cStackMax__)
+        __cObjN__:=__cStackMin__
     endif
-    __cObjN__:=Soma1(__cObjN__)
+    __cObjN__:=__Soma1(__cObjN__)
 return(__cObjN__)

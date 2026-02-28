@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add WebFileTools.CopyFile wrapper and use it)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Use stack min/max and __Soma1 in __GetObjN)"
 */
+
+2026-02-28 02:17 UTC naldodj (Use stack min/max and __Soma1 in __GetObjN)
+  Use stack min/max and __Soma1 in __GetObjN
+    Introduce static __cStackMax__ and __cStackMin__ constants and update __GetObjN to initialize and wrap __cObjN__ using these bounds.
+    Also switch the increment call from Soma1 to the internal __Soma1.
+    These changes make the object-numbering range configurable and ensure the internal increment routine is used.
+      * src/fw.webex/core/tools/fw.webex.class.base.tlpp
 
 2026-02-25 10:47 UTC naldodj (Add WebFileTools.CopyFile wrapper and use it)
   Introduce a static CopyFile(cFileSource,cFileTarget) method in WebFileTools that delegates to the existing __CopyFile function.
