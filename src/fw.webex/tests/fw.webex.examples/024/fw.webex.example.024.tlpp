@@ -64,7 +64,7 @@ static function FWWebExExample_024(cHTML as character) as character
         END WEBEXOBJECT
     END WEBEXOBJECT NOADDCHILD
 
-    WebFileTools():HTMLFromControl(oFWWebExPage,GetTempPath(),@cHTMLFile,@cHTML,.T.)
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 
     WEBEXOBJECT CLEAN
 

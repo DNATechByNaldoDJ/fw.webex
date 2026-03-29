@@ -2,8 +2,23 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Use stack min/max and __Soma1 in __GetObjN)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add ASCIILoader component and examples)"
 */
+
+2026-03-29 03:26 UTC naldodj (Add ASCIILoader component and examples)
+  Introduce WebExAsciiLoader DSL and engine: add contrib fw.webex.asciiloader (README + WebExAsciiLoader class) with client-side FWWebExAsciiEngine registration and control functions.
+  Extend WebExControl to expose lASCIILoaderEnabled flag and getter/setter, injecting the engine script when enabled.
+  Add ASCIIArt examples (025, 026) and register them in the examples index (increment example count and categorize under ASCIIArt).
+  Also tweak example 024 to use oFWWebExPage:GetFWWebExTmpPath() for HTML generation.
+    + src/fw.webex/contrib/fw.webex.asciiloader/README.md
+    + src/fw.webex/tests/fw.webex.examples/025/fw.webex.example.025.tlpp
+    + src/fw.webex/tests/fw.webex.examples/025/README.md
+    + src/fw.webex/tests/fw.webex.examples/026/fw.webex.example.026.tlpp
+    + src/fw.webex/tests/fw.webex.examples/026/README.md
+    + src/fw.webex/contrib/fw.webex.asciiloader/fw.webex.asciiloader.tlpp
+    * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+    * src/fw.webex/tests/fw.webex.examples/024/fw.webex.example.024.tlpp
+    * src/fw.webex/core/control/fw.webex.control.tlpp
 
 2026-02-28 02:17 UTC naldodj (Use stack min/max and __Soma1 in __GetObjN)
   Use stack min/max and __Soma1 in __GetObjN

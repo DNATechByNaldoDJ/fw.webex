@@ -1,0 +1,302 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_026()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_026(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_026(cHTML as character) as character
+
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+    local cConteinerASCII as character
+
+    local jASCIIProgress:=LoadASCIIProgress() as json
+
+    local oFWWebExPage as object
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: ASCIIProgress"
+        WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
+            WITH WEBEXOBJECT oConteinerASCII CLASS WebExStyle
+                beginContent var cConteinerASCII
+                    .container-ascii {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 1rem;
+                    }
+                endContent
+                .:SetContent(cConteinerASCII)
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT oFWWebExDivASCIIContainer CLASS WebExDiv
+                .:AddClass("container-ascii")
+                WITH WEBEXOBJECT oFWWebExDivClassicBar CLASS WebExDiv
+                    .:SetAttr("style","height:175px; overflow:hidden;")
+                    WITH WEBEXOBJECT oWebExAsciiLoaderClassicBar CLASS WebExAsciiLoader ARGS jASCIIProgress["ClassicBar"][1]
+                        .:SetMaxLines(jASCIIProgress["ClassicBar"][2])
+                     END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT oFWWebExDivSpinner CLASS WebExDiv
+                    .:SetAttr("style","height:175px; overflow:hidden;")
+                    WITH WEBEXOBJECT oWebExAsciiLoaderSpinner CLASS WebExAsciiLoader ARGS jASCIIProgress["Spinner"][1]
+                        .:SetMaxLines(jASCIIProgress["Spinner"][2])
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT oFWWebExDivProgressBar CLASS WebExDiv
+                    .:SetAttr("style","height:175px; overflow:hidden;")
+                    WITH WEBEXOBJECT oWebExAsciiLoaderProgressBar CLASS WebExAsciiLoader ARGS jASCIIProgress["ProgressBar"][1]
+                        .:SetMaxLines(jASCIIProgress["ProgressBar"][2])
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT oFWWebExDivPingPong CLASS WebExDiv
+                    .:SetAttr("style","height:175px; overflow:hidden;")
+                    WITH WEBEXOBJECT oWebExAsciiLoaderPingPong CLASS WebExAsciiLoader ARGS jASCIIProgress["PingPong"][1]
+                        .:SetMaxLines(jASCIIProgress["PingPong"][2])
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT oFWWebExDivTypeWriter CLASS WebExDiv
+                    .:SetAttr("style","height:175px; overflow:hidden;")
+                    WITH WEBEXOBJECT oWebExAsciiLoaderTypeWriter CLASS WebExAsciiLoader ARGS jASCIIProgress["TypeWriter"][1]
+                        .:SetMaxLines(jASCIIProgress["TypeWriter"][2])
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT oFWWebExDivArea CLASS WebExDiv
+                    .:SetAttr("style","height:175px; overflow:hidden;")
+                    WITH WEBEXOBJECT oWebExAsciiLoaderArea CLASS WebExAsciiLoader ARGS jASCIIProgress["Area"][1]
+                        .:SetMaxLines(jASCIIProgress["Area"][2])
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    aEval(jASCIIProgress:GetNames(),{|cName|FWFreeArray(jASCIIProgress[cName]),jASCIIProgress:DelName(cName)})
+    FreeObj(@jASCIIProgress)
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)
+
+static function LoadASCIIProgress() as json
+    local jASCIIProgress:=JSONObject():New() as json
+    jASCIIProgress["ClassicBar"]:=ClassicBar()
+    jASCIIProgress["Spinner"]:=Spinner()
+    jASCIIProgress["ProgressBar"]:=ProgressBar()
+    jASCIIProgress["PingPong"]:=PingPong()
+    jASCIIProgress["TypeWriter"]:=TypeWriter()
+    jASCIIProgress["Area"]:=Area()
+return(jASCIIProgress)
+
+static function ClassicBar() as array
+    local aFrames as array
+    local cFrames as character
+    beginContent var cFrames
+;loop=inf
+[          ];;
+[#         ];;
+[##        ];;
+[###       ];;
+[####      ];;
+[#####     ];;
+[######    ];;
+[#######   ];;
+[########  ];;
+[######### ];;
+[##########];;
+    endContent
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
+    aFrames:=StrToKArr2(cFrames,";;",.F.)
+return(;
+    {;
+      aFrames,;
+      {;
+           "top"    : 0;
+          ,"full"   : 1;
+          ,"bottom" : 0;
+          ,"mode"   : "fixed";
+      };
+    };
+)
+
+static function Spinner() as array
+    local aFrames as array
+    local cFrames as character
+    beginContent var cFrames
+;loop=inf
+[-];;
+[\];;
+[|];;
+[/];;
+    endContent
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
+    aFrames:=StrToKArr2(cFrames,";;",.F.)
+return(;
+    {;
+      aFrames,;
+      {;
+         "top"    : 0;
+        ,"full"   : 1;
+        ,"bottom" : 0;
+        ,"mode"   : "fixed";
+        };
+    };
+)
+
+static function ProgressBar() as array
+    local aFrames as array
+    local cFrames as character
+    beginContent var cFrames
+;loop=inf
+[          ] 0%;;
+[#         ] 10%;;
+[##        ] 20%;;
+[###       ] 30%;;
+[####      ] 40%;;
+[#####     ] 50%;;
+[######    ] 60%;;
+[#######   ] 70%;;
+[########  ] 80%;;
+[######### ] 90%;;
+[##########] 100%;;
+    endContent
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
+    aFrames:=StrToKArr2(cFrames,";;",.F.)
+return(;
+    {;
+      aFrames,;
+      {;
+         "top"    : 0;
+        ,"full"   : 1;
+        ,"bottom" : 0;
+        ,"mode"   : "fixed";
+        };
+    };
+)
+
+static function PingPong() as array
+    local aFrames as array
+    local cFrames as character
+    beginContent var cFrames
+;loop=inf
+[>         ];;
+[>>        ];;
+[>>>       ];;
+[>>>>      ];;
+[>>>>>     ];;
+[>>>>>>    ];;
+[>>>>>>>   ];;
+[>>>>>>>>  ];;
+[>>>>>>>>> ];;
+[<<<<<<<<  ];;
+[<<<<<<<   ];;
+[<<<<<<    ];;
+[<<<<<     ];;
+[<<<<      ];;
+[<<<       ];;
+[<<        ];;
+[<         ];;
+    endContent
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
+    aFrames:=StrToKArr2(cFrames,";;",.F.)
+return(;
+    {;
+      aFrames,;
+      {;
+         "top"    : 0;
+        ,"full"   : 1;
+        ,"bottom" : 0;
+        ,"mode"   : "fixed";
+        };
+    };
+)
+
+static function TypeWriter() as array
+    local aFrames as array
+    local cFrames as character
+    beginContent var cFrames
+;loop=inf
+[>         ];;
+[>>>       ];;
+[>>>>>     ];;
+[>>>>>>>   ];;
+[>>>>>>>>>>];;
+[<<<<<<<   ];;
+[<<<<<     ];;
+[<<<       ];;
+[<         ];;
+    endContent
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
+    aFrames:=StrToKArr2(cFrames,";;",.F.)
+return(;
+    {;
+      aFrames,;
+      {;
+         "top"    : 0;
+        ,"full"   : 1;
+        ,"bottom" : 0;
+        ,"mode"   : "scroll";
+        };
+    };
+)
+
+static function Area() as array
+    local aFrames as array
+    local cFrames as character
+    beginContent var cFrames
+;loop=inf
+;area=top
+Processando pedido...;;
+;area=full
+[>         ];;
+[>>        ];;
+[>>>       ];;
+[>>>>      ];;
+[>>>>>     ];;
+[>>>>>>    ];;
+[>>>>>>>   ];;
+[>>>>>>>>  ];;
+[>>>>>>>>> ];;
+[>>>>>>>>>>];;
+;area=bottom
+Aguarde...;;
+    endContent
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
+    aFrames:=StrToKArr2(cFrames,";;",.F.)
+return(;
+    {;
+      aFrames,;
+      {;
+         "top"    : 0;
+        ,"full"   : 1;
+        ,"bottom" : 0;
+        ,"mode"   : "fixed";
+        };
+    };
+)

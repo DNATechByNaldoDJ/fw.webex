@@ -1,0 +1,157 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+
+WebExAsciiLoader DSL
+
+   Linguagem declarativa para animacoes ASCII no FWWebEx.
+
+   Suporta:
+   - Controle de fluxo (loop, reset)
+   - Layout (areas top/full/bottom)
+   - Estilo (cores)
+   - Tempo (delay)
+   - Efeitos (typewriter)
+   - Integracao realtime (WebSocket)
+
+   Inspirado no modelo de renderizacao incremental do [tBigNumber](https://github.com/naldodj/naldodj-harbour-tbignumber).
+
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExAsciiLoader from WebExPre
+
+    protected data aFrames as array
+    protected data cText as character
+    protected data lAutoStart as logical
+    protected data nInterval as numeric
+
+    protected data oASCIILoader as object
+    protected data oASCIILoaderScript as object
+
+    protected data vMaxLines as variant
+
+    public method New(aFrames as array,nInterval as numeric,cText as character,lAutoStart as logical) as object
+    public method SetFrames(aFrames as array) as object
+    public method SetInterval(nInterval as numeric) as object
+    public method SetText(cText) as object
+    public method SetAutoStart(lAutoStart as logical) as object
+    public method SetMaxLines(vMaxLines as variant) as object
+    public method RenderHTML() as character
+
+endclass
+
+method New(aFrames,nInterval,cText,lAutoStart) class WebExAsciiLoader
+
+    paramtype 1 var aFrames as array
+    paramtype 2 var nInterval as numeric optional default 100
+    paramtype 3 var cText as character optional default ""
+    paramtype 4 var lAutoStart as logical optional default .T.
+
+    ::SetEnableASCIILoader(.T.)  // Ativa ASCIILoader por padrao
+
+    ::aFrames:=aClone(aFrames)
+    ::nInterval:=nInterval
+    ::cText:=cText
+    ::lAutoStart:=lAutoStart
+    ::vMaxLines:=10
+    ::oASCIILoaderScript:=WebExScript():New()
+
+    _Super:New()
+
+    ::oASCIILoader:=self
+
+    WITH WEBEXOBJECT ::oASCIILoader
+        .:SetAttr("style","font-family: monospace; margin:0;")
+    END WEBEXOBJECT
+
+return(self)
+
+method SetFrames(aFrames) class WebExAsciiLoader
+    paramtype 1 var aFrames as array
+    FWFreeArray(@::aFrames)
+    ::aFrames:=aClone(aFrames)
+return(self)
+
+method SetInterval(nInterval) class WebExAsciiLoader
+    ::nInterval:=nInterval
+return(self)
+
+method SetText(cText) class WebExAsciiLoader
+    ::cText:=cText
+return(self)
+
+method SetAutoStart(lAutoStart) class WebExAsciiLoader
+    ::lAutoStart:=lAutoStart
+return(self)
+
+method SetMaxLines(vMaxLines) class WebExAsciiLoader
+    paramtype 1 var vMaxLines as json,numeric optional default 10
+    ::vMaxLines:=vMaxLines
+return(self)
+
+method RenderHTML() class WebExAsciiLoader
+
+    local cHTML:="" as character
+    local cAsciiLoaderFrames as character
+    local cAsciiLoaderScript:="" as character
+
+    local jAsciiLoaderFrames:=JSONObject():New() as json
+
+    beginContent var cAsciiLoaderScript
+
+        // ===============================
+        // REGISTRO DO LOADER
+        // ===============================
+        FWWebExWaitForElementID("__ASCII_LOADER_ID__", function(el){
+
+            FWWebExAsciiEngine.register("__ASCII_LOADER_ID__",{
+                 el: document.getElementById("__ASCII_LOADER_ID__")
+                ,frames: __ASCII_LOADER_FRAMES__
+                ,text: "__ASCII_LOADER_TEXT__"
+                ,interval: __ASCII_LOADER_INTERVAL__
+                ,autoStart: __ASCII_LOADER_AUTO_START__
+                ,maxLines: __ASCII_LOADER_MAXLINES__
+            });
+
+            // ===============================
+            // EXPORT FUNCOES POR ID
+            // ===============================
+            window["__ASCII_LOADER_ID___start"] = function(){
+                FWWebExAsciiEngine.run("__ASCII_LOADER_ID__");
+            };
+
+            window["__ASCII_LOADER_ID___stop"] = function(){
+                FWWebExAsciiEngine.stop("__ASCII_LOADER_ID__");
+            };
+
+        });
+    endContent
+
+    jAsciiLoaderFrames:Set(::aFrames)
+    cAsciiLoaderFrames:=jAsciiLoaderFrames:ToJSON()
+
+    cAsciiLoaderScript:=WebExHelper():StrReplaceEx(;
+         cAsciiLoaderScript;
+        ,{"__ASCII_LOADER_ID__",::GetFixedID()};
+        ,{"__ASCII_LOADER_FRAMES__",cAsciiLoaderFrames};
+        ,{"__ASCII_LOADER_TEXT__",::cText};
+        ,{"__ASCII_LOADER_INTERVAL__",tlpp.ToStr(::nInterval)};
+        ,{"__ASCII_LOADER_AUTO_START__",if(::lAutoStart,"true","false")};
+        ,{"__ASCII_LOADER_MAXLINES__",if((valtype(::vMaxLines)=="N"),tlpp.ToStr(::vMaxLines),JSONObjectTools():ToJSObjectString(::vMaxLines))};
+    )
+
+    ::oASCIILoaderScript:SetContent(cAsciiLoaderScript)
+
+    cHTML:=_Super:RenderHTML()
+
+return(cHTML)
