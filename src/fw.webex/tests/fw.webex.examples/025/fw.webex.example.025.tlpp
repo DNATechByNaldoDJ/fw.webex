@@ -440,7 +440,7 @@ static function baseball_ascii_art_Load() as array
        jgs^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [\n];
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"[\n]",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";",.T.)
+    aFrames:=StrToKArr2(cFrames,";",.F.)
 return(;
     {;
       aFrames,;
@@ -732,7 +732,7 @@ static function basketball_ascii_art_Load()
                                  <\  /<      | Shanx[\n];
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"[\n]",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";",.T.)
+    aFrames:=StrToKArr2(cFrames,";",.F.)
 return(;
     {;
       aFrames,;
@@ -1108,7 +1108,7 @@ static function bicycling_ascii_art_Load()
           __________________________________________________________//Shanx[\n];
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"[\n]",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";",.T.)
+    aFrames:=StrToKArr2(cFrames,";",.F.)
 return(;
     {;
       aFrames,;
@@ -1329,7 +1329,7 @@ static function macarena_ascii_art_Load()
       /<     /<     /<     /<     /<     /<     /<     /<     /<     /<     /<   [\n];
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"[\n]",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";",.T.)
+    aFrames:=StrToKArr2(cFrames,";",.F.)
 return(;
     {;
       aFrames,;
@@ -2768,7 +2768,7 @@ static function stationtraffic_ascii_art_Load()
                                                                      |     [\n];
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"[\n]",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";",.T.)
+    aFrames:=StrToKArr2(cFrames,";",.F.)
 return(;
     {;
       aFrames,;
@@ -3410,8 +3410,7 @@ static function swimming_ascii_art_Load()
              jgs`~^~^^~^^~^~^~^^~^~^~^~^^~^~^~^~^^~^~^~^~^~^~^~^`          ;
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"[\n]",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";",.T.)
-
+    aFrames:=StrToKArr2(cFrames,";",.F.)
 return(;
     {;
       aFrames,;
