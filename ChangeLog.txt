@@ -2,8 +2,21 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Use .F. flag for StrToKArr2 in ascii loaders)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add script/DSL mode to ASCII loader)"
 */
+
+2026-03-31 04:34 UTC naldodj (Add script/DSL mode to ASCII loader)
+  Introduce a script-based mode and DSL for the WebEx ASCII loader and improve frame timing/control.
+  Key changes:
+    - WebExAsciiLoader: add xScriptFrames, cScriptFrame, nFrameTimeFactor and methods SetScript and SetFrameTimeFactor; constructor now accepts a script/frames variant and handles either frames array or a script string. RenderHTML now embeds script payload (script or frames) and a frameTimeFactor, and registers a per-element API (start/stop/load) instead of global window functions.
+    - FWWebExAsciiEngine (core control JS): major refactor to support a parsed AST script mode (parseScript) with commands (;d=, ;area=, ;color=, ;progress=, ;type, ;repeat, ;loop, ;end) and text/blocks, plus improved execution model, typing/append helpers, context handling, stop behavior, and frame mode fallback. frameTimeFactor is used for inter-frame delays; script mode takes precedence over frames. Exposes register, loadScript, run, stop, parseScript.
+    - Tests/examples: update example frames to include colors and convert the TypeWriter example to the new inline script/DSL format.
+      Backward compatibility: existing frames-only usage remains supported; when a non-empty script is provided it is used preferentially.
+        + src/fw.webex/contrib/fw.webex.terminal/fw.webex.terminal.tlpp
+        + src/fw.webex/contrib/fw.webex.terminal/README.md
+        * src/fw.webex/contrib/fw.webex.asciiloader/fw.webex.asciiloader.tlpp
+        * src/fw.webex/core/control/fw.webex.control.tlpp
+        * src/fw.webex/tests/fw.webex.examples/026/fw.webex.example.026.tlpp
 
 2026-03-29 13:54 UTC naldodj (Use .F. flag for StrToKArr2 in ascii loaders)
   Use .F. flag for StrToKArr2 in ascii loaders

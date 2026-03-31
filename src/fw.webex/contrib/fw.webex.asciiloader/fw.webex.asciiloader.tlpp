@@ -18,7 +18,7 @@ WebExAsciiLoader DSL
    - Estilo (cores)
    - Tempo (delay)
    - Efeitos (typewriter)
-   - Integracao realtime (WebSocket)
+   - Integracao realtime (WebSocket) TODO
 
    Inspirado no modelo de renderizacao incremental do [tBigNumber](https://github.com/naldodj/naldodj-harbour-tbignumber).
 
@@ -30,40 +30,51 @@ namespace FWWebEx
 
 class WebExAsciiLoader from WebExPre
 
-    protected data aFrames as array
     protected data cText as character
+    protected data cScriptFrame as character
     protected data lAutoStart as logical
     protected data nInterval as numeric
+    protected data nFrameTimeFactor as numeric
+
+    protected data xScriptFrames as variant
 
     protected data oASCIILoader as object
     protected data oASCIILoaderScript as object
 
     protected data vMaxLines as variant
 
-    public method New(aFrames as array,nInterval as numeric,cText as character,lAutoStart as logical) as object
+    public method New(xScriptFrames as variant,nInterval as numeric,cText as character,lAutoStart as logical) as object
     public method SetFrames(aFrames as array) as object
+    public method SetScript(cScriptFrame) as character
     public method SetInterval(nInterval as numeric) as object
     public method SetText(cText) as object
     public method SetAutoStart(lAutoStart as logical) as object
     public method SetMaxLines(vMaxLines as variant) as object
+    public method SetFrameTimeFactor(nFrameTimeFactor) as object
     public method RenderHTML() as character
 
 endclass
 
-method New(aFrames,nInterval,cText,lAutoStart) class WebExAsciiLoader
+method New(xScriptFrames,nInterval,cText,lAutoStart) class WebExAsciiLoader
 
-    paramtype 1 var aFrames as array
+    paramtype 1 var xScriptFrames as array,character
     paramtype 2 var nInterval as numeric optional default 100
     paramtype 3 var cText as character optional default ""
     paramtype 4 var lAutoStart as logical optional default .T.
 
     ::SetEnableASCIILoader(.T.)  // Ativa ASCIILoader por padrao
 
-    ::aFrames:=aClone(aFrames)
+    if (ValType(xScriptFrames)=="A")
+        ::xScriptFrames:=aClone(xScriptFrames)
+    else
+        ::xScriptFrames:=xScriptFrames
+        ::cScriptFrame:=AllTrim(::xScriptFrames)
+    endif
     ::nInterval:=nInterval
     ::cText:=cText
     ::lAutoStart:=lAutoStart
     ::vMaxLines:=10
+    ::nFrameTimeFactor:=2
     ::oASCIILoaderScript:=WebExScript():New()
 
     _Super:New()
@@ -82,75 +93,108 @@ method SetFrames(aFrames) class WebExAsciiLoader
     ::aFrames:=aClone(aFrames)
 return(self)
 
+method SetScript(cScriptFrame) class WebExAsciiLoader
+    paramtype 1 var cScriptFrame as character
+    ::cScriptFrame:=AllTrim(cScriptFrame)
+return(self)
+
 method SetInterval(nInterval) class WebExAsciiLoader
+    paramtype 1 var nInterval as numeric optional default ::nInterval
     ::nInterval:=nInterval
 return(self)
 
 method SetText(cText) class WebExAsciiLoader
+    paramtype 1 var cText as character optional default ::cText
     ::cText:=cText
 return(self)
 
 method SetAutoStart(lAutoStart) class WebExAsciiLoader
+    paramtype 1 var lAutoStart as logical optional default ::lAutoStart
     ::lAutoStart:=lAutoStart
 return(self)
 
 method SetMaxLines(vMaxLines) class WebExAsciiLoader
-    paramtype 1 var vMaxLines as json,numeric optional default 10
+    paramtype 1 var vMaxLines as json,numeric optional default ::vMaxLines
     ::vMaxLines:=vMaxLines
+return(self)
+
+method SetFrameTimeFactor(nFrameTimeFactor) class WebExAsciiLoader
+    paramtype 1 var nFrameTimeFactor as numeric optional default ::nFrameTimeFactor
+    ::nFrameTimeFactor:=nFrameTimeFactor
 return(self)
 
 method RenderHTML() class WebExAsciiLoader
 
     local cHTML:="" as character
+    local cScript as character
     local cAsciiLoaderFrames as character
-    local cAsciiLoaderScript:="" as character
+    local cAsciiLoaderScript as character
 
     local jAsciiLoaderFrames:=JSONObject():New() as json
+    local jAsciiLoaderScript:=JSONObject():New() as json
 
-    beginContent var cAsciiLoaderScript
+    beginContent var cScript
 
         // ===============================
         // REGISTRO DO LOADER
         // ===============================
         FWWebExWaitForElementID("__ASCII_LOADER_ID__", function(el){
 
-            FWWebExAsciiEngine.register("__ASCII_LOADER_ID__",{
-                 el: document.getElementById("__ASCII_LOADER_ID__")
-                ,frames: __ASCII_LOADER_FRAMES__
+            const id = "__ASCII_LOADER_ID__";
+
+            FWWebExAsciiEngine.register(id,{
+                 el: el
+                ,frames: __ASCII_LOADER_FRAMES__   //Compatibilidade
+                ,script: (__ASCII_LOADER_SCRIPT__ ? __ASCII_LOADER_SCRIPT__ : null) //NOVO (preferencial)
                 ,text: "__ASCII_LOADER_TEXT__"
                 ,interval: __ASCII_LOADER_INTERVAL__
                 ,autoStart: __ASCII_LOADER_AUTO_START__
                 ,maxLines: __ASCII_LOADER_MAXLINES__
+                ,frameTimeFactor: __ASCII_FRAME_TIME_FACTOR__ || 10
             });
 
-            // ===============================
-            // EXPORT FUNCOES POR ID
-            // ===============================
-            window["__ASCII_LOADER_ID___start"] = function(){
-                FWWebExAsciiEngine.run("__ASCII_LOADER_ID__");
-            };
-
-            window["__ASCII_LOADER_ID___stop"] = function(){
-                FWWebExAsciiEngine.stop("__ASCII_LOADER_ID__");
+            // ======================================
+            // API LOCAL (SEM POLUIR GLOBAL)
+            // ======================================
+            el.__ascii = {
+                start: () => FWWebExAsciiEngine.run(id),
+                stop:  () => FWWebExAsciiEngine.stop(id),
+                load:  (script) => FWWebExAsciiEngine.loadScript(id, script)
             };
 
         });
     endContent
 
-    jAsciiLoaderFrames:Set(::aFrames)
-    cAsciiLoaderFrames:=jAsciiLoaderFrames:ToJSON()
+    if ((ValType(::xScriptFrames)=="A").and.(!Empty(::xScriptFrames)))
+        jAsciiLoaderFrames:Set(::xScriptFrames)
+        cAsciiLoaderFrames:=jAsciiLoaderFrames:ToJSON()
+        jAsciiLoaderScript["AsciiLoaderScript"]:=nil
+        cAsciiLoaderScript:=jAsciiLoaderScript:GetJSONText("AsciiLoaderScript")
+    else
+        jAsciiLoaderScript["AsciiLoaderScript"]:=::cScriptFrame
+        cAsciiLoaderScript:=jAsciiLoaderScript:ToJSON()
+        cAsciiLoaderScript:=WebExHelper():StrReplaceEx(cAsciiLoaderScript,{'{"AsciiLoaderScript":"',""})
+        cAsciiLoaderScript:='"'+SubStr(cAsciiLoaderScript,1,Len(cAsciiLoaderScript)-2)+'"'
+        jAsciiLoaderFrames:Set(Array(0))
+        cAsciiLoaderFrames:=jAsciiLoaderFrames:ToJSON()
+    endif
 
-    cAsciiLoaderScript:=WebExHelper():StrReplaceEx(;
-         cAsciiLoaderScript;
+    FreeObj(@jAsciiLoaderFrames)
+    FreeObj(@jAsciiLoaderScript)
+
+    cScript:=WebExHelper():StrReplaceEx(;
+         cScript;
         ,{"__ASCII_LOADER_ID__",::GetFixedID()};
         ,{"__ASCII_LOADER_FRAMES__",cAsciiLoaderFrames};
+        ,{"__ASCII_LOADER_SCRIPT__",cAsciiLoaderScript};
         ,{"__ASCII_LOADER_TEXT__",::cText};
         ,{"__ASCII_LOADER_INTERVAL__",tlpp.ToStr(::nInterval)};
         ,{"__ASCII_LOADER_AUTO_START__",if(::lAutoStart,"true","false")};
         ,{"__ASCII_LOADER_MAXLINES__",if((valtype(::vMaxLines)=="N"),tlpp.ToStr(::vMaxLines),JSONObjectTools():ToJSObjectString(::vMaxLines))};
+        ,{"__ASCII_FRAME_TIME_FACTOR__",tlpp.ToStr(::nFrameTimeFactor)};
     )
 
-    ::oASCIILoaderScript:SetContent(cAsciiLoaderScript)
+    ::oASCIILoaderScript:SetContent(cScript)
 
     cHTML:=_Super:RenderHTML()
 

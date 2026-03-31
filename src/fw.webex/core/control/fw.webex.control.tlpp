@@ -2132,6 +2132,7 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
         ***************************************************************************************************************************
         //Scripts Tools
             beginContent var cASCIILoaderScript
+
                 // ===============================
                 // FWWebExAsciiEngine GLOBAL
                 // ===============================
@@ -2145,8 +2146,127 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                             return new Promise(r => setTimeout(r, ms));
                         }
 
-                        function getLimit(inst, area){
+                        function createContext(inst){
+                            return {
+                                inst,
+                                currentArea: "full",
+                                delay: inst.delay || 120,
+                                color: null,
+                                progress: 0,
+                                stopped: false,
+                                typeNextLine: false
+                            };
+                        }
 
+                        function parseCommand(line){
+                            if(line === ";") return { type: "command", name: "clearArea" };
+                            if(line === ";c") return { type: "command", name: "clearAll" };
+                            if(line === ";type") return { type: "command", name: "typeNext" };
+
+                            if(line.startsWith(";d=")){
+                                return { type: "command", name: "delay", value: parseInt(line.split("=")[1]) || 120 };
+                            }
+
+                            if(line.startsWith(";area=")){
+                                return { type: "command", name: "area", value: line.split("=")[1] || "full" };
+                            }
+
+                            if(line.startsWith(";color=")){
+                                return { type: "command", name: "color", value: line.split("=")[1] || "" };
+                            }
+
+                            if(line.startsWith(";progress=")){
+                                return { type: "command", name: "progress", value: parseInt(line.split("=")[1]) || 0 };
+                            }
+
+                            throw new Error("Comando invalido: " + line);
+                        }
+
+                        function parseTimes(line){
+                            const value = (line.split("=")[1] || "").trim();
+                            if(value === "inf") return "inf";
+
+                            const n = parseInt(value, 10);
+                            if(isNaN(n) || n < 1){
+                                throw new Error("Valor invalido para repeticao: " + value);
+                            }
+
+                            return n;
+                        }
+
+                        function parseScript(script){
+                            const lines = script.split("\n");
+                            const root = [];
+                            const stack = [root];
+
+                            for(let i = 0; i < lines.length; i++){
+                                const raw = lines[i];
+                                const line = raw.trim();
+
+                                if(line === ""){
+                                stack[stack.length - 1].push({ type: "text", value: "" });
+                                continue;
+                                }
+
+                                if(line === ";end"){
+                                if(stack.length === 1){
+                                    throw new Error("';end' sem bloco aberto");
+                                }
+                                stack.pop();
+                                continue;
+                                }
+
+                                if(line.startsWith(";repeat=")){
+                                const node = {
+                                    type: "block",
+                                    kind: "repeat",
+                                    times: parseTimes(line),
+                                    children: []
+                                };
+                                stack[stack.length - 1].push(node);
+                                stack.push(node.children);
+                                continue;
+                                }
+
+                                if(line.startsWith(";loop=")){
+                                const node = {
+                                    type: "block",
+                                    kind: "loop",
+                                    times: parseTimes(line),
+                                    children: []
+                                };
+                                stack[stack.length - 1].push(node);
+                                stack.push(node.children);
+                                continue;
+                                }
+
+                                if(line.startsWith(";#") || line.startsWith(";//")){
+                                continue;
+                                }
+
+                                if(line.startsWith(";")){
+                                stack[stack.length - 1].push(parseCommand(line));
+                                continue;
+                                }
+
+                                stack[stack.length - 1].push({ type: "text", value: raw });
+                            }
+
+                            if(stack.length !== 1){
+                                throw new Error("Ha bloco sem ';end'");
+                            }
+
+                            return root;
+                        }
+
+                        function getMode(inst){
+                            if(typeof inst.maxLines === "object"){
+                                return inst.maxLines.mode || "fixed";
+                            }
+                            return "fixed";
+                        }
+
+                        function getLimit(inst, area){
                             if(typeof inst.maxLines === "number"){
                                 return inst.maxLines;
                             }
@@ -2158,30 +2278,17 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                             return 10;
                         }
 
-                        function getMode(inst){
-                            if(typeof inst.maxLines === "object"){
-                                return inst.maxLines.mode || "fixed";
-                            }
-                            return "fixed";
+                        function trim(arr, limit){
+                            return arr.length > limit ? arr.slice(arr.length - limit) : arr;
                         }
 
-                        function render(id){
-
-                            const inst = instances[id];
+                        function render(inst){
                             const mode = getMode(inst);
 
-                            function trim(arr, limit){
-                                if(arr.length > limit){
-                                    return arr.slice(arr.length - limit);
-                                }
-                                return arr;
-                            }
-
-                            // so limita no modo FIXED
                             if(mode === "fixed"){
-                                inst.areas.top    = trim(inst.areas.top,    getLimit(inst,"top"));
-                                inst.areas.full   = trim(inst.areas.full,   getLimit(inst,"full"));
-                                inst.areas.bottom = trim(inst.areas.bottom, getLimit(inst,"bottom"));
+                                inst.areas.top    = trim(inst.areas.top,    getLimit(inst, "top"));
+                                inst.areas.full   = trim(inst.areas.full,   getLimit(inst, "full"));
+                                inst.areas.bottom = trim(inst.areas.bottom, getLimit(inst, "bottom"));
                             }
 
                             let txt = "";
@@ -2199,85 +2306,207 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                             }
 
                             if(inst.text){
-                                txt += "\n" + inst.text;
+                                txt += (txt ? "\n" : "") + inst.text;
                             }
 
                             inst.el.textContent = txt;
 
-                            // auto-scroll (modo scroll)
                             if(mode === "scroll"){
                                 inst.el.scrollTop = inst.el.scrollHeight;
                             }
                         }
 
-                        async function processFrame(id, frame){
+                        function clearArea(inst, area){
+                            inst.areas[area] = [];
+                            render(inst);
+                        }
 
-                            const inst = instances[id];
+                        function clearAll(inst){
+                            inst.areas = { top: [], full: [], bottom: [] };
+                            render(inst);
+                        }
 
-                            let rows = frame.split("\n");
-                            let delay = inst.delay;
+                        async function typeLine(inst, area, text, delay){
+                            let buffer = "";
+
+                            for(let i = 0; i < text.length; i++){
+                                if(inst.context.stopped) break;
+                                buffer += text[i];
+
+                                const clone = [...inst.areas[area]];
+                                if(clone.length === 0 || clone[clone.length - 1] !== buffer){
+                                if(clone.length && clone[clone.length - 1].startsWith(buffer.slice(0, -1))){
+                                    inst.areas[area][inst.areas[area].length - 1] = buffer;
+                                } else {
+                                    inst.areas[area].push(buffer);
+                                }
+                                }
+
+                                render(inst);
+                                await sleep(Math.max(10, delay / Math.max(text.length, 1)));
+                            }
+                        }
+
+                        async function appendLine(inst, area, text, delay, typeMode){
+                            if(typeMode){
+                                inst.areas[area].push("");
+                                await typeLine(inst, area, text, delay);
+                            } else {
+                                inst.areas[area].push(text);
+                                render(inst);
+                                await sleep(delay);
+                            }
+                        }
+
+                        async function executeCommand(node, ctx){
+                            const inst = ctx.inst;
+
+                            switch(node.name){
+                                case "clearArea":
+                                clearArea(inst, ctx.currentArea);
+                                break;
+
+                                case "clearAll":
+                                clearAll(inst);
+                                break;
+
+                                case "delay":
+                                ctx.delay = node.value;
+                                break;
+
+                                case "area":
+                                ctx.currentArea = node.value;
+                                break;
+
+                                case "color":
+                                ctx.color = node.value;
+                                inst.el.style.color = node.value;
+                                break;
+
+                                case "progress":
+                                ctx.progress = node.value;
+                                if(typeof inst.onProgress === "function"){
+                                    inst.onProgress(node.value, inst);
+                                }
+                                break;
+
+                                case "typeNext":
+                                ctx.typeNextLine = true;
+                                break;
+                            }
+                        }
+
+                        async function executeNode(node, ctx){
+                        if(ctx.stopped) return;
+
+                        if(node.type === "text"){
+                            const typeMode = ctx.typeNextLine;
+                            ctx.typeNextLine = false;
+                            await appendLine(ctx.inst, ctx.currentArea, node.value, ctx.delay, typeMode);
+                            return;
+                        }
+
+                        if(node.type === "command"){
+                            await executeCommand(node, ctx);
+                            return;
+                        }
+
+                        if(node.type === "block"){
+                                if(node.times === "inf"){
+                                while(!ctx.stopped){
+                                    for(const child of node.children){
+                                    await executeNode(child, ctx);
+                                    if(ctx.stopped) break;
+                                    }
+                                }
+                                return;
+                                }
+
+                                for(let i = 0; i < node.times; i++){
+                                if(ctx.stopped) break;
+                                for(const child of node.children){
+                                    await executeNode(child, ctx);
+                                    if(ctx.stopped) break;
+                                }
+                                }
+                            }
+                        }
+
+                        async function executeAst(inst, ast){
+                            const ctx = createContext(inst);
+                            inst.context = ctx;
+
+                            for(const node of ast){
+                                    await executeNode(node, ctx);
+                                    if(ctx.stopped) break;
+                                }
+                        }
+
+
+                        function renderFrame(inst, frame){
+
+                            inst.areas = { top: [], full: [], bottom: [] };
+
                             let currentArea = "full";
 
-                            for(let i=0;i<rows.length;i++){
+                            const lines = frame.split("\n");
 
-                                let raw = rows[i];
-                                let line = raw.trim();
+                            for(const raw of lines){
 
-                                if(line.startsWith(";")){
+                                const line = raw.trim();
 
-                                    if(line === ";"){
-                                        inst.areas[currentArea] = [];
-                                        render(id);
-                                        continue;
-                                    }
+                                // ===============================
+                                // ?? COMANDOS (DSL)
+                                // ===============================
 
-                                    if(line.indexOf(";d=") === 0){
-                                        delay = parseInt(line.split("=")[1]) || inst.delay;
-                                        continue;
-                                    }
-
-                                    if(line.indexOf(";area=") === 0){
-                                        currentArea = line.split("=")[1];
-                                        continue;
-                                    }
-
-                                    if(line.indexOf(";color=") === 0){
-                                        inst.el.style.color = line.split("=")[1];
-                                        continue;
-                                    }
-
+                                if(line === ";"){
+                                    inst.areas[currentArea] = [];
                                     continue;
                                 }
 
-                                if(getMode(inst) === "fixed"){
-
-                                    if(!inst.frameBuffer){
-                                        inst.frameBuffer = { top:[], full:[], bottom:[] };
-                                    }
-
-                                    inst.frameBuffer[currentArea].push(raw);
-
-                                } else {
-
-                                    inst.areas[currentArea].push(raw);
+                                if(line === ";c"){
+                                    inst.areas = { top: [], full: [], bottom: [] };
+                                    continue;
                                 }
 
-                                render(id);
+                                if(line.startsWith(";area=")){
+                                    currentArea = line.split("=")[1] || "full";
+                                    continue;
+                                }
 
-                                await sleep(delay/2);
+                                if(line.startsWith(";color=")){
+                                    inst.el.style.color = line.split("=")[1] || "";
+                                    continue;
+                                }
+
+                                if(line.startsWith(";d=")){
+                                    // ?? delay por frame (override temporario)
+                                    inst._frameDelayOverride = parseInt(line.split("=")[1]) || inst.delay;
+                                    continue;
+                                }
+
+                                if(line.startsWith(";progress=")){
+                                    const val = parseInt(line.split("=")[1]) || 0;
+                                    if(typeof inst.onProgress === "function"){
+                                        inst.onProgress(val, inst);
+                                    }
+                                    continue;
+                                }
+
+                                // ? ignorados no frame mode (faz sentido)
+                                if(line.startsWith(";type")) continue;
+                                if(line.startsWith(";repeat")) continue;
+                                if(line.startsWith(";loop")) continue;
+
+                                if(line.startsWith(";")) continue;
+
+                                // ===============================
+                                // ?? TEXTO
+                                // ===============================
+                                inst.areas[currentArea].push(raw);
                             }
 
-                            if(getMode(inst) === "fixed"){
-                                inst.areas = {
-                                    top:    [...(inst.frameBuffer.top || [])],
-                                    full:   [...(inst.frameBuffer.full || [])],
-                                    bottom: [...(inst.frameBuffer.bottom || [])]
-                                };
-                                inst.frameBuffer = { top:[], full:[], bottom:[] };
-                            }
-
-                            render(id);
-
+                            render(inst);
                         }
 
                         async function run(id){
@@ -2287,10 +2516,45 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
 
                             inst.running = true;
 
-                            while(inst.running){
-                                for(let i=0;i<inst.frames.length;i++){
-                                    await processFrame(id, inst.frames[i]);
+                            try{
+
+                                // ===============================
+                                // SCRIPT MODE
+                                // ===============================
+                                if(inst.script && inst.script.trim() !== ""){
+
+                                    const ast = parseScript(inst.script);
+                                    await executeAst(inst, ast);
+                                    return;
                                 }
+
+                                // ===============================
+                                // FRAME MODE
+                                // ===============================
+                                if(inst.frames && inst.frames.length){
+
+                                    while(inst.running){
+
+                                        for(const frame of inst.frames){
+
+                                            if(!inst.running) break;
+
+                                            // renderiza TUDO de uma vez
+                                            renderFrame(inst, frame);
+
+                                            // delay entre frames (nao entre linhas)
+                                            // usa override se existir
+                                            const delay = inst._frameDelayOverride || inst.delay;
+                                            // limpa override
+                                            inst._frameDelayOverride = null;
+                                            await sleep(delay * (inst.frameTimeFactor || 2));
+
+                                        }
+                                    }
+                                }
+
+                            } finally {
+                                inst.running = false;
                             }
                         }
 
@@ -2299,74 +2563,65 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                             if(!inst) return;
 
                             inst.running = false;
-                            inst.areas = { full:[], top:[], bottom:[] };
-                            render(id);
+
+                            if(inst.context){
+                                inst.context.stopped = true;
+                            }
+                        }
+
+                        function loadScript(id, script){
+                            const inst = instances[id];
+                            if(!inst) return;
+                            inst.script = script || "";
                         }
 
                         function applyModeStyle(inst){
-
                             const mode = getMode(inst);
 
-                            // ===============================
-                            // BASE (THEME-AWARE)
-                            // ===============================
                             inst.el.style.backgroundColor = "var(--bs-body-bg)";
                             inst.el.style.color           = "var(--bs-body-color)";
+                            inst.el.style.display         = "block";
+                            inst.el.style.padding         = "0.75rem";
+                            inst.el.style.margin          = "0";
+                            inst.el.style.whiteSpace      = "pre";
+                            inst.el.style.fontFamily      = "monospace";
+                            inst.el.style.lineHeight      = "1.2em";
+                            inst.el.style.border          = "1px solid var(--bs-border-color)";
+                            inst.el.style.borderRadius    = "0.375rem";
+                            inst.el.style.boxSizing       = "border-box";
 
-                            inst.el.style.display    = "block";
-                            inst.el.style.padding    = "0.75rem";
-                            inst.el.style.margin     = "0";
-                            inst.el.style.whiteSpace = "pre";
-                            inst.el.style.fontFamily = "monospace";
-                            inst.el.style.lineHeight = "1.2em";
-
-                            // opcional (fica bonito e respeita tema)
-                            inst.el.style.border       = "1px solid var(--bs-border-color)";
-                            inst.el.style.borderRadius = "0.375rem";
-
-                            // evita layout quebrado
-                            inst.el.style.boxSizing = "border-box";
-
-                            // ===============================
-                            // MODO FIXED (terminal classico)
-                            // ===============================
                             if(mode === "fixed"){
-
                                 inst.el.style.overflow = "hidden";
 
                                 const totalLines =
-                                    getLimit(inst,"top") +
-                                    getLimit(inst,"full") +
-                                    getLimit(inst,"bottom");
+                                getLimit(inst,"top") +
+                                getLimit(inst,"full") +
+                                getLimit(inst,"bottom");
 
-                                // altura baseada em linhas (terminal real)
                                 inst.el.style.height = (totalLines * 1.2) + "em";
                             }
 
-                            // ===============================
-                            // MODO SCROLL (console/log)
-                            // ===============================
                             if(mode === "scroll"){
-
                                 inst.el.style.overflowY = "auto";
                                 inst.el.style.overflowX = "hidden";
-
-                                // altura padrao (pode evoluir pra config futura)
                                 inst.el.style.height = "200px";
                             }
                         }
 
                         function register(id, config){
-
                             instances[id] = {
                                 el: config.el,
                                 frames: config.frames || [],
+                                script: (config.script && config.script.trim() !== "") ? config.script : null,
                                 text: config.text || "",
                                 delay: config.interval || 120,
                                 autoStart: config.autoStart || false,
                                 maxLines: config.maxLines || 10,
+                                frameTimeFactor: config.frameTimeFactor || 2,
+                                onProgress: config.onProgress || null,
                                 running: false,
-                                areas: { full:[], top:[], bottom:[] }
+                                context: null,
+                                areas: { top: [], full: [], bottom: [] },
                             };
 
                             applyModeStyle(instances[id]);
@@ -2375,10 +2630,13 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                                 run(id);
                             }
                         }
+
                         return {
                             register,
+                            loadScript,
                             run,
-                            stop
+                            stop,
+                            parseScript
                         };
 
                     })();

@@ -150,6 +150,7 @@ static function Spinner() as array
     local cFrames as character
     beginContent var cFrames
 ;loop=inf
+;color=#900020
 [-];;
 [\];;
 [|];;
@@ -174,16 +175,17 @@ static function ProgressBar() as array
     local cFrames as character
     beginContent var cFrames
 ;loop=inf
-[          ] 0%;;
-[#         ] 10%;;
-[##        ] 20%;;
-[###       ] 30%;;
-[####      ] 40%;;
-[#####     ] 50%;;
-[######    ] 60%;;
-[#######   ] 70%;;
-[########  ] 80%;;
-[######### ] 90%;;
+;color=#008000
+[          ]   0%;;
+[#         ]  10%;;
+[##        ]  20%;;
+[###       ]  30%;;
+[####      ]  40%;;
+[#####     ]  50%;;
+[######    ]  60%;;
+[#######   ]  70%;;
+[########  ]  80%;;
+[######### ]  90%;;
 [##########] 100%;;
     endContent
     cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
@@ -238,25 +240,26 @@ return(;
 )
 
 static function TypeWriter() as array
-    local aFrames as array
     local cFrames as character
     beginContent var cFrames
-;loop=inf
-[>         ];;
-[>>>       ];;
-[>>>>>     ];;
-[>>>>>>>   ];;
-[>>>>>>>>>>];;
-[<<<<<<<   ];;
-[<<<<<     ];;
-[<<<       ];;
-[<         ];;
+;repeat=5\n
+;loop=inf\n
+[>         ]\n
+[>>>       ]\n
+[>>>>>     ]\n
+[>>>>>>>   ]\n
+[>>>>>>>>>>]\n
+[<<<<<<<   ]\n
+[<<<<<     ]\n
+[<<<       ]\n
+[<         ]\n
+;end\n
+;end\n
     endContent
-    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13)},"__CHR_10__"},{"__CHR_10__",CHR(10)})
-    aFrames:=StrToKArr2(cFrames,";;",.F.)
+    cFrames:=WebExHelper():StrReplaceEx(cFrames,{{CRLF,CHR(13),CHR(10)},""},{"\n",CHR(10)})
 return(;
     {;
-      aFrames,;
+      cFrames,;
       {;
          "top"    : 0;
         ,"full"   : 1;

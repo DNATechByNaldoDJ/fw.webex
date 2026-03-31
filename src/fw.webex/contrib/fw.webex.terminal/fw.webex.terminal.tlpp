@@ -1,0 +1,57 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+CLASS FWWebExTerminal FROM WebExControl
+
+    DATA cId
+    DATA cPrompt
+    DATA lAutoFocus
+
+    // engine (nao execucao, so config)
+    DATA hEngineConfig
+
+    METHOD SetPrompt(cPrompt)
+    METHOD RenderHTML()
+
+ENDCLASS
+
+METHOD SetPrompt(cPrompt) CLASS FWWebExTerminal
+    ::cPrompt := cPrompt
+RETURN Self
+
+METHOD RenderHTML() CLASS FWWebExTerminal
+
+Local cHtml := ""
+
+cHtml += '<div class="webex-terminal" id="'+::cId+'">'
+cHtml += '  <div class="terminal-output"></div>'
+cHtml += '  <div class="terminal-input-line">'
+cHtml += '    <span>'+::cPrompt+'</span>'
+cHtml += '    <input type="text" class="webex-terminal-input"/>'
+cHtml += '  </div>'
+cHtml += '</div>'
+
+cHtml += '<script>'
+
+cHtml += 'FWWebExTerminalEngine.register("'+::cId+'",{'
+cHtml += '  prompt: "'+::cPrompt+'",'
+cHtml += '  engine: '+FWJsonSerialize(::hEngineConfig)+','
+cHtml += '  autoFocus: '+If(::lAutoFocus,"true","false")+''
+cHtml += '});'
+
+cHtml += '</script>'
+
+RETURN cHtml
