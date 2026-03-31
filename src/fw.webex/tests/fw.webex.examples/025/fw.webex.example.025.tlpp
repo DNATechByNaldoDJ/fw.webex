@@ -59,36 +59,54 @@ static function FWWebExExample_025(cHTML as character) as character
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderBaseBall CLASS WebExAsciiLoader ARGS jASCIIArt["baseball.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
+                        .:SetInterval(60)
+                        .:SetFrameTimeFactor(1.5)
+                        .:SetMaxFrameTime(140)
                      END WEBEXOBJECT
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT oFWWebExDivBasketBall CLASS WebExDiv
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderBasketBall CLASS WebExAsciiLoader ARGS jASCIIArt["basketball.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
+                        .:SetInterval(60)
+                        .:SetFrameTimeFactor(1.5)
+                        .:SetMaxFrameTime(140)
                     END WEBEXOBJECT
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT oFWWebExDivBicycling CLASS WebExDiv
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderBicycling CLASS WebExAsciiLoader ARGS jASCIIArt["bicycling.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
+                        .:SetInterval(60)
+                        .:SetFrameTimeFactor(1.5)
+                        .:SetMaxFrameTime(140)
                     END WEBEXOBJECT
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT oFWWebExDivMacarena CLASS WebExDiv
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderMacarena CLASS WebExAsciiLoader ARGS jASCIIArt["macarena.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
+                        .:SetInterval(60)
+                        .:SetFrameTimeFactor(1.5)
+                        .:SetMaxFrameTime(140)
                     END WEBEXOBJECT
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT oFWWebExDivStationTraffic CLASS WebExDiv
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderStationTraffic CLASS WebExAsciiLoader ARGS jASCIIArt["stationtraffic.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
+                        .:SetInterval(60)
+                        .:SetFrameTimeFactor(1.5)
+                        .:SetMaxFrameTime(140)
                     END WEBEXOBJECT
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT oFWWebExDivSwimming CLASS WebExDiv
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderSwimming CLASS WebExAsciiLoader ARGS jASCIIArt["swimming.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
+                        .:SetInterval(60)
+                        .:SetFrameTimeFactor(1.5)
+                        .:SetMaxFrameTime(140)
                     END WEBEXOBJECT
                 END WEBEXOBJECT
             END WEBEXOBJECT

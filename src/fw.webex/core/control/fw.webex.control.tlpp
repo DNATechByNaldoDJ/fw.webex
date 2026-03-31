@@ -2509,6 +2509,26 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                             render(inst);
                         }
 
+                        function getFrameComplexity(frame){
+
+                            const lines = frame.split("\n");
+
+                            let weight = 0;
+
+                            for(const raw of lines){
+
+                                const line = raw.trim();
+
+                                if(line.startsWith(";")) continue;
+                                if(line === "") continue;
+
+                                weight += 1;
+                                weight += Math.min(line.length / 20, 2);
+                            }
+
+                            return Math.max(weight, 1);
+                        }
+
                         async function run(id){
 
                             const inst = instances[id];
@@ -2542,12 +2562,17 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                                             // renderiza TUDO de uma vez
                                             renderFrame(inst, frame);
 
-                                            // delay entre frames (nao entre linhas)
-                                            // usa override se existir
-                                            const delay = inst._frameDelayOverride || inst.delay;
-                                            // limpa override
-                                            inst._frameDelayOverride = null;
-                                            await sleep(delay * (inst.frameTimeFactor || 2));
+                                            //calcula complexidade do frame
+                                            const complexity = getFrameComplexity(frame);
+
+                                            //calcula tempo adaptativo
+                                            const frameTime = Math.min(
+                                                inst.delay * complexity * inst.frameTimeFactor,
+                                                inst.maxFrameTime || 1000
+                                            );
+
+                                            //espera baseado no conteudo
+                                            await sleep(frameTime);
 
                                         }
                                     }
@@ -2617,7 +2642,8 @@ method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
                                 delay: config.interval || 120,
                                 autoStart: config.autoStart || false,
                                 maxLines: config.maxLines || 10,
-                                frameTimeFactor: config.frameTimeFactor || 2,
+                                frameTimeFactor: config.frameTimeFactor || 0.5,
+                                maxFrameTime: config.maxFrameTime || 1000,
                                 onProgress: config.onProgress || null,
                                 running: false,
                                 context: null,

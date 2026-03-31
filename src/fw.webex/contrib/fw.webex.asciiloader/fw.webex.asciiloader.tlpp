@@ -34,6 +34,7 @@ class WebExAsciiLoader from WebExPre
     protected data cScriptFrame as character
     protected data lAutoStart as logical
     protected data nInterval as numeric
+    protected data nMaxFrameTime as numeric
     protected data nFrameTimeFactor as numeric
 
     protected data xScriptFrames as variant
@@ -45,12 +46,13 @@ class WebExAsciiLoader from WebExPre
 
     public method New(xScriptFrames as variant,nInterval as numeric,cText as character,lAutoStart as logical) as object
     public method SetFrames(aFrames as array) as object
-    public method SetScript(cScriptFrame) as character
+    public method SetScript(cScriptFrame as character) as character
     public method SetInterval(nInterval as numeric) as object
-    public method SetText(cText) as object
+    public method SetText(cText as character) as object
     public method SetAutoStart(lAutoStart as logical) as object
     public method SetMaxLines(vMaxLines as variant) as object
-    public method SetFrameTimeFactor(nFrameTimeFactor) as object
+    public method SetMaxFrameTime(nMaxFrameTime as numeric) as object
+    public method SetFrameTimeFactor(nFrameTimeFactor as numeric) as object
     public method RenderHTML() as character
 
 endclass
@@ -74,7 +76,8 @@ method New(xScriptFrames,nInterval,cText,lAutoStart) class WebExAsciiLoader
     ::cText:=cText
     ::lAutoStart:=lAutoStart
     ::vMaxLines:=10
-    ::nFrameTimeFactor:=2
+    ::nMaxFrameTime:=1000
+    ::nFrameTimeFactor:=.5
     ::oASCIILoaderScript:=WebExScript():New()
 
     _Super:New()
@@ -118,6 +121,11 @@ method SetMaxLines(vMaxLines) class WebExAsciiLoader
     ::vMaxLines:=vMaxLines
 return(self)
 
+method SetMaxFrameTime(nMaxFrameTime) class WebExAsciiLoader
+    paramtype 1 var nMaxFrameTime as numeric optional default ::nMaxFrameTime
+    ::nMaxFrameTime:=nMaxFrameTime
+return(self)
+
 method SetFrameTimeFactor(nFrameTimeFactor) class WebExAsciiLoader
     paramtype 1 var nFrameTimeFactor as numeric optional default ::nFrameTimeFactor
     ::nFrameTimeFactor:=nFrameTimeFactor
@@ -150,7 +158,8 @@ method RenderHTML() class WebExAsciiLoader
                 ,interval: __ASCII_LOADER_INTERVAL__
                 ,autoStart: __ASCII_LOADER_AUTO_START__
                 ,maxLines: __ASCII_LOADER_MAXLINES__
-                ,frameTimeFactor: __ASCII_FRAME_TIME_FACTOR__ || 10
+                ,frameTimeFactor: __ASCII_FRAME_TIME_FACTOR__ || .5
+                ,maxFrameTime: __ASCII_FRAME_MAX_FRAME_TIME__
             });
 
             // ======================================
@@ -192,6 +201,7 @@ method RenderHTML() class WebExAsciiLoader
         ,{"__ASCII_LOADER_AUTO_START__",if(::lAutoStart,"true","false")};
         ,{"__ASCII_LOADER_MAXLINES__",if((valtype(::vMaxLines)=="N"),tlpp.ToStr(::vMaxLines),JSONObjectTools():ToJSObjectString(::vMaxLines))};
         ,{"__ASCII_FRAME_TIME_FACTOR__",tlpp.ToStr(::nFrameTimeFactor)};
+        ,{"__ASCII_FRAME_MAX_FRAME_TIME__",tlpp.ToStr(::nMaxFrameTime)};
     )
 
     ::oASCIILoaderScript:SetContent(cScript)
