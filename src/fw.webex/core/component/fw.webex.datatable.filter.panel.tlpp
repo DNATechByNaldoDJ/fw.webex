@@ -84,6 +84,8 @@ method New(cTitle,cTargetTableID,jTargetTableFields) class WebExDataTableFilterP
                         WITH WEBEXOBJECT ::oPanelHeaderButtonClose CLASS WebExButton ARGS "+","button"
                             .:SetAttr("onclick","FWWebExAddFilterRow_"+cIDContainer+"()")
                             .:AddClass("btn btn-sm btn-outline-primary mt-2")
+                            //Alguma atualizacao em BootStrap quebrou btn-outline-primary
+                            .:DelClass("btn-outline-primary")
                         END WEBEXOBJECT
                         beginContent var cScript
                             function FWWebExAddFilterRow___ID_CONTAINER__(){

@@ -86,9 +86,9 @@ static function FWWebExExample_025(cHTML as character) as character
                     .:SetAttr("style","height:175px; overflow:hidden;")
                     WITH WEBEXOBJECT oWebExAsciiLoaderMacarena CLASS WebExAsciiLoader ARGS jASCIIArt["macarena.ascii.art"][1]
                         .:SetMaxLines(jASCIIArt["baseball.ascii.art"][2])
-                        .:SetInterval(60)
-                        .:SetFrameTimeFactor(1.5)
-                        .:SetMaxFrameTime(140)
+                        .:SetInterval(200)
+                        .:SetFrameTimeFactor(4)
+                        .:SetMaxFrameTime(400)
                     END WEBEXOBJECT
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT oFWWebExDivStationTraffic CLASS WebExDiv

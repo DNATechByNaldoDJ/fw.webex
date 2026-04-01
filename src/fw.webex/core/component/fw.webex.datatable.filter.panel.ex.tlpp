@@ -293,8 +293,8 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                                 group.innerHTML = `
                                     <div class="conditions"></div>
                                     <div class="mt-2 d-flex">
-                                        <button class="btn btn-sm btn-outline-primary add-condition">(+)Expr.</button>
-                                        <button class="btn btn-sm btn-outline-primary add-group ms-1">(+)(Expr.)</button>
+                                        <button class="btn btn-sm add-condition">(+)Expr.</button>
+                                        <button class="btn btn-sm add-group ms-1">(+)(Expr.)</button>
                                         <select class="form-select connector ms-1" style="max-width: 95px;">
                                             <option value=""></option>
                                             <option>AND</option>
@@ -409,10 +409,14 @@ method New(cTitle,cTargetTableID,jTargetTableFields,jInternalFilter,jInternalFie
                             .:AddClass("mt-2")
                             WITH WEBEXOBJECT ::oPanelBodyButtonAddCondition CLASS WebExButton ARGS "(+)Expr.","button"
                                 .:AddClass("btn btn-sm btn-outline-primary")
+                                //Alguma atualizacao em BootStrap quebrou btn-outline-primary
+                                .:DelClass("btn-outline-primary")
                                 .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddCondition_"+cIDContainer+"(document.getElementById('"+cIDContainer+"_rows'))")
                             END WEBEXOBJECT
                             WITH WEBEXOBJECT ::oPanelBodyButtonAddGroup CLASS WebExButton ARGS "(+)(Expr.)","button"
                                 .:AddClass("btn btn-sm btn-outline-primary ms-2")
+                                //Alguma atualizacao em BootStrap quebrou btn-outline-primary
+                                .:DelClass("btn-outline-primary")
                                 .:SetAttr("onclick","FWWebExDataTableFilterPanelExAddGroup_"+cIDContainer+"(document.getElementById('"+cIDContainer+"_rows'))")
                             END WEBEXOBJECT
                         END WEBEXOBJECT

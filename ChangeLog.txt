@@ -2,8 +2,23 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add adaptive ASCII frame timing and maxFrameTime)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Fix button class and update animation presets)"
 */
+
+2026-04-01 20:39 UTC naldodj (Fix button class and update animation presets)
+  Fix button class and update animation presets
+  Remove usage of Bootstrap's btn-outline-primary (markup and WebEx object classes) and explicitly call DelClass where needed to work around a Bootstrap change that broke the outline style.
+  Add animation presets and guidance to example README for FWWebExAsciiEngine.
+  Update example 025 loader parameters (interval, frameTimeFactor, maxFrameTime) to new values (200, 4, 400) to reflect the updated presets and demo behavior.
+    Files changed:
+    - src/fw.webex/core/component/fw.webex.datatable.filter.panel.ex.tlpp:
+        removed btn-outline-primary from button markup and added .:DelClass calls with comment about Bootstrap change.
+    - src/fw.webex/core/component/fw.webex.datatable.filter.panel.tlpp:
+        removed btn-outline-primary class and added .:DelClass for close button.
+    - src/fw.webex/tests/fw.webex.examples/025/README.md:
+        added animation presets tables, practical ranges and quick notes.
+    - src/fw.webex/tests/fw.webex.examples/025/fw.webex.example.025.tlpp:
+        adjusted WebExAsciiLoader settings from (60, 1.5, 140) to (200, 4, 400).
 
 2026-03-31 05:08 UTC naldodj (Add adaptive ASCII frame timing and maxFrameTime)
   Introduce adaptive frame timing for the ASCII loader: add nMaxFrameTime to WebExAsciiLoader (default 1000) and a SetMaxFrameTime method, tighten param types for SetScript/SetText, and adjust default frameTimeFactor.
