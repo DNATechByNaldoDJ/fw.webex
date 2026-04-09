@@ -27,7 +27,7 @@ method New() class WebExBackURLButton
 
     _Super:New()
 
-    if (::GetEnableWebExBackURLButton())
+    if (::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON"))
         WITH WEBEXOBJECT self
             WITH WEBEXOBJECT ::oBackURL CLASS WebExAnchor
                 .:AddClass("btn-floating btn-large")

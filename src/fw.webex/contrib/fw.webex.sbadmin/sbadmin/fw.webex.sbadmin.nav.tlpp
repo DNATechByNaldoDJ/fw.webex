@@ -127,7 +127,7 @@ return(self)
 method SetBrandLink(cBrandLInk) class SBAdminNav
     paramtype cBrandLInk as character optional default ::cBrandLInk
     ::cBrandLInk:=cBrandLInk
-    if ((::GetEnableWebExBackURLButton()).and.(!("#"$::cBrandLInk)))
+    if ((::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON")).and.(!("#"$::cBrandLInk)))
         .:SetAttr("href","#")
         .:SetAttr("onclick","navigateTo('"+::cBrandLInk+"');")
     else
@@ -152,7 +152,7 @@ method NavRightMenuAdd(oSBAdminNav,cSBAdminNavHRef) class SBAdminNav
                     WITH WEBEXOBJECT CLASS WebExAnchor
                         .:SetAttr("class","nav-link dropdown-toggle")
                         .:SetFixedID("navbarDropdown")
-                        if ((::GetEnableWebExBackURLButton()).and.(!("#"$::cSBAdminNavHRef)))
+                        if ((::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON")).and.(!("#"$::cSBAdminNavHRef)))
                             .:SetAttr("href","#")
                             .:SetAttr("onclick","navigateTo('"+::cSBAdminNavHRef+"');")
                         else
@@ -290,7 +290,7 @@ method RenderDropdownMenu(aMenuItems,cClass,cAriaLabelledBy) CLASS SBAdminNav
                             .:SetAttr("data-wsaction",Encode64(jMenuItem["wsAction"]:ToJSON()))
                         else
                             cHRef:=if(jMenuItem:HasProperty("url"),jMenuItem["url"],"#")
-                            if ((::GetEnableWebExBackURLButton()).and.(!("#"$cHRef)))
+                            if ((::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON")).and.(!("#"$cHRef)))
                                 .:SetAttr("href","#")
                                 .:SetAttr("onclick","navigateTo('"+cHRef+"');")
                             else

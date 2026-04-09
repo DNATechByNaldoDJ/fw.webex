@@ -12,6 +12,10 @@ Released to Public Domain.
 
     #DEFINE _FW_WEB_EX_TH
 
+    #IFNDEF _FW_WEB_EX_FEATURES_TH
+        #include "fw.features.th"
+    #ENDIF
+
     #IFNDEF _PROTHEUS_CH
         #IFNDEF _TOTVS_CH
             #DEFINE _TOTVS_CH

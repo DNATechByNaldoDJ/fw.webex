@@ -1,0 +1,425 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureMarkDown from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+end class
+
+method Enable() class WebExFeatureMarkDown
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)},10)
+return(self)
+
+method Load(oControl) class WebExFeatureMarkDown
+
+    paramtype 1 var oControl as object
+
+    //FWWebEx MarkDown
+    WITH WEBEXOBJECT oControl
+    //FWWebEx MarkDown
+        //JQuery First
+            WebExFeatureJQuery():Enable()
+        //JQuery
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("Embedding Markdown style in a FWWebEx HTML page")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Highlight CSS
+        WITH WEBEXOBJECT CLASS WebExControl TYPE link
+            .:SetAttr("href","https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css")
+            .:SetAttr("rel","stylesheet")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Highlight.js
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Highlight.js
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/markdown.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // markdown-it
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-mark
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-mark/dist/markdown-it-mark.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-sub
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-sub/dist/markdown-it-sub.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-sup
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-sup/dist/markdown-it-sup.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-emoji
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-emoji/dist/markdown-it-emoji.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-task-lists
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-task-lists/dist/markdown-it-task-lists.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-container
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-container/dist/markdown-it-container.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-footnote
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-footnote/dist/markdown-it-footnote.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // Plugin markdown-it-multimd-table
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-multimd-table/dist/markdown-it-multimd-table.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        // TODO: Plugin markdown-it-blockquote-cite
+        /*WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD*/
+        // TODO: markdown-it-front-matter
+        /*WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD*/
+    //FWWebEx MarkDown
+***************************************************************************************************************************
+//WebExMarkDown Style
+    beginContent var cMarkDownStyle
+
+        mark { background-color: yellow; } sub, sup { font-size: 0.8em; }
+
+        @page {
+            @top-center { content: element(header); }
+            @bottom-center { content: element(footer); }
+        }
+
+        @media print {
+
+            /* Hide all content by default */
+            body {
+                visibility: hidden; /* Esconde navbar, sidebar, footer, etc. */
+                margin: 0; /* Remove margens padrao do body */
+            }
+
+            /* Show only .print-only container with padding for header/footer */
+            .print-only {
+                visibility: visible !important;
+                position: absolute; //static
+                margin: 1.5cm 1.5cm 1.5cm 1.5cm; /* Margens gerais para a pagina */
+                padding-top: 0; /* Espaco abaixo do header fixo - ajuste conforme altura do header */
+                padding-bottom: 18px; /* Espaco acima do footer fixo - ajuste conforme altura do footer */
+                font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
+                font-size: 12pt;
+                color: #000;
+            }
+
+            /* Fixed header */
+            .print-only.header {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                text-align: center;
+                font-size: 10pt;
+                color: #555;
+                visibility: visible;
+                height: .1px; /* Altura fixa para consistencia */
+            }
+
+            /* Fixed footer with dynamic page numbers */
+            .print-only.footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                text-align: center;
+                font-size: 10pt;
+                color: #555;
+                visibility: visible;
+                height: .1px; /* Altura fixa para consistencia */
+            }
+
+            /* Style images within .print-only */
+            .print-only img {
+                max-width: 100%; /* Prevent overflow */
+                height: auto; /* Maintain aspect ratio */
+                page-break-inside: avoid; /* Avoid breaking images */
+                width: 80%; /* Default width for printing */
+            }
+
+            /* Optional class for custom image sizes */
+            .print-only img.custom-size {
+                width: 500px; /* Example custom size */
+                height: auto;
+            }
+
+            /* Style Markdown elements within .print-only */
+            .print-only h1, .print-only h2, .print-only h3, .print-only h4, .print-only h5, .print-only h6 {
+                page-break-after: avoid;
+                page-break-inside: avoid;
+                margin-bottom: 0.5cm;
+                color: #000;
+            }
+
+            /* Estilizar elementos Markdown */
+            h1, h2, h3, h4, h5, h6 {
+                page-break-after: avoid;
+                page-break-inside: avoid;
+                margin-bottom: 0.5cm;
+                color: #000;
+            }
+
+            p {
+                margin: 0.5cm 0;
+                page-break-inside: avoid;
+            }
+
+            ul, ol {
+                margin: 0.5cm 0;
+                padding-left: 1.5cm;
+                page-break-inside: avoid;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                page-break-inside: avoid;
+                margin: 0.5cm 0;
+            }
+
+            th, td {
+                border: 1px solid #000;
+                padding: 0.3cm;
+                text-align: left;
+            }
+
+            th {
+                background-color: #f0f0f0;
+                font-weight: bold;
+            }
+
+            /* Suporte a quebras de pagina */
+            .page-break {
+                page-break-after: always;
+                height: 0;
+                visibility: hidden;
+            }
+
+            /* Suporte a emojis */
+            * {
+                font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
+            }
+
+            /* Esconder elementos desnecessarios*/
+            .no-print {
+                display: none !important;
+            }
+
+            /* Ajustar imagens */
+            img {
+                max-width: 100%;
+                height: auto;
+                page-break-inside: avoid;
+            }
+
+            /* Esconder iframes (videos) */
+            /*
+            iframe {
+                display: none;
+            }*/
+
+            /* Garantir que o report-header seja visivel */
+            .report-header {
+                visibility: visible !important;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+        }
+    endContent
+    WITH WEBEXOBJECT CLASS WebExStyle
+        .:SetContent(cMarkDownStyle)
+        .:AddInHeader(.this)
+    END WEBEXOBJECT NOADDCHILD
+//MarkDown Style
+***************************************************************************************************************************
+//Scripts Tools
+    beginContent var cMarkDownScript
+        var MarkdownHighlightInFWWebExPage = {};
+        MarkdownHighlightInFWWebExPage.unescapeHTML = function (html) {
+            var htmlNode = document.createElement('DIV');
+            htmlNode.innerHTML = html;
+            if (htmlNode.innerText !== undefined)
+                return htmlNode.innerText; // IE
+            return htmlNode.textContent; // FF
+        };
+        MarkdownHighlightInFWWebExPage.convertMD = function (idOrElement) {
+            try {
+                if (typeof jQuery === 'undefined') {
+                    console.error('jQuery is not loaded. Markdown conversion aborted.');
+                    return;
+                }
+                if (typeof hljs === 'undefined') {
+                    console.warn('Highlight.js is not loaded. Code highlighting will be skipped.');
+                }
+                if (typeof window.markdownit === 'undefined') {
+                    console.error('markdown-it is not loaded. Markdown conversion aborted.');
+                    return;
+                }
+                // List of plugins
+                const plugins = [
+                    'markdownitMark',
+                    'markdownitSub',
+                    'markdownitSup',
+                    'markdownitEmoji',
+                    'markdownitTaskLists',
+                    'markdownitContainer',
+                    'markdownitFootnote',
+                    'markdownitMultimdTable',
+                    'markdownitFrontMatter',
+                    'markdownitBlockquoteCite'
+                ];
+                // Filter available plugins
+                const availablePlugins = plugins.filter(plugin => window[plugin]);
+                const missingPlugins = plugins.filter(plugin => !window[plugin]);
+                if (missingPlugins.length > 0) {
+                    console.warn(`Some markdown-it plugins are not loaded: ${missingPlugins.join(', ')}. Proceeding with available plugins.`);
+                }
+                // Normalize idOrElement to string (ID) or DOM element
+                var id = typeof idOrElement === 'string' ? idOrElement : idOrElement.id;
+                console.info('Converting markdown for ID: ' + id + ' using markdown-it');
+                var md = window.markdownit({
+                    html: true,
+                    highlight: function (str, lang) {
+                        if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
+                            try {
+                                return hljs.highlight(str, { language: lang }).value;
+                            } catch (__) {}
+                        }
+                        return '';
+                    }
+                });
+                // Add only available plugins
+                availablePlugins.forEach(plugin => {
+                    md.use(window[plugin]);
+                });
+                // Process the element
+                var block = typeof idOrElement === 'string' ? jQuery('#' + id) : jQuery(idOrElement);
+                if (block.length === 0) {
+                    console.error('Element with ID ' + id + ' not found.');
+                    return;
+                }
+                if (!block.hasClass('markdown')) {
+                    console.warn('Element with ID ' + id + ' does not have class "markdown".');
+                }
+                var rawtext = MarkdownHighlightInFWWebExPage.unescapeHTML(block[0].innerHTML);
+                // Extract frontmatter
+                var env = {};
+                md.render(rawtext, env);
+                var frontmatter = env.frontMatter || {}; // Try to get from the plugin
+                var content = env.content || rawtext; // Fallback to original text
+                // If frontmatter was not extracted by the plugin, parse manually with regex (alternative)
+                if (!frontmatter.title && !frontmatter.author && !frontmatter.date) {
+                    var fmMatch = rawtext.match(/^---\s*([\s\S]*?)\s*---/);
+                    if (fmMatch) {
+                        var fmText = fmMatch[1].trim(); // Extract content between ---
+                        var lines = fmText.split('\n');
+                        lines.forEach(line => {
+                            var parts = line.split(':');
+                            if (parts.length >= 2) {
+                                var key = parts[0].trim();
+                                var value = parts.slice(1).join(':').trim();
+                                frontmatter[key] = value;
+                            }
+                        });
+                        content = rawtext.replace(fmMatch[0], '').trim(); // Remove frontmatter from content
+                    }
+                }
+                // Render the frontmatter as a custom header (only once)
+                var header = jQuery('<div class="report-header"></div>');
+                header.append(`<h1>${frontmatter.title || 'No Title'}</h1>`);
+                header.append(`<div class="meta-info"><p>Author: ${frontmatter.author || 'No Author'}</p><p>Date: ${frontmatter.date || 'No Date'}</p></div>`);
+                // Render the remaining content
+                var md_html = md.render(content);
+                // Use a temporary wrapper to manipulate the rendered HTML
+                var tempWrapper = jQuery('<div></div>');
+                tempWrapper.html(md_html);
+                // Remove any residual <h2> with frontmatter raw text (fallback)
+                tempWrapper.find('h2:contains("title:")').remove();
+                // Wrap tables in a responsive div and clean up alignment styles
+                tempWrapper.find('table').each(function () {
+                    var $table = jQuery(this);
+                    $table.removeAttr('style'); // Remove inline styles
+                    //TODO: Remove inline styles from cells?
+                    $table.find('th, td').removeAttr('style'); // Remove inline styles from cells
+                    $table.wrap('<div class="table-responsive mt-4"></div>');
+                    $table.addClass('table table-bordered table-sm table-striped');
+                });
+                // Get the modified HTML
+                md_html = tempWrapper.html();
+                // Insert header and modified content as HTML string before the block
+                block.before(header[0].outerHTML + md_html);
+                block[0].hidden = true;
+                // Inject CSS for styling
+                var style = jQuery('<style>')
+                    .text(`
+                        .report-header {
+                            padding: 15px;
+                            margin-bottom: 20px;
+                            border-radius: 5px;
+                            border-left: 4px solid #007bff;
+                            font-family: Arial, sans-serif;
+                        }
+                        .report-header h1 { margin: 0 0 10px 0; font-size: 1.5em; font-weight: bold; }
+                        .report-header .meta-info { display: flex; justify-content: space-between; font-size: 0.9em; opacity: 0.9; }
+                        .report-header .meta-info p { margin: 0; padding: 0; }
+                    `);
+                jQuery('head').append(style);
+                // Code highlighting, if available (after insertion to ensure elements are in DOM)
+                if (typeof hljs !== 'undefined') {
+                    jQuery('pre code').each(function (i, block) {
+                        hljs.highlightElement(block);
+                    });
+                }
+            } catch (exc) {
+                console.error('Markdown conversion error for ID ' + id + ':', exc);
+            }
+        };
+    endContent
+    WITH WEBEXOBJECT CLASS WebExScript
+        .:SetContent(cMarkDownScript)
+    END WEBEXOBJECT
+//Scripts Tools***************************************************************************************************************************
+
+    END WEBEXOBJECT NOADDCHILD
+    //FWWebEx MarkDown
+
+return(self)

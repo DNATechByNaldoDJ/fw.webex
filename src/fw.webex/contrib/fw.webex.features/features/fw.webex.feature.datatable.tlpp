@@ -1,0 +1,555 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureDataTable from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+end class
+
+method Enable() class WebExFeatureDataTable
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)},5)
+return(self)
+
+method Load(oControl) class WebExFeatureDataTable
+
+    local cDataTableStyle as character
+    local cDataTableScript as character
+
+    paramtype 1 var oControl as object
+
+    //DataTables
+    WITH WEBEXOBJECT oControl
+
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("https://cdn.datatables.net/")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("DataTables 2.3.2 is the current stable release of DataTables")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExControl TYPE link
+            .:SetAttr("href","https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.min.css")
+            .:SetAttr("rel","stylesheet")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.datatables.net/2.3.2/js/dataTables.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+    //Data Tables
+    ***************************************************************************************************************************
+    //DataTables Extensions
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("Extensions")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        //Excel
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("Excel : https://cdnjs.com/libraries/jszip")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Excel
+    ***************************************************************************************************************************
+        //PDF
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("PDF : https://cdnjs.com/libraries/pdfmake")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/vfs_fonts.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //PDF
+    ***************************************************************************************************************************
+        //AutoFill
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("AutoFill")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/autofill/2.7.0/css/autoFill.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/autofill/2.7.0/js/dataTables.autoFill.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/autofill/2.7.0/js/autoFill.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //AutoFill
+    ***************************************************************************************************************************
+        //Buttons
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("Buttons")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.print.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Buttons
+    ***************************************************************************************************************************
+        //ColReorder
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("ColReorder")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/colreorder/2.1.1/css/colReorder.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/colreorder/2.1.1/js/dataTables.colReorder.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/colreorder/2.1.1/js/colReorder.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //ColReorder
+    ***************************************************************************************************************************
+        //FixedColumns
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("FixedColumns")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/fixedcolumns/5.0.4/css/fixedColumns.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/fixedcolumns/5.0.4/js/dataTables.fixedColumns.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/fixedcolumns/5.0.4/js/fixedColumns.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //FixedColumns
+    ***************************************************************************************************************************
+        //FixedHeader
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("FixedHeader")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/fixedheader/4.0.3/css/fixedHeader.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/fixedheader/4.0.3/js/dataTables.fixedHeader.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/fixedheader/4.0.3/js/fixedHeader.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //FixedHeader
+    ***************************************************************************************************************************
+        //KeyTable
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("KeyTable")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/keytable/2.12.1/css/keyTable.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/keytable/2.12.1/js/dataTables.keyTable.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/keytable/2.12.1/js/keyTable.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //KeyTable
+    ***************************************************************************************************************************
+        //Responsive
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("Responsive")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/responsive/3.0.4/css/responsive.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/responsive/3.0.4/js/dataTables.responsive.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/responsive/3.0.4/js/responsive.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Responsive
+    ***************************************************************************************************************************
+        //RowGroup
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("RowGroup")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //RowGroup
+    ***************************************************************************************************************************
+        //RowReorder
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("RowReorder")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/rowreorder/1.5.0/css/rowReorder.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/rowreorder/1.5.0/js/dataTables.rowReorder.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/rowreorder/1.5.0/js/rowReorder.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //RowReorder
+    ***************************************************************************************************************************
+        //Scroller
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("Scroller")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/scroller/2.4.3/css/scroller.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/scroller/2.4.3/js/dataTables.scroller.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/scroller/2.4.3/js/scroller.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Scroller
+    ***************************************************************************************************************************
+        //SearchBuilder
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("SearchBuilder")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/searchbuilder/1.8.2/css/searchBuilder.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/searchbuilder/1.8.2/js/dataTables.searchBuilder.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/searchbuilder/1.8.2/js/searchBuilder.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //SearchBuilder
+    ***************************************************************************************************************************
+        //SearchPanes
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("SearchPanes")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/searchpanes/2.3.3/css/searchPanes.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/searchpanes/2.3.3/js/dataTables.searchPanes.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/searchpanes/2.3.3/js/searchPanes.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //SearchPanes
+    ***************************************************************************************************************************
+        //Select
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("SearchPanes")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/select/3.0.1/css/select.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/select/3.0.1/js/dataTables.select.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/select/3.0.1/js/select.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Select
+    ***************************************************************************************************************************
+        //StateRestore
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("StateRestore")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.datatables.net/staterestore/1.4.1/css/stateRestore.bootstrap5.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/staterestore/1.4.1/js/dataTables.stateRestore.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdn.datatables.net/staterestore/1.4.1/js/stateRestore.bootstrap5.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Select
+    //DataTables Extensions
+    ***************************************************************************************************************************
+    //DataTables Style
+        beginContent var cDataTableStyle
+
+            /* Filtro Customizado */
+            .datatable-filter-wrapper {
+                display: inline-block;
+                width: 100%;
+                text-align: right; /* ou left */
+            }
+
+            /* Garantir que a tabela nao tenha espacamentos extras */
+            table.dataTable.compact {
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+
+            /* Ajustar linhas vazias adicionadas pelo drawCallback */
+            table.dataTable.compact tr.empty-row td {
+                padding: 0;
+                height: 20px; /* Menor altura para linhas vazias */
+            }
+
+            /* Evitar quebras de linha e overflow */
+            table.dataTable.compact td {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            table.dataTable.compact thead th {
+                font-weight: bold; /* Manter destaque nos cabecalhos */
+            }
+
+            table.dataTable.compact tbody td,
+            table.dataTable.compact thead th {
+                padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
+                font-size: 12px; /* Tamanho de fonte menor */
+                margin: 0; /* Remover margens */
+            }
+
+            /* Compactar linhas do DataTables */
+            table.dataTable.compact tbody tr {
+                height: 28px; /* Altura reduzida para linhas */
+                line-height: 28px; /* Alinhar texto verticalmente */
+            }
+
+            /* Estiliza o elemento select dentro da classe dt-length para garantir que a seta de expansao fique aa direita sem sobrepor o texto */
+            .dt-length select.form-select.form-select-sm {
+                min-width: 70px; /* Define largura minima para evitar corte do texto das opcoes */
+                padding-right: 1.5rem; /* Adiciona espaco aa direita para acomodar a seta personalizada */
+                appearance: none; /* Remove a aparencia padrao do navegador para personalizar a seta */
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); /* Define uma seta personalizada usando SVG */
+                background-repeat: no-repeat; /* Evita repeticao da imagem da seta */
+                background-position: right 0.5rem center; /* Posiciona a seta aa direita do select, centralizada verticalmente */
+                background-size: 1rem; /* Define o tamanho da seta para consistencia visual */
+                box-sizing: border-box; /* Garante que padding e borda sejam incluidos na largura total */
+            }
+
+        endContent
+        WITH WEBEXOBJECT CLASS WebExStyle
+            .:SetContent(cDataTableStyle)
+        END WEBEXOBJECT NOADDCHILD
+    //DataTables Style
+    ***************************************************************************************************************************
+    //Scripts Tools
+        beginContent var cDataTableScript
+
+            //FWWebExHasDataTables:Utilitario para verificar se jQuery + DataTables estao disponiveis
+            function FWWebExHasDataTables() {
+                return !!(FWWebExHasJQuery() && $?.fn && $.fn?.DataTable && $.fn.DataTable?.isDataTable);
+            }
+
+            /**
+            * FWWebExHasDataTableFilters
+            *
+            * Checks if custom filters exist in a DataTable instance.
+            * Validates if table exists and returns a map of filter names to boolean values.
+            * Uses FWWebExPanelFilterExHasFilter flag for ExtendedFilter state.
+            *
+            * @param {object} table - DataTable instance.
+            * @param {Array<string>} filterNames - List of filter property names to check.
+            * @param {object} defaults - Default boolean values for each filter (optional).
+            * @returns {object|false} An object with filter names mapped to true/false, or false if table is invalid.
+            */
+            function FWWebExHasDataTableFilters(table, filterNames = [], defaults = {}) {
+
+                if (!table || typeof table.settings !== 'function') {
+                    console.warn("FWWebExHasDataTableFilters: invalid or missing DataTable instance.");
+                    return false;
+                }
+
+                const oInit = table.settings()[0]?.oInit || {};
+
+                // Build hasFilter object with safe defaults
+                const hasFilter = filterNames.reduce((acc, name) => {
+                    const fallback = defaults[name] ?? false;
+                    const f = oInit[name];
+                    acc[name] = (f && typeof f === 'object' && Object.keys(f).length > 0) ? true : fallback;
+                    return acc;
+                }, {});
+
+                // Use the dedicated flag for ExtendedFilter if available
+                if ('FWWebExPanelFilterExHasFilter' in oInit) {
+                    hasFilter['FWWebExPanelFilterEx'] = !!oInit.FWWebExPanelFilterExHasFilter;
+                }
+
+                return hasFilter;
+            }
+
+            /**
+            * FWWebExGetDataTableFilters
+            *
+            * Retrieves custom filters from a DataTable instance.
+            * Validates if table exists, applies safe defaults,
+            * and clears other filters when ExtendedFilter is defined with expression.
+            *
+            * @param {object} table - DataTable instance.
+            * @param {Array<string>} filterNames - List of filter property names to retrieve.
+            * @param {object} defaults - Default values for each filter (optional).
+            * @returns {object} An object with the requested filters.
+            */
+            function FWWebExGetDataTableFilters(table, filterNames = [], defaults = {}) {
+
+                if (!table || typeof table.settings !== 'function') {
+                    console.warn("FWWebExGetDataTableFilters: invalid or missing DataTable instance.");
+                    return {};
+                }
+
+                const oInit = table.settings()[0]?.oInit || {};
+
+                // Build filters object with safe defaults
+                const filters = filterNames.reduce((acc, name) => {
+                    const fallback = defaults[name] || {};
+                    const f = oInit[name];
+                    acc[name] = (f && typeof f === 'object') ? f : fallback;
+                    return acc;
+                }, {});
+
+                // ExtendedFilter logic
+                const extendedFilter = filters['FWWebExPanelFilterEx'] || {};
+                const extendedFilterExpression = extendedFilter["expression"] || '';
+                const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
+
+                if (hasExtendedFilter?.FWWebExPanelFilterEx && Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
+                    // Clear all filters except ExtendedFilter itself
+                    Object.keys(filters).forEach(key => {
+                        if (key !== 'FWWebExPanelFilterEx') {
+                            Object.keys(filters[key]).forEach(k => delete filters[key][k]);
+                        }
+                    });
+                }
+
+                return filters;
+            }
+        endContent
+        WITH WEBEXOBJECT CLASS WebExScript
+            .:SetContent(cDataTableScript)
+        END WEBEXOBJECT NOADDCHILD
+    //Scripts Tools
+    ***************************************************************************************************************************
+
+    END WEBEXOBJECT NOADDCHILD
+    //DataTables
+
+return(self)

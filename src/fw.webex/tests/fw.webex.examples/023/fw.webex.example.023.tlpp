@@ -466,11 +466,13 @@ static procedure FWWebExExample_023(cHTML as character) as character
                                 .:AddClass("ms-auto")
                                 WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtrar","button"
                                     .:SetButtonIcon("fa-filter","fontawesome",.T.)
-                                    .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanel:GetID()+"').modal('show')")
+                                    .:SetAttr("data-fwwebex-action","open-modal")
+                                    .:SetAttr("data-target","#"+oWebExDataTableFilterPanel:GetID())
                                 END WEBEXOBJECT
                                 WITH WEBEXOBJECT CLASS WebExButton ARGS "Filtros Avan&ccedil;ados","button"
                                     .:SetButtonIcon("fa-filter","fontawesome",.T.)
-                                    .:SetAttr("onclick","$('#"+oWebExDataTableFilterPanelEx:GetID()+"').modal('show')")
+                                    .:SetAttr("data-fwwebex-action","open-modal")
+                                    .:SetAttr("data-target","#"+oWebExDataTableFilterPanelEx:GetID())
                                 END WEBEXOBJECT
                             END WEBEXOBJECT
                         END WEBEXOBJECT NOADDCHILD
@@ -492,9 +494,11 @@ static procedure FWWebExExample_023(cHTML as character) as character
 
     oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWebEx :: SBADMIN :: SBAdminNav")
     oFWWebExPage:AddChild(oFWWebExBody)
-    oFWWebExPage:SetEnableDataTable(.T.)
-    oFWWebExPage:SetEnableChart(.T.)
-    oFWWebExPage:SetEnableApexChart(.T.)
+
+    //Enable Features
+    WebExFeatureDataTable():Enable()
+    WebExFeatureChart():Enable()
+    WebExFeatureApexChart():Enable()
 
     WITH WEBEXOBJECT oFWWebExPage
         WITH WEBEXOBJECT CLASS WebExStyle

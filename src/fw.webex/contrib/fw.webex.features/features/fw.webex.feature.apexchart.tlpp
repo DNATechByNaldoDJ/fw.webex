@@ -1,0 +1,49 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureApexChart from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+end class
+
+method Enable() class WebExFeatureApexChart
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    WebExFeatureJQuery():Enable()
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)},20)
+return(self)
+
+method Load(oControl) class WebExFeatureApexChart
+
+    paramtype 1 var oControl as object
+
+    //ApexChart
+    WITH WEBEXOBJECT oControl
+        //https://apexcharts.com/
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("ApexChart")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+    END WEBEXOBJECT NOADDCHILD
+    //ApexChart
+
+return(self)

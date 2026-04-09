@@ -33,11 +33,11 @@ method New(cIconName,cIconType,lIconBefore) class WebExIcon
     paramtype 1 var cIconName as character
     paramtype 2 var cIconType as character optional default "bootstrap"
     paramtype 3 var lIconBefore as logical optional default .T.
+    WebExFeatureIcons():Enable()
     ::cIconType:=Lower(AllTrim(cIconType))
     ::cIconName:=cIconName
     ::lIconBefore:=lIconBefore
     _Super:New("i")
-    _Super:SetEnableIcons()
     ::SetIconName(cIconName,cIconType)
     ::AddClass(if(::lIconBefore,"me-1","ms-1"))
 return(self)

@@ -64,7 +64,7 @@ method New(xScriptFrames,nInterval,cText,lAutoStart) class WebExAsciiLoader
     paramtype 3 var cText as character optional default ""
     paramtype 4 var lAutoStart as logical optional default .T.
 
-    ::SetEnableASCIILoader(.T.)  // Ativa ASCIILoader por padrao
+    WebExFeatureASCIILoader():Enable()  // Ativa ASCIILoader por padrao
 
     if (ValType(xScriptFrames)=="A")
         ::xScriptFrames:=aClone(xScriptFrames)
@@ -148,28 +148,37 @@ method RenderHTML() class WebExAsciiLoader
         // ===============================
         FWWebExWaitForElementID("__ASCII_LOADER_ID__", function(el){
 
-            const id = "__ASCII_LOADER_ID__";
+            FWWebEx.Ready.withDependencies(
+                [
+                    'FWWebEx:jquery:ready',
+                    'FWWebEx:ascii:ready'
+                ],
+                function () {
 
-            FWWebExAsciiEngine.register(id,{
-                 el: el
-                ,frames: __ASCII_LOADER_FRAMES__   //Compatibilidade
-                ,script: (__ASCII_LOADER_SCRIPT__ ? __ASCII_LOADER_SCRIPT__ : null) //NOVO (preferencial)
-                ,text: "__ASCII_LOADER_TEXT__"
-                ,interval: __ASCII_LOADER_INTERVAL__
-                ,autoStart: __ASCII_LOADER_AUTO_START__
-                ,maxLines: __ASCII_LOADER_MAXLINES__
-                ,frameTimeFactor: __ASCII_FRAME_TIME_FACTOR__ || .5
-                ,maxFrameTime: __ASCII_FRAME_MAX_FRAME_TIME__
-            });
+                    const id = "__ASCII_LOADER_ID__";
 
-            // ======================================
-            // API LOCAL (SEM POLUIR GLOBAL)
-            // ======================================
-            el.__ascii = {
-                start: () => FWWebExAsciiEngine.run(id),
-                stop:  () => FWWebExAsciiEngine.stop(id),
-                load:  (script) => FWWebExAsciiEngine.loadScript(id, script)
-            };
+                    FWWebExAsciiEngine.register(id,{
+                        el: el
+                        ,frames: __ASCII_LOADER_FRAMES__   //Compatibilidade
+                        ,script: (__ASCII_LOADER_SCRIPT__ ? __ASCII_LOADER_SCRIPT__ : null) //NOVO (preferencial)
+                        ,text: "__ASCII_LOADER_TEXT__"
+                        ,interval: __ASCII_LOADER_INTERVAL__
+                        ,autoStart: __ASCII_LOADER_AUTO_START__
+                        ,maxLines: __ASCII_LOADER_MAXLINES__
+                        ,frameTimeFactor: __ASCII_FRAME_TIME_FACTOR__ || .5
+                        ,maxFrameTime: __ASCII_FRAME_MAX_FRAME_TIME__
+                    });
+
+                    // ======================================
+                    // API LOCAL (SEM POLUIR GLOBAL)
+                    // ======================================
+                    el.__ascii = {
+                        start: () => FWWebExAsciiEngine.run(id),
+                        stop:  () => FWWebExAsciiEngine.stop(id),
+                        load:  (script) => FWWebExAsciiEngine.loadScript(id, script)
+                    };
+                }
+            );
 
         });
     endContent

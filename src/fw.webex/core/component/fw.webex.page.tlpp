@@ -71,6 +71,10 @@ method New(cPageTitle) class WebExPage
 
     ::oPage:=self
 
+    //JQuery First
+        WebExFeatureJQuery():Enable()
+    //JQuery
+
     WITH WEBEXOBJECT ::oPage CLASS WebExHtml
         .:SetAttr("lang","pt-br")
         WITH WEBEXOBJECT ::oPageHeader CLASS WebExHead
@@ -105,9 +109,6 @@ method New(cPageTitle) class WebExPage
                 WITH WEBEXOBJECT ::jObjectsContainer["comment-bootstrap-script"] CLASS WebExComment
                     .:SetContent("Optional JavaScript: jQuery first, then Popper.js, then Bootstrap JS")
                 END WEBEXOBJECT
-                //JQuery First
-                    ::SetEnableJQuery(.T.)
-                //JQuery
                 //popperjs
                     WITH WEBEXOBJECT ::jObjectsContainer["script-popperjs"] CLASS WebExScript ARGS .F.
                         .:SetContent("https://cdn.jsdelivr.net/npm/@popperjs/core/dist/umd/popper.min.js")
@@ -516,7 +517,10 @@ method RenderHTML() class WebExPage
                 .:SetContent("Custom Header")
             END WEBEXOBJECT
             jHeader:=::oPageHeader:GetHeader()
-            aEval(jHeader:GetNames(),{|cName|::GetMemberData("oPageHeader"):AddChild(jHeader[cName])})
+            aEval(;
+                 aSort(jHeader:GetNames(),nil,nil,{|x as character,y as character|jHeader[x]:GetPriority()<jHeader[y]:GetPriority()});
+                ,{|cName|::GetMemberData("oPageHeader"):AddChild(jHeader[cName])};
+            )
             ***************************************************************************************************************************
             //Custom Styles
             WITH WEBEXOBJECT CLASS WebExComment
@@ -642,10 +646,9 @@ static function FWWebExScripts() as character
 
     //FWWebEx Scripts
     beginContent var cPageScript
-
         /*FWWebExHasJQuery*/
         function FWWebExHasJQuery() {
-            return window?.jQuery;
+            return !!window?.jQuery;
         }
 
         /*FWWebExWaitForElementID*/
@@ -658,13 +661,363 @@ static function FWWebExScripts() as character
             }
         }
 
+        window.FWWebEx = window.FWWebEx || {};
+
+        /***********************************************************************
+        * FWWebEx.Events
+        * - Event bus com memoria de eventos disparados
+        * - Evita polling espalhado pela aplicacao
+        **********************************************************************/
+        FWWebEx.Events = (() => {
+
+            const fired = {};
+
+            function on(name, callback, options = {}) {
+                const once = !!options.once;
+
+                if (fired[name]) {
+                    callback({ type: name, detail: fired[name] });
+                    return;
+                }
+
+                const handler = (event) => {
+                    callback(event);
+                    if (once) {
+                        document.removeEventListener(name, handler);
+                    }
+                };
+
+                document.addEventListener(name, handler);
+            }
+
+            function once(name, callback) {
+                on(name, callback, { once: true });
+            }
+
+            function emit(name, detail) {
+                fired[name] = detail ?? true;
+                document.dispatchEvent(new CustomEvent(name, { detail }));
+            }
+
+            function hasFired(name) {
+                return Object.prototype.hasOwnProperty.call(fired, name);
+            }
+
+            return { on, once, emit, hasFired };
+
+        })();
+
+        /***********************************************************************
+        * FWWebEx.Ready
+        * - Aguarda assets opcionais/obrigatorios sem loop infinito
+        * - Dispara:
+        *   FWWebEx:jquery:ready
+        *   FWWebEx:bootstrap:ready
+        *   FWWebEx:datatable:ready
+        *   FWWebEx:datatable:timeout
+        *   FWWebEx:ui:ready
+        **********************************************************************/
+        FWWebEx.Ready = (() => {
+
+            function waitFor(checkFn, eventName, options = {}) {
+
+                const timeout  = Number(options.timeout ?? 3000);
+                const interval = Number(options.interval ?? 25);
+                const optional = !!options.optional;
+                const onTimeoutEmit = options.onTimeoutEmit || (eventName + ':timeout');
+
+                let elapsed = 0;
+                let done = false;
+
+                function finish(success, payload = {}) {
+                    if (done) {
+                        return;
+                    }
+
+                    done = true;
+
+                    if (success) {
+                        FWWebEx.Events.emit(eventName, {
+                            name: eventName,
+                            success: true,
+                            optional,
+                            timeout: false,
+                            ...payload
+                        });
+                    } else {
+                        if (!optional) {
+                            console.warn('[FWWebEx] Timeout aguardando:', eventName);
+                        }
+                        FWWebEx.Events.emit(onTimeoutEmit, {
+                            name: eventName,
+                            success: false,
+                            optional,
+                            timeout: true,
+                            ...payload
+                        });
+                    }
+                }
+
+                function loop() {
+                    try {
+                        if (checkFn()) {
+                            finish(true);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('[FWWebEx] Erro ao avaliar dependencia:', eventName, e);
+                    }
+
+                    elapsed += interval;
+
+                    if (elapsed >= timeout) {
+                        finish(false);
+                        return;
+                    }
+
+                    setTimeout(loop, interval);
+                }
+
+                loop();
+            }
+
+            function jquery(options = {}) {
+                waitFor(
+                    () => !!window.jQuery,
+                    'FWWebEx:jquery:ready',
+                    {
+                        timeout: options.timeout ?? 4000,
+                        interval: options.interval ?? 25,
+                        optional: options.optional ?? false
+                    }
+                );
+            }
+
+            function bootstrap(options = {}) {
+                waitFor(
+                    () => !!window.bootstrap && !!window.bootstrap.Modal,
+                    'FWWebEx:bootstrap:ready',
+                    {
+                        timeout: options.timeout ?? 4000,
+                        interval: options.interval ?? 25,
+                        optional: options.optional ?? false
+                    }
+                );
+            }
+
+            function datatable(options = {}) {
+                waitFor(
+                    () => !!window.jQuery && !!window.$?.fn?.DataTable,
+                    'FWWebEx:datatable:ready',
+                    {
+                        timeout: options.timeout ?? 2000,
+                        interval: options.interval ?? 25,
+                        optional: options.optional ?? true
+                    }
+                );
+            }
+
+            function ui() {
+
+                let hasJQuery = false;
+                let hasBootstrap = false;
+
+                function tryEmitUI() {
+                    if (hasJQuery && hasBootstrap) {
+                        FWWebEx.Events.emit('FWWebEx:ui:ready', {
+                            jquery: true,
+                            bootstrap: true
+                        });
+                    }
+                }
+
+                FWWebEx.Events.once('FWWebEx:jquery:ready', () => {
+                    hasJQuery = true;
+                    tryEmitUI();
+                });
+
+                FWWebEx.Events.once('FWWebEx:bootstrap:ready', () => {
+                    hasBootstrap = true;
+                    tryEmitUI();
+                });
+            }
+
+            return { waitFor, jquery, bootstrap, datatable, ui };
+
+        })();
+
+        /***********************************************************************
+        * FWWebEx.Actions
+        * - Registro generico de acoes declarativas via data-fwwebex-action
+        * - Evita onclick inline
+        **********************************************************************/
+        FWWebEx.Actions = (() => {
+
+            const registry = {};
+
+            function register(name, handler) {
+                if (!name || typeof handler !== 'function') {
+                    console.warn('[FWWebEx] Acao invalida ao registrar:', name);
+                    return;
+                }
+                registry[name] = handler;
+            }
+
+            function execute(el, event) {
+                if (!el) {
+                    return;
+                }
+
+                const actionName = el.dataset.fwwebexAction;
+
+                if (!actionName) {
+                    return;
+                }
+
+                const handler = registry[actionName];
+
+                if (typeof handler !== 'function') {
+                    console.warn('[FWWebEx] Acao nao registrada:', actionName, el);
+                    return;
+                }
+
+                try {
+                    handler(el, event);
+                } catch (err) {
+                    console.error('[FWWebEx] Erro executando acao:', actionName, err);
+                }
+            }
+
+            function bind(root = document) {
+
+                let elements = [];
+
+                if (root?.matches?.('[data-fwwebex-action]')) {
+                    elements.push(root);
+                }
+
+                if (root?.querySelectorAll) {
+                    elements = elements.concat(Array.from(root.querySelectorAll('[data-fwwebex-action]')));
+                }
+
+                elements.forEach(el => {
+
+                    if (el.__fwwebexActionBound) {
+                        return;
+                    }
+
+                    const eventName = el.dataset.fwwebexEvent || 'click';
+
+                    el.addEventListener(eventName, function(event) {
+
+                        const preventDefault = el.dataset.fwwebexPreventDefault;
+                        const shouldPrevent =
+                            preventDefault === undefined ||
+                            String(preventDefault).toLowerCase() === 'true';
+
+                        if (shouldPrevent && event?.preventDefault) {
+                            event.preventDefault();
+                        }
+
+                        execute(el, event);
+                    });
+
+                    el.__fwwebexActionBound = true;
+                });
+            }
+
+            return { register, execute, bind };
+
+        })();
+
+        /***********************************************************************
+        * Acoes padrao
+        **********************************************************************/
+        FWWebEx.Actions.register('open-modal', function(el) {
+
+            const target =
+                el.dataset.target ||
+                el.dataset.bsTarget ||
+                el.getAttribute('href');
+
+            if (!target || target === '#') {
+                console.warn('[FWWebEx] open-modal sem target:', el);
+                return;
+            }
+
+            const modalEl = document.querySelector(target);
+
+            if (!modalEl) {
+                console.warn('[FWWebEx] Modal nao encontrado:', target);
+                return;
+            }
+
+            if (window.bootstrap?.Modal) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+                return;
+            }
+
+            if (FWWebExHasJQuery() && typeof window.jQuery(modalEl).modal === 'function') {
+                window.jQuery(modalEl).modal('show');
+                return;
+            }
+
+            console.warn('[FWWebEx] Nenhum motor de modal disponivel para:', target);
+        });
+
+        FWWebEx.Actions.register('close-modal', function(el) {
+
+            const target =
+                el.dataset.target ||
+                el.dataset.bsTarget ||
+                el.getAttribute('href');
+
+            let modalEl = null;
+
+            if (target && target !== '#') {
+                modalEl = document.querySelector(target);
+            } else {
+                modalEl = el.closest('.modal');
+            }
+
+            if (!modalEl) {
+                console.warn('[FWWebEx] close-modal sem modal alvo:', el);
+                return;
+            }
+
+            if (window.bootstrap?.Modal) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.hide();
+                return;
+            }
+
+            if (FWWebExHasJQuery() && typeof window.jQuery(modalEl).modal === 'function') {
+                window.jQuery(modalEl).modal('hide');
+                return;
+            }
+
+            console.warn('[FWWebEx] Nenhum motor de modal disponivel para fechar:', modalEl);
+        });
+
+        FWWebEx.Actions.register('alert', function(el) {
+            const message = el.dataset.message || 'OK';
+            const title   = el.dataset.title   || 'Alert';
+            const type    = el.dataset.type    || 'primary';
+            FWWebExAlert(message, title, type, { dismissible: true });
+        });
+
+        FWWebEx.Actions.register('coming-soon', function(el) {
+            const route = el.dataset.route || el.getAttribute('href') || '/';
+            FWWebExShowComingSoon(route);
+        });
+
         /***********************************************************************
         * FWWebEx.RequestHandler (v2) - agora 100% compativel
         * - Usa CustomEvent + event.detail (padrao DOM)
         * - Mantem fallback para event.protheusResponse (legado)
         * - Inclui logs de debug opcionais
         **********************************************************************/
-        window.FWWebEx = window.FWWebEx || {};
         FWWebEx.RequestHandler = (() => {
             let _debug = true;
             const log = (...args) => _debug && console.log('[FWWebEx]', ...args);
@@ -740,6 +1093,122 @@ static function FWWebExScripts() as character
         })();
 
         /**
+        * =============================================================================
+        * FWWebEx.Ready.withDependencies
+        * =============================================================================
+        *
+        * Aguarda multiplos eventos de "ready" antes de executar um callback.
+        *
+        * Este metodo implementa um mecanismo declarativo de dependencias entre
+        * componentes/features do FWWebEx, permitindo que modulos sejam carregados
+        * de forma desacoplada e sincronizada atraves do sistema de eventos.
+        *
+        * -----------------------------------------------------------------------------
+        * CONCEITO
+        * -----------------------------------------------------------------------------
+        * Em vez de depender da ordem de carregamento de scripts ou uso de polling
+        * (setTimeout/setInterval), este metodo utiliza eventos explicitos de readiness.
+        *
+        * Cada dependencia deve emitir um evento no padrao:
+        *
+        *     FWWebEx.Events.emit('<namespace>:ready')
+        *
+        * Exemplo:
+        *     FWWebEx.Events.emit('FWWebEx:ascii:ready')
+        *
+        * -----------------------------------------------------------------------------
+        * PARAMETROS
+        * -----------------------------------------------------------------------------
+        * @param {Array<string>} deps
+        * Lista de eventos que devem ser aguardados antes da execucao do callback.
+        *
+        * Exemplo:
+        * [
+        *   'FWWebEx:jquery:ready',
+        *   'FWWebEx:ascii:ready'
+        * ]
+        *
+        * @param {Function} callback
+        * Funcao executada apos todas as dependencias terem sido resolvidas.
+        *
+        * Recebe como argumento um objeto "state" contendo o status das dependencias:
+        *
+        * {
+        *   'FWWebEx:jquery:ready': true,
+        *   'FWWebEx:ascii:ready' : true
+        * }
+        *
+        * -----------------------------------------------------------------------------
+        * COMPORTAMENTO
+        * -----------------------------------------------------------------------------
+        * - Cada dependencia e escutada utilizando FWWebEx.Events.once
+        * - O callback sera executado apenas UMA vez
+        * - A ordem dos eventos NAO importa
+        * - Nao ha polling ou verificacao ativa (event-driven)
+        *
+        * -----------------------------------------------------------------------------
+        * EXEMPLO DE USO
+        * -----------------------------------------------------------------------------
+        *
+        * FWWebEx.Ready.withDependencies(
+        *     [
+        *         'FWWebEx:jquery:ready',
+        *         'FWWebEx:ascii:ready'
+        *     ],
+        *     function (state) {
+        *         FWWebExAsciiEngine.start({
+        *             id: 'loader',
+        *             script: '...'
+        *         });
+        *     }
+        * );
+        *
+        * -----------------------------------------------------------------------------
+        * BOAS PRATICAS
+        * -----------------------------------------------------------------------------
+        * - Cada feature deve ser responsavel por emitir seu proprio evento de ready
+        * - Evite dependencias implicitas (ex: assumir que jQuery ja esta carregado)
+        * - Use nomes de eventos padronizados: "FWWebEx:<feature>:ready"
+        *
+        * -----------------------------------------------------------------------------
+        * LIMITACOES
+        * -----------------------------------------------------------------------------
+        * - Caso um evento nunca seja emitido, o callback nao sera executado
+        * - Nao possui timeout nativo (pode ser implementado externamente)
+        *
+        * -----------------------------------------------------------------------------
+        * VISAO ARQUITETURAL
+        * -----------------------------------------------------------------------------
+        * Este metodo e base para um modelo de carregamento orientado a eventos,
+        * permitindo evolucao para:
+        *
+        * - Sistema de plugins/features com dependsOn
+        * - Gerenciador de assets com prioridade
+        * - Bootstrapping modular do FWWebEx
+        *
+        * Em essencia:
+        *     "Nao pergunte se esta pronto. Espere ser avisado."
+        *
+        * =============================================================================
+        */
+        FWWebEx.Ready.withDependencies = function(deps, callback) {
+
+            const state = {};
+            let remaining = deps.length;
+
+            deps.forEach(dep => {
+                FWWebEx.Events.once(dep, () => {
+                    state[dep] = true;
+                    remaining--;
+
+                    if (remaining === 0) {
+                        callback(state);
+                    }
+                });
+            });
+        };
+
+        /**
         * Executor generico FWWebEx para WS, REST Basic, REST OAuth2 e Link Direto
         * Executa acao a partir de um link/menu/card
         * @param {Object} options
@@ -778,7 +1247,6 @@ static function FWWebExScripts() as character
             else if (type === 'rest-oauth2') {
                 let token = auth?.token;
 
-                // Busca automaticamente do ERPTOKEN se nao foi informado no menu/link
                 if (!token) {
                     try {
                         const erpTokenData = JSON.parse(sessionStorage.getItem('ERPTOKEN') || '{}');
@@ -823,6 +1291,7 @@ static function FWWebExScripts() as character
                 FWWebExShowOverlay(content);
             } else if (target && document.querySelector(target)) {
                 document.querySelector(target).innerHTML = content;
+                FWWebEx.Actions.bind(document.querySelector(target));
             } else {
                 console.warn('Destino nao encontrado:', target);
             }
@@ -846,6 +1315,7 @@ static function FWWebExScripts() as character
                 });
             }
             overlay.innerHTML = `<div style="background:white;padding:1rem;border-radius:8px;">${html}</div>`;
+            FWWebEx.Actions.bind(overlay);
         }
 
         /**
@@ -868,29 +1338,8 @@ static function FWWebExScripts() as character
 
         /** Helper function
         * Creates and displays a customizable modal dialog using Bootstrap styling, similar to WebExDataTableFilterPanelEx.
-        * @param {string} message - The message or HTML content to display in the modal body (short message or detailed text).
-        * @param {string} [title='Alert'] - The title to display in the modal header.
-        * @param {string} [type='primary'] - The modal type for styling (e.g., 'primary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'secondary').
-        * @param {Object} [options] - Optional configuration object.
-        * @param {boolean} [options.autoClose=false] - Whether the modal should close automatically.
-        * @param {number} [options.autoCloseDelay=5000] - Delay in milliseconds before auto-closing (if autoClose is true).
-        * @param {boolean} [options.dismissible=true] - Whether the modal includes a close button and is dismissible by backdrop/ESC.
-        * @param {HTMLElement} [options.target=document.body] - The DOM element where the modal will be appended.
-        * @param {boolean} [options.detailed=false] - Whether to display the message in a textarea for detailed content.
-        * @returns {HTMLElement} - The created modal element for further manipulation.
-        ********************************************************************************************************************************************
-        Example of usage:
-        // Link message example
-        FWWebExAlert('Alert with link <a href="#" class="alert-link">click here</a>.', 'Warning', 'warning', { dismissible: true });
-        // Short message example
-        FWWebExAlert('This is a test alert at 03:50 PM -03 on October 02, 2025!', 'Success Alert', 'success', { autoClose: true, autoCloseDelay: 3000 });
-        // Detailed message example
-        const detailedMessage = `This is a very long message to demonstrate the textarea feature. It includes multiple lines of text to show how the modal adapts to detailed content. You can add as much text as needed here, and it will be displayed in a resizable textarea for better readability. This is especially useful for error messages or detailed notifications.`;
-        FWWebExAlert(detailedMessage, 'Detailed Alert', 'info', { detailed: true });
-        ********************************************************************************************************************************************
         */
         function FWWebExAlert(message, title = 'Alert', type = 'primary', options = {}) {
-            // Default configurations
             const defaultOptions = {
                 autoClose: false,
                 autoCloseDelay: 5000,
@@ -900,7 +1349,6 @@ static function FWWebExScripts() as character
             };
             const settings = { ...defaultOptions, ...options };
 
-            // Validate input
             if (!message || typeof message !== 'string') {
                 console.error('FWWebExAlert: Message is required and must be a string.');
                 return null;
@@ -914,7 +1362,6 @@ static function FWWebExScripts() as character
                 settings.target = document.body;
             }
 
-            // Map alert types to Bootstrap icons
             const iconMap = {
                 primary: 'bi-info-circle-fill',
                 secondary: 'bi-info-circle-fill',
@@ -927,22 +1374,19 @@ static function FWWebExScripts() as character
             };
 
             try {
-                // Generate unique ID for the modal
                 const modalId = 'fwwebex-alert-modal-' + Date.now();
                 const dialogId = modalId + '-dialog';
                 const contentId = modalId + '-content';
 
-                // Create the modal structure with larger size
                 const modalDiv = document.createElement('div');
                 modalDiv.id = modalId;
                 modalDiv.className = `modal fade ${settings.dismissible ? '' : 'modal-static'}`;
                 modalDiv.setAttribute('tabindex', '-1');
                 modalDiv.setAttribute('role', 'dialog');
-                modalDiv.style.display = 'block'; // Ensure visibility
+                modalDiv.style.display = 'block';
 
-                // Determine modal body content
                 let modalBodyContent = '';
-                if (settings.detailed && message.length > 100) { // Threshold for detailed view
+                if (settings.detailed && message.length > 100) {
                     modalBodyContent = `
                         <textarea class="form-control" rows="5" readonly>${message}</textarea>
                     `;
@@ -967,29 +1411,23 @@ static function FWWebExScripts() as character
                     </div>
                 `;
 
-                // Add the modal to the DOM
                 settings.target.appendChild(modalDiv);
 
-                // Check if Bootstrap is available
                 if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    // Initialize the modal
                     const bsModal = new bootstrap.Modal(modalDiv, {
                         backdrop: settings.dismissible ? 'static' : true,
                         keyboard: settings.dismissible,
                         focus: true
                     });
 
-                    // Show the modal
                     bsModal.show();
 
-                    // If autoClose is enabled, close the modal after the delay
                     if (settings.autoClose) {
                         setTimeout(() => {
                             bsModal.hide();
                         }, settings.autoCloseDelay);
                     }
 
-                    // Listen for hidden event to remove from DOM
                     modalDiv.addEventListener('hidden.bs.modal', () => {
                         if (modalDiv.parentNode) {
                             modalDiv.parentNode.removeChild(modalDiv);
@@ -997,13 +1435,11 @@ static function FWWebExScripts() as character
                     });
                 } else {
                     console.warn('FWWebExAlert: Bootstrap JS not loaded. Modal will be static.');
-                    // Fallback: Show statically without Bootstrap functionality
                     modalDiv.classList.add('show');
                     modalDiv.style.display = 'block';
-                    document.body.classList.add('modal-open'); // Prevent body scroll
+                    document.body.classList.add('modal-open');
                 }
 
-                // Return the modal element for additional control, if needed
                 return modalDiv;
             } catch (error) {
                 console.error('FWWebExAlert: Failed to create modal:', error);
@@ -1011,37 +1447,53 @@ static function FWWebExScripts() as character
             }
         }
 
-        /*
-        ********************************************************************************************************************************************
-        FWWebExDecodeHTMLEntities*/
         function FWWebExDecodeHTMLEntities(text) {
             const txt = document.createElement("textarea");
             txt.innerHTML = text;
             return txt.value;
         }
 
-        /*
-        ********************************************************************************************************************************************
-        FWWebExShowComingSoon*/
         function FWWebExShowComingSoon(route) {
             FWWebExAlert(FWWebExDecodeHTMLEntities('Rota '+route+' ainda n&atilde;o implementada!'), 'Info' ,'info', { dismissible: true });
         }
 
-        /*
-        ********************************************************************************************************************************************
-        * Helper function
-        * Removes all leading, trailing, and extra spaces between words in a string.
-        * @param {string} str - The input string to be trimmed.
-        * @returns {string} - The trimmed string with single spaces between words.
-        */
         function FWWebExAllTrim(str) {
             if (typeof str !== "string") {
                 throw new TypeError("Input must be a string");
             }
-            // Use trim() to remove leading and trailing spaces
-            // Use replace() with a regex to collapse multiple spaces into one
             return str.trim().replace(/\s+/g, " ");
         }
+
+        /***********************************************************************
+        * Bootstrap do runtime
+        **********************************************************************/
+        document.addEventListener('DOMContentLoaded', function () {
+
+            FWWebEx.Ready.ui();
+            FWWebEx.Ready.jquery();
+            FWWebEx.Ready.bootstrap();
+            FWWebEx.Ready.datatable();
+
+            FWWebEx.Events.on('FWWebEx:ui:ready', function () {
+                FWWebEx.Actions.bind(document);
+            });
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            FWWebEx.Actions.bind(node);
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+        });
     endContent
 
 return(cPageScript)

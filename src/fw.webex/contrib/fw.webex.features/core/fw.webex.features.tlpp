@@ -1,0 +1,151 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+static __jGlobalFeatures:=JSONObject():New()
+
+namespace FWWebEx
+
+class WebExFeatures from FWWebEx.ClassBase
+
+    protected data bLoadFeature as codeblock
+
+    protected data cFeatureID as character
+
+    protected data lLoaded as logical
+    protected data lEnabled as logical
+
+    protected data nPriority as numeric
+
+    protected data oFeature as object
+
+    public method New(oFeature as object,bLoadFeature as codeblock,nPriority as numeric) as object
+
+    public method SetPriority(nPriority as numeric) as object
+    public method GetPriority() as numeric
+
+    public method LoadAll(oControl) as object
+    public method UnLoadAll() as object
+
+    public method Load(oControl) as object
+    public method UnLoad() as object
+
+endclass
+
+method New(oFeature,bLoadFeature,nPriority) class WebExFeatures
+
+    local cClassName as character
+
+    paramtype 1 var oFeature as object
+    paramtype 2 var bLoadFeature as block
+    paramtype 3 var nPriority as numeric optional default 1
+
+    _Super:New()
+
+    cClassName:=GetClassName(oFeature)
+    if (!Left(cClassName,8)=="FWWEBEX.")
+        CLASSPARAMEXCEPTION PARAM 1 VAR oFeature TEXT cClassName MESSAGE "Object must belong to the FWWEBEX namespace. Got '"+cClassName+"' instead. Check your class declaration."
+    elseif ((!MethIsMemberOf(oFeature,"ISKINDOF",.T.)).or.(!oFeature:IsKindOf("WEBEXCONTROL",.T.)))
+        CLASSPARAMEXCEPTION PARAM 1 VAR oFeature TEXT cClassName MESSAGE "Object must inherit from FWWEBEX.WebExControl. Received: "+cClassName+"."
+    endif
+
+    ::oFeature:=oFeature
+    ::cFeatureID:=cClassName
+    ::bLoadFeature:=bLoadFeature
+
+    ::lEnabled:=.F.
+    ::lEnabled:=.F.
+    ::SetPriority(nPriority)
+    ::oFeature:SetPriority(nPriority)
+
+    if ((!__jGlobalFeatures:HasProperty(::cFeatureID)).or.(ValType(__jGlobalFeatures[::cFeatureID])!="O"))
+        ::lEnabled:=.T.
+        __jGlobalFeatures[::cFeatureID]:=self
+    else //se tentar habilitar uma feature ja carregada assume a original
+        self:=__jGlobalFeatures[::cFeatureID]
+        ::lEnabled:=.T.
+    endif
+
+return(self)
+
+method SetPriority(nPriority) class WebExFeatures
+    paramtype 1 var nPriority as numeric optional default 1
+    ::nPriority:=nPriority
+return(self)
+
+method GetPriority() class WebExFeatures
+return(::nPriority)
+
+method Load(oControl) class WebExFeatures
+
+    local bErrorBlock as codeblock
+
+    local lLoaded as logical
+
+    local oError as object
+
+    if ((!::lLoaded).and.(__jGlobalFeatures:HasProperty(::cFeatureID)))
+        lLoaded:=__jGlobalFeatures[::cFeatureID]:GetMemberData("lLoaded",.F.)
+        if ((!lLoaded).and.(valType(::bLoadFeature)=="B"))
+            bErrorBlock:=ErrorBlock({|e as object|e:=oError,break(e)})
+            begin sequence
+                Eval(::bLoadFeature,oControl)
+                ::lLoaded:=.T.
+                ::lEnabled:=.T.
+            recover
+                if (ValType(oError)=="O")
+                    ConOut(oError:Description)
+                    FreeObj(@oError)
+                endif
+                ::lLoaded:=.F.
+                ::lEnabled:=.F.
+            end sequence
+            ErrorBlock(bErrorBlock)
+        else
+            ::lLoaded:=.F.
+            ::lEnabled:=.F.
+        endif
+        __jGlobalFeatures[::cFeatureID]:SetMemberData("lLoaded",::lLoaded)
+        __jGlobalFeatures[::cFeatureID]:SetMemberData("lEnabled",::lEnabled)
+    endif
+
+return(self)
+
+method UnLoad() class WebExFeatures
+    ::lEnabled:=.F.
+    ::lLoaded:=.F.
+    ::bLoadFeature:={||.F.}
+    if (__jGlobalFeatures:HasProperty(::cFeatureID))
+        __jGlobalFeatures:DelName(::cFeatureID)
+    endif
+return(self)
+
+method LoadAll(oControl) class WebExFeatures
+
+    local aFeatures:=__jGlobalFeatures:GetNames()
+
+    aSort(aFeatures,nil,nil,{|x as character,y as character|__jGlobalFeatures[x]:GetPriority()<__jGlobalFeatures[y]:GetPriority()})
+    aEval(aFeatures,{|cFeature as character|__jGlobalFeatures[cFeature]:Load(oControl)})
+
+    FWFreeArray(@aFeatures)
+
+return(self)
+
+method UnLoadAll() class WebExFeatures
+
+    local aFeatures:=__jGlobalFeatures:GetNames() as array
+
+    aEval(aFeatures,{|cFeature as character|__jGlobalFeatures[cFeature]:UnLoad()})
+
+    FWFreeArray(@aFeatures)
+
+return(self)

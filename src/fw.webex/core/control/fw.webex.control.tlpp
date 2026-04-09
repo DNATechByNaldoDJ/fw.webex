@@ -27,24 +27,19 @@ static __aVoidTags:={;
    ,"wbr";
 } as array
 
+static __jWebExFeatures:=JSONObject():New()
+
 static __cID as character
 static __cCRLF:=CRLF as character
 static __cTmpPathUserInfo as character
 
+static __lHasFeaturesEnabled:=.F. as logical
+
 static __jAssets:=JSONObject():New() as json
 static __jHeader:=JSONObject():New() as json
 static __jScripts:=JSONObject():New() as json
-static __jFeatures:={;
-    "lChartEnabled":.F.;
-   ,"lIconsEnabled":.F.;
-   ,"lJQueryEnabled":.F.;
-   ,"lMarkDownEnabled":.F.;
-   ,"lApexChartEnabled":.F.;
-   ,"lDataTableEnabled":.F.;
-   ,"lASCIILoaderEnabled":.F.;
-   ,"lMaterialDesignEnabled":.F.;
-   ,"lWebExBackURLButtonEnabled":.F.;
-} as json
+
+static __nPriority:=0 as numeric
 
 namespace FWWebEx
 
@@ -69,15 +64,7 @@ class WebExControl from FWWebEx.ClassBase
     protected data lExternalAssets as logical
     protected data lRenderChildren as logical
 
-    protected data lChartEnabled as logical
-    protected data lIconsEnabled as logical
-    protected data lJQueryEnabled as logical
-    protected data lMarkDownEnabled as logical
-    protected data lApexChartEnabled as logical
-    protected data lDataTableEnabled as logical
-    protected data lASCIILoaderEnabled as logical
-    protected data lMaterialDesignEnabled as logical
-    protected data lWebExBackURLButtonEnabled as logical
+    protected data nPriority as numeric
 
     public method New(cType as character) as object
 
@@ -88,6 +75,9 @@ class WebExControl from FWWebEx.ClassBase
 
     public method SetFixedID(cFixedID as character) as character
     public method GetFixedID() as character
+
+    public method SetPriority(nPriority as numeric) as object
+    public method GetPriority() as numeric
 
     public method GetType() as character
     public method SetType(cType) as character
@@ -164,41 +154,19 @@ class WebExControl from FWWebEx.ClassBase
     public method IsVisible() as logical
     public method SetVisible(lVisible as logical) as object
 
-    public method GetEnableChart() as logical
-    public method SetEnableChart(lChartEnabled as logical) as object
-
-    public method GetEnableApexChart() as logical
-    public method SetEnableApexChart(lApexChartEnabled as logical) as object
-
-    public method GetEnableIcons() as logical
-    public method SetEnableIcons(lIconsEnabled as logical) as object
-
-    public method GetEnableJQuery() as logical
-    public method SetEnableJQuery(lJQueryEnabled as logical) as object
-
-    public method GetEnableMarkDown() as logical
-    public method SetEnableMarkDown(lMarkDownEnabled as logical) as object
-
-    public method GetEnableDataTable() as logical
-    public method SetEnableDataTable(lDataTableEnabled as logical) as object
-
-    public method GetEnableASCIILoader() as logical
-    public method SetEnableASCIILoader(lASCIILoaderEnabled as logical) as object
-
-    public method GetEnableMaterialDesign() as logical
-    public method SetEnableMaterialDesign(lMaterialDesignEnabled as logical) as object
-
-    public method GetEnableWebExBackURLButton() as logical
-    public method SetEnableWebExBackURLButton(lWebExBackURLButtonEnabled as logical) as object
-
     public method Clean() as variant
+    public method CleanHeader() as variant
     public method CleanChildren() as variant
     public method CleanObjectsContainer()
 
     public method RemoveScripts() as variant
 
-    public method DisableFeatures() as variant
-    public method HasFeatureEnabled() as logical
+    public method AddFeature(oFeature as object,bLoadFeature as codeblock,nPriority as numeric) as object
+    public method ExistFeature(vFeature as variant) as logical
+
+    public method EnableFeatures() as logical
+    public method DisableFeatures() as logical
+    public method HasFeaturesEnabled(cFeature) as logical
 
     public method DumpDOM(nLevel as numeric) as character
 
@@ -214,15 +182,6 @@ method New(cType) class WebExControl
     ::jContents:=JSONObject():New()
     ::jObjectsContainer:=JSONObject():New()
     ::lVisible:=.T.
-    ::lChartEnabled:=__jFeatures["lChartEnabled"]
-    ::lIconsEnabled:=__jFeatures["lIconsEnabled"]
-    ::lJQueryEnabled:=__jFeatures["lJQueryEnabled"]
-    ::lMarkDownEnabled:=__jFeatures["lMarkDownEnabled"]
-    ::lApexChartEnabled:=__jFeatures["lApexChartEnabled"]
-    ::lDataTableEnabled:=__jFeatures["lDataTableEnabled"]
-    ::lASCIILoaderEnabled:=__jFeatures["lASCIILoaderEnabled"]
-    ::lMaterialDesignEnabled:=__jFeatures["lMaterialDesignEnabled"]
-    ::lWebExBackURLButtonEnabled:=__jFeatures["lWebExBackURLButtonEnabled"]
     ::lRenderChildren:=.T.
     ::lExternalAssets:=.F.
     _Super:New()
@@ -246,6 +205,7 @@ method SetID(cID) class WebExControl
         cID:=::GetID()
     endif
     ::cID:=cID
+    ::nPriority:=__nPriority
 return(self)
 
 method NewID() class WebExControl
@@ -253,10 +213,12 @@ method NewID() class WebExControl
         ::ResetID()
     endif
     __cID:=__Soma1(__cID)
+    __nPriority++
 return((self:ClassName()+"_"+__cID))
 
 method ResetID() class WebExControl
     __cID:=Replicate("0",FWWEBEX_ID_MAX_SIZE)
+    __nPriority:=0
 return(self)
 
 method SetFixedID(cFixedID) class WebExControl
@@ -268,6 +230,14 @@ method GetFixedID() class WebExControl
     local cFixedID as character
     cFixedID:=if(Empty(::cFixedID),::GetID(),::cFixedID)
 return(cFixedID)
+
+method SetPriority(nPriority) class WebExControl
+    paramtype 1 var nPriority as numeric optional default ::nPriority
+    ::nPriority:=nPriority
+return(self)
+
+method GetPriority() class WebExControl
+return(::nPriority)
 
 method GetType() class WebExControl
 return(::cType)
@@ -380,7 +350,7 @@ method DelAttrValue(cAttr,cAttrValue,aAttr,lDelAttrValue) class WebExControl
     if (Empty(aAttr))
         lDelAttrValue:=::HasAttrValue(cAttr,cAttrValue,@aAttr)
     else
-        lDelAttrValue:=(aScan(aAttr,{|cToken|cToken==cAttrValue})>0)
+        lDelAttrValue:=(aScan(aAttr,{|cToken as character|cToken==cAttrValue})>0)
     endif
 
     if (lDelAttrValue)
@@ -516,7 +486,7 @@ method SetFWWebExTmpPath(cFWWebExTmpPath)  class WebExControl
             cEnvServer:=Upper(AllTrim(GetEnvServer()))
             nUserInfo:=aScan(;
                 aUserInfo;
-                ,{|x|;
+                ,{|x as character|;
                     (;
                         (!Empty(x[1]));
                         .and.;
@@ -790,6 +760,10 @@ method RenderHTML() class WebExControl
 
     if ((::lRenderChildren).or.(Empty(::cHTML)))
 
+        if ((.T.).or.(!::HasFeaturesEnabled()))
+            ::EnableFeatures()
+        endif
+
         // Garante que tenha um ID unico
         if (!::jAttrs:HasProperty("id"))
             ::jAttrs["id"]:=::GetFixedID()
@@ -848,7 +822,7 @@ method RenderHTML() class WebExControl
                     next nAttr
                 endif
 
-            if (aScan(__aVoidTags,{|cType|(cType==cLowerType)})>0)
+            if (aScan(__aVoidTags,{|cType as character|(cType==cLowerType)})>0)
 
                 cHTML+="/>"
 
@@ -1015,1730 +989,6 @@ method SetVisible(lVisible) class WebExControl
     endif
 return(self)
 
-method GetEnableChart() class WebExControl
-return(::lChartEnabled)
-
-method SetEnableChart(lChartEnabled) class WebExControl
-
-    paramtype 1 var lChartEnabled as logical optional default .T.
-
-    if ((lChartEnabled).and.(!::lChartEnabled))
-        ::lChartEnabled:=.T.
-        __jFeatures["lChartEnabled"]:=::lChartEnabled
-        //Chart
-            //https://www.chartjs.org/docs/latest/
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("Chart")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                .:SetContent("https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            //https://date-fns.org/
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("date-fns")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                .:SetContent("https://cdn.jsdelivr.net/npm/date-fns/cdn.min.js")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            //https://github.com/chartjs/chartjs-adapter-date-fns
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("chartjs-adapter-date-fns")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                .:SetContent("https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-        //Chart
-    elseif ((!lChartEnabled).and.((__jFeatures["lChartEnabled"]).or.(::lChartEnabled)))
-        ::lChartEnabled:=lChartEnabled
-        __jFeatures["lChartEnabled"]:=::lChartEnabled
-    endif
-
-return(self)
-
-method GetEnableApexChart() class WebExControl
-return(::lApexChartEnabled)
-
-method SetEnableApexChart(lApexChartEnabled) class WebExControl
-
-    paramtype 1 var lApexChartEnabled as logical optional default .T.
-
-    if ((lApexChartEnabled).and.(!::lApexChartEnabled))
-        ::lApexChartEnabled:=.T.
-        __jFeatures["lApexChartEnabled"]:=::lApexChartEnabled
-        //ApexChart
-            //https://apexcharts.com/
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("ApexChart")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                .:SetContent("https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.min.js")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-        //ApexChart
-    elseif ((!lApexChartEnabled).and.((__jFeatures["lApexChartEnabled"]).or.(::lApexChartEnabled)))
-        ::lApexChartEnabled:=lApexChartEnabled
-        __jFeatures["lApexChartEnabled"]:=::lApexChartEnabled
-    endif
-
-return(self)
-
-method GetEnableIcons() class WebExControl
-return(::lIconsEnabled)
-
-method SetEnableIcons(lIconsEnabled) class WebExControl
-
-    paramtype 1 var lIconsEnabled as logical optional default .T.
-
-    if ((lIconsEnabled).and.(!::lIconsEnabled))
-        ::lIconsEnabled:=.T.
-        __jFeatures["lIconsEnabled"]:=::lIconsEnabled
-***************************************************************************************************************************
-            //Bootstrap Icons
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Bootstrap Icons")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Bootstrao Icons
-***************************************************************************************************************************
-            //font-awesome Icons
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("font-awesome Icons")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //font-awesome Icons
-***************************************************************************************************************************
-            //Materialize Icons
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Materialize Icons :: https://materializecss.com/icons.html")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://fonts.googleapis.com/icon?family=Material+Icons")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Materialize
-***************************************************************************************************************************
-    elseif ((!lIconsEnabled).and.((__jFeatures["lIconsEnabled"]).or.(::lIconsEnabled)))
-        ::lIconsEnabled:=lIconsEnabled
-        __jFeatures["lIconsEnabled"]:=::lIconsEnabled
-    endif
-
-return(self)
-
-method GetEnableJQuery() class WebExControl
-return(::lJQueryEnabled)
-
-method SetEnableJQuery(lJQueryEnabled) class WebExControl
-
-    paramtype 1 var lJQueryEnabled as logical optional default .T.
-
-    if ((lJQueryEnabled).and.(!::lJQueryEnabled))
-        ::lJQueryEnabled:=.T.
-        __jFeatures["lJQueryEnabled"]:=::lJQueryEnabled
-***************************************************************************************************************************
-        //JQuery
-            WITH WEBEXOBJECT ::jObjectsContainer["script-jquery-slim"] CLASS WebExScript ARGS .F.
-                .:SetAttr("src","https://releases.jquery.com/git/jquery-git.slim.min.js")
-            END WEBEXOBJECT
-            WITH WEBEXOBJECT ::jObjectsContainer["script-jquery"] CLASS WebExScript ARGS .F.
-                    .:SetAttr("src","https://releases.jquery.com/git/jquery-git.min.js")
-            END WEBEXOBJECT
-        //JQuery
-***************************************************************************************************************************
-    elseif ((!lJQueryEnabled).and.((__jFeatures["lJQueryEnabled"]).or.(::lJQueryEnabled)))
-        ::lJQueryEnabled:=lJQueryEnabled
-        __jFeatures["lJQueryEnabled"]:=::lJQueryEnabled
-    endif
-
-return(self)
-
-method GetEnableMarkDown() class WebExControl
-return(::lMarkDownEnabled)
-
-method SetEnableMarkDown(lMarkDownEnabled) class WebExControl
-
-    local cMarkDownStyle as character
-    local cMarkDownScript as character
-
-    paramtype 1 var lMarkDownEnabled as logical optional default .T.
-
-    if ((lMarkDownEnabled).and.(!::lMarkDownEnabled))
-        ::lMarkDownEnabled:=.T.
-        __jFeatures["lMarkDownEnabled"]:=::lMarkDownEnabled
-***************************************************************************************************************************
-            //FWWebEx MarkDown
-                //JQuery First
-                    ::SetEnableJQuery(.T.)
-                //JQuery
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Embedding Markdown style in a FWWebEx HTML page")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Highlight CSS
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Highlight.js
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Highlight.js
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/markdown.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // markdown-it
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-mark
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-mark/dist/markdown-it-mark.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-sub
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-sub/dist/markdown-it-sub.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-sup
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-sup/dist/markdown-it-sup.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-emoji
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-emoji/dist/markdown-it-emoji.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-task-lists
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-task-lists/dist/markdown-it-task-lists.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-container
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-container/dist/markdown-it-container.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-footnote
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-footnote/dist/markdown-it-footnote.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // Plugin markdown-it-multimd-table
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/npm/markdown-it-multimd-table/dist/markdown-it-multimd-table.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                // TODO: Plugin markdown-it-blockquote-cite
-                /*WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD*/
-                // TODO: markdown-it-front-matter
-                /*WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD*/
-            //FWWebEx MarkDown
-***************************************************************************************************************************
-        //WebExMarkDown Style
-            beginContent var cMarkDownStyle
-
-                mark { background-color: yellow; } sub, sup { font-size: 0.8em; }
-
-                @page {
-                    @top-center { content: element(header); }
-                    @bottom-center { content: element(footer); }
-                }
-
-                @media print {
-
-                    /* Hide all content by default */
-                    body {
-                        visibility: hidden; /* Esconde navbar, sidebar, footer, etc. */
-                        margin: 0; /* Remove margens padrao do body */
-                    }
-
-                    /* Show only .print-only container with padding for header/footer */
-                    .print-only {
-                        visibility: visible !important;
-                        position: absolute; //static
-                        margin: 1.5cm 1.5cm 1.5cm 1.5cm; /* Margens gerais para a pagina */
-                        padding-top: 0; /* Espaco abaixo do header fixo - ajuste conforme altura do header */
-                        padding-bottom: 18px; /* Espaco acima do footer fixo - ajuste conforme altura do footer */
-                        font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
-                        font-size: 12pt;
-                        color: #000;
-                    }
-
-                    /* Fixed header */
-                    .print-only.header {
-                        position: fixed;
-                        top: 0;
-                        width: 100%;
-                        text-align: center;
-                        font-size: 10pt;
-                        color: #555;
-                        visibility: visible;
-                        height: .1px; /* Altura fixa para consistencia */
-                    }
-
-                    /* Fixed footer with dynamic page numbers */
-                    .print-only.footer {
-                        position: fixed;
-                        bottom: 0;
-                        width: 100%;
-                        text-align: center;
-                        font-size: 10pt;
-                        color: #555;
-                        visibility: visible;
-                        height: .1px; /* Altura fixa para consistencia */
-                    }
-
-                    /* Style images within .print-only */
-                    .print-only img {
-                        max-width: 100%; /* Prevent overflow */
-                        height: auto; /* Maintain aspect ratio */
-                        page-break-inside: avoid; /* Avoid breaking images */
-                        width: 80%; /* Default width for printing */
-                    }
-
-                    /* Optional class for custom image sizes */
-                    .print-only img.custom-size {
-                        width: 500px; /* Example custom size */
-                        height: auto;
-                    }
-
-                    /* Style Markdown elements within .print-only */
-                    .print-only h1, .print-only h2, .print-only h3, .print-only h4, .print-only h5, .print-only h6 {
-                        page-break-after: avoid;
-                        page-break-inside: avoid;
-                        margin-bottom: 0.5cm;
-                        color: #000;
-                    }
-
-                    /* Estilizar elementos Markdown */
-                    h1, h2, h3, h4, h5, h6 {
-                        page-break-after: avoid;
-                        page-break-inside: avoid;
-                        margin-bottom: 0.5cm;
-                        color: #000;
-                    }
-
-                    p {
-                        margin: 0.5cm 0;
-                        page-break-inside: avoid;
-                    }
-
-                    ul, ol {
-                        margin: 0.5cm 0;
-                        padding-left: 1.5cm;
-                        page-break-inside: avoid;
-                    }
-
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        page-break-inside: avoid;
-                        margin: 0.5cm 0;
-                    }
-
-                    th, td {
-                        border: 1px solid #000;
-                        padding: 0.3cm;
-                        text-align: left;
-                    }
-
-                    th {
-                        background-color: #f0f0f0;
-                        font-weight: bold;
-                    }
-
-                    /* Suporte a quebras de pagina */
-                    .page-break {
-                        page-break-after: always;
-                        height: 0;
-                        visibility: hidden;
-                    }
-
-                    /* Suporte a emojis */
-                    * {
-                        font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji";
-                    }
-
-                    /* Esconder elementos desnecessarios*/
-                    .no-print {
-                        display: none !important;
-                    }
-
-                    /* Ajustar imagens */
-                    img {
-                        max-width: 100%;
-                        height: auto;
-                        page-break-inside: avoid;
-                    }
-
-                    /* Esconder iframes (videos) */
-                    /*
-                    iframe {
-                        display: none;
-                    }*/
-
-                    /* Garantir que o report-header seja visivel */
-                    .report-header {
-                        visibility: visible !important;
-                        padding: 15px;
-                        margin-bottom: 20px;
-                    }
-                }
-            endContent
-            WITH WEBEXOBJECT CLASS WebExStyle
-                .:SetContent(cMarkDownStyle)
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-        //MarkDown Style
-***************************************************************************************************************************
-        //Scripts Tools
-            beginContent var cMarkDownScript
-                var MarkdownHighlightInFWWebExPage = {};
-                MarkdownHighlightInFWWebExPage.unescapeHTML = function (html) {
-                    var htmlNode = document.createElement('DIV');
-                    htmlNode.innerHTML = html;
-                    if (htmlNode.innerText !== undefined)
-                        return htmlNode.innerText; // IE
-                    return htmlNode.textContent; // FF
-                };
-                MarkdownHighlightInFWWebExPage.convertMD = function (idOrElement) {
-                    try {
-                        if (typeof jQuery === 'undefined') {
-                            console.error('jQuery is not loaded. Markdown conversion aborted.');
-                            return;
-                        }
-                        if (typeof hljs === 'undefined') {
-                            console.warn('Highlight.js is not loaded. Code highlighting will be skipped.');
-                        }
-                        if (typeof window.markdownit === 'undefined') {
-                            console.error('markdown-it is not loaded. Markdown conversion aborted.');
-                            return;
-                        }
-                        // List of plugins
-                        const plugins = [
-                            'markdownitMark',
-                            'markdownitSub',
-                            'markdownitSup',
-                            'markdownitEmoji',
-                            'markdownitTaskLists',
-                            'markdownitContainer',
-                            'markdownitFootnote',
-                            'markdownitMultimdTable',
-                            'markdownitFrontMatter',
-                            'markdownitBlockquoteCite'
-                        ];
-                        // Filter available plugins
-                        const availablePlugins = plugins.filter(plugin => window[plugin]);
-                        const missingPlugins = plugins.filter(plugin => !window[plugin]);
-                        if (missingPlugins.length > 0) {
-                            console.warn(`Some markdown-it plugins are not loaded: ${missingPlugins.join(', ')}. Proceeding with available plugins.`);
-                        }
-                        // Normalize idOrElement to string (ID) or DOM element
-                        var id = typeof idOrElement === 'string' ? idOrElement : idOrElement.id;
-                        console.info('Converting markdown for ID: ' + id + ' using markdown-it');
-                        var md = window.markdownit({
-                            html: true,
-                            highlight: function (str, lang) {
-                                if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
-                                    try {
-                                        return hljs.highlight(str, { language: lang }).value;
-                                    } catch (__) {}
-                                }
-                                return '';
-                            }
-                        });
-                        // Add only available plugins
-                        availablePlugins.forEach(plugin => {
-                            md.use(window[plugin]);
-                        });
-                        // Process the element
-                        var block = typeof idOrElement === 'string' ? jQuery('#' + id) : jQuery(idOrElement);
-                        if (block.length === 0) {
-                            console.error('Element with ID ' + id + ' not found.');
-                            return;
-                        }
-                        if (!block.hasClass('markdown')) {
-                            console.warn('Element with ID ' + id + ' does not have class "markdown".');
-                        }
-                        var rawtext = MarkdownHighlightInFWWebExPage.unescapeHTML(block[0].innerHTML);
-                        // Extract frontmatter
-                        var env = {};
-                        md.render(rawtext, env);
-                        var frontmatter = env.frontMatter || {}; // Try to get from the plugin
-                        var content = env.content || rawtext; // Fallback to original text
-                        // If frontmatter was not extracted by the plugin, parse manually with regex (alternative)
-                        if (!frontmatter.title && !frontmatter.author && !frontmatter.date) {
-                            var fmMatch = rawtext.match(/^---\s*([\s\S]*?)\s*---/);
-                            if (fmMatch) {
-                                var fmText = fmMatch[1].trim(); // Extract content between ---
-                                var lines = fmText.split('\n');
-                                lines.forEach(line => {
-                                    var parts = line.split(':');
-                                    if (parts.length >= 2) {
-                                        var key = parts[0].trim();
-                                        var value = parts.slice(1).join(':').trim();
-                                        frontmatter[key] = value;
-                                    }
-                                });
-                                content = rawtext.replace(fmMatch[0], '').trim(); // Remove frontmatter from content
-                            }
-                        }
-                        // Render the frontmatter as a custom header (only once)
-                        var header = jQuery('<div class="report-header"></div>');
-                        header.append(`<h1>${frontmatter.title || 'No Title'}</h1>`);
-                        header.append(`<div class="meta-info"><p>Author: ${frontmatter.author || 'No Author'}</p><p>Date: ${frontmatter.date || 'No Date'}</p></div>`);
-                        // Render the remaining content
-                        var md_html = md.render(content);
-                        // Use a temporary wrapper to manipulate the rendered HTML
-                        var tempWrapper = jQuery('<div></div>');
-                        tempWrapper.html(md_html);
-                        // Remove any residual <h2> with frontmatter raw text (fallback)
-                        tempWrapper.find('h2:contains("title:")').remove();
-                        // Wrap tables in a responsive div and clean up alignment styles
-                        tempWrapper.find('table').each(function () {
-                            var $table = jQuery(this);
-                            $table.removeAttr('style'); // Remove inline styles
-                            //TODO: Remove inline styles from cells?
-                            $table.find('th, td').removeAttr('style'); // Remove inline styles from cells
-                            $table.wrap('<div class="table-responsive mt-4"></div>');
-                            $table.addClass('table table-bordered table-sm table-striped');
-                        });
-                        // Get the modified HTML
-                        md_html = tempWrapper.html();
-                        // Insert header and modified content as HTML string before the block
-                        block.before(header[0].outerHTML + md_html);
-                        block[0].hidden = true;
-                        // Inject CSS for styling
-                        var style = jQuery('<style>')
-                            .text(`
-                                .report-header {
-                                    padding: 15px;
-                                    margin-bottom: 20px;
-                                    border-radius: 5px;
-                                    border-left: 4px solid #007bff;
-                                    font-family: Arial, sans-serif;
-                                }
-                                .report-header h1 { margin: 0 0 10px 0; font-size: 1.5em; font-weight: bold; }
-                                .report-header .meta-info { display: flex; justify-content: space-between; font-size: 0.9em; opacity: 0.9; }
-                                .report-header .meta-info p { margin: 0; padding: 0; }
-                            `);
-                        jQuery('head').append(style);
-                        // Code highlighting, if available (after insertion to ensure elements are in DOM)
-                        if (typeof hljs !== 'undefined') {
-                            jQuery('pre code').each(function (i, block) {
-                                hljs.highlightElement(block);
-                            });
-                        }
-                    } catch (exc) {
-                        console.error('Markdown conversion error for ID ' + id + ':', exc);
-                    }
-                };
-            endContent
-            WITH WEBEXOBJECT CLASS WebExScript
-                .:SetContent(cMarkDownScript)
-            END WEBEXOBJECT
-        //Scripts Tools***************************************************************************************************************************
-    elseif ((!lMarkDownEnabled).and.((__jFeatures["lMarkDownEnabled"]).or.(::lMarkDownEnabled)))
-        ::lMarkDownEnabled:=lMarkDownEnabled
-        __jFeatures["lMarkDownEnabled"]:=::lMarkDownEnabled
-    endif
-
-return(self)
-
-method GetEnableDataTable() class WebExControl
-return(::lDataTableEnabled)
-
-method SetEnableDataTable(lDataTableEnabled) class WebExControl
-
-    local cDataTableStyle as character
-    local cDataTableScript as character
-
-    paramtype 1 var lDataTableEnabled as logical optional default .T.
-
-    if ((lDataTableEnabled).and.(!::lDataTableEnabled))
-
-        ::lDataTableEnabled:=.T.
-        __jFeatures["lDataTableEnabled"]:=::lDataTableEnabled
-
-        //DataTables
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("https://cdn.datatables.net/")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("DataTables 2.3.2 is the current stable release of DataTables")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                .:SetAttr("href","https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.min.css")
-                .:SetAttr("rel","stylesheet")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                .:SetContent("https://cdn.datatables.net/2.3.2/js/dataTables.min.js")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                .:SetContent("https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.min.js")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-        //Data Tables
-        ***************************************************************************************************************************
-        //DataTables Extensions
-            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                .:SetContent("Extensions")
-                .:AddInHeader(.this)
-            END WEBEXOBJECT NOADDCHILD
-            //Excel
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Excel : https://cdnjs.com/libraries/jszip")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Excel
-        ***************************************************************************************************************************
-            //PDF
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("PDF : https://cdnjs.com/libraries/pdfmake")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/vfs_fonts.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //PDF
-        ***************************************************************************************************************************
-            //AutoFill
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("AutoFill")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/autofill/2.7.0/css/autoFill.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/autofill/2.7.0/js/dataTables.autoFill.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/autofill/2.7.0/js/autoFill.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //AutoFill
-        ***************************************************************************************************************************
-            //Buttons
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Buttons")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.print.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Buttons
-        ***************************************************************************************************************************
-            //ColReorder
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("ColReorder")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/colreorder/2.1.1/css/colReorder.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/colreorder/2.1.1/js/dataTables.colReorder.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/colreorder/2.1.1/js/colReorder.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //ColReorder
-        ***************************************************************************************************************************
-            //FixedColumns
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("FixedColumns")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/fixedcolumns/5.0.4/css/fixedColumns.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/fixedcolumns/5.0.4/js/dataTables.fixedColumns.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/fixedcolumns/5.0.4/js/fixedColumns.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //FixedColumns
-        ***************************************************************************************************************************
-            //FixedHeader
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("FixedHeader")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/fixedheader/4.0.3/css/fixedHeader.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/fixedheader/4.0.3/js/dataTables.fixedHeader.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/fixedheader/4.0.3/js/fixedHeader.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //FixedHeader
-        ***************************************************************************************************************************
-            //KeyTable
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("KeyTable")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/keytable/2.12.1/css/keyTable.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/keytable/2.12.1/js/dataTables.keyTable.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/keytable/2.12.1/js/keyTable.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //KeyTable
-        ***************************************************************************************************************************
-            //Responsive
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Responsive")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/responsive/3.0.4/css/responsive.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/responsive/3.0.4/js/dataTables.responsive.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/responsive/3.0.4/js/responsive.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Responsive
-        ***************************************************************************************************************************
-            //RowGroup
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("RowGroup")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/rowgroup/1.5.1/css/rowGroup.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/rowgroup/1.5.1/js/dataTables.rowGroup.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/rowgroup/1.5.1/js/rowGroup.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //RowGroup
-        ***************************************************************************************************************************
-            //RowReorder
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("RowReorder")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/rowreorder/1.5.0/css/rowReorder.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/rowreorder/1.5.0/js/dataTables.rowReorder.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/rowreorder/1.5.0/js/rowReorder.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //RowReorder
-        ***************************************************************************************************************************
-            //Scroller
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Scroller")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/scroller/2.4.3/css/scroller.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/scroller/2.4.3/js/dataTables.scroller.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/scroller/2.4.3/js/scroller.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Scroller
-        ***************************************************************************************************************************
-            //SearchBuilder
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("SearchBuilder")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/searchbuilder/1.8.2/css/searchBuilder.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/searchbuilder/1.8.2/js/dataTables.searchBuilder.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/searchbuilder/1.8.2/js/searchBuilder.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //SearchBuilder
-        ***************************************************************************************************************************
-            //SearchPanes
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("SearchPanes")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/searchpanes/2.3.3/css/searchPanes.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/searchpanes/2.3.3/js/dataTables.searchPanes.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/searchpanes/2.3.3/js/searchPanes.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //SearchPanes
-        ***************************************************************************************************************************
-            //Select
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("SearchPanes")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/select/3.0.1/css/select.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/select/3.0.1/js/dataTables.select.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/select/3.0.1/js/select.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Select
-        ***************************************************************************************************************************
-            //StateRestore
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("StateRestore")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdn.datatables.net/staterestore/1.4.1/css/stateRestore.bootstrap5.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/staterestore/1.4.1/js/dataTables.stateRestore.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.datatables.net/staterestore/1.4.1/js/stateRestore.bootstrap5.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Select
-        //DataTables Extensions
-        ***************************************************************************************************************************
-        //DataTables Style
-            beginContent var cDataTableStyle
-
-                /* Filtro Customizado */
-                .datatable-filter-wrapper {
-                    display: inline-block;
-                    width: 100%;
-                    text-align: right; /* ou left */
-                }
-
-                /* Garantir que a tabela nao tenha espacamentos extras */
-                table.dataTable.compact {
-                    border-spacing: 0;
-                    border-collapse: collapse;
-                }
-
-                /* Ajustar linhas vazias adicionadas pelo drawCallback */
-                table.dataTable.compact tr.empty-row td {
-                    padding: 0;
-                    height: 20px; /* Menor altura para linhas vazias */
-                }
-
-                /* Evitar quebras de linha e overflow */
-                table.dataTable.compact td {
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                table.dataTable.compact thead th {
-                    font-weight: bold; /* Manter destaque nos cabecalhos */
-                }
-
-                table.dataTable.compact tbody td,
-                table.dataTable.compact thead th {
-                    padding: 4px 8px; /* Reduzir padding (vertical, horizontal) */
-                    font-size: 12px; /* Tamanho de fonte menor */
-                    margin: 0; /* Remover margens */
-                }
-
-                /* Compactar linhas do DataTables */
-                table.dataTable.compact tbody tr {
-                    height: 28px; /* Altura reduzida para linhas */
-                    line-height: 28px; /* Alinhar texto verticalmente */
-                }
-
-                /* Estiliza o elemento select dentro da classe dt-length para garantir que a seta de expansao fique aa direita sem sobrepor o texto */
-                .dt-length select.form-select.form-select-sm {
-                    min-width: 70px; /* Define largura minima para evitar corte do texto das opcoes */
-                    padding-right: 1.5rem; /* Adiciona espaco aa direita para acomodar a seta personalizada */
-                    appearance: none; /* Remove a aparencia padrao do navegador para personalizar a seta */
-                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); /* Define uma seta personalizada usando SVG */
-                    background-repeat: no-repeat; /* Evita repeticao da imagem da seta */
-                    background-position: right 0.5rem center; /* Posiciona a seta aa direita do select, centralizada verticalmente */
-                    background-size: 1rem; /* Define o tamanho da seta para consistencia visual */
-                    box-sizing: border-box; /* Garante que padding e borda sejam incluidos na largura total */
-                }
-
-            endContent
-            WITH WEBEXOBJECT CLASS WebExStyle
-                .:SetContent(cDataTableStyle)
-            END WEBEXOBJECT
-        //DataTables Style
-        ***************************************************************************************************************************
-        //Scripts Tools
-            beginContent var cDataTableScript
-
-                //FWWebExHasDataTables:Utilitario para verificar se jQuery + DataTables estao disponiveis
-                function FWWebExHasDataTables() {
-                    return !!(FWWebExHasJQuery() && $?.fn && $.fn?.DataTable && $.fn.DataTable?.isDataTable);
-                }
-
-                /**
-                * FWWebExHasDataTableFilters
-                *
-                * Checks if custom filters exist in a DataTable instance.
-                * Validates if table exists and returns a map of filter names to boolean values.
-                * Uses FWWebExPanelFilterExHasFilter flag for ExtendedFilter state.
-                *
-                * @param {object} table - DataTable instance.
-                * @param {Array<string>} filterNames - List of filter property names to check.
-                * @param {object} defaults - Default boolean values for each filter (optional).
-                * @returns {object|false} An object with filter names mapped to true/false, or false if table is invalid.
-                */
-                function FWWebExHasDataTableFilters(table, filterNames = [], defaults = {}) {
-
-                    if (!table || typeof table.settings !== 'function') {
-                        console.warn("FWWebExHasDataTableFilters: invalid or missing DataTable instance.");
-                        return false;
-                    }
-
-                    const oInit = table.settings()[0]?.oInit || {};
-
-                    // Build hasFilter object with safe defaults
-                    const hasFilter = filterNames.reduce((acc, name) => {
-                        const fallback = defaults[name] ?? false;
-                        const f = oInit[name];
-                        acc[name] = (f && typeof f === 'object' && Object.keys(f).length > 0) ? true : fallback;
-                        return acc;
-                    }, {});
-
-                    // Use the dedicated flag for ExtendedFilter if available
-                    if ('FWWebExPanelFilterExHasFilter' in oInit) {
-                        hasFilter['FWWebExPanelFilterEx'] = !!oInit.FWWebExPanelFilterExHasFilter;
-                    }
-
-                    return hasFilter;
-                }
-
-                /**
-                * FWWebExGetDataTableFilters
-                *
-                * Retrieves custom filters from a DataTable instance.
-                * Validates if table exists, applies safe defaults,
-                * and clears other filters when ExtendedFilter is defined with expression.
-                *
-                * @param {object} table - DataTable instance.
-                * @param {Array<string>} filterNames - List of filter property names to retrieve.
-                * @param {object} defaults - Default values for each filter (optional).
-                * @returns {object} An object with the requested filters.
-                */
-                function FWWebExGetDataTableFilters(table, filterNames = [], defaults = {}) {
-
-                    if (!table || typeof table.settings !== 'function') {
-                        console.warn("FWWebExGetDataTableFilters: invalid or missing DataTable instance.");
-                        return {};
-                    }
-
-                    const oInit = table.settings()[0]?.oInit || {};
-
-                    // Build filters object with safe defaults
-                    const filters = filterNames.reduce((acc, name) => {
-                        const fallback = defaults[name] || {};
-                        const f = oInit[name];
-                        acc[name] = (f && typeof f === 'object') ? f : fallback;
-                        return acc;
-                    }, {});
-
-                    // ExtendedFilter logic
-                    const extendedFilter = filters['FWWebExPanelFilterEx'] || {};
-                    const extendedFilterExpression = extendedFilter["expression"] || '';
-                    const hasExtendedFilter = FWWebExHasDataTableFilters(table, ['FWWebExPanelFilterEx']);
-
-                    if (hasExtendedFilter?.FWWebExPanelFilterEx && Object.keys(extendedFilter).length > 0 && extendedFilterExpression !== '') {
-                        // Clear all filters except ExtendedFilter itself
-                        Object.keys(filters).forEach(key => {
-                            if (key !== 'FWWebExPanelFilterEx') {
-                                Object.keys(filters[key]).forEach(k => delete filters[key][k]);
-                            }
-                        });
-                    }
-
-                    return filters;
-                }
-            endContent
-            WITH WEBEXOBJECT CLASS WebExScript
-                .:SetContent(cDataTableScript)
-            END WEBEXOBJECT
-        //Scripts Tools
-        ***************************************************************************************************************************
-    elseif ((!lDataTableEnabled).and.((__jFeatures["lDataTableEnabled"]).or.(::lDataTableEnabled)))
-        ::lDataTableEnabled:=lDataTableEnabled
-        __jFeatures["lDataTableEnabled"]:=lDataTableEnabled
-    endif
-
-return(self)
-
-method GetEnableASCIILoader() class WebExControl
-return(::lASCIILoaderEnabled)
-
-method SetEnableASCIILoader(lASCIILoaderEnabled) class WebExControl
-
-    local cASCIILoaderScript as character
-
-    paramtype 1 var lASCIILoaderEnabled as logical optional default .T.
-
-    if ((lASCIILoaderEnabled).and.(!::lASCIILoaderEnabled))
-
-        ::lASCIILoaderEnabled:=.T.
-        __jFeatures["lASCIILoaderEnabled"]:=::lASCIILoaderEnabled
-
-        ***************************************************************************************************************************
-        //Scripts Tools
-            beginContent var cASCIILoaderScript
-
-                // ===============================
-                // FWWebExAsciiEngine GLOBAL
-                // ===============================
-                if(!window.FWWebExAsciiEngine){
-
-                    window.FWWebExAsciiEngine = (function(){
-
-                        const instances = {};
-
-                        function sleep(ms){
-                            return new Promise(r => setTimeout(r, ms));
-                        }
-
-                        function createContext(inst){
-                            return {
-                                inst,
-                                currentArea: "full",
-                                delay: inst.delay || 120,
-                                color: null,
-                                progress: 0,
-                                stopped: false,
-                                typeNextLine: false
-                            };
-                        }
-
-                        function parseCommand(line){
-                            if(line === ";") return { type: "command", name: "clearArea" };
-                            if(line === ";c") return { type: "command", name: "clearAll" };
-                            if(line === ";type") return { type: "command", name: "typeNext" };
-
-                            if(line.startsWith(";d=")){
-                                return { type: "command", name: "delay", value: parseInt(line.split("=")[1]) || 120 };
-                            }
-
-                            if(line.startsWith(";area=")){
-                                return { type: "command", name: "area", value: line.split("=")[1] || "full" };
-                            }
-
-                            if(line.startsWith(";color=")){
-                                return { type: "command", name: "color", value: line.split("=")[1] || "" };
-                            }
-
-                            if(line.startsWith(";progress=")){
-                                return { type: "command", name: "progress", value: parseInt(line.split("=")[1]) || 0 };
-                            }
-
-                            throw new Error("Comando invalido: " + line);
-                        }
-
-                        function parseTimes(line){
-                            const value = (line.split("=")[1] || "").trim();
-                            if(value === "inf") return "inf";
-
-                            const n = parseInt(value, 10);
-                            if(isNaN(n) || n < 1){
-                                throw new Error("Valor invalido para repeticao: " + value);
-                            }
-
-                            return n;
-                        }
-
-                        function parseScript(script){
-                            const lines = script.split("\n");
-                            const root = [];
-                            const stack = [root];
-
-                            for(let i = 0; i < lines.length; i++){
-                                const raw = lines[i];
-                                const line = raw.trim();
-
-                                if(line === ""){
-                                stack[stack.length - 1].push({ type: "text", value: "" });
-                                continue;
-                                }
-
-                                if(line === ";end"){
-                                if(stack.length === 1){
-                                    throw new Error("';end' sem bloco aberto");
-                                }
-                                stack.pop();
-                                continue;
-                                }
-
-                                if(line.startsWith(";repeat=")){
-                                const node = {
-                                    type: "block",
-                                    kind: "repeat",
-                                    times: parseTimes(line),
-                                    children: []
-                                };
-                                stack[stack.length - 1].push(node);
-                                stack.push(node.children);
-                                continue;
-                                }
-
-                                if(line.startsWith(";loop=")){
-                                const node = {
-                                    type: "block",
-                                    kind: "loop",
-                                    times: parseTimes(line),
-                                    children: []
-                                };
-                                stack[stack.length - 1].push(node);
-                                stack.push(node.children);
-                                continue;
-                                }
-
-                                if(line.startsWith(";#") || line.startsWith(";//")){
-                                continue;
-                                }
-
-                                if(line.startsWith(";")){
-                                stack[stack.length - 1].push(parseCommand(line));
-                                continue;
-                                }
-
-                                stack[stack.length - 1].push({ type: "text", value: raw });
-                            }
-
-                            if(stack.length !== 1){
-                                throw new Error("Ha bloco sem ';end'");
-                            }
-
-                            return root;
-                        }
-
-                        function getMode(inst){
-                            if(typeof inst.maxLines === "object"){
-                                return inst.maxLines.mode || "fixed";
-                            }
-                            return "fixed";
-                        }
-
-                        function getLimit(inst, area){
-                            if(typeof inst.maxLines === "number"){
-                                return inst.maxLines;
-                            }
-
-                            if(typeof inst.maxLines === "object"){
-                                return inst.maxLines[area] || 10;
-                            }
-
-                            return 10;
-                        }
-
-                        function trim(arr, limit){
-                            return arr.length > limit ? arr.slice(arr.length - limit) : arr;
-                        }
-
-                        function render(inst){
-                            const mode = getMode(inst);
-
-                            if(mode === "fixed"){
-                                inst.areas.top    = trim(inst.areas.top,    getLimit(inst, "top"));
-                                inst.areas.full   = trim(inst.areas.full,   getLimit(inst, "full"));
-                                inst.areas.bottom = trim(inst.areas.bottom, getLimit(inst, "bottom"));
-                            }
-
-                            let txt = "";
-
-                            if(inst.areas.top.length){
-                                txt += inst.areas.top.join("\n") + "\n";
-                            }
-
-                            if(inst.areas.full.length){
-                                txt += inst.areas.full.join("\n") + "\n";
-                            }
-
-                            if(inst.areas.bottom.length){
-                                txt += inst.areas.bottom.join("\n");
-                            }
-
-                            if(inst.text){
-                                txt += (txt ? "\n" : "") + inst.text;
-                            }
-
-                            inst.el.textContent = txt;
-
-                            if(mode === "scroll"){
-                                inst.el.scrollTop = inst.el.scrollHeight;
-                            }
-                        }
-
-                        function clearArea(inst, area){
-                            inst.areas[area] = [];
-                            render(inst);
-                        }
-
-                        function clearAll(inst){
-                            inst.areas = { top: [], full: [], bottom: [] };
-                            render(inst);
-                        }
-
-                        async function typeLine(inst, area, text, delay){
-                            let buffer = "";
-
-                            for(let i = 0; i < text.length; i++){
-                                if(inst.context.stopped) break;
-                                buffer += text[i];
-
-                                const clone = [...inst.areas[area]];
-                                if(clone.length === 0 || clone[clone.length - 1] !== buffer){
-                                if(clone.length && clone[clone.length - 1].startsWith(buffer.slice(0, -1))){
-                                    inst.areas[area][inst.areas[area].length - 1] = buffer;
-                                } else {
-                                    inst.areas[area].push(buffer);
-                                }
-                                }
-
-                                render(inst);
-                                await sleep(Math.max(10, delay / Math.max(text.length, 1)));
-                            }
-                        }
-
-                        async function appendLine(inst, area, text, delay, typeMode){
-                            if(typeMode){
-                                inst.areas[area].push("");
-                                await typeLine(inst, area, text, delay);
-                            } else {
-                                inst.areas[area].push(text);
-                                render(inst);
-                                await sleep(delay);
-                            }
-                        }
-
-                        async function executeCommand(node, ctx){
-                            const inst = ctx.inst;
-
-                            switch(node.name){
-                                case "clearArea":
-                                clearArea(inst, ctx.currentArea);
-                                break;
-
-                                case "clearAll":
-                                clearAll(inst);
-                                break;
-
-                                case "delay":
-                                ctx.delay = node.value;
-                                break;
-
-                                case "area":
-                                ctx.currentArea = node.value;
-                                break;
-
-                                case "color":
-                                ctx.color = node.value;
-                                inst.el.style.color = node.value;
-                                break;
-
-                                case "progress":
-                                ctx.progress = node.value;
-                                if(typeof inst.onProgress === "function"){
-                                    inst.onProgress(node.value, inst);
-                                }
-                                break;
-
-                                case "typeNext":
-                                ctx.typeNextLine = true;
-                                break;
-                            }
-                        }
-
-                        async function executeNode(node, ctx){
-                        if(ctx.stopped) return;
-
-                        if(node.type === "text"){
-                            const typeMode = ctx.typeNextLine;
-                            ctx.typeNextLine = false;
-                            await appendLine(ctx.inst, ctx.currentArea, node.value, ctx.delay, typeMode);
-                            return;
-                        }
-
-                        if(node.type === "command"){
-                            await executeCommand(node, ctx);
-                            return;
-                        }
-
-                        if(node.type === "block"){
-                                if(node.times === "inf"){
-                                while(!ctx.stopped){
-                                    for(const child of node.children){
-                                    await executeNode(child, ctx);
-                                    if(ctx.stopped) break;
-                                    }
-                                }
-                                return;
-                                }
-
-                                for(let i = 0; i < node.times; i++){
-                                if(ctx.stopped) break;
-                                for(const child of node.children){
-                                    await executeNode(child, ctx);
-                                    if(ctx.stopped) break;
-                                }
-                                }
-                            }
-                        }
-
-                        async function executeAst(inst, ast){
-                            const ctx = createContext(inst);
-                            inst.context = ctx;
-
-                            for(const node of ast){
-                                    await executeNode(node, ctx);
-                                    if(ctx.stopped) break;
-                                }
-                        }
-
-
-                        function renderFrame(inst, frame){
-
-                            inst.areas = { top: [], full: [], bottom: [] };
-
-                            let currentArea = "full";
-
-                            const lines = frame.split("\n");
-
-                            for(const raw of lines){
-
-                                const line = raw.trim();
-
-                                // ===============================
-                                // ?? COMANDOS (DSL)
-                                // ===============================
-
-                                if(line === ";"){
-                                    inst.areas[currentArea] = [];
-                                    continue;
-                                }
-
-                                if(line === ";c"){
-                                    inst.areas = { top: [], full: [], bottom: [] };
-                                    continue;
-                                }
-
-                                if(line.startsWith(";area=")){
-                                    currentArea = line.split("=")[1] || "full";
-                                    continue;
-                                }
-
-                                if(line.startsWith(";color=")){
-                                    inst.el.style.color = line.split("=")[1] || "";
-                                    continue;
-                                }
-
-                                if(line.startsWith(";d=")){
-                                    // ?? delay por frame (override temporario)
-                                    inst._frameDelayOverride = parseInt(line.split("=")[1]) || inst.delay;
-                                    continue;
-                                }
-
-                                if(line.startsWith(";progress=")){
-                                    const val = parseInt(line.split("=")[1]) || 0;
-                                    if(typeof inst.onProgress === "function"){
-                                        inst.onProgress(val, inst);
-                                    }
-                                    continue;
-                                }
-
-                                // ? ignorados no frame mode (faz sentido)
-                                if(line.startsWith(";type")) continue;
-                                if(line.startsWith(";repeat")) continue;
-                                if(line.startsWith(";loop")) continue;
-
-                                if(line.startsWith(";")) continue;
-
-                                // ===============================
-                                // ?? TEXTO
-                                // ===============================
-                                inst.areas[currentArea].push(raw);
-                            }
-
-                            render(inst);
-                        }
-
-                        function getFrameComplexity(frame){
-
-                            const lines = frame.split("\n");
-
-                            let weight = 0;
-
-                            for(const raw of lines){
-
-                                const line = raw.trim();
-
-                                if(line.startsWith(";")) continue;
-                                if(line === "") continue;
-
-                                weight += 1;
-                                weight += Math.min(line.length / 20, 2);
-                            }
-
-                            return Math.max(weight, 1);
-                        }
-
-                        async function run(id){
-
-                            const inst = instances[id];
-                            if(!inst || inst.running) return;
-
-                            inst.running = true;
-
-                            try{
-
-                                // ===============================
-                                // SCRIPT MODE
-                                // ===============================
-                                if(inst.script && inst.script.trim() !== ""){
-
-                                    const ast = parseScript(inst.script);
-                                    await executeAst(inst, ast);
-                                    return;
-                                }
-
-                                // ===============================
-                                // FRAME MODE
-                                // ===============================
-                                if(inst.frames && inst.frames.length){
-
-                                    while(inst.running){
-
-                                        for(const frame of inst.frames){
-
-                                            if(!inst.running) break;
-
-                                            // renderiza TUDO de uma vez
-                                            renderFrame(inst, frame);
-
-                                            //calcula complexidade do frame
-                                            const complexity = getFrameComplexity(frame);
-
-                                            //calcula tempo adaptativo
-                                            const frameTime = Math.min(
-                                                inst.delay * complexity * inst.frameTimeFactor,
-                                                inst.maxFrameTime || 1000
-                                            );
-
-                                            //espera baseado no conteudo
-                                            await sleep(frameTime);
-
-                                        }
-                                    }
-                                }
-
-                            } finally {
-                                inst.running = false;
-                            }
-                        }
-
-                        function stop(id){
-                            const inst = instances[id];
-                            if(!inst) return;
-
-                            inst.running = false;
-
-                            if(inst.context){
-                                inst.context.stopped = true;
-                            }
-                        }
-
-                        function loadScript(id, script){
-                            const inst = instances[id];
-                            if(!inst) return;
-                            inst.script = script || "";
-                        }
-
-                        function applyModeStyle(inst){
-                            const mode = getMode(inst);
-
-                            inst.el.style.backgroundColor = "var(--bs-body-bg)";
-                            inst.el.style.color           = "var(--bs-body-color)";
-                            inst.el.style.display         = "block";
-                            inst.el.style.padding         = "0.75rem";
-                            inst.el.style.margin          = "0";
-                            inst.el.style.whiteSpace      = "pre";
-                            inst.el.style.fontFamily      = "monospace";
-                            inst.el.style.lineHeight      = "1.2em";
-                            inst.el.style.border          = "1px solid var(--bs-border-color)";
-                            inst.el.style.borderRadius    = "0.375rem";
-                            inst.el.style.boxSizing       = "border-box";
-
-                            if(mode === "fixed"){
-                                inst.el.style.overflow = "hidden";
-
-                                const totalLines =
-                                getLimit(inst,"top") +
-                                getLimit(inst,"full") +
-                                getLimit(inst,"bottom");
-
-                                inst.el.style.height = (totalLines * 1.2) + "em";
-                            }
-
-                            if(mode === "scroll"){
-                                inst.el.style.overflowY = "auto";
-                                inst.el.style.overflowX = "hidden";
-                                inst.el.style.height = "200px";
-                            }
-                        }
-
-                        function register(id, config){
-                            instances[id] = {
-                                el: config.el,
-                                frames: config.frames || [],
-                                script: (config.script && config.script.trim() !== "") ? config.script : null,
-                                text: config.text || "",
-                                delay: config.interval || 120,
-                                autoStart: config.autoStart || false,
-                                maxLines: config.maxLines || 10,
-                                frameTimeFactor: config.frameTimeFactor || 0.5,
-                                maxFrameTime: config.maxFrameTime || 1000,
-                                onProgress: config.onProgress || null,
-                                running: false,
-                                context: null,
-                                areas: { top: [], full: [], bottom: [] },
-                            };
-
-                            applyModeStyle(instances[id]);
-
-                            if(instances[id].autoStart){
-                                run(id);
-                            }
-                        }
-
-                        return {
-                            register,
-                            loadScript,
-                            run,
-                            stop,
-                            parseScript
-                        };
-
-                    })();
-                }
-
-            endContent
-            WITH WEBEXOBJECT CLASS WebExScript
-                .:SetContent(cASCIILoaderScript)
-            END WEBEXOBJECT
-        //Scripts Tools
-        ***************************************************************************************************************************
-    elseif ((!lASCIILoaderEnabled).and.((__jFeatures["lASCIILoaderEnabled"]).or.(::lASCIILoaderEnabled)))
-        ::lASCIILoaderEnabled:=lASCIILoaderEnabled
-        __jFeatures["lASCIILoaderEnabled"]:=lASCIILoaderEnabled
-    endif
-
-return(self)
-
-method GetEnableMaterialDesign() class WebExControl
-return(::lMaterialDesignEnabled)
-
-method SetEnableMaterialDesign(lMaterialDesignEnabled) class WebExControl
-
-    paramtype 1 var lMaterialDesignEnabled as logical optional default .T.
-
-    if ((lMaterialDesignEnabled).and.(!::lMaterialDesignEnabled))
-        ::lMaterialDesignEnabled:=.T.
-        __jFeatures["lMaterialDesignEnabled"]:=::lMaterialDesignEnabled
-***************************************************************************************************************************
-            //Material Design
-                WITH WEBEXOBJECT CLASS WebExControl TYPE !--
-                    .:SetContent("Material Design :: https://materializecss.com/about.html")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExControl TYPE link
-                    .:SetAttr("href","https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css")
-                    .:SetAttr("rel","stylesheet")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js")
-                    .:AddInHeader(.this)
-                END WEBEXOBJECT NOADDCHILD
-            //Material Design
-***************************************************************************************************************************
-    elseif ((!lMaterialDesignEnabled).and.((__jFeatures["lMaterialDesignEnabled"]).or.(::lMaterialDesignEnabled)))
-        ::lMaterialDesignEnabled:=lMaterialDesignEnabled
-        __jFeatures["lMaterialDesignEnabled"]:=::lMaterialDesignEnabled
-    endif
-
-return(self)
-
-method GetEnableWebExBackURLButton() class WebExControl
-return(::lWebExBackURLButtonEnabled)
-
-method SetEnableWebExBackURLButton(lWebExBackURLButtonEnabled) class WebExControl
-
-    paramtype 1 var lWebExBackURLButtonEnabled as logical optional default .T.
-
-    if ((lWebExBackURLButtonEnabled).and.(!::lWebExBackURLButtonEnabled))
-        ::lWebExBackURLButtonEnabled:=.T.
-        __jFeatures["lWebExBackURLButtonEnabled"]:=::lWebExBackURLButtonEnabled
-***************************************************************************************************************************
-            //WebExBackURLButton
-                WITH WEBEXOBJECT CLASS WebExScript
-                    .:SetContent(GetWebExBackURLButtonScript())
-                END WEBEXOBJECT NOADDCHILD
-            //WebExBackURLButton
-***************************************************************************************************************************
-    elseif ((!lWebExBackURLButtonEnabled).and.((__jFeatures["lWebExBackURLButtonEnabled"]).or.(::lWebExBackURLButtonEnabled)))
-        ::lWebExBackURLButtonEnabled:=lWebExBackURLButtonEnabled
-        __jFeatures["lWebExBackURLButtonEnabled"]:=::lWebExBackURLButtonEnabled
-    endif
-
-return(self)
-
 static function GetWebExBackURLButtonScript()
 
     local cBackURLButtonScript as character
@@ -2816,6 +1066,7 @@ method Clean() class WebExControl
     ::RemoveScripts()
     ::DisableFeatures()
     ::CleanObjectsContainer()
+    ::CleanHeader()
     ::CleanChildren()
     aEval(;
          ::GetJSONChildren():GetNames();
@@ -2828,6 +1079,34 @@ method Clean() class WebExControl
             ,::GetJSONChildren():DelName(cName);
         };
     )
+return(nil)
+
+method CleanHeader() class WebExControl
+
+    local aHeader:=__jHeader:GetNames() as array
+
+    local cKey as character
+
+    local nHeader as numeric
+    local nHeaders as numeric
+
+    local oHeader as object
+
+    nHeaders:=Len(aHeader)
+    if (nHeaders>0)
+        for nHeader:=1 to nHeaders
+            cKey:=aHeader[nHeader]
+            if (__jHeader:HasProperty(cKey))
+                oHeader:=__jHeader[cKey]
+                if (valType(oHeader)=="O")
+                    oHeader:CleanObjectsContainer()
+                    oHeader:CleanChildren()
+                    FreeObj(@oHeader)
+                endif
+                __jHeader:DelName(cKey)
+            endif
+        next nHeader
+    endif
 return(nil)
 
 method CleanChildren() class WebExControl
@@ -2920,28 +1199,81 @@ method RemoveScripts() class WebExControl
     )
 return(nil)
 
-method DisableFeatures() class WebExControl
-    aEval(;
-         __jHeader:GetNames();
-        ,{|cName as character|;
-            if(;
-                (ValType(__jHeader[cName])=="O");
-                ,(;
-                    __jHeader[cName]:CleanChildren();
-                    ,FreeObj(__jHeader[cName]);
-                );
-                ,nil;
-            );
-            ,__jHeader:DelName(cName);
-        };
-    )
-    aEval(__jFeatures:GetNames(),{|cFeature as character|__jFeatures[cFeature]:=.F.,self:SetMemberData(cFeature,.T.)})
-return(nil)
+method AddFeature(oFeature,bLoadFeature,nPriority) class WebExControl
 
-method HasFeatureEnabled() class WebExControl
-    local lHasFeatureEnabled:=.F. as logical
-    aEval(__jFeatures:GetNames(),{|cFeature as character|lHasFeatureEnabled:=if(lHasFeatureEnabled,lHasFeatureEnabled,__jFeatures[cFeature])})
-return(lHasFeatureEnabled)
+    local cWebExFeature as character
+
+    local oWebExFeature as object
+
+    paramtype 1 var oFeature as object
+    paramtype 2 var bLoadFeature as block
+    paramtype 3 var nPriority as numeric optional default 1
+
+    cClassName:=GetClassName(oFeature)
+    if (!Left(cClassName,8)=="FWWEBEX.")
+        CLASSPARAMEXCEPTION PARAM 1 VAR oFeature TEXT cClassName MESSAGE "Object must belong to the FWWEBEX namespace. Got '"+cClassName+"' instead. Check your class declaration."
+    elseif ((!MethIsMemberOf(oFeature,"ISKINDOF",.T.)).or.(!oFeature:IsKindOf("WEBEXCONTROL",.T.)))
+        CLASSPARAMEXCEPTION PARAM 1 VAR oFeature TEXT cClassName MESSAGE "Object must inherit from FWWEBEX.WebExControl. Received: "+cClassName+"."
+    endif
+
+    if (!::ExistFeature(oFeature))
+        oWebExFeature:=WebExFeatures():New(oFeature,bLoadFeature)
+        oWebExFeature:SetMemberData("nPriority",nPriority)
+        cWebExFeature:=oWebExFeature:GetMemberData("cFeatureID")
+        __jWebExFeatures[cWebExFeature]:=oWebExFeature
+    endif
+
+return(self)
+
+method ExistFeature(vFeature) class WebExControl
+    local cFeature as character
+    local cClassName as character
+    local lExistFeature as logical
+    paramtype 1 var vFeature as character,object
+    if (ValType(vFeature)=="O")
+        cClassName:=GetClassName(vFeature)
+        if (!Left(cClassName,8)=="FWWEBEX.")
+            CLASSPARAMEXCEPTION PARAM 1 VAR vFeature TEXT cClassName MESSAGE "Object must belong to the FWWEBEX namespace. Got '"+cClassName+"' instead. Check your class declaration."
+        elseif ((!MethIsMemberOf(vFeature,"ISKINDOF",.T.)).or.(!vFeature:IsKindOf("WEBEXCONTROL",.T.)))
+            CLASSPARAMEXCEPTION PARAM 1 VAR vFeature TEXT cClassName MESSAGE "Object must inherit from FWWEBEX.WebExControl. Received: "+cClassName+"."
+        endif
+        cFeature:=cClassName
+    else
+        cFeature:=vFeature
+    endif
+    lExistFeature:=__jWebExFeatures:HasProperty(cFeature)
+    lExistFeature:=((lExistFeature).and.(__jWebExFeatures[cFeature]:GetMemberData("lLoaded")))
+return(lExistFeature)
+
+method EnableFeatures() class WebExControl
+    if (!__lHasFeaturesEnabled)
+        __lHasFeaturesEnabled:=.T.
+        WebExFeatures():LoadAll(self)
+    endif
+return(__lHasFeaturesEnabled)
+
+method DisableFeatures() class WebExControl
+    local aWebExFeatures as array
+    local oWebExFeature as object
+    if (__lHasFeaturesEnabled)
+        __lHasFeaturesEnabled:=.F.
+        WebExFeatures():UnLoadAll()
+        aWebExFeatures:=__jWebExFeatures:GetNames()
+        aEval(;
+            aWebExFeatures;
+            ,{|cWebExFeature as character|;
+                 oWebExFeature:=__jWebExFeatures[cWebExFeature];
+                ,oWebExFeature:Unload();
+                ,FreeObj(oWebExFeature);
+                ,__jWebExFeatures:DelName(cWebExFeature);
+            };
+        )
+        aSize(aWebExFeatures,0)
+    endif
+return(__lHasFeaturesEnabled)
+
+method HasFeaturesEnabled() class WebExControl
+return(__lHasFeaturesEnabled)
 
 method DumpDOM(nLevel) class WebExControl
 

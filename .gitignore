@@ -5,3 +5,9 @@ _commit.txt
 *.code-workspace
 *.bak
 *.~tlp
+.openclaude-profile.json
+.openclaude-profile.json.openrouter
+.openclaude-profile.json.openrouter.openai
+/node_modules
+package-lock.json
+package.json

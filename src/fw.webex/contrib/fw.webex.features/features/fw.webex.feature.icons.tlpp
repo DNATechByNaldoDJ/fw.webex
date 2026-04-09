@@ -1,0 +1,73 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureIcons from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+end class
+
+method Enable() class WebExFeatureIcons
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)})
+return(self)
+
+method Load(oControl) class WebExFeatureIcons
+
+    paramtype 1 var oControl as object
+
+    //Icons
+    WITH WEBEXOBJECT oControl
+    //Bootstrap Icons
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("Bootstrap Icons")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExControl TYPE link
+            .:SetAttr("href","https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css")
+            .:SetAttr("rel","stylesheet")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+    //Bootstrao Icons
+***************************************************************************************************************************
+    //font-awesome Icons
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("font-awesome Icons")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExControl TYPE link
+            .:SetAttr("href","https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css")
+            .:SetAttr("rel","stylesheet")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+    //font-awesome Icons
+***************************************************************************************************************************
+    //Materialize Icons
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("Materialize Icons :: https://materializecss.com/icons.html")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExControl TYPE link
+            .:SetAttr("href","https://fonts.googleapis.com/icon?family=Material+Icons")
+            .:SetAttr("rel","stylesheet")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+    //Materialize
+    END WEBEXOBJECT NOADDCHILD
+    //Icons
+return(self)

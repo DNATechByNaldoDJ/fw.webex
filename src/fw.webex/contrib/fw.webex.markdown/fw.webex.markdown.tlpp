@@ -24,7 +24,9 @@ endclass
 method New() class WebExMarkDown
 
     _Super:New()
-    ::SetEnableMarkDown(.T.)
+
+    WebExFeatureMarkDown():Enable()
+
     ::AddClass("markdown")
     ::AddClass("print-only")
 

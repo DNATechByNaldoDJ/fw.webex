@@ -174,7 +174,7 @@ method RenderItem(jMenuItem,cParentID,nDepth,aRolesUser) class SBAdminLayoutSide
         oWebExAnchor:SetAttr("data-wsaction",Encode64(jMenuItem["wsAction"]:ToJSON()))
     else
         cHRef:=if(jMenuItem:HasProperty("url"),jMenuItem["url"],"#")
-        if ((::GetEnableWebExBackURLButton()).and.(!("#"$cHRef)))
+        if ((::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON")).and.(!("#"$cHRef)))
             oWebExAnchor:SetAttr("href","#")
             oWebExAnchor:SetAttr("onclick","navigateTo('"+cHRef+"');")
         else

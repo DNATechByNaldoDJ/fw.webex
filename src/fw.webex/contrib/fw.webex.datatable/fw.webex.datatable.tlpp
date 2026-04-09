@@ -122,7 +122,7 @@ method New(cTableTitle,lServerSide) class WebExDataTable
 
     _Super:New(cTableTitle)
 
-    ::SetEnableDataTable(.T.)  // Ativa DataTable por padrao
+    WebExFeatureDataTable():Enable()  // Ativa DataTable por padrao
 
     // Opcoes padrao do DataTable
     ::jDataTableOptions["processing"]:=.T.

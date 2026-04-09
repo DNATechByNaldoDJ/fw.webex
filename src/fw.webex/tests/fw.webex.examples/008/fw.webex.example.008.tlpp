@@ -426,7 +426,7 @@ static procedure FWWebExExample_008(cHTML as character) as character
             endif
             .:SetContent(cScript)
         END WEBEXOBJECT
-        oFWWebExPage:SetEnableDataTable()
+        WebExFeatureDataTable():Enable()
     END WEBEXOBJECT NOADDCHILD
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)

@@ -1,0 +1,72 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureChart from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+end class
+
+method Enable() class WebExFeatureChart
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    WebExFeatureJQuery():Enable()
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)},15)
+return(self)
+
+method Load(oControl) class WebExFeatureChart
+
+    paramtype 1 var oControl as object
+
+    //Chart
+    WITH WEBEXOBJECT oControl
+        //https://www.chartjs.org/docs/latest/
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("Chart")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        //https://date-fns.org/
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("date-fns")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/date-fns/cdn.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        //https://github.com/chartjs/chartjs-adapter-date-fns
+        WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+            .:SetContent("chartjs-adapter-date-fns")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+            .:SetContent("https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js")
+            .:AddInHeader(.this)
+        END WEBEXOBJECT NOADDCHILD
+    END WEBEXOBJECT NOADDCHILD
+    //Chart
+
+return(self)

@@ -2,8 +2,52 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Fix button class and update animation presets)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add feature framework and webex features)"
 */
+
+2026-04-09 23:56 UTC naldodj (Add feature framework and webex features)
+  Add feature framework and webex features
+    Introduce a feature system for fw.webex: add include/fw.features.th and include it from include/fw.webex.th;
+    add core feature manager (WebExFeatures) under contrib/fw.webex.features/core. Add multiple feature modules (ASCIILoader, DataTable, Chart, ApexChart, BackURLButton, and others) under contrib/fw.webex.features/features and a core feature container.
+    Update existing components (ASCII loader, DataTable, etc.) to enable functionality via feature objects (e.g. WebExFeatureASCIILoader():Enable(), WebExFeatureDataTable():Enable()) instead of direct SetEnable* calls.
+    Refactor ASCIILoader JS to initialize FWWebExAsciiEngine within a feature script, emit readiness events and defer registration with FWWebEx.Ready.withDependencies.
+    Also update .gitignore to ignore OpenClaude profiles, node_modules and package files. Various test/example and component files adjusted to use the new feature system.
+      * .gitignore
+      + include/fw.features.th
+      + src/fw.webex/contrib/fw.webex.features/core/fw.webex.features.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.apexchart.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.asciiloader.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.backurlbutton.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.chart.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.datatable.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.icons.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.jquery.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.markdown.tlpp
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.materialdesign.tlpp
+      * include/fw.webex.th
+      * src/fw.webex/contrib/fw.webex.asciiloader/fw.webex.asciiloader.tlpp
+      * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.tlpp
+      * src/fw.webex/contrib/fw.webex.markdown/fw.webex.markdown.tlpp
+      * src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.layout.side.nav.nav.tlpp
+      * src/fw.webex/contrib/fw.webex.sbadmin/sbadmin/fw.webex.sbadmin.nav.tlpp
+      * src/fw.webex/core/component/fw.webex.back.url.button.tlpp
+      * src/fw.webex/core/component/fw.webex.cardkpi.tlpp
+      * src/fw.webex/core/component/fw.webex.icon.tlpp
+      * src/fw.webex/core/component/fw.webex.navside.tlpp
+      * src/fw.webex/core/component/fw.webex.table.tlpp
+      * src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/core/page/fw.webex.footer.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp
+      * src/fw.webex/tests/fw.webex.examples/006/fw.webex.example.006.tlpp
+      * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+      * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+      * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+      * src/fw.webex/tests/fw.webex.examples/019/fw.webex.example.019.tlpp
+      * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+      * src/fw.webex/tests/fw.webex.examples/021/fw.webex.example.021.tlpp
+      * src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+      * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+      * src/fw.webex/core/component/fw.webex.page.tlpp
 
 2026-04-01 20:39 UTC naldodj (Fix button class and update animation presets)
   Fix button class and update animation presets

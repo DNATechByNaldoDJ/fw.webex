@@ -1,0 +1,17 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+#IFNDEF _FW_WEB_EX_FEATURES_TH
+
+    #DEFINE _FW_WEB_EX_FEATURES_TH
+
+    #DEFINE FWWEBEX_FEATURE_PRIORITY_JQUERY -10
+
+#ENDIF

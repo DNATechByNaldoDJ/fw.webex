@@ -47,8 +47,7 @@ method New(cCardKPITitle,cCardKPIValue,cCardKPITheme,oCardKPIIcon) class WebExCa
     ::cCardKPITheme:=Lower(AllTrim(cCardKPITheme))
 
     _Super:New()
-
-    ::SetEnableIcons()
+    WebExFeatureIcons():Enable()
 
     ::AddClass("card")
     ::AddClass("mb-3")

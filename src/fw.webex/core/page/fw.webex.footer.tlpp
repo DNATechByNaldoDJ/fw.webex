@@ -43,7 +43,7 @@ method New(cFooterContent) class WebExFooter
             WITH WEBEXOBJECT CLASS WebExControl TYPE span
                 .:SetContent(::cFooterContent)
             END WEBEXOBJECT
-            if (::GetEnableWebExBackURLButton())
+            if (::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON"))
                 WITH WEBEXOBJECT CLASS WebExBackURLButton
                 END WEBEXOBJECT
             endif

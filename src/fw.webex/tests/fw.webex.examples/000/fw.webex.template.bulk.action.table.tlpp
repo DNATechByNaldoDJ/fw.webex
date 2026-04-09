@@ -35,7 +35,7 @@ method New(cTemplateBulkActionTableTitle) class WebExTemplateBulkActionTable
     ::jTemplateBulkActionTableColumns:=JSONObject():New()
     ::jTemplateBulkActionTableItems:=JSONObject():New()
     _Super:New()
-    _Super:SetEnableDataTable()
+    WebExFeatureDataTable():Enable()
     ::SetAttr("style","overflow-x:auto")
 return(self)
 

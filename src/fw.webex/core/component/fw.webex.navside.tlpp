@@ -64,7 +64,7 @@ method AddItem(cNavSideLabel,cNavSideHRef,oNavSideIcon) class WebExNavSide
 
     ::oNavSideLink:=WebExAnchor():New()
     ::oNavSideLink:AddClass("nav-link")
-    if (::GetEnableWebExBackURLButton()).and.(!("#"$cNavSideHRef))
+    if (::ExistFeature("FWWEBEX.WEBEXFEATUREBACKURLBUTTON")).and.(!("#"$cNavSideHRef))
         ::oNavSideLink:SetAttr("href","#")
         ::oNavSideLink:SetAttr("onclick","navigateTo('"+cNavSideHRef+"');")
     else

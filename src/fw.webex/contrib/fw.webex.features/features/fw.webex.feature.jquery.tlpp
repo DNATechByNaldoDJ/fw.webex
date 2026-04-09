@@ -1,0 +1,51 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureJQuery from WebExControl
+    protected data oFeature as object
+    public method Enable(nPriority as numeric) as object
+    public method Load(oControl as object,nPriority as numeric) as object
+end class
+
+method Enable(nPriority) class WebExFeatureJQuery
+    local oFeature as object
+    paramtype nPriority as numeric optional default FWWEBEX_FEATURE_PRIORITY_JQUERY
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl as object,nPriority as numeric|oFeature:Load(oControl,nPriority)},nPriority)
+return(self)
+
+method Load(oControl,nPriority) class WebExFeatureJQuery
+
+    paramtype 1 var oControl as object
+    paramtype 2 var nPriority as numeric optional default FWWEBEX_FEATURE_PRIORITY_JQUERY
+
+    //JQuery
+    WITH WEBEXOBJECT oControl
+        WITH WEBEXOBJECT ::jObjectsContainer["script-jquery-slim"] CLASS WebExScript ARGS .F.
+            .:SetAttr("src","https://releases.jquery.com/git/jquery-git.slim.min.js")
+            .:AddInHeader(.this)
+            .:SetPriority(nPriority)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT ::jObjectsContainer["script-jquery"] CLASS WebExScript ARGS .F.
+            .:SetAttr("src","https://releases.jquery.com/git/jquery-git.min.js")
+            .:AddInHeader(.this)
+            .:SetPriority(nPriority+1)
+        END WEBEXOBJECT NOADDCHILD
+    END WEBEXOBJECT NOADDCHILD
+    //JQuery
+
+return(self)

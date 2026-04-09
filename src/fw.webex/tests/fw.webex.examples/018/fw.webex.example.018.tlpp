@@ -302,7 +302,7 @@ static procedure FWWebExExample_018(cHTML as character) as character
     oFWWebExBody:AddChild(oFWWebExMain)
 
     oFWWebExPage:=WebExPage():New("Exemplo 007 - Funcionarios (WEBSOCKET + DataTable)")
-    oFWWebExPage:SetEnableDataTable()
+    WebExFeatureDataTable():Enable()
     oFWWebExPage:AddChild(oFWWebExBody)
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)

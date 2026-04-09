@@ -60,7 +60,7 @@ method New(cTableTitle) class WebExTable
     ::oTableTBody:=WebExTBody():New()
     ::oTableTHead:=WebExTHead():New()
     _Super:New("table")
-    _Super:SetEnableDataTable()
+    WebExFeatureDataTable():Enable()
     ::AddClass("table")
     ::AddClass("table-striped")
     ::AddClass("table-hover")

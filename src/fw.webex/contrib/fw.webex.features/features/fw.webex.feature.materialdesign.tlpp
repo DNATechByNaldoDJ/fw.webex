@@ -1,0 +1,54 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureMaterialDesign from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+end class
+
+method Enable() class WebExFeatureMaterialDesign
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)},0)
+return(self)
+
+method Load(oControl) class WebExFeatureMaterialDesign
+
+    paramtype 1 var oControl as object
+
+    //FWWebEx MaterialDesign
+    WITH WEBEXOBJECT oControl
+        //Material Design
+            WITH WEBEXOBJECT CLASS WebExControl TYPE !--
+                .:SetContent("Material Design :: https://materializecss.com/about.html")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExControl TYPE link
+                .:SetAttr("href","https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css")
+                .:SetAttr("rel","stylesheet")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+            WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
+                .:SetContent("https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js")
+                .:AddInHeader(.this)
+            END WEBEXOBJECT NOADDCHILD
+        //Material Design
+    END WEBEXOBJECT NOADDCHILD
+    //FWWebEx MaterialDesign
+
+return(self)

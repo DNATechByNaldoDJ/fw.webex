@@ -1778,7 +1778,7 @@ static procedure FWWebExExample_019(cHTML as character) as character
     oFWWebExPage:=SBAdminPage():New("fw.webex.example.019.tlpp :: FWWebEx :: SBADMIN")
     oFWWebExPage:AddChild(oFWWebExBody)
 
-    oFWWebExPage:SetEnableDataTable()
+    WebExFeatureDataTable():Enable()
     oFWWebExPage:DisableFooter(.T.)
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)

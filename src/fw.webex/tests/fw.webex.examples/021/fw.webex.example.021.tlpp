@@ -441,7 +441,7 @@ static procedure FWWebExExample_021(cHTML as character) as character
     oFWWebExPage:AddChild(oFWWebExBody)
     oFWWebExPage:AddChild(oFWWebExBody)
 
-    oFWWebExPage:SetEnableDataTable()
+    WebExFeatureDataTable():Enable()
     oFWWebExPage:DisableFooter(.T.)
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)

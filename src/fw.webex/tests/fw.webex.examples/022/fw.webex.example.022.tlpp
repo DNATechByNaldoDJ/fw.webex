@@ -126,9 +126,9 @@ static procedure FWWebExExample_022(cHTML as character) as character
 
     oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWebEx :: SBADMIN :: SBAdminNav")
     oFWWebExPage:AddChild(oFWWebExBody)
-    oFWWebExPage:SetEnableDataTable(.T.)
-    oFWWebExPage:SetEnableChart(.F.)
-    oFWWebExPage:SetEnableApexChart(.T.)
+
+    WebExFeatureDataTable():Enable()
+    WebExFeatureApexChart():Enable()
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 
