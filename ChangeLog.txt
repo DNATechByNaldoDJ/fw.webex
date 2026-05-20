@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add feature framework and webex features)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add ArrayTools utility class and tests)"
 */
+
+2026-05-20 21:16 UTC naldodj (Add ArrayTools utility class and tests)
+  Add ArrayTools utility class and tests
+    Introduce FWWebEx::ArrayTools with common array operations (Merge, MergeSorted, MergeUnique, MergeDeep, Zip, Union, Intersect, Diff, Clone, Contains, IndexOf) including optional comparators, cloning and sorting behaviors.
+    Also add a sample test/procedure (u_ArrayToolsSample) demonstrating usage and JSON output helpers.
+    Provides reusable, recursive-safe array utilities for TLPP/ADVPL codebases.
+      + src/fw.webex/tests/fw.webex.examples/000/fw.webex.array.tools.test.tlpp
+      + src/fw.webex/core/tools/fw.webex.array.tools.tlpp
 
 2026-04-09 23:56 UTC naldodj (Add feature framework and webex features)
   Add feature framework and webex features

@@ -1,0 +1,44 @@
+#include "totvs.ch"
+
+using namespace FWWebEx
+
+/*/{Protheus.doc} u_ArrayToolsSample
+    Exemplos rapidos de uso.
+    @type User Procedure
+/*/
+procedure u_ArrayToolsSample()
+
+    local aA      as array
+    local aB      as array
+    local aResult as array
+
+    aA := {3,1,2}
+    aB := {2,4,5}
+
+    aResult := ArrayTools():Merge(aA,aB,.T.)
+    MsgInfo("Merge ordenado: "+Array2JSON(aResult),"Merge ordenado")
+
+    aResult := ArrayTools():MergeUnique(aA,aB)
+    MsgInfo("Merge unique: "+Array2JSON(aResult),"Merge unique")
+
+    aResult := ArrayTools():MergeSorted({1,3,5},{2,4,6})
+    MsgInfo("Merge sorted linear: "+Array2JSON(aResult),"Merge sorted linear")
+
+    aResult := ArrayTools():Zip({"A","B"},{1,2})
+    MsgInfo("Zip: "+Array2JSON(aResult),"Zip")
+
+    aResult := ArrayTools():Union({1,2},{2,3})
+    MsgInfo("Union: "+Array2JSON(aResult),"Union")
+
+    aResult := ArrayTools():Intersect({1,2,3},{2,3,4})
+    MsgInfo("Intersect: "+Array2JSON(aResult),"Intersect")
+
+    aResult := ArrayTools():Diff({1,2,3},{2,4})
+    MsgInfo("Diff: "+Array2JSON(aResult),"Diff")
+
+return
+
+static function Array2JSON(aResult)
+    local jResult:=JSONObject():New() as json
+    jResult:Set(aResult)
+return(jResult:ToJSON())
