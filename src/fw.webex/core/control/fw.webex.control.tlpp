@@ -415,7 +415,7 @@ method DelAttrValueRegex(cAttr,cAttrValueRegex,/*@*/aAttr,lDelAttrValue) class W
         FWFreeArray(@aAttrRemained)
     endif
 
-    lDelClass:=lDeleted
+    lDelAttrValue:=lDeleted
 
 return(self)
 
@@ -552,11 +552,11 @@ method ObliterateFWWebExTmpFiles(lNoMercy) class WebExControl
 return(self)
 
 method GetLocalAssetsFilePath() class WebExControl
-    paramtype 1 var cLocalAssetsFilePath as character
 return(::cLocalAssetsFilePath)
 
 method SetLocalAssetsFilePath(cLocalAssetsFilePath) class WebExControl
     paramtype 1 var cLocalAssetsFilePath as character
+    ::cLocalAssetsFilePath:=cLocalAssetsFilePath
 return(self)
 
 method GetExternalAssetsFilePath() class WebExControl
@@ -589,6 +589,7 @@ method GetHeader() class WebExControl
 return(__jHeader)
 
 method AddInHeader(oChild) class WebExControl
+    local cClassName as character
     paramtype 1 var oChild as object
     cClassName:=GetClassName(oChild)
     if (!Left(cClassName,8)=="FWWEBEX.")

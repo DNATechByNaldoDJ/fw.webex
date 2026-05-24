@@ -428,6 +428,7 @@ static method GetAPPRoot() class WebApp
 
     local cEnvServer:=GetEnvServer() as character
     local cSRVIniName:=GetSrvIniName() as character
+    local cAPPRootURI  as character
 
     //TODO: Rever a forma de Obter app-root
     cAPPRootURI:=AllTrim(GetPvProfString("FWWEBEX_"+cEnvServer,"AppRootURI","",cSRVIniName))

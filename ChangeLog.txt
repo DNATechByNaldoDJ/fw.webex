@@ -2,8 +2,19 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add ArrayTools utility class and tests)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Fix variable names, locals and assignment in WebEx)"
 */
+
+2026-05-24 10:32 UTC naldodj (Fix variable names, locals and assignment in WebEx)
+  Fix variable names, locals and assignment in WebEx
+    Correct several issues in WebEx control/tools code:
+      rename lDelClass to lDelAttrValue in DelAttrValueRegex to use the intended deletion flag;
+      add assignment in SetLocalAssetsFilePath to store the provided path (::cLocalAssetsFilePath := cLocalAssetsFilePath);
+      declare local cClassName in AddInHeader to avoid implicit/global variable usage;
+      and declare local cAPPRootURI in GetAPPRoot.
+    These changes prevent accidental globals and ensure the methods behave as intended.
+      * src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp
 
 2026-05-20 21:16 UTC naldodj (Add ArrayTools utility class and tests)
   Add ArrayTools utility class and tests
