@@ -1,9 +1,17 @@
 name: Release Freeze Automation
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to freeze, without prefix (example: 1.0.3)"
+        required: true
+        type: string
+      base_branch:
+        description: "Branch used as the release source"
+        required: false
+        default: "main"
+        type: string
 
 permissions:
   contents: write
@@ -11,12 +19,12 @@ permissions:
 
 jobs:
   freeze-and-next:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.base_branch }}
           fetch-depth: 0
 
       - name: Configure git identity
@@ -28,4 +36,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BASE_BRANCH: ${{ inputs.base_branch }}
         run: ./scripts/release_freeze.sh

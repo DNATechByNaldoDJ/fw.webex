@@ -2,32 +2,41 @@
 set -euo pipefail
 
 TAG_PREFIX="fw.webex-v"
-DEFAULT_VERSION="1.0.0"
 REPO="${GITHUB_REPOSITORY:-}"
 TOKEN="${GITHUB_TOKEN:-}"
+RELEASE_VERSION="${RELEASE_VERSION:-${1:-}}"
+BASE_BRANCH="${RELEASE_BASE_BRANCH:-${2:-main}}"
 
 if [[ -z "$REPO" ]]; then
   echo "GITHUB_REPOSITORY is required" >&2
   exit 1
 fi
 
-git checkout main
-git pull origin main
+if [[ -z "$RELEASE_VERSION" ]]; then
+  echo "RELEASE_VERSION is required. Provide a version such as 1.0.3." >&2
+  exit 1
+fi
+
+RELEASE_VERSION="${RELEASE_VERSION#${TAG_PREFIX}}"
+
+if ! [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Invalid RELEASE_VERSION '${RELEASE_VERSION}'. Expected format: MAJOR.MINOR.PATCH." >&2
+  exit 1
+fi
+
+git fetch origin "$BASE_BRANCH"
+git checkout -B "$BASE_BRANCH" "origin/${BASE_BRANCH}"
 
 git fetch --tags --force
 latest_tag="$(git tag -l "${TAG_PREFIX}*" --sort=-v:refname | head -n1 || true)"
 
 if [[ -z "$latest_tag" ]]; then
-  new_version="$DEFAULT_VERSION"
   prev_tag=""
 else
-  raw="${latest_tag#${TAG_PREFIX}}"
-  IFS='.' read -r major minor patch <<<"$raw"
-  patch=$((patch+1))
-  new_version="${major}.${minor}.${patch}"
   prev_tag="$latest_tag"
 fi
 
+new_version="$RELEASE_VERSION"
 freeze_tag="${TAG_PREFIX}${new_version}"
 
 if git rev-parse -q --verify "refs/tags/${freeze_tag}" >/dev/null; then
@@ -56,7 +65,7 @@ if [[ -z "$commit_log" ]]; then
   commit_log="- Sem commits relevantes para registrar"
 fi
 
-summary="- Congelamento automático após merge em main\n- Tag ${freeze_tag}\n- Branch de release ${release_branch}\n- Início de desenvolvimento em ${develop_branch}"
+summary="- Congelamento manual a partir de ${BASE_BRANCH}\n- Tag ${freeze_tag}\n- Branch de release ${release_branch}\n- Início de desenvolvimento em ${develop_branch}"
 
 tmp_file="$(mktemp)"
 {
