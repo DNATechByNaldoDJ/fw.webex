@@ -2,8 +2,17 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Fix variable names, locals and assignment in WebEx)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add release-freeze inputs and version checks)"
 */
+
+2026-05-29 21:38 UTC naldodj (Add release-freeze inputs and version checks)
+  Add release-freeze inputs and version checks
+    Introduce manual release freeze via workflow_dispatch:
+      add required `version` and optional `base_branch` inputs, use the base_branch for checkout, and expose RELEASE_VERSION/RELEASE_BASE_BRANCH to the script.
+    Update release_freeze.sh to require and validate RELEASE_VERSION (strip tag prefix, enforce MAJOR.MINOR.PATCH), fetch and checkout the specified base branch, and use the provided version to create the freeze tag instead of auto-incrementing or relying on a default.
+    Also update the commit summary messaging to reflect a manual freeze and remove the previous automatic push trigger on main.
+      * .github/workflows/release-freeze.yml
+      * scripts/release_freeze.sh
 
 2026-05-24 10:32 UTC naldodj (Fix variable names, locals and assignment in WebEx)
   Fix variable names, locals and assignment in WebEx
