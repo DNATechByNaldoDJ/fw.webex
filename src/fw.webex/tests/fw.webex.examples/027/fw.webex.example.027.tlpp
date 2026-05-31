@@ -1,0 +1,198 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_027()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_027(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_027(cHTML as character) as character
+
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+    local cScript as character
+
+    local oFWWebExPage as object
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: Runtime Bootstrap"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-4")
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("row g-3")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExH2
+                                .:SetContent("FWWebEx runtime bootstrap")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExParagraph
+                                .:SetContent("init, ready, hooks e binding declarativo em uma pagina.")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-md-4")
+                            WITH WEBEXOBJECT CLASS WebExCard ARGS "DOM","Aguardando..."
+                                .:SetFixedID("fwwebex-bootstrap-dom")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-md-4")
+                            WITH WEBEXOBJECT CLASS WebExCard ARGS "Init","Aguardando..."
+                                .:SetFixedID("fwwebex-bootstrap-init")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-md-4")
+                            WITH WEBEXOBJECT CLASS WebExCard ARGS "UI","Aguardando..."
+                                .:SetFixedID("fwwebex-bootstrap-ui")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("d-flex gap-2 flex-wrap")
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Adicionar acao dinamica","button"
+                                    .:SetAttr("data-fwwebex-action","example027-add-dynamic")
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Acao declarativa","button"
+                                    .:SetAttr("data-fwwebex-action","example027-static")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:SetFixedID("fwwebex-bootstrap-dynamic")
+                                .:AddClass("mt-2")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExControl TYPE pre
+                                .:SetFixedID("fwwebex-bootstrap-log")
+                                .:AddClass("border rounded p-3 small")
+                                .:SetContent("Aguardando eventos...")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS WebExScript
+                beginContent var cScript
+                    window.FWWebExBootLog = [];
+
+                    function FWWebExExample027SetText(id, text) {
+                        const element = document.getElementById(id);
+                        if (!element) {
+                            return;
+                        }
+
+                        const body = element.querySelector('.card-text') || element;
+                        body.textContent = text;
+                    }
+
+                    function FWWebExExample027Log(message) {
+                        window.FWWebExBootLog.push(message);
+                        const log = document.getElementById('fwwebex-bootstrap-log');
+                        if (log) {
+                            log.textContent = window.FWWebExBootLog.join('\n');
+                        }
+                    }
+
+                    function FWWebExExample027Render(state) {
+                        FWWebExExample027SetText('fwwebex-bootstrap-dom', state.domReady ? 'Pronto' : 'Aguardando');
+                        FWWebExExample027SetText('fwwebex-bootstrap-init', state.initialized ? 'Inicializado' : 'Aguardando');
+                        FWWebExExample027SetText('fwwebex-bootstrap-ui', FWWebEx.Events.hasFired('FWWebEx:ui:ready') ? 'Pronta' : 'Aguardando');
+                    }
+
+                    window.FWWebEx.config = {
+                        ready: {
+                            datatable: {
+                                timeout: 600,
+                                interval: 25,
+                                optional: true
+                            }
+                        },
+                        hooks: {
+                            beforeInit: function(config) {
+                                FWWebExExample027Log('hook: beforeInit');
+                                FWWebExExample027Log('datatable timeout: ' + config.ready.datatable.timeout + 'ms');
+                            },
+                            afterInit: function(config, state) {
+                                FWWebExExample027Log('hook: afterInit');
+                                FWWebExExample027Log('initCount: ' + state.initCount);
+                                FWWebExExample027Render(state);
+                            },
+                            onError: function(payload) {
+                                FWWebExExample027Log('hook: onError [' + payload.phase + ']');
+                            }
+                        }
+                    };
+
+                    FWWebEx.Events.on('FWWebEx:dom:ready', function () {
+                        FWWebExExample027Log('event: FWWebEx:dom:ready');
+                    });
+
+                    FWWebEx.Events.on('FWWebEx:ui:ready', function () {
+                        FWWebExExample027Log('event: FWWebEx:ui:ready');
+                        FWWebExExample027Render(FWWebEx.state);
+                    });
+
+                    FWWebEx.ready(function (state) {
+                        FWWebExExample027Log('ready: DOM callback');
+                        FWWebExExample027Render(state);
+                    });
+
+                    FWWebEx.Actions.register('example027-static', function () {
+                        FWWebExExample027Log('action: static button');
+                    });
+
+                    FWWebEx.Actions.register('example027-add-dynamic', function () {
+                        const target = document.getElementById('fwwebex-bootstrap-dynamic');
+                        if (!target) {
+                            return;
+                        }
+
+                        target.innerHTML = '<button type="button" class="btn fwwebex-example-027-action" data-fwwebex-action="example027-dynamic">Acao dinamica</button>';
+                        FWWebExExample027Log('action: dynamic button added');
+                    });
+
+                    FWWebEx.Actions.register('example027-dynamic', function () {
+                        FWWebExExample027Log('action: dynamic button');
+                    });
+                endContent
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)

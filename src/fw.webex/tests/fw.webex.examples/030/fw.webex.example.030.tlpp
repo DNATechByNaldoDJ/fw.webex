@@ -1,0 +1,539 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_030()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_030(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_030(cHTML as character) as character
+
+    local cLoaderScript as character
+    local cPageStyle as character
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+    local cScript as character
+
+    local jLoaderLines:=JSONObject():New() as json
+
+    local oFWWebExPage as object
+
+    jLoaderLines["top"]:=1
+    jLoaderLines["full"]:=8
+    jLoaderLines["bottom"]:=1
+    jLoaderLines["mode"]:="fixed"
+
+    cLoaderScript:=FWWebExExample030LoaderScript()
+
+    beginContent var cPageStyle
+        .fwwebex-example-030-shell {
+            min-height: 100vh;
+        }
+
+        .fwwebex-example-030-loader {
+            --fwwebex-example-030-step-runtime: var(--bs-info);
+            --fwwebex-example-030-step-assets: var(--bs-primary);
+            --fwwebex-example-030-step-data: var(--bs-warning);
+            --fwwebex-example-030-step-ready: var(--bs-success);
+            --fwwebex-example-030-step-contrast: var(--bs-body-bg);
+            position: fixed;
+            inset: 0;
+            z-index: 1080;
+            display: grid;
+            place-items: center;
+            padding: 1rem;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            transition: opacity .28s ease, visibility .28s ease;
+        }
+
+        .fwwebex-example-030-loader.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .fwwebex-example-030-loader-panel {
+            width: min(720px, 100%);
+            border-style: solid;
+            border-width: 1px;
+            border-color: var(--bs-border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            background-color: var(--bs-tertiary-bg);
+        }
+
+        .fwwebex-example-030-loader-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .75rem;
+        }
+
+        .fwwebex-example-030-loader-title strong {
+            font-size: 1rem;
+            letter-spacing: 0;
+        }
+
+        .fwwebex-example-030-progress {
+            height: .55rem;
+            background-color: var(--bs-secondary-bg);
+        }
+
+        .fwwebex-example-030-progress .progress-bar {
+            background-color: var(--fwwebex-example-030-step-runtime);
+            transition: width .24s ease;
+        }
+
+        .fwwebex-example-030-progress .progress-bar[data-step="1"] {
+            background-color: var(--fwwebex-example-030-step-assets);
+        }
+
+        .fwwebex-example-030-progress .progress-bar[data-step="2"] {
+            background-color: var(--fwwebex-example-030-step-data);
+        }
+
+        .fwwebex-example-030-progress .progress-bar[data-step="3"] {
+            background-color: var(--fwwebex-example-030-step-ready);
+        }
+
+        .fwwebex-example-030-status {
+            background-color: var(--fwwebex-example-030-step-runtime);
+            color: var(--fwwebex-example-030-step-contrast);
+        }
+
+        .fwwebex-example-030-status[data-step="1"] {
+            background-color: var(--fwwebex-example-030-step-assets);
+        }
+
+        .fwwebex-example-030-status[data-step="2"] {
+            background-color: var(--fwwebex-example-030-step-data);
+        }
+
+        .fwwebex-example-030-status[data-step="3"] {
+            background-color: var(--fwwebex-example-030-step-ready);
+        }
+
+        .fwwebex-example-030-steps {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .5rem;
+            margin: .75rem 0 0;
+            padding: 0;
+            list-style: none;
+            font-size: .75rem;
+        }
+
+        .fwwebex-example-030-steps li {
+            border-style: solid;
+            border-width: 1px;
+            border-color: var(--bs-border-color);
+            border-radius: 6px;
+            padding: .45rem .5rem;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .fwwebex-example-030-steps li[data-step="0"].is-active {
+            border-color: var(--fwwebex-example-030-step-runtime);
+            color: var(--fwwebex-example-030-step-runtime);
+        }
+
+        .fwwebex-example-030-steps li[data-step="1"].is-active {
+            border-color: var(--fwwebex-example-030-step-assets);
+            color: var(--fwwebex-example-030-step-assets);
+        }
+
+        .fwwebex-example-030-steps li[data-step="2"].is-active {
+            border-color: var(--fwwebex-example-030-step-data);
+            color: var(--fwwebex-example-030-step-data);
+        }
+
+        .fwwebex-example-030-steps li[data-step="3"].is-active,
+        .fwwebex-example-030-steps li.is-done {
+            border-color: var(--fwwebex-example-030-step-ready);
+            color: var(--fwwebex-example-030-step-ready);
+        }
+
+        .fwwebex-example-030-content.is-loading {
+            opacity: .25;
+            filter: blur(1px);
+            pointer-events: none;
+        }
+
+        .fwwebex-example-030-tile {
+            height: 100%;
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .fwwebex-example-030-tile-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        @media (max-width: 640px) {
+            .fwwebex-example-030-steps {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    endContent
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: ASCII Page Loader"
+        .:AddPageStyle(cPageStyle)
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                .:AddClass("fwwebex-example-030-shell")
+                WITH WEBEXOBJECT CLASS WebExDiv
+                    .:SetFixedID("fwwebex-example-030-loader-overlay")
+                    .:AddClass("fwwebex-example-030-loader")
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("fwwebex-example-030-loader-panel")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("fwwebex-example-030-loader-title")
+                            WITH WEBEXOBJECT CLASS WebExStrong ARGS "FWWebEx carregando pagina"
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExControl TYPE span
+                                .:SetFixedID("fwwebex-example-030-loader-status")
+                                .:AddClass("badge fwwebex-example-030-status")
+                                .:SetAttr("data-step","0")
+                                .:SetContent("0%")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExAsciiLoader ARGS cLoaderScript
+                            .:SetFixedID("fwwebex-example-030-loader")
+                            .:SetMaxLines(jLoaderLines)
+                            .:SetInterval(80)
+                            .:SetFrameTimeFactor(1)
+                            .:SetMaxFrameTime(220)
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("progress fwwebex-example-030-progress mt-3")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:SetFixedID("fwwebex-example-030-progress")
+                                .:AddClass("progress-bar")
+                                .:SetAttr("data-step","0")
+                                .:SetAttr("role","progressbar")
+                                .:SetAttr("style","width: 0%;")
+                                .:SetAttr("aria-valuenow","0")
+                                .:SetAttr("aria-valuemin","0")
+                                .:SetAttr("aria-valuemax","100")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExControl TYPE ul
+                            .:SetFixedID("fwwebex-example-030-steps")
+                            .:AddClass("fwwebex-example-030-steps")
+                            WITH WEBEXOBJECT CLASS WebExLI
+                                .:SetAttr("data-step","0")
+                                .:SetContent("Runtime")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExLI
+                                .:SetAttr("data-step","1")
+                                .:SetContent("Assets")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExLI
+                                .:SetAttr("data-step","2")
+                                .:SetContent("Dados")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExLI
+                                .:SetAttr("data-step","3")
+                                .:SetContent("Interface")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:SetFixedID("fwwebex-example-030-content")
+                    .:AddClass("fwwebex-example-030-content is-loading py-4")
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("d-flex align-items-center justify-content-between gap-3 flex-wrap mb-4")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            WITH WEBEXOBJECT CLASS WebExH2
+                                .:SetContent("Carga de pagina com ASCII art")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExParagraph
+                                .:AddClass("mb-0")
+                                .:SetContent("Overlay reutilizavel para bootstrap, assets, requests e montagem visual.")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExButton ARGS "Reexecutar loader","button"
+                            .:SetButtonIcon("bi-arrow-clockwise","bootstrap",.T.)
+                            .:SetAttr("onclick","FWWebExExample030Replay();")
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("row g-3")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-md-4")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("fwwebex-example-030-tile")
+                                WITH WEBEXOBJECT CLASS WebExParagraph
+                                    .:AddClass("mb-2")
+                                    .:SetContent("Pedidos carregados")
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("fwwebex-example-030-tile-value")
+                                    .:SetContent("128")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-md-4")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("fwwebex-example-030-tile")
+                                WITH WEBEXOBJECT CLASS WebExParagraph
+                                    .:AddClass("mb-2")
+                                    .:SetContent("Integracoes OK")
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("fwwebex-example-030-tile-value")
+                                    .:SetContent("7")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-md-4")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("fwwebex-example-030-tile")
+                                WITH WEBEXOBJECT CLASS WebExParagraph
+                                    .:AddClass("mb-2")
+                                    .:SetContent("Tempo simulado")
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:SetFixedID("fwwebex-example-030-elapsed")
+                                    .:AddClass("fwwebex-example-030-tile-value")
+                                    .:SetContent("0.0s")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE pre
+                        .:SetFixedID("fwwebex-example-030-log")
+                        .:AddClass("border rounded p-3 mt-4 small")
+                        .:SetContent("Aguardando eventos de carga...")
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS WebExScript
+                beginContent var cScript
+                    (function(){
+                        const stages = [
+                            { label: 'Runtime FWWebEx', percent: 20, delay: 380 },
+                            { label: 'Assets e dependencias', percent: 48, delay: 520 },
+                            { label: 'Request de dados', percent: 76, delay: 620 },
+                            { label: 'Interface liberada', percent: 100, delay: 420 }
+                        ];
+                        let loadStart = performance.now();
+
+                        function byId(id) {
+                            return document.getElementById(id);
+                        }
+
+                        function setStep(index) {
+                            const progress = byId('fwwebex-example-030-progress');
+                            const status = byId('fwwebex-example-030-loader-status');
+                            const elapsed = byId('fwwebex-example-030-elapsed');
+                            const log = byId('fwwebex-example-030-log');
+                            const stepItems = document.querySelectorAll('#fwwebex-example-030-steps [data-step]');
+                            const stage = stages[index] || stages[stages.length - 1];
+
+                            stepItems.forEach(function(item) {
+                                const step = parseInt(item.dataset.step,10);
+                                item.classList.toggle('is-done', step < index);
+                                item.classList.toggle('is-active', step === index);
+                            });
+
+                            if (progress) {
+                                progress.style.width = stage.percent + '%';
+                                progress.setAttribute('aria-valuenow', stage.percent);
+                                progress.setAttribute('data-step', index);
+                            }
+
+                            if (status) {
+                                status.textContent = stage.percent + '%';
+                                status.setAttribute('data-step', index);
+                            }
+
+                            if (elapsed) {
+                                elapsed.textContent = ((performance.now() - loadStart) / 1000).toFixed(1) + 's';
+                            }
+
+                            if (log) {
+                                log.textContent += '\n' + stage.label + '... ok';
+                            }
+                        }
+
+                        function replaceAscii(script) {
+                            const loader = byId('fwwebex-example-030-loader');
+
+                            if (!loader || !loader.__ascii) {
+                                return;
+                            }
+
+                            loader.__ascii.stop();
+                            loader.__ascii.load(script);
+                            setTimeout(function() {
+                                loader.__ascii.start();
+                            },90);
+                        }
+
+                        function finishLoader() {
+                            const overlay = byId('fwwebex-example-030-loader-overlay');
+                            const content = byId('fwwebex-example-030-content');
+                            const finalScript = ';c\n;color=var(--fwwebex-example-030-step-ready)\n;area=top\nFWWebEx pronto\n;area=full\n+------------------------------+\n| OK  runtime                  |\n| OK  assets                   |\n| OK  dados                    |\n| OK  interface                |\n+------------------------------+\n;area=bottom\nConteudo liberado';
+
+                            replaceAscii(finalScript);
+
+                            setTimeout(function() {
+                                if (overlay) {
+                                    overlay.classList.add('is-hidden');
+                                }
+                                if (content) {
+                                    content.classList.remove('is-loading');
+                                }
+                            },720);
+                        }
+
+                        window.FWWebExExample030Replay = function() {
+                            const overlay = byId('fwwebex-example-030-loader-overlay');
+                            const content = byId('fwwebex-example-030-content');
+                            const log = byId('fwwebex-example-030-log');
+
+                            loadStart = performance.now();
+
+                            if (overlay) {
+                                overlay.classList.remove('is-hidden');
+                            }
+                            if (content) {
+                                content.classList.add('is-loading');
+                            }
+                            if (log) {
+                                log.textContent = 'Iniciando carga simulada...';
+                            }
+
+                            let offset = 120;
+                            stages.forEach(function(stage,index) {
+                                offset += stage.delay;
+                                setTimeout(function() {
+                                    setStep(index);
+                                },offset);
+                            });
+
+                            setTimeout(finishLoader,offset + 520);
+                        };
+
+                        FWWebEx.ready(function() {
+                            setTimeout(window.FWWebExExample030Replay,140);
+                        });
+                    })();
+                endContent
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)
+
+static function FWWebExExample030LoaderScript() as character
+
+    local cLoaderScript as character
+
+    beginContent var cLoaderScript
+;loop=inf
+;c
+;color=var(--fwwebex-example-030-step-runtime)
+;area=top
+FWWebEx bootstrap
+;area=full
++--------------------------------------+
+| init runtime                  [..]   |
+| mount assets                  [  ]   |
+| request data                  [  ]   |
+| paint interface               [  ]   |
++--------------------------------------+
+;area=bottom
+Sincronizando ambiente...
+;d=170
+;c
+;color=var(--fwwebex-example-030-step-assets)
+;area=top
+FWWebEx bootstrap
+;area=full
++--------------------------------------+
+| init runtime                  [ok]   |
+| mount assets                  [..]   |
+| request data                  [  ]   |
+| paint interface               [  ]   |
++--------------------------------------+
+;area=bottom
+Preparando dependencias...
+;d=170
+;c
+;color=var(--fwwebex-example-030-step-data)
+;area=top
+FWWebEx bootstrap
+;area=full
++--------------------------------------+
+| init runtime                  [ok]   |
+| mount assets                  [ok]   |
+| request data                  [..]   |
+| paint interface               [  ]   |
++--------------------------------------+
+;area=bottom
+Carregando dados...
+;d=170
+;c
+;color=var(--fwwebex-example-030-step-ready)
+;area=top
+FWWebEx bootstrap
+;area=full
++--------------------------------------+
+| init runtime                  [ok]   |
+| mount assets                  [ok]   |
+| request data                  [ok]   |
+| paint interface               [..]   |
++--------------------------------------+
+;area=bottom
+Montando interface...
+;d=170
+;end
+    endContent
+
+    cLoaderScript:=WebExHelper():StrReplaceEx(cLoaderScript,{{CRLF,CHR(13),CHR(10)},""},{"\n",CHR(10)})
+
+return(cLoaderScript)

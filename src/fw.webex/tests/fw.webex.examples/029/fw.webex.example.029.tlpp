@@ -1,0 +1,364 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_029()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_029(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_029(cHTML as character) as character
+
+    local aRows:=Array(0) as array
+    local cEditFrameID:="fwwebex-example-029-edit-frame" as character
+    local cEditFrameName:="fwwebex-example-029-edit" as character
+    local cEditFormPage as character
+    local cEditFormPageExternalAssetsFilePath as character
+    local cEditFormPageFileName as character
+    local cEditFormPageFilePath as character
+    local cEditFormPageLocalAssetsFilePath as character
+    local cEditModalID:="fwwebex-example-029-edit-modal" as character
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+    local cRowsJS as character
+    local cScript as character
+    local cTableID:="fwwebex-example-029-table" as character
+
+    local jDataTableOptions:=JSONObject():New() as json
+    local jFormConfig:=JSONObject():New() as json
+    local jLookups:=JSONObject():New() as json
+    local jTableFields:=JSONObject():New() as json
+
+    local oEditForm as object
+    local oEditFormPage as object
+    local oFWWebExPage as object
+
+    jTableFields["fields"]:=Array(0)
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"C","data":"ID","title":"ID"})
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"C","data":"NOME","title":"Nome","required":.T.})
+    aAdd(jTableFields["fields"],{"visible":.T.,"inputType":"email","data":"EMAIL","title":"E-mail","required":.T.})
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"C","data":"TIPO","title":"Tipo"})
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"L","data":"ATIVO","title":"Ativo"})
+    aAdd(jTableFields["fields"],{"visible":.F.,"inputType":"hidden","data":"TOKEN","title":"Token"})
+
+    aAdd(aRows,{"ID":"USR-001","NOME":"Ana Oliveira","EMAIL":"ana.oliveira@example.com","TIPO":"U","ATIVO":.T.,"TOKEN":"token-001"})
+    aAdd(aRows,{"ID":"USR-002","NOME":"Bruno Santos","EMAIL":"bruno.santos@example.com","TIPO":"A","ATIVO":.T.,"TOKEN":"token-002"})
+    aAdd(aRows,{"ID":"USR-003","NOME":"Carla Lima","EMAIL":"carla.lima@example.com","TIPO":"V","ATIVO":.F.,"TOKEN":"token-003"})
+    aAdd(aRows,{"ID":"USR-004","NOME":"Diego Costa","EMAIL":"diego.costa@example.com","TIPO":"U","ATIVO":.T.,"TOKEN":"token-004"})
+
+    jFormConfig["required"]:={"ID","NOME","EMAIL"}
+    jFormConfig["readonly"]:={"ID"}
+    jLookups["TIPO"]:={"type":"fixed","source":"A=Administrador;U=Usuario;V=Visitante"}
+    jFormConfig["lookups"]:=jLookups
+
+    oEditForm:=WebExDataTableForm():New("Editar usuario",jTableFields,"edit",{"ID"})
+    oEditForm:SetFormConfig(jFormConfig)
+    oEditForm:SetDataTableID(cTableID)
+    oEditForm:SetUpdateFunction("FWWebExExample029Update")
+    oEditForm:LoadFromDataTableRow(aRows[1])
+    oEditForm:BuildFormLayout(2)
+
+    oEditFormPage:=oEditForm:BuildStandalonePage("Editar usuario",cEditFrameName)
+    cEditFormPage:=oEditFormPage:RenderHTML()
+    WebFileTools():HTMLFromControl(oEditFormPage,@cEditFormPageFilePath,@cEditFormPageFileName,@cEditFormPage,.T.)
+    WebFileTools():HTMLAssetsToFile(oEditFormPage:GetFixedID(),"html",cEditFormPage,oEditFormPage:GetFWWebExTmpPath(),@cEditFormPageExternalAssetsFilePath,@cEditFormPageLocalAssetsFilePath)
+    oEditFormPage:Clean()
+    WEBEXOBJECT CLEAN
+    FreeObj(@oEditFormPage)
+
+    jDataTableOptions["data"]:=aRows
+    jDataTableOptions["processing"]:=.F.
+    jDataTableOptions["pageLength"]:=5
+    jDataTableOptions["responsive"]:=.F.
+    jDataTableOptions["columnDefs"]:=Array(0)
+    aAdd(jDataTableOptions["columnDefs"],{"defaultContent":"","targets":"_all"})
+
+    cRowsJS:=JSONObjectTools():ToJSObjectString(aRows)
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: DataTable Form Integrado"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-4")
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("row g-3")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExH2
+                                .:SetContent("DataTable Form integrado")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExParagraph
+                                .:SetContent("Duplo clique em uma linha para editar e atualizar a tabela em memoria.")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("d-flex flex-wrap gap-2")
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Editar primeiro registro","button"
+                                    .:SetButtonIcon("bi-pencil-square","bootstrap",.T.)
+                                    .:SetAttr("onclick","FWWebExExample029OpenEdit(window.FWWebExExample029Rows[0]);")
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("table-responsive")
+                                WITH WEBEXOBJECT CLASS WebExDataTable ARGS "Usuarios",.F.
+                                    .:SetFixedID(cTableID)
+                                    .:SetDataTableFields(jTableFields)
+                                    .:SetDataTableOptions(jDataTableOptions)
+                                    .:BuildHeader()
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExControl TYPE pre
+                                .:SetFixedID("fwwebex-example-029-log")
+                                .:AddClass("border rounded p-3 small")
+                                .:SetContent("Aguardando edicao...")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:SetFixedID(cEditModalID)
+                        .:SetAttr("tabindex","-1")
+                        .:AddClass("modal fade")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("modal-dialog modal-xl modal-dialog-scrollable")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("modal-content")
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("modal-header")
+                                    WITH WEBEXOBJECT CLASS WebExH5
+                                        .:AddClass("modal-title")
+                                        .:SetContent("Editar usuario")
+                                    END WEBEXOBJECT
+                                    WITH WEBEXOBJECT CLASS WebExButton ARGS "","button"
+                                        .:DelClassRegex("^btn-.+")
+                                        .:AddClass("btn-close")
+                                        .:SetAttr("data-bs-dismiss","modal")
+                                        .:SetAttr("aria-label","Close")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("modal-body p-0")
+                                    WITH WEBEXOBJECT CLASS WebExIFrame
+                                        .:SetFixedID(cEditFrameID)
+                                        .:SetAttr("src",cEditFormPageExternalAssetsFilePath)
+                                        .:SetAttr("title","Editar usuario")
+                                        .:SetAttr("style","width: 100%; height: 70vh; border: none; display: block;")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS WebExScript
+                beginContent var cScript
+                    window.FWWebExExample029Rows = __ROWS__;
+                    window.FWWebExExample029CurrentRow = null;
+
+                    function FWWebExExample029Table() {
+                        const selector = '#__TABLE_ID__';
+
+                        if (window.jQuery && $.fn && $.fn.DataTable && $.fn.DataTable.isDataTable(selector)) {
+                            return $(selector).DataTable();
+                        }
+
+                        if (window.DataTable && DataTable.isDataTable(selector)) {
+                            return new DataTable(selector);
+                        }
+
+                        return null;
+                    }
+
+                    function FWWebExExample029Truthy(value) {
+                        return value === true || value === 'true' || value === '1' || value === 'T' || value === 'S';
+                    }
+
+                    function FWWebExExample029PostRow(row) {
+                        const frame = document.getElementById('__IFRAME_ID__');
+
+                        if (!frame || !frame.contentWindow || !row) {
+                            return;
+                        }
+
+                        frame.contentWindow.postMessage({
+                            source: 'FWWebExDataTableFormParent',
+                            type: 'FWWebEx:datatable-form:load',
+                            frameName: '__FRAME_NAME__',
+                            data: row
+                        },'*');
+                    }
+
+                    function FWWebExExample029Log(message, data) {
+                        const log = document.getElementById('fwwebex-example-029-log');
+                        if (log) {
+                            log.textContent = message + (data ? '\n' + JSON.stringify(data,null,2) : '');
+                        }
+                    }
+
+                    function FWWebExExample029CloseModal() {
+                        const modalElement = document.getElementById('__MODAL_ID__');
+
+                        if (modalElement && window.bootstrap && bootstrap.Modal) {
+                            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                            modal.hide();
+                        }
+                    }
+
+                    function FWWebExExample029OpenEdit(row) {
+                        const modalElement = document.getElementById('__MODAL_ID__');
+
+                        if (!row || !modalElement) {
+                            return;
+                        }
+
+                        window.FWWebExExample029CurrentRow = row;
+
+                        FWWebExExample029Log('Editando '+row.ID,row);
+
+                        if (window.bootstrap && bootstrap.Modal) {
+                            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                            modal.show();
+                        }
+
+                        setTimeout(function() {
+                            FWWebExExample029PostRow(row);
+                        },80);
+                    }
+
+                    window.FWWebExExample029OpenEdit = FWWebExExample029OpenEdit;
+
+                    window.FWWebExExample029Update = function(payload, form) {
+                        const rows = window.FWWebExExample029Rows || [];
+                        const row = rows.find(function(item) {
+                            return item.ID === payload.ID;
+                        });
+
+                        if (!row) {
+                            throw new Error('Registro nao encontrado: '+payload.ID);
+                        }
+
+                        Object.keys(payload).forEach(function(name) {
+                            row[name] = payload[name];
+                        });
+
+                        row.ATIVO = FWWebExExample029Truthy(payload.ATIVO);
+
+                        const table = FWWebExExample029Table();
+                        if (table) {
+                            table.clear();
+                            table.rows.add(rows);
+                            table.draw(false);
+                        }
+
+                        window.FWWebExExample029CurrentRow = row;
+                        FWWebExExample029Log('Registro atualizado',row);
+
+                        return {
+                            success: true,
+                            row: row
+                        };
+                    };
+
+                    FWWebEx.ready(function() {
+                        const tableElement = document.getElementById('__TABLE_ID__');
+                        const frame = document.getElementById('__IFRAME_ID__');
+
+                        if (frame && !frame.__fwwebexExample029LoadBound) {
+                            frame.__fwwebexExample029LoadBound = true;
+                            frame.addEventListener('load',function() {
+                                if (window.FWWebExExample029CurrentRow) {
+                                    FWWebExExample029PostRow(window.FWWebExExample029CurrentRow);
+                                }
+                            });
+                        }
+
+                        window.addEventListener('message',function(event) {
+                            const message = event.data || {};
+
+                            if (message.source !== 'FWWebExDataTableForm' || message.frameName !== '__FRAME_NAME__') {
+                                return;
+                            }
+
+                            if (message.type === 'FWWebEx:datatable-form:ready' && window.FWWebExExample029CurrentRow) {
+                                FWWebExExample029PostRow(window.FWWebExExample029CurrentRow);
+                            } else if (message.type === 'FWWebEx:datatable-form:submit') {
+                                FWWebExExample029Log('Registro atualizado',(message.result && message.result.row) ? message.result.row : (message.data || {}));
+                                FWWebExExample029CloseModal();
+                            } else if (message.type === 'FWWebEx:datatable-form:close') {
+                                FWWebExExample029CloseModal();
+                            }
+                        });
+
+                        function bindRowOpen() {
+                            const table = FWWebExExample029Table();
+
+                            if (!table || !tableElement || tableElement.__fwwebexExample029Bound) {
+                                if (!table) {
+                                    setTimeout(bindRowOpen,50);
+                                }
+                                return;
+                            }
+
+                            tableElement.__fwwebexExample029Bound = true;
+                            tableElement.addEventListener('dblclick',function(event) {
+                                const tr = event.target.closest('tbody tr');
+                                const table = FWWebExExample029Table();
+                                const row = table && tr ? table.row(tr).data() : null;
+
+                                if (row) {
+                                    FWWebExExample029OpenEdit(row);
+                                }
+                            });
+                        }
+
+                        bindRowOpen();
+                    });
+                endContent
+                cScript:=WebExHelper():StrReplaceEx(;
+                    cScript;
+                    ,{"__ROWS__",cRowsJS};
+                    ,{"__TABLE_ID__",cTableID};
+                    ,{"__IFRAME_ID__",cEditFrameID};
+                    ,{"__FRAME_NAME__",cEditFrameName};
+                    ,{"__MODAL_ID__",cEditModalID};
+                )
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)
