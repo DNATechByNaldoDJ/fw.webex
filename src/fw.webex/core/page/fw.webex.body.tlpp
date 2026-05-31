@@ -31,11 +31,11 @@ method New() class WebExBody
 
     WITH WEBEXOBJECT self
         WITH WEBEXOBJECT CLASS WebExDiv
-            .:SetAttr("style", "position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; background-color: #212529;")
+            .:SetAttr("style", "position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; background-color: var(--bs-body-bg); color: var(--bs-body-color);")
             // Barra de status de conexao
             WITH WEBEXOBJECT CLASS WebExDiv
                 .:SetFixedID("fwwebex-connection-status")
-                .:SetAttr("style", "display: none; color: #d4a437; font-weight: 500; font-size: 0.8rem; padding: 0.5rem 0.75rem; text-align: center;")
+                .:SetAttr("style", "display: none; color: var(--bs-warning); font-weight: 500; font-size: 0.8rem; padding: 0.5rem 0.75rem; text-align: center;")
                 .:SetContent("Tentando conectar ao Protheus")
                 // Pinguinhos animados
                 WITH WEBEXOBJECT CLASS WebExSpan
@@ -78,7 +78,7 @@ method New() class WebExBody
                     left: 0 !important;
                     right: 0 !important;
                     height: 4px !important;
-                    background: linear-gradient(270deg, #0dcaf0, #0d6efd) !important;
+                    background: linear-gradient(270deg, var(--bs-info), var(--bs-primary)) !important;
                     animation: progressbar-stripes 1s linear infinite !important;
                 }
                 @keyframes progressbar-stripes {

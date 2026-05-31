@@ -33,15 +33,15 @@ Fora de escopo imediato:
 ## 3) Objetivos e Métricas
 
 ### Objetivos
-- [ ] Definir API de bootstrap (`FWWebEx.init(config)`) e lifecycle.
+- [x] Definir API de bootstrap (`FWWebEx.init(config)`) e lifecycle.
 - [ ] Implementar arquitetura plugável mínima (registro + init de plugins).
 - [ ] Externalizar JS por módulos (core + features).
 - [ ] Resolver TODOs P0/P1 com exemplos obrigatórios.
 
 ### Métricas
-- TODOs P0 resolvidos: `0/2`
+- TODOs P0 resolvidos: `2/5`
 - TODOs P1 resolvidos: `0/2`
-- Exemplos novos publicados: `0/2`
+- Exemplos novos publicados: `4/5`
 - Módulos migrados para modelo plugável: `0/1 (piloto)`
 
 ---
@@ -56,10 +56,10 @@ Legenda:
 |---|---|---|---|---|---|---|---|
 | NX-000 | P0 | governança/release | Efetivar congelamento operacional da v0 (tag + branches + proteção) | `V0_FREEZE.md` | Não | TODO | S1 |
 | NX-001 | P0 | core/table | Implementar carregamento real via AJAX | `src/fw.webex/core/component/fw.webex.table.tlpp` | Sim | TODO | S2 |
-| NX-002 | P0 | contrib/datatable | Finalizar fluxo do datatable form e estabilizar uso | `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp` | Sim | TODO | S1 |
+| NX-002 | P0 | contrib/datatable | Finalizar fluxo do datatable form e estabilizar uso | `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp` | Sim | DONE | S1 |
 | NX-003 | P1 | features/markdown | Revisar TODOs de plugins markdown | `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.markdown.tlpp` | Sim | TODO | S3 |
 | NX-004 | P1 | tests/md | Corrigir cenário PageHeader/PageFooter | `src/fw.webex/tests/md/testemd.tlpp` | Não | TODO | S1 |
-| NX-005 | P0 | core/bootstrap | Criar inicializador de DOM configurável com hooks | Novo | Sim | TODO | S1 |
+| NX-005 | P0 | core/bootstrap | Criar inicializador de DOM configurável com hooks | Novo | Sim | DONE | S1 |
 | NX-006 | P0 | core/plugins | Definir registro e contrato mínimo de plugins | Novo | Sim | TODO | S2 |
 
 ---
@@ -90,11 +90,11 @@ Um item só pode ser concluído quando:
 Objetivo: estabelecer a base arquitetural e concluir um TODO crítico com exemplo.
 
 Escopo:
-1. NX-005: inicializador de DOM configurável (`init`, `ready`, hooks principais).
-2. NX-002: concluir datatable form.
+1. NX-005: inicializador de DOM configurável (`init`, `ready`, hooks principais). **DONE**
+2. NX-002: concluir datatable form. **DONE**
 3. NX-004: corrigir teste markdown de header/footer.
-4. Criar 2 exemplos para datatable (mínimo e realista).
-5. Atualizar documentação de uso da feature.
+4. Criar 2 exemplos para datatable (mínimo e realista). **DONE**
+5. Atualizar documentação de uso da feature. **DONE**
 
 Critério de aceite:
 - 100% dos itens P0 planejados da sprint concluídos;

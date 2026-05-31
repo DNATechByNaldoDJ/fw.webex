@@ -14,9 +14,6 @@ namespace FWWebEx
 
 #include "fw.webex.th"
 
-#include "tlpp-core.th"
-#include "tlpp-rest.th"
-
 class WebAuthorization
 
     static method ParamsProvider() as json
