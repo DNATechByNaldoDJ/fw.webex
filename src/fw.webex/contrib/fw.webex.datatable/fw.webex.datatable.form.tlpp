@@ -6,8 +6,6 @@
 |_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
 
 Released to Public Domain.
-
-TODO: Finalizar e criar exemplo
 --------------------------------------------------------------------------------------
 */
 
@@ -17,79 +15,113 @@ namespace FWWebEx
 
 class WebExDataTableForm from WebExForm
 
-    protected data aReadOnlyFields as array     // Campos que nao podem ser alterados mesmo em edit
+    protected data aReadOnlyFields as array
 
-    protected data cMode as character           // "view" ou "edit"
-    protected data cDataTableID as character    // ID da DataTable associada
-    protected data cUpdateFunction as character // Funcao JS para atualizacao apos submit
+    protected data cDataTableID as character
+    protected data cMode as character
+    protected data cModalID as character
+    protected data cUpdateFunction as character
 
-    protected data jFormConfig as json          // Configuracoes especificas do form (obrigatorios,lookups,etc.)
-    protected data jDataTableFields as json     // Campos da DataTable (visiveis e ocultos)
-    protected data lValidateRequired as logical // Ativar validacao de obrigatorios
+    protected data jDataTableFields as json
+    protected data jFieldControls as json
+    protected data jFieldInputs as json
+    protected data jFormConfig as json
 
-    protected data oModal as object             // Modal para exibir o form (opcional,se integrado com SBAdmin)
+    protected data lFormScriptsAdded as logical
+    protected data lLookupScriptsAdded as logical
+    protected data lValidateRequired as logical
+
+    protected data nColsPerRow as numeric
 
     public method New(cFormTitle as character,jDataTableFields as json,cMode as character,aReadOnlyFields as array,lFormButtonsFirst as logical) as object
 
-    public method SetFormConfig(jFormConfig as json) as object          // Configura obrigatorios,lookups,etc.
+    public method SetFormConfig(jFormConfig as json) as object
     public method SetDataTableID(cDataTableID as character) as object
     public method SetUpdateFunction(cUpdateFunction as character) as object
     public method SetValidateRequired(lValidateRequired as logical) as object
+    public method SetModalID(cModalID as character) as object
+    public method GetModalID() as character
 
-    public method LoadFromDataTableRow(jRowData as json) as object      // Carrega dados de uma linha da DataTable
-    public method BuildFormLayout(nColsPerRow as numeric) as object     // Constroi layout com colunas otimizadas
-    public method AddLookupToField(cFieldName as character,cLookupType as character,cLookupSource as character) as object  // Adiciona lookup (lupa)
-    public method RenderHTMLWithModal() as character                    // Renderiza com modal para view/edit
+    public method LoadFromDataTableRow(jRowData as json) as object
+    public method BuildFormLayout(nColsPerRow as numeric) as object
+    public method AddLookupToField(cFieldName as character,cLookupType as character,cLookupSource as character) as object
+    public method AddFormScripts() as object
+    public method BuildStandalonePage(cPageTitle as character,cFrameName as character) as object
+    public method RenderHTML() as character
 
-    public method GetJSValidationScript() as character  // Script JS para validacao de obrigatorios
-    public method GetJSUpdateScript() as character      // Script JS para atualizacao da DataTable apos submit
+    public method GetJSFrameBridgeScript(cFrameName as character) as character
+    public method GetJSValidationScript() as character
+    public method GetJSUpdateScript() as character
 
 endclass
 
 method New(cFormTitle,jDataTableFields,cMode,aReadOnlyFields,lFormButtonsFirst) class WebExDataTableForm
 
+    local oButton as object
+
     paramtype 1 var cFormTitle as character optional default "Formulario da DataTable"
-    paramtype 2 var jDataTableFields as json  // Ex: {"RA_FILIAL": {"type":"C","label":"Filial","visible":.T.},...}
-    paramtype 3 var cMode as character optional default "view"  // "view" ou "edit"
+    paramtype 2 var jDataTableFields as json optional default JSONObject():New()
+    paramtype 3 var cMode as character optional default "view"
     paramtype 4 var aReadOnlyFields as array optional default {}
     paramtype 5 var lFormButtonsFirst as logical optional default .F.
 
-    ::jDataTableFields:=jDataTableFields
-
-    ::cMode:=Lower(cMode)
-
     ::aReadOnlyFields:=aReadOnlyFields
-
+    ::cDataTableID:=""
+    ::cMode:=Lower(AllTrim(cMode))
+    ::cUpdateFunction:=""
+    ::jDataTableFields:=jDataTableFields
+    ::jFieldControls:=JSONObject():New()
+    ::jFieldInputs:=JSONObject():New()
+    ::jFormConfig:=__DTFEnsureConfig()
+    ::lFormScriptsAdded:=.F.
+    ::lLookupScriptsAdded:=.F.
     ::lValidateRequired:=.T.
-
-    ::jFormConfig:=JSONObject():New()
-    ::jFormConfig["required"]:={}  // Array de campos obrigatorios
-    ::jFormConfig["lookups"]:=JSONObject():New()  // lookups por campo
+    ::nColsPerRow:=3
 
     _Super:New(cFormTitle,lFormButtonsFirst)
 
-    // Adiciona botoes padrao
+    ::cModalID:=Lower(StrTran(::GetFixedID(),".","_"))+"_modal"
+    ::SetFormMethod(if(::cMode=="edit","post","get"))
+    ::SetFormAction("javascript:void(0);")
+
     if (::cMode=="edit")
-        ::AddButton(WebExButton():New("Salvar","btn-primary","submit"))
-        ::AddButton(WebExButton():New("Cancelar","btn-secondary","button","closeModal();"))
+        oButton:=WebExButton():New("Salvar","submit")
+        oButton:DelClassRegex("^btn-.+")
+        oButton:AddClass("fwwebex-datatable-form-button-save")
+        oButton:SetButtonIcon("bi-check2","bootstrap",.T.)
+        ::AddButton(oButton)
+
+        oButton:=WebExButton():New("Cancelar","button")
+        oButton:DelClassRegex("^btn-.+")
+        oButton:AddClass("fwwebex-datatable-form-button-cancel")
+        oButton:SetAttr("data-bs-dismiss","modal")
+        ::AddButton(oButton)
     else
-        ::AddButton(WebExButton():New("Fechar","btn-secondary","button","closeModal();"))
+        oButton:=WebExButton():New("Fechar","button")
+        oButton:DelClassRegex("^btn-.+")
+        oButton:AddClass("fwwebex-datatable-form-button-close")
+        oButton:SetAttr("data-bs-dismiss","modal")
+        ::AddButton(oButton)
+    endif
+
+    if (__DTFHasFields(::jDataTableFields))
+        ::LoadFromDataTableRow(JSONObject():New())
     endif
 
 return(self)
 
 method SetFormConfig(jFormConfig) class WebExDataTableForm
-    paramtype 1 var jFormConfig as json optional
-    ::jFormConfig:=jFormConfig
+    paramtype 1 var jFormConfig as json optional default JSONObject():New()
+    ::jFormConfig:=__DTFEnsureConfig(jFormConfig)
 return(self)
 
 method SetDataTableID(cDataTableID) class WebExDataTableForm
-    paramtype 1 var cDataTableID as character
+    paramtype 1 var cDataTableID as character optional default ""
     ::cDataTableID:=cDataTableID
 return(self)
 
 method SetUpdateFunction(cUpdateFunction) class WebExDataTableForm
-    paramtype 1 var cUpdateFunction as character
+    paramtype 1 var cUpdateFunction as character optional default ""
     ::cUpdateFunction:=cUpdateFunction
 return(self)
 
@@ -98,84 +130,157 @@ method SetValidateRequired(lValidateRequired) class WebExDataTableForm
     ::lValidateRequired:=lValidateRequired
 return(self)
 
+method SetModalID(cModalID) class WebExDataTableForm
+    paramtype 1 var cModalID as character optional default ::cModalID
+    ::cModalID:=cModalID
+return(self)
+
+method GetModalID() class WebExDataTableForm
+return(::cModalID)
+
 method LoadFromDataTableRow(jRowData) class WebExDataTableForm
 
     local aFields as array
-
     local cFieldName as character
-
+    local cInputType as character
+    local cLabel as character
+    local cPlaceHolder as character
+    local cValue as character
+    local jFieldInfo as json
+    local lHidden as logical
+    local lReadOnly as logical
+    local lRequired as logical
     local nField as numeric
     local nFields as numeric
+    local oField as object
+    local oInput as object
 
-    local jFieldInfo as json
+    paramtype 1 var jRowData as json optional default JSONObject():New()
 
-    paramtype 1 var jRowData as json  // Dados da linha: {"RA_FILIAL":"01","RA_MAT":"000001",...}
+    ::jFieldControls:=JSONObject():New()
+    ::jFieldInputs:=JSONObject():New()
+    ::jFormFieldWebExFields:=JSONObject():New()
+    ::oFormFieldWebExFieldSet:=WebExFieldSet():New(::cFormTitle)
 
-    aFields:=::jDataTableFields:GetNames()
+    aFields:=__DTFGetFields(::jDataTableFields)
     nFields:=Len(aFields)
 
     for nField:=1 to nFields
 
-        cFieldName:=aFields[nField]
-        jFieldInfo:=::jDataTableFields[cFieldName]
+        jFieldInfo:=aFields[nField]
 
-        // Adiciona campo ao form (mesmo se oculto na DataTable)
-        ::AddField(jFieldInfo["label"],cFieldName,jFieldInfo["type"],/*placeholder*/"")
-
-        // Preenche valor
-        ::oFormFieldWebExField:SetValue(jRowData[cFieldName])
-
-        // Modo view: readonly
-        if (::cMode=="view" .or. aScan(::aReadOnlyFields,cFieldName) > 0)
-            ::oFormFieldWebExField:SetAttr("readonly","readonly")
-            ::oFormFieldWebExField:AddClass("form-control-plaintext")  // Estilo readonly Bootstrap
+        if (ValType(jFieldInfo)!="J")
+            loop
         endif
 
-        // Obrigatorio: adiciona classe e atributo
-        if (aScan(::jFormConfig["required"],cFieldName) > 0)
-            ::oFormFieldWebExField:SetAttr("required","required")
-            ::oFormFieldWebExField:AddClass("border-danger")  // Destaque visual
+        cFieldName:=__DTFFieldName(jFieldInfo,nField)
+
+        if (Empty(cFieldName))
+            loop
         endif
 
-        // Lookup: adiciona botao lupa
-        if (::jFormConfig["lookups"]:HasProperty(cFieldName))
-            ::AddLookupToField(cFieldName,::jFormConfig["lookups"][cFieldName]["type"],::jFormConfig["lookups"][cFieldName]["source"])
+        cInputType:=__DTFInputType(jFieldInfo)
+        cLabel:=__DTFFieldLabel(jFieldInfo,cFieldName)
+        cPlaceHolder:=__DTFFieldPlaceHolder(jFieldInfo)
+        cValue:=__DTFFieldValue(jRowData,cFieldName,cInputType)
+        lHidden:=(__DTFFieldIsHidden(jFieldInfo).or.(cInputType=="hidden"))
+        lReadOnly:=__DTFFieldIsReadOnly(jFieldInfo,::jFormConfig,::aReadOnlyFields,cFieldName,::cMode)
+        lRequired:=__DTFFieldIsRequired(jFieldInfo,::jFormConfig,cFieldName)
+
+        oField:=WebExField():New(cLabel,cFieldName,cInputType,cPlaceHolder)
+        oInput:=oField:GetMemberData("oFieldInput")
+        oInput:SetAttr("data-fwwebex-datatable-field",cFieldName)
+
+        if (!Empty(cValue))
+            if (cInputType=="checkbox")
+                oInput:SetAttr("value","true")
+                if (__DTFIsTruthy(cValue))
+                    oInput:SetAttr("checked","checked")
+                endif
+            else
+                oInput:SetAttr("value",__DTFEncodeAttr(cValue))
+            endif
         endif
-    next
+
+        if (lRequired)
+            oInput:SetAttr("required","required")
+        endif
+
+        if (lReadOnly)
+            if (cInputType=="checkbox")
+                oInput:SetAttr("disabled","disabled")
+            else
+                oInput:SetAttr("readonly","readonly")
+                oInput:AddClass("form-control-plaintext")
+            endif
+        endif
+
+        if (lHidden)
+            oField:AddClass("d-none")
+            oInput:SetAttr("type","hidden")
+        endif
+
+        ::jFieldControls[cFieldName]:=oField
+        ::jFieldInputs[cFieldName]:=oInput
+
+        if ((::cMode=="edit").and.(!lReadOnly).and.(!lHidden).and.(__DTFHasLookup(::jFormConfig,cFieldName)))
+            ::AddLookupToField(;
+                cFieldName;
+                ,::jFormConfig["lookups"][cFieldName]["type"];
+                ,::jFormConfig["lookups"][cFieldName]["source"];
+            )
+        endif
+
+    next nField
 
     FWFreeArray(@aFields)
+
+    ::BuildFormLayout(::nColsPerRow)
 
 return(self)
 
 method BuildFormLayout(nColsPerRow) class WebExDataTableForm
 
     local aFields as array
-
+    local cFieldName as character
+    local nColCount:=0 as numeric
+    local nColSize as numeric
     local nField as numeric
     local nFields as numeric
-    local nColSize as numeric
-    local nColCount as numeric
-
+    local oCol as object
+    local oField as object
     local oRow as object
 
-    paramtype 1 var nColsPerRow as numeric optional default 3  // Colunas por linha para otimizacao
+    paramtype 1 var nColsPerRow as numeric optional default ::nColsPerRow
 
-    aFields:=::jFormFieldWebExFields:GetNames()
+    if (nColsPerRow<1)
+        nColsPerRow:=1
+    elseif (nColsPerRow>4)
+        nColsPerRow:=4
+    endif
+
+    ::nColsPerRow:=nColsPerRow
+    nColSize:=Int(12/::nColsPerRow)
+
+    ::jFormFieldWebExFields:=JSONObject():New()
+    ::oFormFieldWebExFieldSet:=WebExFieldSet():New(::cFormTitle)
+
+    aFields:=::jFieldControls:GetNames()
     nFields:=Len(aFields)
-    nColSize:=Int(12/nColsPerRow)  // Ex: 12/3 = 4 (col-md-4)
-    nColCount:=0
 
     for nField:=1 to nFields
 
-        if ((nColCount==0).or.(nColCount>=nColsPerRow))
+        cFieldName:=aFields[nField]
+        oField:=::jFieldControls[cFieldName]
+
+        if ((nColCount==0).or.(nColCount>=::nColsPerRow))
             oRow:=WebExRow():New()
-            ::AddChild(oRow)  // Adiciona row ao form
+            ::jFormFieldWebExFields[oRow:GetID()]:=oRow
             nColCount:=0
         endif
 
-        // Adiciona campo em coluna
         oCol:=WebExCol():New(nColSize)
-        oCol:AddChild(::jFormFieldWebExFields[aFields[nField]])
+        oCol:AddChild(oField)
         oRow:AddChild(oCol)
 
         nColCount++
@@ -188,100 +293,336 @@ return(self)
 
 method AddLookupToField(cFieldName,cLookupType,cLookupSource) class WebExDataTableForm
 
-    local cJS:="" as character
-
-    local oFieldGroup as object
+    local cJS as character
+    local oField as object
     local oLookupButton as object
+    local oLookupScript as object
 
     paramtype 1 var cFieldName as character
-    paramtype 2 var cLookupType as character  // "fixed" para valores fixos,"table" para tabela externa
-    paramtype 3 var cLookupSource as character  // Ex: "M=Masculino;F=Feminino" ou "SX5" (tabela)
+    paramtype 2 var cLookupType as character optional default "fixed"
+    paramtype 3 var cLookupSource as character optional default ""
 
-    oFieldGroup:=::oFormFieldWebExFieldGroup  // Assume que o campo esta em um group
-    oLookupButton:=WebExButton():New(" ","btn-outline-secondary","button")
-    oLookupButton:AddClass("bi-search")  // icone de lupa (Bootstrap Icons)
-
-    // JS para lookup
-    if (cLookupType=="fixed")
-        // Popup com select de valores fixos
-        cJS:="showFixedLookup('"+cFieldName+"','"+cLookupSource+"');"
-    elseif (cLookupType=="table")
-        // Consulta API ou tabela externa (ex: centros de custo)
-        cJS:="showTableLookup('"+cFieldName+"','"+cLookupSource+"');"
+    if (!::jFieldControls:HasProperty(cFieldName))
+        return(self)
     endif
 
-    oLookupButton:SetAttr("onclick",cJS)
-    oFieldGroup:AddChild(oLookupButton)  // Adiciona lupa ao grupo do campo
+    oField:=::jFieldControls[cFieldName]
+
+    beginContent var cJS
+        FWWebExDataTableFormLookup(this,'__FIELD_NAME__','__LOOKUP_TYPE__','__LOOKUP_SOURCE__');
+    endContent
+
+    cJS:=WebExHelper():StrReplaceEx(;
+        cJS;
+        ,{"__FIELD_NAME__",__DTFEncodeJS(cFieldName)};
+        ,{"__LOOKUP_TYPE__",__DTFEncodeJS(cLookupType)};
+        ,{"__LOOKUP_SOURCE__",__DTFEncodeJS(cLookupSource)};
+    )
+
+    oLookupButton:=WebExButton():New("Lookup","button")
+    oLookupButton:DelClassRegex("^btn-.+")
+    oLookupButton:AddClass("fwwebex-datatable-form-button-lookup btn-sm mt-1")
+    oLookupButton:SetButtonIcon("bi-search","bootstrap",.T.)
+    oLookupButton:SetAttr("onclick",AllTrim(cJS))
+    oField:AddChild(oLookupButton)
+
+    if (!::lLookupScriptsAdded)
+        oLookupScript:=WebExScript():New(.T.,.T.)
+        oLookupScript:SetContent(GetLookupScripts())
+        ::AddChild(oLookupScript)
+        ::lLookupScriptsAdded:=.T.
+    endif
 
 return(self)
 
-method RenderHTMLWithModal() class WebExDataTableForm
+method AddFormScripts() class WebExDataTableForm
 
-    local oModalBody as object
-    local oModalHeader as object
-    local oModalDialog as object
-    local oModalContent as object
+    local oScript as object
 
-    // Cria modal (baseado em Bootstrap/SBAdmin)
-    ::oModal:=WebExDiv():New()
-    ::oModal:AddClass("modal fade")
-    ::oModal:SetFixedID("dataTableFormModal")
+    if (::lFormScriptsAdded)
+        return(self)
+    endif
 
-    oModalDialog:=WebExDiv():New()
-    oModalDialog:AddClass("modal-dialog modal-lg")  // Large modal
-    ::oModal:AddChild(oModalDialog)
-
-    oModalContent:=WebExDiv():New()
-    oModalContent:AddClass("modal-content")
-    oModalDialog:AddChild(oModalContent)
-
-    // Header
-    oModalHeader:=WebExDiv():New()
-    oModalHeader:AddClass("modal-header")
-    oModalHeader:AddChild(WebExH5():New(::cFormTitle))
-    oModalContent:AddChild(oModalHeader)
-
-    // Body com o form
-    oModalBody:=WebExDiv():New()
-    oModalBody:AddClass("modal-body")
-    oModalBody:AddChild(self)  // Adiciona o form ao body
-    oModalContent:AddChild(oModalBody)
-
-    // Footer com botoes (ja adicionados no form)
-
-    // Adiciona script de validacao se ativado
     if (::lValidateRequired)
-        ::AddChild(WebExScript():New(::GetJSValidationScript()))
+        oScript:=WebExScript():New(.T.,.T.)
+        oScript:SetContent(::GetJSValidationScript())
+        ::AddChild(oScript)
     endif
 
-    // Script de update
-    if ((::cMode=="edit").and.(!Empty(::cDataTableID)))
-        ::AddChild(WebExScript():New(::GetJSUpdateScript()))
+    if (::cMode=="edit")
+        oScript:=WebExScript():New(.T.,.T.)
+        oScript:SetContent(::GetJSUpdateScript())
+        ::AddChild(oScript)
     endif
 
-return(::oModal:RenderHTML())
+    ::lFormScriptsAdded:=.T.
+
+return(self)
+
+method BuildStandalonePage(cPageTitle,cFrameName) class WebExDataTableForm
+
+    local cStyle as character
+    local oFWWebExPage as object
+
+    paramtype 1 var cPageTitle as character optional default ::cFormTitle
+    paramtype 2 var cFrameName as character optional default ::GetFixedID()
+
+    ::AddFormScripts()
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cPageTitle
+        .:DisableFooter(.T.)
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-3")
+                    .:AddChild(self)
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+        WITH WEBEXOBJECT CLASS WebExStyle
+            beginContent var cStyle
+                body {
+                    overflow-x: hidden;
+                }
+
+                form {
+                    border: 0 !important;
+                    border-radius: 0 !important;
+                    margin-bottom: 0 !important;
+                }
+            endContent
+            .:SetContent(cStyle)
+        END WEBEXOBJECT
+        WITH WEBEXOBJECT CLASS WebExScript
+            .:SetContent(::GetJSFrameBridgeScript(cFrameName))
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+return(oFWWebExPage)
+
+method RenderHTML() class WebExDataTableForm
+
+    ::AddFormScripts()
+
+return(_Super:RenderHTML())
+
+method GetJSFrameBridgeScript(cFrameName) class WebExDataTableForm
+
+    local cScript as character
+
+    paramtype 1 var cFrameName as character optional default ::GetFixedID()
+
+    beginContent var cScript
+        (function(){
+            const frameName = '__FRAME_NAME__';
+            const formId = '__FORM_ID__';
+
+            function getForm() {
+                return document.getElementById(formId);
+            }
+
+            function truthy(value) {
+                return value === true || value === 'true' || value === '1' || value === 'T' || value === 'S';
+            }
+
+            function normalizeElements(elements) {
+                if (!elements) {
+                    return [];
+                }
+
+                if (elements.tagName) {
+                    return [elements];
+                }
+
+                return Array.prototype.slice.call(elements);
+            }
+
+            function notifyParent(type, detail) {
+                if (!window.parent || window.parent === window) {
+                    return;
+                }
+
+                const message = {
+                    source: 'FWWebExDataTableForm',
+                    type: type,
+                    frameName: frameName,
+                    formId: formId
+                };
+
+                if (detail && typeof detail === 'object') {
+                    if (Object.prototype.hasOwnProperty.call(detail,'data')) {
+                        message.data = detail.data;
+                    }
+
+                    if (Object.prototype.hasOwnProperty.call(detail,'result')) {
+                        message.result = detail.result;
+                    }
+
+                    if (!Object.prototype.hasOwnProperty.call(message,'data')) {
+                        message.data = detail;
+                    }
+                }
+
+                window.parent.postMessage(message,'*');
+            }
+
+            function setField(form, name, value) {
+                const fields = normalizeElements(form.elements[name]);
+
+                fields.forEach(function(field) {
+                    if (field.type === 'checkbox') {
+                        field.checked = truthy(value);
+                    } else if (field.type === 'radio') {
+                        field.checked = String(field.value) === String(value == null ? '' : value);
+                    } else {
+                        field.value = value == null ? '' : value;
+                    }
+
+                    field.dispatchEvent(new Event('change',{ bubbles: true }));
+                });
+            }
+
+            function loadData(data) {
+                const form = getForm();
+
+                if (!form || !data) {
+                    return;
+                }
+
+                Object.keys(data).forEach(function(name) {
+                    setField(form,name,data[name]);
+                });
+
+                notifyParent('FWWebEx:datatable-form:loaded',{ data: data });
+            }
+
+            function bindParentMessages() {
+                if (window.__fwwebexDataTableFormParentMessagesBound) {
+                    return;
+                }
+
+                window.__fwwebexDataTableFormParentMessagesBound = true;
+
+                window.addEventListener('message',function(event) {
+                    const message = event.data || {};
+
+                    if (message.source !== 'FWWebExDataTableFormParent') {
+                        return;
+                    }
+
+                    if (message.frameName && message.frameName !== frameName) {
+                        return;
+                    }
+
+                    if (message.type === 'FWWebEx:datatable-form:load') {
+                        loadData(message.data || {});
+                    }
+                });
+            }
+
+            function bindCloseButtons() {
+                const form = getForm();
+
+                if (!form) {
+                    return;
+                }
+
+                form.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(button) {
+                    if (button.__fwwebexDataTableFormCloseBound) {
+                        return;
+                    }
+
+                    button.__fwwebexDataTableFormCloseBound = true;
+                    button.addEventListener('click',function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        notifyParent('FWWebEx:datatable-form:close',{});
+                    });
+                });
+            }
+
+            function bindSubmitEvents() {
+                if (!window.FWWebEx || !FWWebEx.Events || window.__fwwebexDataTableFormSubmitBridgeBound) {
+                    return;
+                }
+
+                window.__fwwebexDataTableFormSubmitBridgeBound = true;
+
+                FWWebEx.Events.on('FWWebEx:datatable-form:submit',function(event) {
+                    notifyParent('FWWebEx:datatable-form:submit',event.detail || {});
+                });
+            }
+
+            function boot() {
+                bindParentMessages();
+                bindCloseButtons();
+                bindSubmitEvents();
+                notifyParent('FWWebEx:datatable-form:ready',{});
+            }
+
+            if (window.FWWebEx && FWWebEx.ready) {
+                FWWebEx.ready(boot);
+            } else {
+                document.addEventListener('DOMContentLoaded',boot);
+            }
+        })();
+    endContent
+
+    cScript:=WebExHelper():StrReplaceEx(;
+        cScript;
+        ,{"__FRAME_NAME__",__DTFEncodeJS(cFrameName)};
+        ,{"__FORM_ID__",__DTFEncodeJS(::GetFixedID())};
+    )
+
+return(cScript)
 
 method GetJSValidationScript() class WebExDataTableForm
 
     local cScript as character
 
     beginContent var cScript
-        document.getElementById('__FORM_ID__').addEventListener('submit',function(e) {
-            let valid = true;
-            const requiredFields = document.querySelectorAll('[required]');
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    valid = false;
-                    field.classList.add('is-invalid');
-                } else {
-                    field.classList.remove('is-invalid');
+        (function(){
+            function bindValidation() {
+                const form = document.getElementById('__FORM_ID__');
+
+                if (!form || form.__fwwebexDataTableFormValidationBound) {
+                    return;
                 }
-            });
-            if (!valid) {
-                e.preventDefault();
-                alert('Preencha todos os campos obrigatorios!');
+
+                form.__fwwebexDataTableFormValidationBound = true;
+
+                form.addEventListener('submit',function(e) {
+                    let valid = true;
+                    const requiredFields = form.querySelectorAll('[required]');
+
+                    requiredFields.forEach(field => {
+                        const emptyValue = field.type === 'checkbox' ? !field.checked : !String(field.value || '').trim();
+
+                        if (emptyValue) {
+                            valid = false;
+                            field.classList.add('is-invalid');
+                        } else {
+                            field.classList.remove('is-invalid');
+                        }
+                    });
+
+                    if (!valid) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (e.stopImmediatePropagation) {
+                            e.stopImmediatePropagation();
+                        }
+                        FWWebExAlert('Preencha todos os campos obrigatorios!','Validacao','warning',{ dismissible: true });
+                    }
+                });
             }
-        });
+
+            if (window.FWWebEx && FWWebEx.ready) {
+                FWWebEx.ready(bindValidation);
+            } else {
+                document.addEventListener('DOMContentLoaded',bindValidation);
+            }
+        })();
     endContent
 
     cScript:=WebExHelper():StrReplaceEx(cScript,{"__FORM_ID__",::GetFixedID()})
@@ -293,62 +634,463 @@ method GetJSUpdateScript() class WebExDataTableForm
     local cScript as character
 
     beginContent var cScript
-        document.getElementById('__FORM_ID__').addEventListener('submit',function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            // Envia via AJAX para backend (ex: userRestCrudTLPPCoreFunction)
-            fetch('__UPDATE_ENDPOINT__',{
-                method: 'POST',
-                body: formData
-            }).then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Atualiza DataTable
-                    const table = $('#__DATATABLE_ID__').DataTable();
-                    table.ajax.reload();
-                    $('#dataTableFormModal').modal('hide');
-                } else {
-                    alert('Erro ao atualizar: '+data.error);
+        (function(){
+            function bindSubmit() {
+                const form = document.getElementById('__FORM_ID__');
+
+                if (!form || form.__fwwebexDataTableFormSubmitBound) {
+                    return;
                 }
-            }).catch(err => console.error(err));
-        });
+
+                form.__fwwebexDataTableFormSubmitBound = true;
+
+                form.addEventListener('submit',function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(form);
+                    const payload = {};
+
+                    formData.forEach(function(value,key) {
+                        payload[key] = value;
+                    });
+
+                    form.querySelectorAll('input[type="checkbox"][name]').forEach(function(field) {
+                        payload[field.name] = field.checked;
+                    });
+
+                    function reloadDataTable() {
+                        const tableSelector = '#__DATATABLE_ID__';
+
+                        if (
+                            '__DATATABLE_ID__' &&
+                            window.jQuery &&
+                            $.fn &&
+                            $.fn.DataTable &&
+                            $.fn.DataTable.isDataTable(tableSelector)
+                        ) {
+                            const table = $(tableSelector).DataTable();
+                            const settings = table.settings ? table.settings()[0] : null;
+                            const hasAjax = !!(settings && settings.oInit && settings.oInit.ajax);
+
+                            if (hasAjax && table.ajax && table.ajax.reload) {
+                                table.ajax.reload(null,false);
+                            } else if (table.draw) {
+                                table.draw(false);
+                            }
+                        }
+                    }
+
+                    function closeModal() {
+                        const modalElement = document.getElementById('__MODAL_ID__');
+
+                        if (modalElement && window.bootstrap && bootstrap.Modal) {
+                            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                            modal.hide();
+                        }
+                    }
+
+                    function finish(result) {
+                        if (window.FWWebEx && FWWebEx.Events) {
+                            FWWebEx.Events.emit('FWWebEx:datatable-form:submit', {
+                                form: form,
+                                data: payload,
+                                result: result || {}
+                            });
+                        }
+
+                        reloadDataTable();
+                        closeModal();
+                    }
+
+                    function fail(error) {
+                        console.error('[FWWebEx] DataTable form update error:',error);
+                        FWWebExAlert('Erro ao atualizar: '+(error.message || error),'Erro','danger',{ dismissible: true });
+                    }
+
+                    const updateTarget = '__UPDATE_ENDPOINT__';
+                    let parentUpdateTarget = null;
+
+                    try {
+                        parentUpdateTarget = window.parent && window.parent !== window ? window.parent[updateTarget] : null;
+                    } catch (error) {
+                        parentUpdateTarget = null;
+                    }
+
+                    if (!updateTarget) {
+                        finish({ success: true, local: true });
+                    } else if (typeof window[updateTarget] === 'function') {
+                        Promise.resolve(window[updateTarget](payload,form)).then(finish).catch(fail);
+                    } else if (typeof parentUpdateTarget === 'function') {
+                        Promise.resolve(parentUpdateTarget(payload,form)).then(finish).catch(fail);
+                    } else {
+                        fetch(updateTarget,{
+                            method: 'POST',
+                            body: formData
+                        }).then(response => response.json()).then(function(data) {
+                            if (data && data.success === false) {
+                                throw new Error(data.error || 'Falha no processamento.');
+                            }
+
+                            finish(data || { success: true });
+                        }).catch(fail);
+                    }
+                });
+            }
+
+            if (window.FWWebEx && FWWebEx.ready) {
+                FWWebEx.ready(bindSubmit);
+            } else {
+                document.addEventListener('DOMContentLoaded',bindSubmit);
+            }
+        })();
     endContent
 
-    cScript:=WebExHelper():StrReplaceEx(cScript,{;
-        {"__FORM_ID__",::GetFixedID()},;
-        {"__DATATABLE_ID__",::cDataTableID},;
-        {"__UPDATE_ENDPOINT__",::cUpdateFunction};  // Endpoint para update,ex: DNA.Tech update function
-    })
+    cScript:=WebExHelper():StrReplaceEx(;
+        cScript;
+        ,{"__FORM_ID__",::GetFixedID()};
+        ,{"__DATATABLE_ID__",::cDataTableID};
+        ,{"__MODAL_ID__",::cModalID};
+        ,{"__UPDATE_ENDPOINT__",__DTFEncodeJS(::cUpdateFunction)};
+    )
 
 return(cScript)
 
-// Funcoes auxiliares para lookups (adicionar em WebExScript global)
 static function GetLookupScripts() as character
 
     local cScript as character
 
     beginContent var cScript
-        function showFixedLookup(fieldName,source) {
-            const values = source.split(';').map(v => v.split('='));
-            let options = '';
-            values.forEach(([key,val]) => options += `<option value="${key}">${val}</option>`);
-            const popup = window.open('','','width=300,height=200');
-            popup.document.write(`<select onchange="opener.document.getElementsByName('${fieldName}')[0].value = this.value; window.close();">${options}</select>`);
-        }
+        function FWWebExDataTableFormLookup(button,fieldName,type,source) {
+            const scope = button && button.closest ? (button.closest('form') || document) : document;
+            const field = scope.querySelector('[name="'+fieldName+'"]');
 
-        function showTableLookup(fieldName,tableSource) {
-            // Consulta API ou tabela (ex: fetch para BrasilAPI ou ViaCEP,adaptado para tabelas TOTVS)
-            fetch(`__API_ENDPOINT__?table=${tableSource}`)
-                .then(res => res.json())
-                .then(data => {
-                    let options = '';
-                    data.items.forEach(item => options += `<option value="${item.code}">${item.description}</option>`);
-                    const popup = window.open('','','width=400,height=300');
-                    popup.document.write(`<select onchange="opener.document.getElementsByName('${fieldName}')[0].value = this.value; window.close();">${options}</select>`);
+            if (!field) {
+                return;
+            }
+
+            if (type === 'fixed') {
+                const values = source.split(';').map(function(item) {
+                    const parts = item.split('=');
+                    return {
+                        value: (parts[0] || '').trim(),
+                        label: (parts[1] || parts[0] || '').trim()
+                    };
+                }).filter(function(item) {
+                    return item.value !== '';
                 });
+
+                const message = values.map(function(item) {
+                    return item.value+' - '+item.label;
+                }).join('\n');
+                const selected = window.prompt(message,field.value || '');
+
+                if (selected !== null) {
+                    field.value = selected;
+                    field.dispatchEvent(new Event('change',{ bubbles: true }));
+                }
+            } else if (type === 'url') {
+                window.open(source,'_blank','width=900,height=600');
+            } else {
+                FWWebExAlert('Lookup nao configurado para '+fieldName,'Lookup','info',{ dismissible: true });
+            }
         }
     endContent
 
-    cScript:=WebExHelper():StrReplaceEx(cScript,{"__API_ENDPOINT__","https://your-totvs-api.com/query"})  // Ajustar para endpoint real
-
 return(cScript)
+
+static function __DTFEnsureConfig(jFormConfig as json) as json
+
+    paramtype 1 var jFormConfig as json optional default JSONObject():New()
+
+    if (!jFormConfig:HasProperty("required"))
+        jFormConfig["required"]:={}
+    endif
+
+    if (!jFormConfig:HasProperty("readonly"))
+        jFormConfig["readonly"]:={}
+    endif
+
+    if (!jFormConfig:HasProperty("lookups"))
+        jFormConfig["lookups"]:=JSONObject():New()
+    endif
+
+return(jFormConfig)
+
+static function __DTFHasFields(jDataTableFields as json) as logical
+    local lHasFields as logical
+    paramtype 1 var jDataTableFields as json optional default JSONObject():New()
+    lHasFields:=(jDataTableFields:HasProperty("fields").and.(ValType(jDataTableFields["fields"])=="A").and.(Len(jDataTableFields["fields"])>0))
+    if (!lHasFields)
+        lHasFields:=(Len(jDataTableFields:GetNames())>0)
+    endif
+return(lHasFields)
+
+static function __DTFGetFields(jDataTableFields as json) as array
+
+    local aFields as array
+    local aNames as array
+    local cName as character
+    local nName as numeric
+    local nNames as numeric
+
+    paramtype 1 var jDataTableFields as json optional default JSONObject():New()
+
+    if (jDataTableFields:HasProperty("fields").and.(ValType(jDataTableFields["fields"])=="A"))
+        aFields:=aClone(jDataTableFields["fields"])
+    else
+        aFields:=Array(0)
+        aNames:=jDataTableFields:GetNames()
+        nNames:=Len(aNames)
+        for nName:=1 to nNames
+            cName:=aNames[nName]
+            if (ValType(jDataTableFields[cName])=="J")
+                if (!jDataTableFields[cName]:HasProperty("data"))
+                    jDataTableFields[cName]["data"]:=cName
+                endif
+                aAdd(aFields,jDataTableFields[cName])
+            endif
+        next nName
+        FWFreeArray(@aNames)
+    endif
+
+return(aFields)
+
+static function __DTFFieldName(jFieldInfo as json,nField as numeric) as character
+
+    local cFieldName as character
+
+    DEFAULT jFieldInfo:=JSONObject():New()
+    DEFAULT nField:=1
+
+    do case
+    case (jFieldInfo:HasProperty("data"))
+        cFieldName:=AllTrim(jFieldInfo["data"])
+    case (jFieldInfo:HasProperty("name"))
+        cFieldName:=AllTrim(jFieldInfo["name"])
+    otherwise
+        cFieldName:="field_"+StrZero(nField,3)
+    endcase
+
+return(cFieldName)
+
+static function __DTFFieldLabel(jFieldInfo as json,cFieldName as character) as character
+
+    local cLabel as character
+
+    DEFAULT jFieldInfo:=JSONObject():New()
+    DEFAULT cFieldName:=""
+
+    do case
+    case (jFieldInfo:HasProperty("title"))
+        cLabel:=jFieldInfo["title"]
+    case (jFieldInfo:HasProperty("label"))
+        cLabel:=jFieldInfo["label"]
+    otherwise
+        cLabel:=cFieldName
+    endcase
+
+return(cLabel)
+
+static function __DTFFieldPlaceHolder(jFieldInfo as json) as character
+
+    local cPlaceHolder as character
+
+    paramtype 1 var jFieldInfo as json optional default JSONObject():New()
+
+    if (jFieldInfo:HasProperty("placeholder"))
+        cPlaceHolder:=jFieldInfo["placeholder"]
+    else
+        cPlaceHolder:=""
+    endif
+
+return(cPlaceHolder)
+
+static function __DTFInputType(jFieldInfo as json) as character
+
+    local cInputType as character
+
+    paramtype 1 var jFieldInfo as json optional default JSONObject():New()
+
+    do case
+    case (jFieldInfo:HasProperty("inputType"))
+        cInputType:=Lower(AllTrim(jFieldInfo["inputType"]))
+    case (jFieldInfo:HasProperty("type"))
+        cInputType:=Lower(AllTrim(jFieldInfo["type"]))
+    case (jFieldInfo:HasProperty("advplDataType"))
+        cInputType:=Upper(AllTrim(jFieldInfo["advplDataType"]))
+    otherwise
+        cInputType:="text"
+    endcase
+
+    do case
+    case (cInputType=="c")
+        cInputType:="text"
+    case (cInputType=="n")
+        cInputType:="number"
+    case (cInputType=="d")
+        cInputType:="date"
+    case (cInputType=="l")
+        cInputType:="checkbox"
+    case (cInputType=="m")
+        cInputType:="text"
+    endcase
+
+return(cInputType)
+
+static function __DTFFieldValue(jRowData as json,cFieldName as character,cInputType as character) as character
+
+    local cValue as character
+    local xValue as variant
+
+    DEFAULT jRowData:=JSONObject():New()
+    DEFAULT cFieldName:=""
+    DEFAULT cInputType:="text"
+
+    cValue:=""
+
+    if (jRowData:HasProperty(cFieldName))
+        xValue:=jRowData[cFieldName]
+        do case
+        case (ValType(xValue)=="D")
+            cValue:=DToS(xValue)
+            if (cInputType=="date")
+                cValue:=SubStr(cValue,1,4)+"-"+SubStr(cValue,5,2)+"-"+SubStr(cValue,7,2)
+            endif
+        case (ValType(xValue)=="L")
+            cValue:=if(xValue,"true","false")
+        case (ValType(xValue)=="U")
+            cValue:=""
+        otherwise
+            cValue:=cValToChar(xValue)
+        endcase
+    endif
+
+return(cValue)
+
+static function __DTFFieldIsRequired(jFieldInfo as json,jFormConfig as json,cFieldName as character) as logical
+
+    local lRequired as logical
+
+    DEFAULT jFieldInfo:=JSONObject():New()
+    DEFAULT jFormConfig:=__DTFEnsureConfig()
+    DEFAULT cFieldName:=""
+
+    jFormConfig:=__DTFEnsureConfig(jFormConfig)
+
+    lRequired:=__DTFArrayHas(jFormConfig["required"],cFieldName)
+
+    if ((!lRequired).and.(jFieldInfo:HasProperty("required")))
+        lRequired:=(jFieldInfo["required"]==.T.)
+    endif
+
+return(lRequired)
+
+static function __DTFFieldIsReadOnly(jFieldInfo as json,jFormConfig as json,aReadOnlyFields as array,cFieldName as character,cMode as character) as logical
+
+    local lReadOnly as logical
+
+    DEFAULT jFieldInfo:=JSONObject():New()
+    DEFAULT jFormConfig:=__DTFEnsureConfig()
+    DEFAULT aReadOnlyFields:={}
+    DEFAULT cFieldName:=""
+    DEFAULT cMode:="view"
+
+    jFormConfig:=__DTFEnsureConfig(jFormConfig)
+
+    lReadOnly:=(cMode=="view")
+
+    if (!lReadOnly)
+        lReadOnly:=__DTFArrayHas(aReadOnlyFields,cFieldName)
+    endif
+
+    if (!lReadOnly)
+        lReadOnly:=__DTFArrayHas(jFormConfig["readonly"],cFieldName)
+    endif
+
+    if ((!lReadOnly).and.(jFieldInfo:HasProperty("readonly")))
+        lReadOnly:=(jFieldInfo["readonly"]==.T.)
+    endif
+
+return(lReadOnly)
+
+static function __DTFFieldIsHidden(jFieldInfo as json) as logical
+
+    local lHidden as logical
+
+    paramtype 1 var jFieldInfo as json optional default JSONObject():New()
+
+    lHidden:=.F.
+
+    if (jFieldInfo:HasProperty("hidden"))
+        lHidden:=(jFieldInfo["hidden"]==.T.)
+    elseif (jFieldInfo:HasProperty("formVisible"))
+        lHidden:=(jFieldInfo["formVisible"]==.F.)
+    endif
+
+return(lHidden)
+
+static function __DTFHasLookup(jFormConfig as json,cFieldName as character) as logical
+
+    local jLookup as variant
+    local lHasLookup as logical
+
+    DEFAULT jFormConfig:=__DTFEnsureConfig()
+    DEFAULT cFieldName:=""
+
+    jFormConfig:=__DTFEnsureConfig(jFormConfig)
+
+    lHasLookup:=(jFormConfig:HasProperty("lookups").and.(ValType(jFormConfig["lookups"])=="J").and.(jFormConfig["lookups"]:HasProperty(cFieldName)))
+
+    if (lHasLookup)
+        jLookup:=jFormConfig["lookups"][cFieldName]
+        if (ValType(jLookup)!="J")
+            lHasLookup:=.F.
+        else
+            if (!jLookup:HasProperty("type"))
+                jLookup["type"]:="fixed"
+            endif
+            if (!jLookup:HasProperty("source"))
+                jLookup["source"]:=""
+            endif
+        endif
+    endif
+
+return(lHasLookup)
+
+static function __DTFArrayHas(aValues as array,cValue as character) as logical
+
+    local lHasValue as logical
+
+    DEFAULT aValues:={}
+    DEFAULT cValue:=""
+
+    lHasValue:=(aScan(aValues,{|cItem as character|Upper(AllTrim(cItem))==Upper(AllTrim(cValue))})>0)
+
+return(lHasValue)
+
+static function __DTFIsTruthy(cValue as character) as logical
+
+    local cNormalized as character
+
+    DEFAULT cValue:=""
+
+    cNormalized:="|"+Upper(AllTrim(cValue))+"|"
+
+return(cNormalized$"|1|T|TRUE|Y|YES|S|SIM|")
+
+static function __DTFEncodeAttr(cValue as character) as character
+    DEFAULT cValue:=""
+    cValue:=StrTran(cValue,"&","&amp;")
+    cValue:=StrTran(cValue,Chr(34),"&quot;")
+    cValue:=StrTran(cValue,"<","&lt;")
+    cValue:=StrTran(cValue,">","&gt;")
+return(cValue)
+
+static function __DTFEncodeJS(cValue as character) as character
+    DEFAULT cValue:=""
+    cValue:=StrTran(cValue,Chr(92),Chr(92)+Chr(92))
+    cValue:=StrTran(cValue,Chr(39),Chr(92)+Chr(39))
+    cValue:=StrTran(cValue,CRLF,"\n")
+    cValue:=StrTran(cValue,Chr(13),"\n")
+    cValue:=StrTran(cValue,Chr(10),"\n")
+return(cValue)

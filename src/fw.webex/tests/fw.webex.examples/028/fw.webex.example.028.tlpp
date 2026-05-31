@@ -1,0 +1,286 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_028()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_028(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_028(cHTML as character) as character
+
+    local cEditFrameID:="fwwebex-example-028-edit-frame" as character
+    local cEditFrameName:="fwwebex-example-028-edit" as character
+    local cEditFormPage as character
+    local cEditFormPageExternalAssetsFilePath as character
+    local cEditFormPageFileName as character
+    local cEditFormPageFilePath as character
+    local cEditFormPageLocalAssetsFilePath as character
+    local cEditModalID:="fwwebex-example-028-edit-modal" as character
+    local cProcName:=ProcName() as character
+    local cHTMLFile:=cProcName as character
+    local cScript as character
+    local cViewFrameID:="fwwebex-example-028-view-frame" as character
+    local cViewFrameName:="fwwebex-example-028-view" as character
+    local cViewFormPage as character
+    local cViewFormPageExternalAssetsFilePath as character
+    local cViewFormPageFileName as character
+    local cViewFormPageFilePath as character
+    local cViewFormPageLocalAssetsFilePath as character
+    local cViewModalID:="fwwebex-example-028-view-modal" as character
+
+    local jFormConfig:=JSONObject():New() as json
+    local jLookups:=JSONObject():New() as json
+    local jRowData:=JSONObject():New() as json
+    local jTableFields:=JSONObject():New() as json
+
+    local oEditForm as object
+    local oEditFormPage as object
+    local oFWWebExPage as object
+    local oViewForm as object
+    local oViewFormPage as object
+
+    jTableFields["fields"]:=Array(0)
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"C","data":"ID","title":"ID","placeholder":"Codigo"})
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"C","data":"NOME","title":"Nome","required":.T.})
+    aAdd(jTableFields["fields"],{"visible":.T.,"inputType":"email","data":"EMAIL","title":"E-mail","required":.T.})
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"C","data":"TIPO","title":"Tipo"})
+    aAdd(jTableFields["fields"],{"visible":.T.,"advplDataType":"L","data":"ATIVO","title":"Ativo"})
+    aAdd(jTableFields["fields"],{"visible":.F.,"inputType":"hidden","data":"TOKEN","title":"Token"})
+
+    jRowData["ID"]:="USR-001"
+    jRowData["NOME"]:="Ana Oliveira"
+    jRowData["EMAIL"]:="ana.oliveira@example.com"
+    jRowData["TIPO"]:="U"
+    jRowData["ATIVO"]:=.T.
+    jRowData["TOKEN"]:="row-token-usr-001"
+
+    jFormConfig["required"]:={"ID","NOME","EMAIL"}
+    jFormConfig["readonly"]:={"ID"}
+    jLookups["TIPO"]:={"type":"fixed","source":"A=Administrador;U=Usuario;V=Visitante"}
+    jFormConfig["lookups"]:=jLookups
+
+    oViewForm:=WebExDataTableForm():New("Visualizar registro",jTableFields,"view")
+    oViewForm:SetFormConfig(jFormConfig)
+    oViewForm:LoadFromDataTableRow(jRowData)
+    oViewForm:BuildFormLayout(2)
+
+    oViewFormPage:=oViewForm:BuildStandalonePage("Visualizar registro",cViewFrameName)
+    cViewFormPage:=oViewFormPage:RenderHTML()
+    WebFileTools():HTMLFromControl(oViewFormPage,@cViewFormPageFilePath,@cViewFormPageFileName,@cViewFormPage,.T.)
+    WebFileTools():HTMLAssetsToFile(oViewFormPage:GetFixedID(),"html",cViewFormPage,oViewFormPage:GetFWWebExTmpPath(),@cViewFormPageExternalAssetsFilePath,@cViewFormPageLocalAssetsFilePath)
+    oViewFormPage:Clean()
+    WEBEXOBJECT CLEAN
+    FreeObj(@oViewFormPage)
+
+    oEditForm:=WebExDataTableForm():New("Editar registro",jTableFields,"edit",{"ID"})
+    oEditForm:SetFormConfig(jFormConfig)
+    oEditForm:SetUpdateFunction("")
+    oEditForm:LoadFromDataTableRow(jRowData)
+    oEditForm:BuildFormLayout(2)
+
+    oEditFormPage:=oEditForm:BuildStandalonePage("Editar registro",cEditFrameName)
+    cEditFormPage:=oEditFormPage:RenderHTML()
+    WebFileTools():HTMLFromControl(oEditFormPage,@cEditFormPageFilePath,@cEditFormPageFileName,@cEditFormPage,.T.)
+    WebFileTools():HTMLAssetsToFile(oEditFormPage:GetFixedID(),"html",cEditFormPage,oEditFormPage:GetFWWebExTmpPath(),@cEditFormPageExternalAssetsFilePath,@cEditFormPageLocalAssetsFilePath)
+    oEditFormPage:Clean()
+    WEBEXOBJECT CLEAN
+    FreeObj(@oEditFormPage)
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: DataTable Form"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-4")
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:AddClass("row g-3")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExH2
+                                .:SetContent("DataTable Form")
+                            END WEBEXOBJECT
+                            WITH WEBEXOBJECT CLASS WebExParagraph
+                                .:SetContent("Formulario gerado a partir da mesma configuracao de campos da DataTable.")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("d-flex flex-wrap gap-2")
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Visualizar","button"
+                                    .:SetButtonIcon("bi-eye","bootstrap",.T.)
+                                    .:SetAttr("data-bs-toggle","modal")
+                                    .:SetAttr("data-bs-target","#"+cViewModalID)
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExButton ARGS "Editar","button"
+                                    .:SetButtonIcon("bi-pencil-square","bootstrap",.T.)
+                                    .:SetAttr("data-bs-toggle","modal")
+                                    .:SetAttr("data-bs-target","#"+cEditModalID)
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("col-12")
+                            WITH WEBEXOBJECT CLASS WebExControl TYPE pre
+                                .:SetFixedID("fwwebex-example-028-log")
+                                .:AddClass("border rounded p-3 small")
+                                .:SetContent("Aguardando submit do formulario...")
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:SetFixedID(cViewModalID)
+                        .:SetAttr("tabindex","-1")
+                        .:AddClass("modal fade")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("modal-dialog modal-xl modal-dialog-scrollable")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("modal-content")
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("modal-header")
+                                    WITH WEBEXOBJECT CLASS WebExH5
+                                        .:AddClass("modal-title")
+                                        .:SetContent("Visualizar registro")
+                                    END WEBEXOBJECT
+                                    WITH WEBEXOBJECT CLASS WebExButton ARGS "","button"
+                                        .:DelClassRegex("^btn-.+")
+                                        .:AddClass("btn-close")
+                                        .:SetAttr("data-bs-dismiss","modal")
+                                        .:SetAttr("aria-label","Close")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("modal-body p-0")
+                                    WITH WEBEXOBJECT CLASS WebExIFrame
+                                        .:SetFixedID(cViewFrameID)
+                                        .:SetAttr("src",cViewFormPageExternalAssetsFilePath)
+                                        .:SetAttr("title","Visualizar registro")
+                                        .:SetAttr("style","width: 100%; height: 70vh; border: none; display: block;")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:SetFixedID(cEditModalID)
+                        .:SetAttr("tabindex","-1")
+                        .:AddClass("modal fade")
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:AddClass("modal-dialog modal-xl modal-dialog-scrollable")
+                            WITH WEBEXOBJECT CLASS WebExDiv
+                                .:AddClass("modal-content")
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("modal-header")
+                                    WITH WEBEXOBJECT CLASS WebExH5
+                                        .:AddClass("modal-title")
+                                        .:SetContent("Editar registro")
+                                    END WEBEXOBJECT
+                                    WITH WEBEXOBJECT CLASS WebExButton ARGS "","button"
+                                        .:DelClassRegex("^btn-.+")
+                                        .:AddClass("btn-close")
+                                        .:SetAttr("data-bs-dismiss","modal")
+                                        .:SetAttr("aria-label","Close")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                                WITH WEBEXOBJECT CLASS WebExDiv
+                                    .:AddClass("modal-body p-0")
+                                    WITH WEBEXOBJECT CLASS WebExIFrame
+                                        .:SetFixedID(cEditFrameID)
+                                        .:SetAttr("src",cEditFormPageExternalAssetsFilePath)
+                                        .:SetAttr("title","Editar registro")
+                                        .:SetAttr("style","width: 100%; height: 70vh; border: none; display: block;")
+                                    END WEBEXOBJECT
+                                END WEBEXOBJECT
+                            END WEBEXOBJECT
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+            WITH WEBEXOBJECT CLASS WebExScript
+                beginContent var cScript
+                    function FWWebExExample028Render(payload) {
+                        const log = document.getElementById('fwwebex-example-028-log');
+                        if (log) {
+                            log.textContent = JSON.stringify(payload,null,2);
+                        }
+                    }
+
+                    function FWWebExExample028ModalID(frameName) {
+                        if (frameName === '__VIEW_FRAME_NAME__') {
+                            return '__VIEW_MODAL_ID__';
+                        }
+
+                        if (frameName === '__EDIT_FRAME_NAME__') {
+                            return '__EDIT_MODAL_ID__';
+                        }
+
+                        return '';
+                    }
+
+                    function FWWebExExample028CloseModal(frameName) {
+                        const modalID = FWWebExExample028ModalID(frameName);
+                        const modalElement = modalID ? document.getElementById(modalID) : null;
+
+                        if (modalElement && window.bootstrap && bootstrap.Modal) {
+                            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                            modal.hide();
+                        }
+                    }
+
+                    FWWebEx.ready(function() {
+                        window.addEventListener('message', function(event) {
+                            const message = event.data || {};
+
+                            if (message.source !== 'FWWebExDataTableForm') {
+                                return;
+                            }
+
+                            if (message.type === 'FWWebEx:datatable-form:submit') {
+                                FWWebExExample028Render(message.data || {});
+                                FWWebExExample028CloseModal(message.frameName);
+                            } else if (message.type === 'FWWebEx:datatable-form:close') {
+                                FWWebExExample028CloseModal(message.frameName);
+                            }
+                        });
+                    });
+                endContent
+                cScript:=WebExHelper():StrReplaceEx(;
+                    cScript;
+                    ,{"__VIEW_FRAME_NAME__",cViewFrameName};
+                    ,{"__VIEW_MODAL_ID__",cViewModalID};
+                    ,{"__EDIT_FRAME_NAME__",cEditFrameName};
+                    ,{"__EDIT_MODAL_ID__",cEditModalID};
+                )
+                .:SetContent(cScript)
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)

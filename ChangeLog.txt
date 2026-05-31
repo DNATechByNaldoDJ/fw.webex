@@ -2,8 +2,79 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add release-freeze inputs and version checks)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Implement FWWebEx init, DataTableForm & examples)"
 */
+
+2026-05-31 20:02 UTC naldodj (Implement FWWebEx init, DataTableForm & examples)
+  Implement FWWebEx init, DataTableForm & examples
+    Introduce a configurable runtime bootstrap (FWWebEx.init, FWWebEx.ready) with lifecycle hooks/events and related documentation updates.
+    Stabilize and refactor WebExDataTableForm into a full component: new fields/methods (modal/standalone rendering, SetFormConfig, SetDataTableID, SetUpdateFunction, validation, lookup support, frame-bridge JS, submit/update flow and helper static functions), plus form scripts and client-side integration.
+    Add new example pages (027–030) and READMEs demonstrating bootstrap, DataTable form usage and an ASCII page loader.
+    Update MIGRATION.md, README.md, TODO.md and ChangeLog to reflect the changes, and add '*.ppo' to .gitignore.
+      + src/fw.webex/tests/fw.webex.examples/007/fw.webex.u_callprocrestcrudtlppex007.tlpp
+      + src/fw.webex/tests/fw.webex.examples/008/fw.webex.u_callprocrestcrudtlppex008.tlpp
+      + src/fw.webex/tests/fw.webex.examples/027/fw.webex.example.027.tlpp
+      + src/fw.webex/tests/fw.webex.examples/027/README.md
+      + src/fw.webex/tests/fw.webex.examples/028/fw.webex.example.028.tlpp
+      + src/fw.webex/tests/fw.webex.examples/028/README.md
+      + src/fw.webex/tests/fw.webex.examples/029/fw.webex.example.029.tlpp
+      + src/fw.webex/tests/fw.webex.examples/029/README.md
+      + src/fw.webex/tests/fw.webex.examples/030/fw.webex.example.030.tlpp
+      + src/fw.webex/tests/fw.webex.examples/030/README.md
+      * .gitignore
+      * ChangeLog.txt
+      * MIGRATION.md
+      * README.md
+      * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp
+      * src/fw.webex/core/component/fw.webex.page.tlpp
+      * src/fw.webex/core/page/fw.webex.body.tlpp
+      * src/fw.webex/core/tools/fw.webex.webapp.auth.tlpp
+      * src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.oauth2.tlpp
+      * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+      * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+      * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+      * TODO.md
+
+2026-05-29 22:52 UTC naldodj (Add ASCII page loader example)
+  Add ASCII page loader example
+    Add example 030 to demonstrate a practical page loading overlay using WebExAsciiLoader, FWWebEx.ready(), staged progress, and content release after initialization.
+    Register the example under ASCIIArt and document the new sample.
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+      + src/fw.webex/tests/fw.webex.examples/030/fw.webex.example.030.tlpp
+      + src/fw.webex/tests/fw.webex.examples/030/README.md
+      * README.md
+      * TODO.md
+
+2026-05-29 22:42 UTC naldodj (Stabilize WebExDataTableForm and examples)
+  Stabilize WebExDataTableForm and examples
+    Replace the prototype datatable form flow with a component that builds fields from DataTable metadata, supports view/edit modes, required/readonly/hidden fields, fixed/url lookups, modal rendering, validation, submit callbacks/endpoints, and linked DataTable redraw/reload behavior.
+    Add example 028 as the minimal modal form flow and example 029 as a client-side DataTable integration using SetUpdateFunction().
+    Register both examples in the example menu under DataTables and document the migration/use contract.
+      * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+      + src/fw.webex/tests/fw.webex.examples/028/fw.webex.example.028.tlpp
+      + src/fw.webex/tests/fw.webex.examples/028/README.md
+      + src/fw.webex/tests/fw.webex.examples/029/fw.webex.example.029.tlpp
+      + src/fw.webex/tests/fw.webex.examples/029/README.md
+      * README.md
+      * TODO.md
+      * MIGRATION.md
+
+2026-05-29 21:51 UTC naldodj (Add configurable FWWebEx runtime bootstrap)
+  Add configurable FWWebEx runtime bootstrap
+    Introduce FWWebEx.ready(fn) and FWWebEx.init(config) with lifecycle state, idempotent initialization, configurable ready checks, action binding options, and beforeInit/afterInit/onError hooks.
+    Preserve the existing FWWebEx.Ready API and move the automatic runtime startup behind FWWebEx.init().
+    Add example 027 to demonstrate FWWebEx.config, hooks, DOM ready callbacks, lifecycle events, and declarative action binding.
+    Update migration/TODO documentation for NX-005.
+      * src/fw.webex/core/component/fw.webex.page.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+      + src/fw.webex/tests/fw.webex.examples/027/fw.webex.example.027.tlpp
+      + src/fw.webex/tests/fw.webex.examples/027/README.md
+      * README.md
+      * TODO.md
+      * MIGRATION.md
 
 2026-05-29 21:38 UTC naldodj (Add release-freeze inputs and version checks)
   Add release-freeze inputs and version checks

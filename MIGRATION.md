@@ -24,16 +24,64 @@ Este documento descreve a migração da linha **v0 (congelada)** para a **nova g
 
 ## 3.1 Inicializador de DOM configurável
 
-Novo contrato alvo:
+Contrato inicial implementado:
 - `FWWebEx.init(config)`
 - `FWWebEx.ready(fn)`
 - hooks de ciclo de vida (ex.: `beforeInit`, `afterInit`, `onError`)
+- eventos de ciclo (`FWWebEx:init:before`, `FWWebEx:init:after`, `FWWebEx:init:error`, `FWWebEx:dom:ready`)
 
 Impacto esperado:
 - substituição/organização de pontos de bootstrap implícitos;
 - maior previsibilidade de inicialização por página/componente.
 
-## 3.2 Externalização de JavaScript
+Uso recomendado:
+```javascript
+window.FWWebEx.config = {
+    ready: {
+        datatable: {
+            timeout: 600,
+            optional: true
+        }
+    },
+    hooks: {
+        beforeInit: function(config, state, FWWebEx) {},
+        afterInit: function(config, state, FWWebEx) {},
+        onError: function(payload, state, FWWebEx) {}
+    }
+};
+
+FWWebEx.ready(function(state, FWWebEx) {
+    // DOM pronto e runtime disponivel.
+});
+```
+
+Exemplo de referência:
+- `src/fw.webex/tests/fw.webex.examples/027/fw.webex.example.027.tlpp`
+
+## 3.2 DataTable Form estabilizado
+
+Contrato inicial implementado:
+- `WebExDataTableForm():New(cTitle,jDataTableFields,cMode,aReadOnlyFields)`
+- `SetFormConfig(jFormConfig)` para `required`, `readonly` e `lookups`
+- `LoadFromDataTableRow(jRowData)` para popular o formulario
+- `RenderHTMLWithModal()` para renderizar em modal Bootstrap
+- `SetUpdateFunction(cUpdateFunction)` para callback JavaScript ou endpoint `POST`
+
+Impacto esperado:
+- substituicao do prototipo anterior do datatable form;
+- formularios de view/edit gerados a partir da mesma configuracao de campos da DataTable;
+- submits locais, por funcao JS ou por endpoint HTTP.
+
+Uso recomendado:
+- configurar `required`, `readonly` e `lookups` antes de chamar `LoadFromDataTableRow()`;
+- usar `SetDataTableID()` quando o submit precisar redesenhar/recarregar uma tabela vinculada;
+- para grids client-side, atualizar os dados na funcao JS definida em `SetUpdateFunction()`.
+
+Exemplos de referência:
+- `src/fw.webex/tests/fw.webex.examples/028/fw.webex.example.028.tlpp`
+- `src/fw.webex/tests/fw.webex.examples/029/fw.webex.example.029.tlpp`
+
+## 3.3 Externalização de JavaScript
 
 Mudança alvo:
 - reduzir JS inline;
@@ -43,7 +91,7 @@ Impacto esperado:
 - melhor manutenção e cache;
 - maior controle de carregamento por contexto.
 
-## 3.3 Modelo Plugável
+## 3.4 Modelo Plugável
 
 Mudança alvo:
 - registrar features/plugins com contrato mínimo (nome, versão, init, dependências).
@@ -61,8 +109,9 @@ Impacto esperado:
 - Mapear dependências JS inline e componentes críticos.
 
 ### Fase B — Bootstrap Novo
-- Introduzir `FWWebEx.init(config)` no app.
-- Migrar inicialização principal para hooks explícitos.
+- Introduzir `FWWebEx.init(config)` no app. **Concluído no core**
+- Migrar inicialização principal para hooks explícitos. **Concluído no core**
+- Aplicar configuração por página via `window.FWWebEx.config` antes do `DOMContentLoaded`.
 
 ### Fase C — Plugins
 - Migrar uma feature piloto (datatable) para registro plugável.
@@ -76,12 +125,13 @@ Impacto esperado:
 
 ## 5) Checklist de Migração
 
-- [ ] Bootstrap novo aplicado no projeto.
+- [x] Bootstrap novo aplicado no projeto.
+- [x] DataTable Form estabilizado com exemplos.
 - [ ] JS inline crítico externalizado.
 - [ ] Plugin piloto ativo e validado.
-- [ ] Exemplos atualizados.
+- [x] Exemplos atualizados.
 - [ ] Testes essenciais executados.
-- [ ] Impactos documentados.
+- [x] Impactos documentados.
 
 ---
 

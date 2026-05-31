@@ -236,6 +236,7 @@ return(self)
 method RenderHTML() class WebExPage
 
     local cHTML as character
+    local cFWWebExThemeStyle as character
     local cPageStyle as character
     local cPageScript as character
 
@@ -570,6 +571,80 @@ method RenderHTML() class WebExPage
                 END WEBEXOBJECT
             //Normalize CSS
             ***************************************************************************************************************************
+            //FWWebEx Theme Base
+                WITH WEBEXOBJECT CLASS WebExStyle
+                    beginContent var cFWWebExThemeStyle
+                        html[data-bs-theme],
+                        html[data-bs-theme] body {
+                            background-color: var(--bs-body-bg);
+                            color: var(--bs-body-color);
+                        }
+
+                        html[data-bs-theme] .card {
+                            --bs-card-bg: var(--bs-body-bg);
+                            --bs-card-border-color: var(--bs-border-color);
+                            --bs-card-color: var(--bs-body-color);
+                            background-color: var(--bs-card-bg);
+                            border-color: var(--bs-card-border-color);
+                            color: var(--bs-card-color);
+                        }
+
+                        html[data-bs-theme] .modal-content {
+                            --bs-modal-bg: var(--bs-body-bg);
+                            --bs-modal-border-color: var(--bs-border-color);
+                            --bs-modal-color: var(--bs-body-color);
+                            background-color: var(--bs-modal-bg);
+                            border-color: var(--bs-modal-border-color);
+                            color: var(--bs-modal-color);
+                        }
+
+                        html[data-bs-theme] .table {
+                            --bs-table-bg: transparent;
+                            --bs-table-border-color: var(--bs-border-color);
+                            --bs-table-color: var(--bs-body-color);
+                            border-color: var(--bs-table-border-color);
+                            color: var(--bs-table-color);
+                        }
+
+                        html[data-bs-theme] .form-control,
+                        html[data-bs-theme] .form-select {
+                            background-color: var(--bs-body-bg);
+                            border-color: var(--bs-border-color);
+                            color: var(--bs-body-color);
+                        }
+
+                        html[data-bs-theme] .form-control::placeholder {
+                            color: var(--bs-secondary-color);
+                            opacity: 1;
+                        }
+
+                        html[data-bs-theme] pre,
+                        html[data-bs-theme] code,
+                        html[data-bs-theme] kbd,
+                        html[data-bs-theme] samp {
+                            color: inherit;
+                        }
+
+                        html[data-bs-theme] pre {
+                            background-color: var(--bs-tertiary-bg);
+                            border-color: var(--bs-border-color);
+                            color: var(--bs-body-color);
+                        }
+
+                        html[data-bs-theme] .bg-body,
+                        html[data-bs-theme] .bg-body-secondary,
+                        html[data-bs-theme] .bg-body-tertiary {
+                            color: var(--bs-body-color);
+                        }
+
+                        html[data-bs-theme] .text-muted {
+                            color: var(--bs-secondary-color) !important;
+                        }
+                    endContent
+                    .:SetContent(cFWWebExThemeStyle)
+                END WEBEXOBJECT
+            //FWWebEx Theme Base
+            ***************************************************************************************************************************
         END WEBEXOBJECT NOADDCHILD
         ***************************************************************************************************************************
         WITH WEBEXOBJECT ::oPageBody
@@ -704,6 +779,69 @@ static function FWWebExScripts() as character
             }
 
             return { on, once, emit, hasFired };
+
+        })();
+
+        /***********************************************************************
+        * FWWebEx.ready
+        * - Executa callbacks quando o DOM estiver pronto
+        * - Mantem memoria do estado de DOM pronto para scripts tardios
+        **********************************************************************/
+        FWWebEx.state = FWWebEx.state || {};
+        FWWebEx.state.domReady = document.readyState !== 'loading';
+        FWWebEx.state.initializing = FWWebEx.state.initializing || false;
+        FWWebEx.state.initialized = FWWebEx.state.initialized || false;
+        FWWebEx.state.initCount = FWWebEx.state.initCount || 0;
+
+        FWWebEx.ready = (() => {
+
+            let domReadyEmitted = false;
+
+            function emitDOMReady() {
+                FWWebEx.state.domReady = true;
+                if (!domReadyEmitted) {
+                    domReadyEmitted = true;
+                    FWWebEx.Events.emit('FWWebEx:dom:ready', {
+                        readyState: document.readyState
+                    });
+                }
+            }
+
+            function run(callback) {
+                emitDOMReady();
+                try {
+                    callback(FWWebEx.state, FWWebEx);
+                } catch (err) {
+                    console.error('[FWWebEx] Erro em FWWebEx.ready:', err);
+                    FWWebEx.Events.emit('FWWebEx:init:error', {
+                        phase: 'ready',
+                        error: err
+                    });
+                }
+            }
+
+            function ready(callback) {
+                if (typeof callback !== 'function') {
+                    console.warn('[FWWebEx] FWWebEx.ready espera uma funcao.');
+                    return FWWebEx;
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => run(callback), { once: true });
+                } else {
+                    setTimeout(() => run(callback), 0);
+                }
+
+                return FWWebEx;
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', emitDOMReady, { once: true });
+            } else {
+                emitDOMReady();
+            }
+
+            return ready;
 
         })();
 
@@ -1465,34 +1603,230 @@ static function FWWebExScripts() as character
         }
 
         /***********************************************************************
+        * FWWebEx.init
+        * - Inicializador configuravel do runtime
+        * - Hooks: beforeInit, afterInit, onError
+        **********************************************************************/
+        FWWebEx.Lifecycle = (() => {
+
+            const DEFAULT_CONFIG = {
+                ready: {
+                    jquery: {
+                        timeout: 4000,
+                        interval: 25,
+                        optional: false
+                    },
+                    bootstrap: {
+                        timeout: 4000,
+                        interval: 25,
+                        optional: false
+                    },
+                    datatable: {
+                        timeout: 2000,
+                        interval: 25,
+                        optional: true
+                    }
+                },
+                features: {
+                    ui: true,
+                    jquery: true,
+                    bootstrap: true,
+                    datatable: true
+                },
+                actions: {
+                    autoBind: true,
+                    observeMutations: true
+                },
+                hooks: {
+                    beforeInit: null,
+                    afterInit: null,
+                    onError: null
+                }
+            };
+
+            let mutationObserver = null;
+
+            function isPlainObject(value) {
+                return Object.prototype.toString.call(value) === '[object Object]';
+            }
+
+            function mergeConfig(target, source) {
+                Object.keys(source || {}).forEach(key => {
+                    const sourceValue = source[key];
+                    const targetValue = target[key];
+
+                    if (isPlainObject(sourceValue)) {
+                        target[key] = mergeConfig(
+                            isPlainObject(targetValue) ? targetValue : {},
+                            sourceValue
+                        );
+                    } else {
+                        target[key] = sourceValue;
+                    }
+                });
+
+                return target;
+            }
+
+            function buildConfig(config) {
+                return mergeConfig(
+                    mergeConfig({}, DEFAULT_CONFIG),
+                    mergeConfig(mergeConfig({}, FWWebEx.config || {}), config || {})
+                );
+            }
+
+            function callHook(name, config, payload) {
+                const hook = config?.hooks?.[name];
+
+                if (!hook) {
+                    return;
+                }
+
+                const hooks = Array.isArray(hook) ? hook : [hook];
+
+                hooks.forEach(fn => {
+                    if (typeof fn === 'function') {
+                        fn(payload || config, FWWebEx.state, FWWebEx);
+                    }
+                });
+            }
+
+            function handleError(error, config, phase) {
+                FWWebEx.state.initializing = false;
+                FWWebEx.state.lastError = error;
+
+                console.error('[FWWebEx] Erro no bootstrap:', error);
+
+                try {
+                    callHook('onError', config || {}, {
+                        phase,
+                        error
+                    });
+                } catch (hookError) {
+                    console.error('[FWWebEx] Erro no hook onError:', hookError);
+                }
+
+                FWWebEx.Events.emit('FWWebEx:init:error', {
+                    phase,
+                    error
+                });
+            }
+
+            function startReadyChecks(config) {
+                if (config.features.ui !== false) {
+                    FWWebEx.Ready.ui();
+                }
+
+                if (config.features.jquery !== false) {
+                    FWWebEx.Ready.jquery(config.ready.jquery);
+                }
+
+                if (config.features.bootstrap !== false) {
+                    FWWebEx.Ready.bootstrap(config.ready.bootstrap);
+                }
+
+                if (config.features.datatable !== false) {
+                    FWWebEx.Ready.datatable(config.ready.datatable);
+                }
+            }
+
+            function bindActions(config) {
+                if (config.actions.autoBind === false) {
+                    return;
+                }
+
+                FWWebEx.Events.on('FWWebEx:ui:ready', function () {
+                    FWWebEx.Actions.bind(document);
+                });
+
+                if (
+                    config.actions.observeMutations !== false &&
+                    window.MutationObserver &&
+                    document.body &&
+                    !mutationObserver
+                ) {
+                    mutationObserver = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeType === 1) {
+                                    FWWebEx.Actions.bind(node);
+                                }
+                            });
+                        });
+                    });
+
+                    mutationObserver.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            }
+
+            function init(config = {}) {
+                config = config || {};
+
+                if (FWWebEx.state.initialized && config.force !== true) {
+                    return FWWebEx.state;
+                }
+
+                if (FWWebEx.state.initializing) {
+                    return FWWebEx.state;
+                }
+
+                const resolvedConfig = buildConfig(config);
+
+                FWWebEx.config = resolvedConfig;
+                FWWebEx.state.config = resolvedConfig;
+                FWWebEx.state.initializing = true;
+
+                try {
+                    FWWebEx.Events.emit('FWWebEx:init:before', {
+                        config: resolvedConfig
+                    });
+
+                    callHook('beforeInit', resolvedConfig);
+
+                    startReadyChecks(resolvedConfig);
+                    bindActions(resolvedConfig);
+
+                    FWWebEx.state.initialized = true;
+                    FWWebEx.state.initializing = false;
+                    FWWebEx.state.initCount += 1;
+
+                    FWWebEx.Events.emit('FWWebEx:init:after', {
+                        config: resolvedConfig,
+                        state: FWWebEx.state
+                    });
+
+                    callHook('afterInit', resolvedConfig);
+                } catch (error) {
+                    handleError(error, resolvedConfig, 'init');
+                }
+
+                return FWWebEx.state;
+            }
+
+            function getConfig() {
+                return FWWebEx.config || buildConfig();
+            }
+
+            function isInitialized() {
+                return !!FWWebEx.state.initialized;
+            }
+
+            return { init, getConfig, isInitialized };
+
+        })();
+
+        FWWebEx.init = FWWebEx.Lifecycle.init;
+        FWWebEx.getConfig = FWWebEx.Lifecycle.getConfig;
+        FWWebEx.isInitialized = FWWebEx.Lifecycle.isInitialized;
+
+        /***********************************************************************
         * Bootstrap do runtime
         **********************************************************************/
-        document.addEventListener('DOMContentLoaded', function () {
-
-            FWWebEx.Ready.ui();
-            FWWebEx.Ready.jquery();
-            FWWebEx.Ready.bootstrap();
-            FWWebEx.Ready.datatable();
-
-            FWWebEx.Events.on('FWWebEx:ui:ready', function () {
-                FWWebEx.Actions.bind(document);
-            });
-
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeType === 1) {
-                            FWWebEx.Actions.bind(node);
-                        }
-                    });
-                });
-            });
-
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-
+        FWWebEx.ready(function () {
+            FWWebEx.init();
         });
     endContent
 

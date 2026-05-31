@@ -206,6 +206,56 @@ return(cHTMLFile)
 
 ---
 
+## 🧭 Bootstrap do Runtime
+
+A partir da nova geração, o runtime possui inicialização configurável:
+
+```javascript
+window.FWWebEx.config = {
+    hooks: {
+        beforeInit: function(config, state, FWWebEx) {},
+        afterInit: function(config, state, FWWebEx) {},
+        onError: function(payload, state, FWWebEx) {}
+    }
+};
+
+FWWebEx.ready(function(state, FWWebEx) {
+    // DOM pronto.
+});
+```
+
+O exemplo `u_FWWebExExample_027()` demonstra `FWWebEx.init(config)`, `FWWebEx.ready(fn)`, hooks e actions declarativas.
+
+---
+
+## 🧾 DataTable Form
+
+`WebExDataTableForm` gera formularios de visualizacao/edicao a partir da mesma configuracao de campos usada por `WebExDataTable`.
+
+Fluxo basico:
+
+```advpl
+oForm:=WebExDataTableForm():New("Editar usuario",jTableFields,"edit",{"ID"})
+oForm:SetFormConfig(jFormConfig)
+oForm:SetDataTableID("minha-tabela")
+oForm:SetUpdateFunction("MinhaFuncaoJSDeUpdate")
+oForm:LoadFromDataTableRow(jRowData)
+oForm:BuildFormLayout(2)
+cModalHTML:=oForm:RenderHTMLWithModal()
+```
+
+Exemplos:
+- `u_FWWebExExample_028()` mostra o uso minimo com modal `view`/`edit`.
+- `u_FWWebExExample_029()` integra o formulario com uma `WebExDataTable` client-side.
+
+---
+
+## 🔡 ASCII Page Loader
+
+`u_FWWebExExample_030()` demonstra um overlay de carregamento de pagina com `WebExAsciiLoader`, `FWWebEx.ready()` e liberacao gradual do conteudo.
+
+---
+
 ## 📦 Como usar
 
 1. Clone o repositório
