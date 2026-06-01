@@ -15,7 +15,7 @@ Esta geração inicia uma nova arquitetura do fw.webex com foco em:
 - externalização de JavaScript;
 - modelo plugável para recursos e integrações;
 - modelo de desenvolvimento MVC para WebEx;
-- integração/renderização de dados vindos do MVC padrão Protheus/TOTVS;
+- integração/renderização de dados vindos do MVC padrão Protheus/TOTVS e do modelo REST DNATech;
 - exemplos reais de aplicações completas, além de exemplos isolados por componente;
 - qualidade operacional mínima (CI, catálogo de exemplos, geração de patch e governança de assets);
 - fechamento orientado a prioridade dos TODOs legados críticos.
@@ -46,7 +46,7 @@ Fora de escopo imediato:
 
 ### Métricas
 - TODOs P0 resolvidos: `2/5`
-- TODOs P1 resolvidos: `0/11`
+- TODOs P1 resolvidos: `0/12`
 - TODOs P2 resolvidos: `0/5`
 - Exemplos novos publicados: `4/9`
 - Módulos migrados para modelo plugável: `0/1 (piloto)`
@@ -82,8 +82,44 @@ Legenda:
 | NX-018 | P1 | integrations/datatable | Padronizar contrato server-side de DataTable para Protheus REST (request, filtros, ordenação, paginação e response) | `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.tlpp`, exemplos 007/008/018/020/023 | Sim | TODO | S5 |
 | NX-019 | P1 | security/render | Centralizar escaping/sanitização de conteúdo, atributos HTML e strings JS geradas pelo FWWebEx | `src/fw.webex/core/control/fw.webex.control.tlpp`, `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp` | Não | TODO | S6 |
 | NX-020 | P2 | ux/i18n/a11y | Revisar acessibilidade, ARIA, mensagens e consistência PT-BR/EN nos componentes e exemplos | `src/fw.webex/core`, `src/fw.webex/contrib`, `src/fw.webex/tests/fw.webex.examples` | Não | TODO | S6 |
+| NX-021 | P1 | integrations/dnatech-rest | Definir contrato/adaptador para dados vindos do modelo REST DNATech | `C:\GitHub\naldodj-tlpp\tlpp\wsrest\afx\wsrest`, exemplo 023 | Sim | TODO | S5 |
 
 ---
+
+### 4.1) Detalhamento — NX-021 DNATech REST
+
+Objetivo: criar uma fronteira explícita entre o FWWebEx e o modelo REST DNATech, evitando que componentes e exemplos dependam diretamente do formato bruto retornado por `userRestCrudTLPPCoreFunction`, `UserRestCrudTLPP` e `REST_userRestCrudADVPL`.
+
+Contrato de request observado:
+- executor: `FWWebEx.RequestHandler.execute()` via `CALLBACK_EXEC`/`CALLBACK_DATA_RESPONSE`;
+- alvo: `ClassName: "userRestCrudTLPPCoreFunction"` e `FunctionName` como `dna.tech.codAliasPost`, `dna.tech.codAliasGet`, `dna.tech.codModelPost`, `dna.tech.keyAliasPost` ou equivalentes;
+- seleção: `codAlias`/`keyAlias` ou `codModel`/`keyModel`;
+- paginação: `PageNumber`, `RowspPage`, `ignoreRowspPage`;
+- projeção e filtros: `yesFields`, `noFields`, `tokenFields`, `Filter`, `Filter64`;
+- ambiente/autorização: `cEmp`, `cFil`, `lChkPrepEnv`, `setAuthorization`;
+- saída: `setContentType`, `setEmptyFields`, `getRecNo`, `getQuery`, `getFilter`, `getDeleted`, `setUTF8`, `setNoAccent`, `setTrimSpace`, `lHTTPCTLen`, `lHTTPCTType`, `lFWHTTPEncode`.
+
+Contrato de response observado:
+- raiz: `method`, `path`, `PageNumber`, `RowspPage`, `TotalRows`, `TotalPages`, `hasNextPage`, `NextPage`, `model`;
+- tabela: `table.alias`, `table.name`, `table.description`, `table.index`, `table.filter`, `table.query`, `table.items`;
+- linha: `table.items[].detail.row`, `HasError`, `key`, `recNo`, `isDeleted`, `error`, `items`;
+- dados planos para UI: `table.items[].detail.items`.
+
+Adaptador esperado:
+- receber o response DNATech bruto e devolver `{ rows, meta, errors, raw }`;
+- preencher `rows` com o flatten de `table.items[].detail.items`;
+- preencher `meta` com paginação, totais, alias, modelo, índice, filtro aplicado e query quando presentes;
+- preencher `errors` com linhas cujo `detail.HasError` seja verdadeiro;
+- expor helper para DataTables com `{ data, recordsTotal, recordsFiltered }`;
+- expor helper para `wsAction`/menus e painéis que não sejam DataTable;
+- manter fallback seguro para responses incompletos, strings JSON e arrays vazios.
+
+Critério de aceite:
+- exemplo 023 deixa de mapear manualmente `json.table.items.map(row => row.detail?.items || {})` e usa o adaptador;
+- `WebExDataTable` ou feature equivalente consegue consumir a resposta DNATech por contrato normalizado;
+- fixtures em `data/json/turnovergeral*.json` cobrem o shape `table.items[].detail.items`;
+- documentação inclui exemplo mínimo de request/response e relação com `NX-018`;
+- erros por linha (`HasError`/`error`) não somem silenciosamente.
 
 ## 5) Definition of Ready (DoR)
 
@@ -165,16 +201,18 @@ Objetivo: sair dos exemplos isolados por componente e publicar uma aplicação p
 Escopo:
 1. NX-014: criar exemplo real de e-shop com dados mockados/local fixtures.
 2. NX-018: padronizar contrato server-side de DataTable para Protheus REST.
-3. NX-009: iniciar externalização de JavaScript inline mais crítico.
-4. NX-011: reduzir dependência de `AppRootURI` manual.
-5. NX-013: auditar catálogo de exemplos e corrigir títulos/numeração/categorias.
-6. NX-017: definir política de assets externos/CDN e fallback local.
+3. NX-021: definir contrato/adaptador para dados vindos do modelo REST DNATech.
+4. NX-009: iniciar externalização de JavaScript inline mais crítico.
+5. NX-011: reduzir dependência de `AppRootURI` manual.
+6. NX-013: auditar catálogo de exemplos e corrigir títulos/numeração/categorias.
+7. NX-017: definir política de assets externos/CDN e fallback local.
 
 Critério de aceite:
 - exemplo de e-shop executável e registrado no menu de exemplos;
 - catálogo, carrinho, checkout mock e administração de pedidos/produtos demonstrados;
 - README do e-shop explicando dados, fluxo e pontos do FWWebEx usados;
 - contrato DataTable server-side documentado com exemplo de request/response;
+- contrato/adaptador DNATech REST documentado e aplicado ao exemplo 023;
 - catálogo de exemplos sem contador manual inconsistente.
 
 ### Sprint 6 — Qualidade operacional e hardening
@@ -204,6 +242,7 @@ Achados principais desta revisão:
 - o catálogo de exemplos é manual (`nExamples:=30`) e alguns READMEs/títulos precisam revisão;
 - há bastante JavaScript inline em core/contrib, reforçando a necessidade de externalização gradual;
 - features usam muitas URLs CDN diretas, o que pede política para ambiente corporativo/offline;
+- o modelo REST DNATech já entrega um shape rico (`table.items[].detail.items`, metadados de tabela e paginação), mas os exemplos ainda fazem flatten manual;
 - a geração de patch ainda referencia uma lista antiga de arquivos e precisa acompanhar a nova estrutura;
 - existem TODOs reais em tabela, markdown, WebApp/AppRoot e `ForEach`;
 - segurança de renderização merece helpers centrais para evitar escaping duplicado por componente.

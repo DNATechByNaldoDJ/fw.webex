@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (TODO.md: add real-app examples, QA & sprints)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (TODO.md: add DNATech REST adapter backlog)"
 */
+
+2026-06-01 23:21 UTC naldodj (TODO.md: add DNATech REST adapter backlog)
+  TODO.md: add DNATech REST adapter backlog
+    Add NX-021 for defining a normalized contract/adapter for data returned by the DNATech REST model.
+    Document observed request/response fields from userRestCrudTLPPCoreFunction, UserRestCrudTLPP and REST_userRestCrudADVPL, including the example 023 flattening use case.
+    Update sprint 5 scope, P1 metrics and broad analysis notes so NX-018 can focus on DataTable server-side while NX-021 covers the DNATech source adapter.
+      * TODO.md
 
 2026-06-01 11:57 UTC naldodj (TODO.md: add real-app examples, QA & sprints)
   TODO.md: add real-app examples, QA & sprints
