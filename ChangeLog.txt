@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add MVC model and Protheus/TOTVS integration TODOs)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (TODO.md: add real-app examples, QA & sprints)"
 */
+
+2026-06-01 11:57 UTC naldodj (TODO.md: add real-app examples, QA & sprints)
+  TODO.md: add real-app examples, QA & sprints
+    Expand TODO.md with new priorities and operational quality items:
+      add real e-shop example and examples metrics, introduce QA/CI and asset governance tasks, externalize critical JS, standardize DataTable contract and security/escaping tasks.
+    Adds multiple NX entries, updates metrics and sprint planning (new Sprints 5 & 6), reorders scope (promotes NX-010) and renames the evolution section to include broad analysis findings.
+    These changes aim to move from isolated component samples to a runnable demo app and improve release/quality processes.
+      * TODO.md
 
 2026-06-01 11:16 UTC naldodj (Add MVC model and Protheus/TOTVS integration TODOs)
   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add MVC model and Protheus/TOTVS integration TODOs)"
