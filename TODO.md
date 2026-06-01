@@ -14,6 +14,8 @@ Esta geração inicia uma nova arquitetura do fw.webex com foco em:
 - inicializador de DOM configurável;
 - externalização de JavaScript;
 - modelo plugável para recursos e integrações;
+- modelo de desenvolvimento MVC para WebEx;
+- integração/renderização de dados vindos do MVC padrão Protheus/TOTVS;
 - fechamento orientado a prioridade dos TODOs legados críticos.
 
 Fora de escopo imediato:
@@ -40,8 +42,8 @@ Fora de escopo imediato:
 
 ### Métricas
 - TODOs P0 resolvidos: `2/5`
-- TODOs P1 resolvidos: `0/2`
-- Exemplos novos publicados: `4/5`
+- TODOs P1 resolvidos: `0/4`
+- Exemplos novos publicados: `4/7`
 - Módulos migrados para modelo plugável: `0/1 (piloto)`
 
 ---
@@ -61,6 +63,8 @@ Legenda:
 | NX-004 | P1 | tests/md | Corrigir cenário PageHeader/PageFooter | `src/fw.webex/tests/md/testemd.tlpp` | Não | TODO | S1 |
 | NX-005 | P0 | core/bootstrap | Criar inicializador de DOM configurável com hooks | Novo | Sim | DONE | S1 |
 | NX-006 | P0 | core/plugins | Definir registro e contrato mínimo de plugins | Novo | Sim | TODO | S2 |
+| NX-007 | P1 | architecture/mvc | Criar modelo de desenvolvimento MVC para WebEx (convenções, lifecycle e responsabilidades) | Novo | Sim | TODO | S4 |
+| NX-008 | P1 | integrations/protheus-mvc | Criar suporte para renderização de dados provenientes do MVC padrão Protheus/TOTVS | Novo | Sim | TODO | S4 |
 
 ---
 
@@ -119,6 +123,22 @@ Escopo:
 1. NX-003: TODOs de markdown.
 2. Ajustes de estilo/comportamento associados.
 3. Revisão final de exemplos e testes da feature.
+
+### Sprint 4 — MVC e integração Protheus/TOTVS
+
+Objetivo: definir um modelo MVC próprio para WebEx e criar a ponte inicial com dados do MVC padrão Protheus/TOTVS.
+
+Escopo:
+1. NX-007: especificar convenções de Model, View e Controller para WebEx.
+2. NX-007: criar exemplo mínimo de aplicação MVC WebEx.
+3. NX-008: definir contrato/adaptador para dados vindos do MVC Protheus/TOTVS.
+4. NX-008: criar exemplo de renderização usando dados compatíveis com o MVC padrão Protheus/TOTVS.
+
+Critério de aceite:
+- contrato MVC documentado;
+- exemplo executável de MVC WebEx;
+- exemplo executável de renderização a partir de dados do MVC Protheus/TOTVS;
+- impacto de migração documentado em `MIGRATION.md`, se houver mudança de contrato público.
 
 ---
 
