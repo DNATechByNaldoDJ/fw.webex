@@ -2,8 +2,15 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Implement FWWebEx init, DataTableForm & examples)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add MVC model and Protheus/TOTVS integration TODOs)"
 */
+
+2026-06-01 11:16 UTC naldodj (Add MVC model and Protheus/TOTVS integration TODOs)
+  (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add MVC model and Protheus/TOTVS integration TODOs)"
+    Add MVC model and Protheus/TOTVS integration TODOs
+      Add TODO items for a WebEx MVC development model and Protheus/TOTVS MVC data integration (NX-007, NX-008).
+      Update metrics and example counts, add task entries in the legend, and introduce a Sprint 4 section describing objectives, scope and acceptance criteria (including documentation of migration impact in MIGRATION.md if applicable).
+        * TODO.md
 
 2026-05-31 20:02 UTC naldodj (Implement FWWebEx init, DataTableForm & examples)
   Implement FWWebEx init, DataTableForm & examples
