@@ -16,6 +16,8 @@ Esta geração inicia uma nova arquitetura do fw.webex com foco em:
 - modelo plugável para recursos e integrações;
 - modelo de desenvolvimento MVC para WebEx;
 - integração/renderização de dados vindos do MVC padrão Protheus/TOTVS;
+- exemplos reais de aplicações completas, além de exemplos isolados por componente;
+- qualidade operacional mínima (CI, catálogo de exemplos, geração de patch e governança de assets);
 - fechamento orientado a prioridade dos TODOs legados críticos.
 
 Fora de escopo imediato:
@@ -38,12 +40,15 @@ Fora de escopo imediato:
 - [x] Definir API de bootstrap (`FWWebEx.init(config)`) e lifecycle.
 - [ ] Implementar arquitetura plugável mínima (registro + init de plugins).
 - [ ] Externalizar JS por módulos (core + features).
+- [ ] Publicar ao menos um exemplo real completo (e-shop piloto).
+- [ ] Criar trilha mínima de qualidade operacional para exemplos, assets e release.
 - [ ] Resolver TODOs P0/P1 com exemplos obrigatórios.
 
 ### Métricas
 - TODOs P0 resolvidos: `2/5`
-- TODOs P1 resolvidos: `0/4`
-- Exemplos novos publicados: `4/7`
+- TODOs P1 resolvidos: `0/11`
+- TODOs P2 resolvidos: `0/5`
+- Exemplos novos publicados: `4/9`
 - Módulos migrados para modelo plugável: `0/1 (piloto)`
 
 ---
@@ -65,6 +70,18 @@ Legenda:
 | NX-006 | P0 | core/plugins | Definir registro e contrato mínimo de plugins | Novo | Sim | TODO | S2 |
 | NX-007 | P1 | architecture/mvc | Criar modelo de desenvolvimento MVC para WebEx (convenções, lifecycle e responsabilidades) | Novo | Sim | TODO | S4 |
 | NX-008 | P1 | integrations/protheus-mvc | Criar suporte para renderização de dados provenientes do MVC padrão Protheus/TOTVS | Novo | Sim | TODO | S4 |
+| NX-009 | P1 | core/assets | Externalizar JavaScript inline crítico em módulos reutilizáveis (core runtime + features) | `src/fw.webex/core/component/fw.webex.page.tlpp`, `src/fw.webex/core/component/*`, `src/fw.webex/contrib/*` | Não | TODO | S5 |
+| NX-010 | P1 | core/features | Revisar idempotência, prioridade, dependências e unload do registro de features/plugins | `src/fw.webex/contrib/fw.webex.features/core/fw.webex.features.tlpp`, `src/fw.webex/core/control/fw.webex.control.tlpp` | Não | TODO | S2 |
+| NX-011 | P1 | core/webapp | Automatizar descoberta de `AppRootURI`/remote origin e reduzir dependência de configuração manual em `appserver.ini` | `src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp`, `README.md` | Não | TODO | S5 |
+| NX-012 | P2 | core/utils | Completar suporte do `ForEach` para `DNA.TECH.THASH`, `DNA.TECH.TFINI` e `DNA.TECH.THASH_TFINI` | `src/fw.webex/core/tools/extra/for.each.tlpp` | Não | TODO | S6 |
+| NX-013 | P2 | docs/examples | Auditar catálogo de exemplos: títulos, READMEs, numeração, categoria e contador hardcoded | `src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp`, `src/fw.webex/tests/fw.webex.examples/*/README.md` | Não | TODO | S5 |
+| NX-014 | P1 | examples/real-app | Criar exemplo real completo de e-shop (catálogo, carrinho, checkout mock, pedidos e admin) | Novo | Sim | TODO | S5 |
+| NX-015 | P1 | quality/ci | Criar esteira mínima de qualidade: validação de TODO/catalogo, checagem textual e compilação quando ambiente permitir | `.github/workflows`, `bin/check.hb`, `bin/commit.hb` | Não | TODO | S6 |
+| NX-016 | P2 | release/patch | Atualizar e automatizar geração de `makepatch.lst` para refletir arquivos atuais do projeto | `bin/patches/makepatch.lst` | Não | TODO | S6 |
+| NX-017 | P2 | core/assets | Definir governança de assets externos/CDN (versões fixas, fallback local, modo offline e SRI quando aplicável) | `src/fw.webex/contrib/fw.webex.features/features/*`, `src/fw.webex/core/component/fw.webex.page.tlpp` | Não | TODO | S5 |
+| NX-018 | P1 | integrations/datatable | Padronizar contrato server-side de DataTable para Protheus REST (request, filtros, ordenação, paginação e response) | `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.tlpp`, exemplos 007/008/018/020/023 | Sim | TODO | S5 |
+| NX-019 | P1 | security/render | Centralizar escaping/sanitização de conteúdo, atributos HTML e strings JS geradas pelo FWWebEx | `src/fw.webex/core/control/fw.webex.control.tlpp`, `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp` | Não | TODO | S6 |
+| NX-020 | P2 | ux/i18n/a11y | Revisar acessibilidade, ARIA, mensagens e consistência PT-BR/EN nos componentes e exemplos | `src/fw.webex/core`, `src/fw.webex/contrib`, `src/fw.webex/tests/fw.webex.examples` | Não | TODO | S6 |
 
 ---
 
@@ -111,9 +128,10 @@ Objetivo: consolidar arquitetura plugável e resolver TODO crítico do core/tabl
 
 Escopo:
 1. NX-006: registro e ciclo de vida de plugins (piloto).
-2. NX-001: carregamento AJAX real em tabela.
-3. Integração plugin piloto + datatable.
-4. Atualização de guia de migração para mudanças técnicas.
+2. NX-010: revisar idempotência, prioridade, dependências e unload de features/plugins.
+3. NX-001: carregamento AJAX real em tabela.
+4. Integração plugin piloto + datatable.
+5. Atualização de guia de migração para mudanças técnicas.
 
 ### Sprint 3 — Features e qualidade
 
@@ -140,9 +158,57 @@ Critério de aceite:
 - exemplo executável de renderização a partir de dados do MVC Protheus/TOTVS;
 - impacto de migração documentado em `MIGRATION.md`, se houver mudança de contrato público.
 
+### Sprint 5 — Exemplos reais e contratos de integração
+
+Objetivo: sair dos exemplos isolados por componente e publicar uma aplicação piloto que mostre o FWWebEx em fluxo real.
+
+Escopo:
+1. NX-014: criar exemplo real de e-shop com dados mockados/local fixtures.
+2. NX-018: padronizar contrato server-side de DataTable para Protheus REST.
+3. NX-009: iniciar externalização de JavaScript inline mais crítico.
+4. NX-011: reduzir dependência de `AppRootURI` manual.
+5. NX-013: auditar catálogo de exemplos e corrigir títulos/numeração/categorias.
+6. NX-017: definir política de assets externos/CDN e fallback local.
+
+Critério de aceite:
+- exemplo de e-shop executável e registrado no menu de exemplos;
+- catálogo, carrinho, checkout mock e administração de pedidos/produtos demonstrados;
+- README do e-shop explicando dados, fluxo e pontos do FWWebEx usados;
+- contrato DataTable server-side documentado com exemplo de request/response;
+- catálogo de exemplos sem contador manual inconsistente.
+
+### Sprint 6 — Qualidade operacional e hardening
+
+Objetivo: preparar o projeto para crescer com menos regressão e menos acoplamento manual.
+
+Escopo:
+1. NX-015: criar workflow/checklist mínimo de qualidade.
+2. NX-016: automatizar geração/atualização da lista de patch.
+3. NX-019: centralizar escaping/sanitização de renderização.
+4. NX-020: revisar acessibilidade, ARIA e consistência de idioma.
+5. NX-012: completar suporte pendente do `ForEach`.
+
+Critério de aceite:
+- checagens locais/CI documentadas;
+- `makepatch.lst` reproduzível a partir do estado atual do projeto;
+- helpers de escaping disponíveis para conteúdo, atributo e JS;
+- pelo menos um exemplo validando os helpers críticos;
+- documentação atualizada com limites conhecidos.
+
 ---
 
-## 8) Política de Evolução
+## 8) Notas da Análise Ampla
+
+Achados principais desta revisão:
+- os exemplos atuais cobrem bem componentes isolados, mas ainda falta uma aplicação real de ponta a ponta;
+- o catálogo de exemplos é manual (`nExamples:=30`) e alguns READMEs/títulos precisam revisão;
+- há bastante JavaScript inline em core/contrib, reforçando a necessidade de externalização gradual;
+- features usam muitas URLs CDN diretas, o que pede política para ambiente corporativo/offline;
+- a geração de patch ainda referencia uma lista antiga de arquivos e precisa acompanhar a nova estrutura;
+- existem TODOs reais em tabela, markdown, WebApp/AppRoot e `ForEach`;
+- segurança de renderização merece helpers centrais para evitar escaping duplicado por componente.
+
+## 9) Política de Evolução
 
 - v0 permanece disponível como referência estável.
 - Nova geração evolui com versionamento próprio.
