@@ -2,8 +2,19 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (TODO.md: add DNATech REST adapter backlog)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add REST timeout, error handling and status UI)"
 */
+
+2026-06-07 01:03 UTC naldodj (Add REST timeout, error handling and status UI)
+  Improve REST client behavior in fw.webex example pages and tools.
+    - Add a visible status alert element and JS helpers to examples 007 and 008 for showing/clearing REST messages, escaping HTML, normalizing HTTP errors, extracting service messages, detecting password-change responses and creating unified error objects.
+    - Replace promise chains with async/await, use AbortController and a 15s timeout, handle redirects and non-JSON responses, and provide user-friendly messages for timeouts, 401s, redirects and required password changes. Ensure the dataTable callback receives empty data on failures and hide the custom loader in all paths.
+    - Improve token-missing handling by clearing timeouts and showing meaningful errors.
+    - In FWExampleTools::EnableRESTCredentialParameters, add checks for server environment/profile (GetEnvServer/GetSrvIniName) so the REST-credential toggle can be enabled via server profile settings.
+    Files changed:
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.tools.tlpp
+      * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+      * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
 
 2026-06-01 23:21 UTC naldodj (TODO.md: add DNATech REST adapter backlog)
   TODO.md: add DNATech REST adapter backlog
