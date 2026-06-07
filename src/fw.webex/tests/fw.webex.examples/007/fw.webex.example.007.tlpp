@@ -152,6 +152,7 @@ static procedure FWWebExExample_007(cHTML as character) as character
                         <button id="btnSearch" class="btn btn-primary" type="button">Pesquisar</button>
                     </div>
                 </div>
+                <div id="fwwebex-rest-status" class="alert alert-info py-2 mb-2" style="display:none;" role="alert"></div>
                 <table id="example" class="table table-striped table-hover display compact nowrap">
                     <thead>
                         <tr>
@@ -182,6 +183,119 @@ static procedure FWWebExExample_007(cHTML as character) as character
             }
 
             montarCampoSelect(); // monta o select com base no yesFields
+
+            const FWWEBEX_EXAMPLE_007_REST_TIMEOUT_MS = 15000;
+
+            function FWWebExExample007EscapeHtml(value) {
+                const div = document.createElement('div');
+                div.textContent = value == null ? '' : String(value);
+                return div.innerHTML;
+            }
+
+            function FWWebExExample007EmptyData(data) {
+                return {
+                    draw: data && data.draw ? data.draw : 0,
+                    data: [],
+                    recordsTotal: 0,
+                    recordsFiltered: 0
+                };
+            }
+
+            function FWWebExExample007ShowRestMessage(type, title, detail) {
+                const status = document.getElementById('fwwebex-rest-status');
+                if (!status) return;
+                status.className = 'alert alert-' + (type || 'warning') + ' py-2 mb-2';
+                status.innerHTML = '<strong>' + FWWebExExample007EscapeHtml(title) + '</strong>'
+                    + (detail ? '<div class="small mt-1">' + FWWebExExample007EscapeHtml(detail) + '</div>' : '');
+                status.style.display = 'block';
+            }
+
+            function FWWebExExample007ClearRestMessage() {
+                const status = document.getElementById('fwwebex-rest-status');
+                if (!status) return;
+                status.innerHTML = '';
+                status.style.display = 'none';
+            }
+
+            function FWWebExExample007IsPasswordChange(value) {
+                const text = String(value || '').toLowerCase();
+                return text.includes('the user must change password')
+                    || text.includes('changepassworduserservice')
+                    || text.includes('alterar senha');
+            }
+
+            function FWWebExExample007ExtractServiceMessage(text) {
+                const raw = String(text || '').trim();
+                if (!raw) return '';
+                try {
+                    const parsed = JSON.parse(raw);
+                    return parsed?.message
+                        || parsed?.error
+                        || parsed?.status?.description
+                        || parsed?.detail
+                        || '';
+                } catch (err) {
+                    return raw.length > 300 ? raw.slice(0, 297) + '...' : raw;
+                }
+            }
+
+            function FWWebExExample007CreateError(message, detail) {
+                const err = new Error(message);
+                err.userMessage = message;
+                err.detail = detail || '';
+                return err;
+            }
+
+            function FWWebExExample007NormalizeHttpError(response, text) {
+                const location = response.headers.get('Location') || '';
+                const detail = FWWebExExample007ExtractServiceMessage(text);
+                const diagnostic = [location, text, detail].join(' ');
+
+                if (FWWebExExample007IsPasswordChange(diagnostic)) {
+                    return FWWebExExample007CreateError(
+                        'O Protheus solicitou a alteracao da senha do usuario.',
+                        'Troque a senha no Protheus e atualize as credenciais usadas por este exemplo.'
+                    );
+                }
+
+                if (response.status >= 300 && response.status < 400) {
+                    return FWWebExExample007CreateError(
+                        'O Protheus redirecionou a requisicao REST.',
+                        location ? 'Destino informado: ' + location : (detail || 'Verifique a sessao e as credenciais do usuario.')
+                    );
+                }
+
+                if (response.status === 401) {
+                    return FWWebExExample007CreateError(
+                        'Autenticacao recusada pelo Protheus (HTTP 401).',
+                        detail || 'Verifique usuario, senha, Bearer token ou X-DNATech-Auth-Token.'
+                    );
+                }
+
+                if (!response.ok) {
+                    return FWWebExExample007CreateError(
+                        'O Protheus respondeu com HTTP ' + response.status + '.',
+                        detail || response.statusText || 'Verifique o log do Protheus e do HAProxy.'
+                    );
+                }
+
+                return null;
+            }
+
+            function FWWebExExample007HandleDataTableError(callback, data, err) {
+                const isTimeout = err && err.name === 'AbortError';
+                const title = isTimeout
+                    ? 'Tempo limite ao consultar o Protheus.'
+                    : (err?.userMessage || err?.message || 'Nao foi possivel carregar os dados do Protheus.');
+                const detail = isTimeout
+                    ? 'A requisicao foi cancelada apos ' + Math.round(FWWEBEX_EXAMPLE_007_REST_TIMEOUT_MS / 1000) + ' segundos sem resposta.'
+                    : (err?.detail || 'Tente novamente em alguns instantes ou consulte o log da aplicacao.');
+
+                console.error('Erro ao carregar dados:', err);
+                FWWebExExample007ShowRestMessage(isTimeout ? 'warning' : 'danger', title, detail);
+                $('#fwwebex-datatable-custom-loader').hide();
+                callback(FWWebExExample007EmptyData(data));
+            }
 
             // Adiciona o filtro customizado no lugar da search bar padrao
             const filtroEl = document.getElementById("meuFiltroCustom");
@@ -238,46 +352,68 @@ static procedure FWWebExExample_007(cHTML as character) as character
                     }
                     $('#fwwebex-datatable-custom-loader').hide();
                 },
-                ajax: function (data, callback) {
+                ajax: async function (data, callback) {
 
                     const pageNumber = Math.floor(data.start / data.length) + 1;
                     const rowsPerPage = data.length === -1 ? 999999 : data.length;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), FWWEBEX_EXAMPLE_007_REST_TIMEOUT_MS);
 
                     __GET_CREDENTIAL__
 
-                    fetch('https://localhost:9898/rest/callProcRestCrudTLPP/post/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            <Autorization>,
-                            <DNATechAuth>
-                        },
-                        body: JSON.stringify({
-                            ClassName: 'userRestCrudTLPPCoreFunction',
-                            FunctionName: 'dna.tech.codAliasPost',
-                            codAlias: 'SRA',
-                            yesFields: 'RA_FILIAL,RA_MAT,RA_APELIDO,RA_CC,RA_SALARIO,RA_ADTPOSE,RA_CATFUNC,RA_DEPIR,RA_SEXO',
-                            Filter: Object.assign({
-                                RA_SEXO: 'M'
-                            }, filtroCampo && filtroValor ? { [filtroCampo]: filtroValor } : {}),
-                            PageNumber: pageNumber,
-                            RowspPage: rowsPerPage,
-                            cEmp: '99',
-                            cFil: '01',
-                            lChkPrepEnv: false,
-                            lHTTPCTLen: true,
-                            lFWHTTpEncode: true,
-                            cHTTPCTType: 'application/json; charset=UTF-8',
-                            lHTTPCTType: true
-                        })
-                    })
-                    .then(res => {
-                        if (!res.ok) throw new Error('HTTP ' + res.status);
-                        return res.text();
-                    })
-                    .then(text => {
+                    try {
+                        FWWebExExample007ClearRestMessage();
+
+                        const res = await fetch('https://localhost:9898/rest/callProcRestCrudTLPP/post/', {
+                            method: 'POST',
+                            redirect: 'manual',
+                            signal: controller.signal,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                <Autorization>,
+                                <DNATechAuth>
+                            },
+                            body: JSON.stringify({
+                                ClassName: 'userRestCrudTLPPCoreFunction',
+                                FunctionName: 'dna.tech.codAliasPost',
+                                codAlias: 'SRA',
+                                yesFields: 'RA_FILIAL,RA_MAT,RA_APELIDO,RA_CC,RA_SALARIO,RA_ADTPOSE,RA_CATFUNC,RA_DEPIR,RA_SEXO',
+                                Filter: Object.assign({
+                                    RA_SEXO: 'M'
+                                }, filtroCampo && filtroValor ? { [filtroCampo]: filtroValor } : {}),
+                                PageNumber: pageNumber,
+                                RowspPage: rowsPerPage,
+                                cEmp: '99',
+                                cFil: '01',
+                                lChkPrepEnv: false,
+                                lHTTPCTLen: true,
+                                lFWHTTpEncode: true,
+                                cHTTPCTType: 'application/json; charset=UTF-8',
+                                lHTTPCTType: true
+                            })
+                        });
+
+                        const text = await res.text();
+                        const normalizedError = FWWebExExample007NormalizeHttpError(res, text);
+                        if (normalizedError) throw normalizedError;
+
+                        if (FWWebExExample007IsPasswordChange(text)) {
+                            throw FWWebExExample007CreateError(
+                                'O Protheus solicitou a alteracao da senha do usuario.',
+                                'Troque a senha no Protheus e atualize as credenciais usadas por este exemplo.'
+                            );
+                        }
+
                         console.log('RAW response:', text);
-                        const json = JSON.parse(text);
+                        let json = null;
+                        try {
+                            json = JSON.parse(text);
+                        } catch (err) {
+                            throw FWWebExExample007CreateError(
+                                'O Protheus respondeu, mas o retorno nao veio em JSON valido.',
+                                FWWebExExample007ExtractServiceMessage(text) || err.message
+                            );
+                        }
                         if (!json.table || !json.table.items) throw new Error('JSON incompleto');
                         const rows = json.table.items.map(row => {
                             const i = row.detail.items;
@@ -294,12 +430,17 @@ static procedure FWWebExExample_007(cHTML as character) as character
                                     ];
                         });
                         callback({
+                            draw: data.draw,
                             data: rows,
                             recordsTotal: json.TotalRows,
                             recordsFiltered: json.TotalRows
                         });
-                    })
-                    .catch(err => console.error('Erro ao carregar dados:', err));
+                    } catch (err) {
+                        FWWebExExample007HandleDataTableError(callback, data, err);
+                    } finally {
+                        clearTimeout(timeoutId);
+                        $('#fwwebex-datatable-custom-loader').hide();
+                    }
                 }
             });
 
@@ -340,7 +481,15 @@ static procedure FWWebExExample_007(cHTML as character) as character
                 }
 
                 if (!token) {
-                    console.error('Token OAuth2 nao encontrado! Faca login no Protheus antes.');
+                    clearTimeout(timeoutId);
+                    FWWebExExample007HandleDataTableError(
+                        callback,
+                        data,
+                        FWWebExExample007CreateError(
+                            'Token OAuth2 nao encontrado.',
+                            'Faca login no Protheus antes de executar este exemplo.'
+                        )
+                    );
                     return;
                 }
 

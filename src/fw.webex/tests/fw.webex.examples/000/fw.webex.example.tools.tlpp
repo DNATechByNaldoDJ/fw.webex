@@ -534,9 +534,18 @@ static method GetRESTCredential(cUSR,cPDW,cRESTURL,cRESTURLOAuth2,jGetAuthorizat
 return(lGetRESTCredential)
 
 static method EnableRESTCredentialParameters() class FWExampleTools
+    local cEnvServer as character
+    local cSRVIniName as character
+    local cComputerName as character
     local lChangeParameters as logical
     //So permite alterar as configuracoes no servidor
-    lChangeParameters:=(Upper(AllTrim(GetComputerName()))==Upper(AllTrim(GetSrvInfo()[1])))
+    cComputerName:=Upper(AllTrim(GetComputerName()))
+    lChangeParameters:=(cComputerName==Upper(AllTrim(GetSrvInfo()[1])))
+    if (!lChangeParameters)
+        cEnvServer:=GetEnvServer()
+        cSRVIniName:=GetSrvIniName()
+        lChangeParameters:=(cComputerName$GetPvProfString("FWWEBEX_"+cEnvServer,"EnableRESTCredentialParameters","",cSRVIniName))
+    endif
 return(lChangeParameters)
 
 //https://tdn.totvs.com/display/tec/onAuthNoCheckUri
