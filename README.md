@@ -203,6 +203,33 @@ return(cHTMLFile)
 
   - [Bootstrap 5.n](https://getbootstrap.com)
   - (opcional) [PO UI CSS](https://po-ui.io)
+  - (quando `WebExFeatureJsPDF` é habilitada) jsPDF 4.2.1
+  - (quando `WebExFeaturePDFJS` é habilitada) PDF.js 3.11.174
+  - (quando Labels é habilitado) JsBarcode 3.11.6
+  - (opcional, para HTML -> PDF) html2canvas 1.4.1 e DOMPurify 3.4.7
+
+As dependências PDF possuem versões fixadas e são carregadas atualmente por
+`cdn.jsdelivr.net`. Fallback local, SRI e modo offline estão acompanhados pelo
+item `NX-017`.
+
+---
+
+## 🏷️ Labels e PDF
+
+`WebExLabelDesigner` e `WebExLabelGeneratorPanel` são produtos FWWebEx
+autocontidos para desenhar, validar, visualizar, baixar e imprimir rótulos. O
+`WebExLabelPDFGenerator` permanece disponível para integração headless.
+No Designer, o modo Impressão rasteriza o PDF real em canvas com
+`WebExFeaturePDFJS` e mantém as caixas editáveis alinhadas ao viewport nas
+quatro rotações ortogonais.
+
+jsPDF é fornecido pela feature genérica `WebExFeatureJsPDF`; contrato, layout,
+textos e códigos de barras permanecem no domínio Labels. Consulte:
+
+- [documentação de Labels](src/fw.webex/contrib/fw.webex.labels/README.md);
+- [feature genérica jsPDF](src/fw.webex/contrib/fw.webex.features/README.md);
+- [exemplo 031 — designer](src/fw.webex/tests/fw.webex.examples/031/README.md);
+- [exemplo 032 — gerador](src/fw.webex/tests/fw.webex.examples/032/README.md).
 
 ---
 

@@ -100,6 +100,71 @@ Impacto esperado:
 - desacoplamento entre core e extensões;
 - evolução incremental com menor atrito.
 
+## 3.5 Labels: contrato v2 e produtos autocontidos
+
+Layouts `version: 1` continuam aceitos. O runtime os normaliza em memória e a
+serialização passa a produzir:
+
+- `schema: "fwwebex.labels"` e `version: 2`;
+- `page`, `box`, `style`, `fit` e `layout` com responsabilidades separadas;
+- `background.dataUrl` preservado integralmente e `background` como última
+  propriedade de nível superior;
+- `editor` restrito aos metadados `grid`, `snap` e `guides`, sem efeito sobre o
+  PDF;
+- `containerId` e `layout.children` explícitos;
+- milímetros como unidade física e pontos para tipografia.
+
+Não é necessário converter arquivos antigos manualmente:
+
+```javascript
+const v2 = FWWebExLabels.contract.serialize(layoutV1);
+```
+
+Páginas que montavam manualmente toolbar, stage, inspetor e formulário de
+geração devem migrar para os produtos:
+
+```tlpp
+WITH WEBEXOBJECT CLASS WebExLabelDesigner ARGS 100,60
+    .:SetLayout(cLayoutJSON)
+    .:SetRecords(cRecordsJSON)
+END WEBEXOBJECT
+
+WITH WEBEXOBJECT CLASS WebExLabelGeneratorPanel
+    .:SetLayout(cLayoutJSON)
+    .:SetRecords(cRecordsJSON)
+END WEBEXOBJECT
+```
+
+`WebExLabelPDFGenerator` permanece disponível para integração headless.
+jsPDF agora é fornecido por `WebExFeatureJsPDF`; consumidores não devem injetar
+ou versionar a biblioteca por conta própria. JsBarcode permanece específico de
+Labels. O preview fiel do Designer habilita separadamente
+`WebExFeaturePDFJS`: `FWWebEx.PDF` continua sendo a API de autoria, enquanto
+`FWWebEx.PDFViewer` recebe o PDF pronto e rasteriza a página escolhida.
+
+Diferenças importantes:
+
+- `locked` é estado de edição e não impede o reflow de impressão;
+- excluir um container remove sua subárvore por padrão;
+- duplicar um container duplica e remapeia toda a subárvore;
+- `minFontSize` nunca é violado para forçar conteúdo;
+- validação, preview, download e impressão usam o mesmo renderer.
+- o antigo iframe do modo Impressão foi substituído por canvas PDF.js; o
+  overlay usa o viewport rasterizado e a mesma matriz ortogonal do PDF;
+- uma falha de PDF.js retorna ao modo Design e emite um erro descritivo, em vez
+  de apresentar uma aproximação HTML como se fosse equivalente.
+
+Os exemplos 031 e 032 demonstram a configuração mínima dos dois produtos.
+
+A regressão automatizada desta migração cobre contrato v1/v2, renderer, quatro
+rotações, layout recursivo, duas instâncias, exemplos mínimos e background
+Data URI. O teste raster real é opt-in porque exige Playwright, Chromium e
+acesso aos CDNs.
+
+jsPDF, PDF.js e JsBarcode possuem versões fixadas, mas ainda são carregados por CDN.
+Aplicações corporativas sem acesso externo devem aguardar ou fornecer a
+política de fallback local/offline acompanhada por `NX-017`.
+
 ---
 
 ## 4) Guia de Migração por Fases

@@ -17,6 +17,8 @@ Esta geração inicia uma nova arquitetura do fw.webex com foco em:
 - modelo de desenvolvimento MVC para WebEx;
 - integração/renderização de dados vindos do MVC padrão Protheus/TOTVS e do modelo REST DNATech;
 - exemplos reais de aplicações completas, além de exemplos isolados por componente;
+- infraestrutura genérica de geração de PDF no navegador, reutilizável por
+  diferentes features sem acoplamento entre domínios;
 - qualidade operacional mínima (CI, catálogo de exemplos, geração de patch e governança de assets);
 - fechamento orientado a prioridade dos TODOs legados críticos.
 
@@ -46,9 +48,9 @@ Fora de escopo imediato:
 
 ### Métricas
 - TODOs P0 resolvidos: `2/5`
-- TODOs P1 resolvidos: `0/12`
+- TODOs P1 resolvidos: `0/13`
 - TODOs P2 resolvidos: `0/5`
-- Exemplos novos publicados: `4/9`
+- Exemplos novos publicados: `6/9`
 - Módulos migrados para modelo plugável: `0/1 (piloto)`
 
 ---
@@ -83,6 +85,7 @@ Legenda:
 | NX-019 | P1 | security/render | Centralizar escaping/sanitização de conteúdo, atributos HTML e strings JS geradas pelo FWWebEx | `src/fw.webex/core/control/fw.webex.control.tlpp`, `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp` | Não | TODO | S6 |
 | NX-020 | P2 | ux/i18n/a11y | Revisar acessibilidade, ARIA, mensagens e consistência PT-BR/EN nos componentes e exemplos | `src/fw.webex/core`, `src/fw.webex/contrib`, `src/fw.webex/tests/fw.webex.examples` | Não | TODO | S6 |
 | NX-021 | P1 | integrations/dnatech-rest | Definir contrato/adaptador para dados vindos do modelo REST DNATech | `C:\GitHub\naldodj-tlpp\tlpp\wsrest\afx\wsrest`, exemplo 023 | Sim | TODO | S5 |
+| NX-022 | P1 | features/pdf | Extrair jsPDF para uma feature genérica, reutilizável por Labels, Markdown e futuros módulos | `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.jspdf.tlpp`, Labels e Markdown | Sim | IN_PROGRESS | S3 |
 
 ---
 
@@ -120,6 +123,108 @@ Critério de aceite:
 - fixtures em `data/json/turnovergeral*.json` cobrem o shape `table.items[].detail.items`;
 - documentação inclui exemplo mínimo de request/response e relação com `NX-018`;
 - erros por linha (`HasError`/`error`) não somem silenciosamente.
+
+### 4.2) Detalhamento — NX-022 Feature genérica jsPDF
+
+Objetivo: disponibilizar a infraestrutura jsPDF como uma feature FWWebEx
+genérica, sem conhecimento de rótulos, Markdown ou qualquer outro domínio
+consumidor.
+
+Arquivo principal novo:
+
+- `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.jspdf.tlpp`
+
+Fronteiras de responsabilidade:
+
+- [x] Criar `WebExFeatureJsPDF` seguindo o lifecycle e o padrão das demais
+  features FWWebEx.
+- [x] Fixar a versão do jsPDF no runtime compartilhado.
+- [x] Garantir carregamento idempotente; várias features consumidoras não podem
+  injetar a biblioteca mais de uma vez.
+- [x] Expor uma API pública para verificar disponibilidade/readiness e criar
+  uma instância de documento sem depender de Labels ou Markdown.
+- [x] Manter a feature genérica sem contrato de rótulos, código de barras,
+  templates, Markdown, CSS de documento ou paginação específica de consumidor.
+- [x] Manter JsBarcode sob responsabilidade de Labels.
+- [x] Tratar `html2canvas`, DOMPurify e outras dependências da renderização HTML
+  como capacidades opcionais e explícitas, sem carregá-las para consumidores
+  que utilizem somente as primitivas do jsPDF.
+- [x] Não confundir jsPDF, usado para autoria/geração, com PDF.js, usado para
+  visualização de PDFs já produzidos.
+- [x] Adotar versão sem vulnerabilidades conhecidas aplicáveis ao uso no
+  FWWebEx e tratar upgrades como mudança testada do runtime compartilhado.
+
+API JavaScript alvo:
+
+```javascript
+FWWebEx.PDF.isReady()
+FWWebEx.PDF.create(documentOptions)
+FWWebEx.PDF.renderElement(elementOrHtml, options) // capacidade HTML opcional
+```
+
+Visualização/rasterização separada da autoria:
+
+- [x] Criar `WebExFeaturePDFJS` em arquivo próprio, sem dependência de Labels
+  ou Markdown.
+- [x] Fixar PDF.js e worker na mesma versão e publicar a API independente
+  `FWWebEx.PDFViewer`.
+- [x] Aceitar `ArrayBuffer`/`TypedArray`, rasterizar uma página em canvas e
+  oferecer readiness, cancelamento e descarte explícito.
+- [x] Manter `WebExFeatureJsPDF` responsável por autoria e
+  `WebExFeaturePDFJS` responsável somente por visualização de PDFs prontos.
+- [ ] Substituir os assets CDN por política local/offline, SRI e CSP conforme
+  o item `NX-017`.
+
+Integração com Labels:
+
+- [x] Fazer `WebExFeatureLabels` depender de `WebExFeatureJsPDF` em vez de
+  injetar jsPDF diretamente.
+- [x] Manter no recurso Labels o contrato, layout, texto, barcode e o renderer
+  especializado de rótulos.
+- [x] Manter `WebExLabelPDFGenerator` como API headless de domínio, construída
+  sobre a feature genérica.
+- [x] Confirmar que Labels não duplica URL, versão, readiness ou lifecycle do
+  jsPDF.
+
+Integração opcional com Markdown:
+
+- [ ] Criar um adaptador Markdown -> PDF fora da feature genérica, consumindo o
+  DOM/HTML produzido por `WebExFeatureMarkDown`.
+- [ ] Avaliar `jsPDF.html()` com dependências HTML opcionais e documentar o
+  subconjunto de CSS efetivamente suportado.
+- [ ] Definir política explícita para sanitização, imagens externas/CORS,
+  carregamento de fontes, links, tabelas e blocos de código.
+- [ ] Mapear `PageBreak`, margens, cabeçalho e rodapé do Markdown para uma
+  política de paginação própria do adaptador.
+- [ ] Não criar dependência entre Markdown e Labels.
+- [ ] Não prometer equivalência visual com `window.print()` antes de concluir
+  testes comparativos.
+
+Testes e critérios de aceite:
+
+- [ ] Uma página mínima cria, baixa e obtém `blob`/`arraybuffer` usando somente
+  `WebExFeatureJsPDF`.
+- [x] Labels continua gerando os fixtures de rótulos após remover sua injeção
+  direta do jsPDF.
+- [ ] Labels e Markdown habilitados simultaneamente carregam uma única instância
+  da biblioteca.
+- [ ] O adaptador Markdown gera título, parágrafos, listas, tabela, imagem,
+  código e quebra de página em um teste representativo.
+- [ ] Falhas de dependência, imagem, fonte ou HTML produzem erro descritivo, e
+  não um PDF silenciosamente incompleto.
+- [x] O README da feature genérica documenta API, versão, capacidades
+  opcionais, limitações e exemplos mínimos.
+- [x] O README de Labels descreve somente sua integração, sem duplicar a
+  documentação da infraestrutura jsPDF.
+- [ ] Quando o adaptador Markdown -> PDF for implementado em `NX-003`, atualizar
+  o README de Markdown sem criar dependência com Labels.
+
+O núcleo reutilizável de `NX-022` está concluído: a feature genérica, sua
+capacidade HTML opcional, o consumo por Labels, readiness, sanitização, testes
+de fronteira e documentação foram entregues. O item permanece `IN_PROGRESS`
+até receber um exemplo direto, uma prova real de saída e o adaptador Markdown
+-> PDF, que continua deliberadamente separado de Labels e relacionado a
+`NX-003`.
 
 ## 5) Definition of Ready (DoR)
 
@@ -174,9 +279,10 @@ Escopo:
 Objetivo: reduzir dívida técnica de markdown e elevar robustez.
 
 Escopo:
-1. NX-003: TODOs de markdown.
-2. Ajustes de estilo/comportamento associados.
-3. Revisão final de exemplos e testes da feature.
+1. NX-022: extrair jsPDF para feature genérica e validar o consumo por Labels.
+2. NX-003: revisar TODOs de Markdown e avaliar o adaptador Markdown -> PDF.
+3. Ajustes de estilo/comportamento associados.
+4. Revisão final de exemplos e testes das features.
 
 ### Sprint 4 — MVC e integração Protheus/TOTVS
 
@@ -245,6 +351,8 @@ Achados principais desta revisão:
 - o modelo REST DNATech já entrega um shape rico (`table.items[].detail.items`, metadados de tabela e paginação), mas os exemplos ainda fazem flatten manual;
 - a geração de patch ainda referencia uma lista antiga de arquivos e precisa acompanhar a nova estrutura;
 - existem TODOs reais em tabela, markdown, WebApp/AppRoot e `ForEach`;
+- jsPDF é infraestrutura transversal e não deve permanecer versionado ou
+  injetado por uma feature de domínio como Labels;
 - segurança de renderização merece helpers centrais para evitar escaping duplicado por componente.
 
 ## 9) Política de Evolução
