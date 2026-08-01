@@ -5,6 +5,28 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add REST timeout, error handling and status UI)"
 */
 
+2026-08-01 22:44 UTC naldodj (Add deterministic Labels arrangement commands)
+  Complete the reusable positioning and distribution core in Labels Designer.
+    - Add the pure `layout.arrange()` API and align, position, distribute and
+      match-size aliases with explicit reference and immutable input semantics.
+    - Support four relative directions, configurable gap/cross alignment,
+      equal dimensions and deterministic equal-gap distribution.
+    - Keep magnetic references and locked targets fixed, move container
+      subtrees exactly once and update `basisBox` when dimensions change.
+    - Pre-calculate page/container overflow and preserve the previous layout
+      when the user cancels the operation.
+    - Replace exposed quick controls with a compact organization menu and keep
+      direction, gap and cross alignment in chained positioning.
+    - Add deterministic coverage for geometry, selection order, locking,
+      subtrees, overflow and Designer integration.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      + src/fw.webex/contrib/fw.webex.labels/tests/designer-arrange.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * ChangeLog.txt
+
 2026-08-01 14:36 UTC naldodj (Harden FWWebEx control chaining and identity)
   Align core object handling with the existing fluent control API.
     - Make `AddInHeader()` and `AddScript()` return the receiving control, as

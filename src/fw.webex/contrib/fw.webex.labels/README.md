@@ -125,6 +125,54 @@ const result = FWWebExLabels.contract.createSampleRecords(layout, records);
 // result.added, result.preserved, result.conflicts e result.warnings: diagnóstico
 ```
 
+### Organização e posicionamento
+
+O menu compacto **Organizar seleção** aparece quando há seleção múltipla. No
+modo de posicionamento encadeado ele também permanece disponível para configurar
+direção, gap e alinhamento transversal antes de adicionar o próximo componente.
+As ações disponíveis são:
+
+- alinhar esquerda, centro, direita, topo, meio, base ou baseline;
+- posicionar acima, abaixo, à esquerda ou à direita da referência;
+- usar alinhamento transversal `start`, `center`, `end` ou `stretch`;
+- distribuir três ou mais elementos horizontal ou verticalmente por gaps iguais;
+- igualar largura, altura ou ambas.
+
+A referência magnética explícita tem prioridade sobre o elemento primário da
+seleção e nunca é movida. Alvos travados são preservados e informados no status.
+Quando um container é movido, sua subárvore acompanha o deslocamento uma única
+vez; igualação de tamanho também atualiza `basisBox`, para que o tamanho não seja
+perdido no próximo reflow. Filhos de containers continuam sujeitos ao fluxo do
+container na validação e no PDF; para organizá-los de forma persistente, ajuste
+`direction`, `gap`, `crossAlign`, `mainAlign` e `sizing` da área e use
+**Reorganizar área**.
+
+O designer calcula o resultado em uma cópia antes de aplicá-lo. Se alguma caixa
+ultrapassar a página ou a área útil do container, solicita confirmação e mantém
+o estado anterior quando a operação é cancelada. A API pura equivalente aceita
+comandos diretos ou um objeto descritivo:
+
+```javascript
+const result = FWWebExLabels.layout.arrange(
+  layout,
+  ["produto", "lote", "validade"],
+  "distribute-vertical",
+  {referenceId: "produto"}
+);
+
+const positioned = FWWebExLabels.layout.arrange(layout, ["lote"], {
+  operation: "position",
+  direction: "below",
+  referenceId: "produto",
+  gap: 1,
+  crossAlign: "start"
+});
+```
+
+`layout.align()`, `layout.position()`, `layout.distribute()` e
+`layout.matchSize()` são aliases da mesma operação pura. O retorno contém o
+layout candidato, `changedIds`, `skippedIds` e `overflowIds`.
+
 ### Snap inteligente
 
 Durante o arraste, o designer escolhe um vencedor independente para cada eixo.
@@ -154,6 +202,7 @@ sangria no canvas.
 
 Eventos do designer: `fwwebex:label-change`, `fwwebex:label-selection`,
 `fwwebex:label-dirtychange`, `fwwebex:label-datachange`,
+`fwwebex:label-arrange`,
 `fwwebex:label-validation`, `fwwebex:label-preview`,
 `fwwebex:label-generated` e `fwwebex:label-error`. O painel gerador emite
 `fwwebex:label-generator:result` e `fwwebex:label-generator:error`.

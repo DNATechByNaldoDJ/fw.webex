@@ -43,6 +43,10 @@ Suítes executáveis:
   partir de variáveis, templates e formatos de barcode, mesclagem aditiva de
   caminhos aninhados, preservação de valores manuais e integração do fluxo
   automático/botão/evento no designer;
+- `designer-arrange.test.mjs`: motor puro de alinhamento, posicionamento em
+  quatro direções, alinhamento transversal, igualação, distribuição com
+  referência fixa, subárvores de containers, overflow atômico e integração do
+  menu/posicionamento encadeado do designer;
 - `initial-config-escaping.test.mjs`: transporte do JSON inicial entre TLPP e
   JavaScript, contagem literal de barras, proteção de `</script>` e diagnóstico
   separado para layout, dados e opções;

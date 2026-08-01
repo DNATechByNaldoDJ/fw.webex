@@ -114,6 +114,25 @@ Bloco de dados demonstrativos executado em 01/08/2026 — **OK**:
   permanecem marcados como **Parcial** e 13 são pendências completas/opcionais;
 - 122 testes Labels: 121 aprovados, nenhuma falha e 1 raster opt-in ignorado.
 
+Núcleo de distribuição e posicionamento executado em 01/08/2026 — **OK**:
+
+- a API pura `layout.arrange()` e os aliases `align`, `position`, `distribute`
+  e `matchSize` centralizam geometria sem alterar o contrato recebido;
+- referência explícita ou magnética permanece fixa, alvos travados são
+  preservados e containers deslocam sua subárvore exatamente uma vez;
+- o Designer passou a posicionar nos quatro sentidos, escolher alinhamento
+  transversal, igualar dimensões e distribuir por gaps iguais;
+- direção, gap e alinhamento transversal são reutilizados pelo modo corrente;
+- overflow de página ou da área útil do container é calculado antes da mutação,
+  com confirmação e preservação do estado anterior quando cancelado;
+- o menu compacto só habilita ações de organização com seleção suficiente e
+  permanece disponível no modo corrente apenas para configurar a sequência;
+- a representação gráfica persistente dos gaps durante o posicionamento continua
+  no próximo bloco de UX, sem bloquear o motor ou os comandos entregues.
+- o backlog detalhado passou a 335 itens concluídos e 30 abertos, dos quais 20
+  permanecem marcados como **Parcial** e 10 são pendências completas/opcionais;
+- 135 testes Labels: 134 aprovados, nenhuma falha e 1 raster opt-in ignorado.
+
 Pendências que não bloqueiam esta entrega:
 
 - compilar e executar os TLPPs em um AppServer Protheus;
@@ -124,9 +143,8 @@ Pendências que não bloqueiam esta entrega:
 
 Próximos blocos recomendados, em ordem:
 
-1. completar comandos de distribuição/posicionamento;
-2. completar a UX de guias manuais, gaps, sangria e responsividade;
-3. incluir imagem, linha e retângulo como novos tipos, se confirmados como
+1. completar a UX de guias manuais, gaps, sangria e responsividade;
+2. incluir imagem, linha e retângulo como novos tipos, se confirmados como
    necessários para os modelos reais.
 
 As listas detalhadas da seção 2 permanecem como catálogo de evolução de UX. O
@@ -747,14 +765,12 @@ Ao mover ou criar o próximo elemento:
 
 Adicionar comandos de posicionamento relativo:
 
-- [ ] **Parcial:** posicionar acima, abaixo, à esquerda ou à direita da
-  referência. Abaixo e à direita já estão disponíveis.
+- [x] **OK:** posicionar acima, abaixo, à esquerda ou à direita da referência.
 - [x] Informar gap em milímetros.
-- [ ] **Parcial:** escolher alinhamento transversal: início, centro, fim ou
-  stretch. A API suporta a opção; os comandos rápidos usam valores fixos.
-- [ ] Igualar largura, altura ou ambas.
+- [x] **OK:** escolher alinhamento transversal: início, centro, fim ou stretch.
+- [x] **OK:** igualar largura, altura ou ambas, atualizando também `basisBox`.
 - [x] Alinhar top, middle, bottom, left, center, right e baseline.
-- [ ] Distribuir vários elementos mantendo a referência fixa.
+- [x] **OK:** distribuir vários elementos mantendo a referência fixa.
 
 Implementar dois comportamentos:
 
@@ -766,12 +782,13 @@ O modo corrente resolve a montagem sequencial de campos como produto, lote,
 validade e peso líquido.
 
 - [x] Incluir toggle "Continuar a partir do último componente".
-- [ ] **Parcial:** preservar o gap e o alinhamento escolhidos durante a corrente.
-  O gap é preservado; falta permitir escolher o alinhamento da corrente.
+- [x] **OK:** preservar direção, gap e alinhamento transversal durante a corrente.
 - [x] Permitir desfazer cada posicionamento separadamente.
 - [x] Encerrar a corrente com `Esc` ou ação equivalente.
-- [ ] Se o próximo componente ultrapassar página/container, manter a posição
-  anterior e mostrar preview do overflow antes de confirmar.
+- [ ] **Parcial:** se o próximo componente ultrapassar página/container, manter
+  a posição anterior e mostrar preview do overflow antes de confirmar. O cálculo
+  atômico, o layout candidato e a confirmação estão implementados; falta desenhar
+  uma sobreposição fantasma antes da decisão.
 
 O snap também pode considerar elementos visíveis que não sejam a referência,
 mas deve existir uma hierarquia previsível:
@@ -890,8 +907,9 @@ Barra superior:
 - [x] Marcar referência, travar e usar como referência, referência
   fixa/corrente e gap.
 - [x] Alternar entre Design, Dados e Impressão.
-- [ ] **Parcial:** alinhar e distribuir; abrir menu somente quando houver seleção
-  múltipla. Alinhamento existe; falta distribuir e condicionar o menu.
+- [x] **OK:** alinhar, distribuir e igualar dimensões em menu compacto, com ações
+  habilitadas somente para seleção suficiente; durante a corrente, somente as
+  configurações da sequência permanecem acessíveis.
 - [x] Validar, preview PDF, exportar JSON e importar JSON.
 - [x] Separar "rotação da página no PDF" de "orientação visual do canvas".
 

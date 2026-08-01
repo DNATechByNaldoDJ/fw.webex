@@ -124,6 +124,13 @@ method Load(oControl) class WebExFeatureLabels
     width:100%;max-width:none
 }
 .fwwebex-label-settings-actions{display:flex;justify-content:flex-end;margin-top:.45rem}
+.fwwebex-label-arrange-settings .fwwebex-label-settings-panel{
+    left:0;right:auto;width:min(620px,calc(100vw - 2rem))
+}
+.fwwebex-label-arrange-actions{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem;margin-top:.45rem
+}
+.fwwebex-label-arrange-actions button{white-space:normal}
 .fwwebex-label-workspace{
     display:grid;grid-template-columns:210px minmax(360px,1fr) 300px;
     grid-template-areas:"layers canvas inspector";gap:.5rem;align-items:stretch
@@ -453,7 +460,8 @@ method Load(oControl) class WebExFeatureLabels
         typeof installed.contract.normalize==="function"&&
         typeof installed.contract.createSampleRecords==="function"&&
         typeof installed.renderer.generate==="function"&&
-        typeof installed.layout.resolve==="function")return;
+        typeof installed.layout.resolve==="function"&&
+        typeof installed.layout.arrange==="function")return;
     const SCHEMA="fwwebex.labels",CONTRACT_VERSION=2;
     const UNSAFE_PATH_SEGMENTS=new Set(["__proto__","prototype","constructor"]);
     function clone(value){return value==null?value:JSON.parse(JSON.stringify(value));}
@@ -2076,6 +2084,206 @@ method Load(oControl) class WebExFeatureLabels
         });
         return {layout:layout,changedIds:Array.from(changed)};
     }
+    const ARRANGE_COMMANDS=new Set([
+        "align-left","align-center","align-right","align-top","align-middle",
+        "align-bottom","position-above","position-below","position-left",
+        "position-right","equal-width","equal-height","equal-size",
+        "distribute-horizontal","distribute-vertical"
+    ]);
+    function arrangeCommand(command,options){
+        if(typeof command==="string")return String(command).toLowerCase();
+        const spec=command&&typeof command==="object"?command:{};
+        Object.keys(spec).forEach(function(key){
+            if(options[key]===undefined)options[key]=spec[key];
+        });
+        const operation=String(spec.operation||"").toLowerCase();
+        if(operation==="align")return "align-"+String(spec.mode||"left").toLowerCase();
+        if(operation==="position")return "position-"+
+            String(spec.direction||"below").toLowerCase();
+        if(operation==="distribute")return "distribute-"+
+            String(spec.axis||"horizontal").toLowerCase();
+        if(operation==="match-size"||operation==="equal"){
+            const dimension=String(spec.dimension||"both").toLowerCase();
+            return dimension==="both"?"equal-size":"equal-"+dimension;
+        }
+        return operation;
+    }
+    function graphArrange(input,ids,command,options){
+        options=options&&typeof options==="object"?Object.assign({},options):{};
+        command=arrangeCommand(command,options);
+        if(!ARRANGE_COMMANDS.has(command))
+            throw new Error("FWWebEx Labels: comando arrange invalido: "+command+".");
+        const layout=clone(input),graph=graphIndex(layout),seen=new Set();
+        let requested=[];
+        (Array.isArray(ids)?ids:[ids]).forEach(function(id){
+            id=String(id==null?"":id);
+            if(id&&graph.byId.has(id)&&!seen.has(id)){seen.add(id);requested.push(id);}
+        });
+        let referenceId=String(options.referenceId==null?"":options.referenceId);
+        if(!graph.byId.has(referenceId))referenceId=requested[requested.length-1]||"";
+        const reference=graph.byId.get(referenceId);
+        if(!reference)
+            throw new Error("FWWebEx Labels: referencia do comando arrange inexistente.");
+        const effective=new Set(requested);
+        requested.forEach(function(id){
+            const item=graph.byId.get(id);
+            if(item&&item.type==="container"&&id!==referenceId&&
+                graph.descendants(id).has(referenceId))effective.delete(id);
+        });
+        requested=requested.filter(function(id){
+            if(!effective.has(id))return false;
+            let parent=graph.byId.get(id),visited=new Set();
+            parent=parent&&graph.byId.get(parent.containerId);
+            while(parent&&!visited.has(parent.id)){
+                if(effective.has(parent.id))return false;
+                visited.add(parent.id);parent=graph.byId.get(parent.containerId);
+            }
+            return true;
+        });
+        const changed=new Set(),skipped=[],skippedSet=new Set(),epsilon=1e-9;
+        function skip(id){if(!skippedSet.has(id)){skippedSet.add(id);skipped.push(id);}}
+        function targets(){
+            return requested.filter(function(id){return id!==referenceId;})
+                .map(function(id){return graph.byId.get(id);}).filter(Boolean);
+        }
+        function movable(item){
+            if(!item||item.id===referenceId)return false;
+            if(options.respectLocked!==false&&item.locked===true){skip(item.id);return false;}
+            return true;
+        }
+        function translate(item,x,y){
+            const dx=finite(x,item.box.x)-item.box.x,dy=finite(y,item.box.y)-item.box.y;
+            if(Math.abs(dx)<=epsilon&&Math.abs(dy)<=epsilon)return;
+            const moving=new Set([item.id]);
+            if(item.type==="container")
+                graph.descendants(item.id).forEach(function(id){moving.add(id);});
+            graph.elements.forEach(function(candidate){
+                if(!moving.has(candidate.id))return;
+                candidate.box.x+=dx;candidate.box.y+=dy;changed.add(candidate.id);
+            });
+        }
+        function resize(item,width,height){
+            width=width==null?item.box.width:Math.max(0,finite(width,item.box.width));
+            height=height==null?item.box.height:Math.max(0,finite(height,item.box.height));
+            if(Math.abs(item.box.width-width)<=epsilon&&
+                Math.abs(item.box.height-height)<=epsilon)return;
+            item.box.width=width;item.box.height=height;
+            item.basisBox=item.basisBox&&typeof item.basisBox==="object"?
+                item.basisBox:{};
+            item.basisBox.width=width;item.basisBox.height=height;changed.add(item.id);
+        }
+        function geometric(items,axis,reverse){
+            const coordinate=axis==="x"?"x":"y",other=axis==="x"?"y":"x";
+            return items.slice().sort(function(a,b){
+                const primary=a.box[coordinate]-b.box[coordinate],
+                    secondary=a.box[other]-b.box[other];
+                return (primary||secondary||String(a.id).localeCompare(String(b.id)))*
+                    (reverse?-1:1);
+            });
+        }
+        if(command.indexOf("align-")===0){
+            targets().forEach(function(item){
+                if(!movable(item))return;
+                let x=item.box.x,y=item.box.y;
+                if(command==="align-left")x=reference.box.x;
+                if(command==="align-center")x=reference.box.x+
+                    (reference.box.width-item.box.width)/2;
+                if(command==="align-right")x=reference.box.x+reference.box.width-
+                    item.box.width;
+                if(command==="align-top")y=reference.box.y;
+                if(command==="align-middle")y=reference.box.y+
+                    (reference.box.height-item.box.height)/2;
+                if(command==="align-bottom")y=reference.box.y+reference.box.height-
+                    item.box.height;
+                translate(item,x,y);
+            });
+        }else if(command.indexOf("equal-")===0){
+            targets().forEach(function(item){
+                if(!movable(item))return;
+                resize(item,command==="equal-height"?item.box.width:reference.box.width,
+                    command==="equal-width"?item.box.height:reference.box.height);
+            });
+        }else if(command.indexOf("position-")===0){
+            const direction=command.slice(9),vertical=direction==="above"||
+                    direction==="below",positive=direction==="below"||direction==="right",
+                cross=String(options.crossAlign||"start").toLowerCase(),
+                gap=Math.max(0,finite(options.gap,0)),axis=vertical?"y":"x",
+                ordered=geometric(targets(),axis,!positive);
+            if(["start","center","end","stretch"].indexOf(cross)<0)
+                throw new Error("FWWebEx Labels: alinhamento transversal invalido: "+cross+".");
+            let cursor=vertical?(positive?reference.box.y+reference.box.height:
+                reference.box.y):(positive?reference.box.x+reference.box.width:reference.box.x);
+            ordered.forEach(function(item){
+                const width=vertical&&cross==="stretch"?reference.box.width:item.box.width,
+                    height=!vertical&&cross==="stretch"?reference.box.height:item.box.height,
+                    mainSize=vertical?height:width;
+                if(!movable(item)){
+                    cursor+=positive?gap+mainSize:-(gap+mainSize);return;
+                }
+                resize(item,width,height);
+                let x=item.box.x,y=item.box.y;
+                if(vertical){
+                    y=positive?cursor+gap:cursor-gap-item.box.height;
+                    if(cross==="start"||cross==="stretch")x=reference.box.x;
+                    if(cross==="center")x=reference.box.x+
+                        (reference.box.width-item.box.width)/2;
+                    if(cross==="end")x=reference.box.x+reference.box.width-item.box.width;
+                    cursor=positive?y+item.box.height:y;
+                }else{
+                    x=positive?cursor+gap:cursor-gap-item.box.width;
+                    if(cross==="start"||cross==="stretch")y=reference.box.y;
+                    if(cross==="center")y=reference.box.y+
+                        (reference.box.height-item.box.height)/2;
+                    if(cross==="end")y=reference.box.y+reference.box.height-item.box.height;
+                    cursor=positive?x+item.box.width:x;
+                }
+                translate(item,x,y);
+            });
+        }else{
+            const horizontal=command==="distribute-horizontal",axis=horizontal?"x":"y",
+                size=horizontal?"width":"height",participants=requested.slice();
+            if(participants.indexOf(referenceId)<0)participants.push(referenceId);
+            const ordered=geometric(participants.map(function(id){return graph.byId.get(id);})
+                .filter(Boolean),axis,false);
+            if(ordered.length<3)
+                throw new Error("FWWebEx Labels: distribuicao requer ao menos tres elementos.");
+            const start=ordered[0].box[axis],last=ordered[ordered.length-1],
+                end=last.box[axis]+last.box[size],span=end-start,
+                used=ordered.reduce(function(total,item){return total+item.box[size];},0),
+                gap=(span-used)/(ordered.length-1),positions=new Map();
+            let cursor=start;
+            ordered.forEach(function(item){
+                positions.set(item.id,cursor);cursor+=item.box[size]+gap;
+            });
+            const offset=reference.box[axis]-positions.get(referenceId);
+            ordered.forEach(function(item){
+                if(item.id===referenceId||!movable(item))return;
+                translate(item,horizontal?positions.get(item.id)+offset:item.box.x,
+                    horizontal?item.box.y:positions.get(item.id)+offset);
+            });
+        }
+        const overflowIds=[];
+        changed.forEach(function(id){
+            const item=graph.byId.get(id);
+            if(!item)return;
+            const parent=item.containerId&&graph.byId.get(item.containerId),
+                padding=parent&&parent.type==="container"?
+                    normalizeInsets(parent.layout&&parent.layout.padding,0):
+                    {top:0,right:0,bottom:0,left:0},
+                bounds=parent&&parent.type==="container"?{
+                    x:parent.box.x+padding.left,y:parent.box.y+padding.top,
+                    width:Math.max(0,parent.box.width-padding.left-padding.right),
+                    height:Math.max(0,parent.box.height-padding.top-padding.bottom)
+                }:{x:0,y:0,width:finite(layout.page&&layout.page.width,0),
+                    height:finite(layout.page&&layout.page.height,0)};
+            if(item.box.x<bounds.x-epsilon||item.box.y<bounds.y-epsilon||
+                item.box.x+item.box.width>bounds.x+bounds.width+epsilon||
+                item.box.y+item.box.height>bounds.y+bounds.height+epsilon)
+                overflowIds.push(id);
+        });
+        return {layout:layout,changedIds:Array.from(changed),skippedIds:skipped,
+            overflowIds:overflowIds,referenceId:referenceId,command:command};
+    }
     const SNAP_PRIORITIES={
         reference:1,container:2,"manual-guide":3,element:4,grid:5,page:6
     };
@@ -2682,6 +2890,19 @@ method Load(oControl) class WebExFeatureLabels
     window.FWWebExLabels.layout.duplicate=graphDuplicate;
     window.FWWebExLabels.layout.remove=graphRemove;
     window.FWWebExLabels.layout.translate=graphTranslate;
+    window.FWWebExLabels.layout.arrange=graphArrange;
+    window.FWWebExLabels.layout.align=function(layout,ids,options){
+        return graphArrange(layout,ids,Object.assign({operation:"align"},options||{}));
+    };
+    window.FWWebExLabels.layout.position=function(layout,ids,options){
+        return graphArrange(layout,ids,Object.assign({operation:"position"},options||{}));
+    };
+    window.FWWebExLabels.layout.distribute=function(layout,ids,options){
+        return graphArrange(layout,ids,Object.assign({operation:"distribute"},options||{}));
+    };
+    window.FWWebExLabels.layout.matchSize=function(layout,ids,options){
+        return graphArrange(layout,ids,Object.assign({operation:"match-size"},options||{}));
+    };
     window.FWWebExLabels.geometry.pageRotationGeometry=pageRotationGeometry;
     window.FWWebExLabels.geometry.pageTransform=pageTransform;
     window.FWWebExLabels.geometry.transformPoint=transformPoint;
@@ -2796,17 +3017,41 @@ method RenderHTML() class WebExLabelDesigner
   <button type="button" data-action="lock-reference">Travar + refer&ecirc;ncia</button>
   <button type="button" data-action="undo" aria-label="Desfazer">Desfazer</button>
   <button type="button" data-action="redo" aria-label="Refazer">Refazer</button>
-  <select data-role="align-mode" aria-label="Tipo de alinhamento">
-    <option value="left">Alinhar esquerda</option><option value="center">Centro horizontal</option>
-    <option value="right">Alinhar direita</option><option value="top">Alinhar topo</option>
-    <option value="middle">Centro vertical</option><option value="bottom">Alinhar base</option>
-    <option value="baseline">Alinhar baseline de textos</option>
-  </select>
-  <button type="button" data-action="align">Alinhar</button>
-  <input data-role="stack-gap" type="number" min="0" step="0.1" value="1"
-    aria-label="Espa&ccedil;amento em mil&iacute;metros">
-  <button type="button" data-action="stack-down">Empilhar abaixo</button>
-  <button type="button" data-action="stack-right">Empilhar ao lado</button>
+  <details class="fwwebex-label-settings fwwebex-label-arrange-settings"
+    data-role="arrange-menu" hidden>
+    <summary>Organizar sele&ccedil;&atilde;o</summary>
+    <div class="fwwebex-label-settings-panel">
+      <div class="fwwebex-label-settings-grid">
+        <label>Alinhamento<select data-role="align-mode" aria-label="Tipo de alinhamento">
+          <option value="left">Esquerda</option><option value="center">Centro horizontal</option>
+          <option value="right">Direita</option><option value="top">Topo</option>
+          <option value="middle">Centro vertical</option><option value="bottom">Base</option>
+          <option value="baseline">Baseline de textos</option>
+        </select></label>
+        <label>Posi&ccedil;&atilde;o<select data-role="position-direction"
+          aria-label="Posi&ccedil;&atilde;o relativa">
+          <option value="below">Abaixo</option><option value="above">Acima</option>
+          <option value="right">&Agrave; direita</option><option value="left">&Agrave; esquerda</option>
+        </select></label>
+        <label>Alinhamento transversal<select data-role="cross-align"
+          aria-label="Alinhamento transversal">
+          <option value="start">In&iacute;cio</option><option value="center">Centro</option>
+          <option value="end">Fim</option><option value="stretch">Esticar</option>
+        </select></label>
+        <label>Espa&ccedil;amento (mm)<input data-role="stack-gap" type="number"
+          min="0" step="0.1" value="1" aria-label="Espa&ccedil;amento em mil&iacute;metros"></label>
+      </div>
+      <div class="fwwebex-label-arrange-actions">
+        <button type="button" data-action="align">Alinhar</button>
+        <button type="button" data-action="position-relative">Posicionar</button>
+        <button type="button" data-action="distribute-horizontal">Distribuir horizontal</button>
+        <button type="button" data-action="distribute-vertical">Distribuir vertical</button>
+        <button type="button" data-action="equal-width">Igualar largura</button>
+        <button type="button" data-action="equal-height">Igualar altura</button>
+        <button type="button" data-action="equal-size">Igualar ambas</button>
+      </div>
+    </div>
+  </details>
   <button type="button" data-action="assign" data-tone="warning">Mover para &aacute;rea</button>
   <button type="button" data-action="reflow" data-tone="warning">Reorganizar &aacute;rea</button>
   <button type="button" data-action="grid" aria-pressed="false">Grid</button>
@@ -3693,6 +3938,21 @@ method RenderHTML() class WebExLabelDesigner
                     (referenceLabel?" \u00b7 Refer\u00eancia: "+referenceLabel:""):
                 (referenceLabel?"Refer\u00eancia: "+referenceLabel:"Nenhuma sele\u00e7\u00e3o");
         }
+        const arrangeMenu=role("arrange-menu"),arrangeReference=arrangementReference(),
+            arrangeParticipants=new Set(state.selection),chainActive=
+                state.layout.editor.snap.chainMode===true;
+        if(arrangeReference)arrangeParticipants.add(arrangeReference.id);
+        if(arrangeMenu){
+            arrangeMenu.hidden=state.selection.length<2&&!chainActive;
+            if(arrangeMenu.hidden)arrangeMenu.open=false;
+        }
+        roleAll(".fwwebex-label-arrange-actions button").forEach(function(button){
+            button.disabled=state.selection.length<2;
+        });
+        ["distribute-horizontal","distribute-vertical"].forEach(function(action){
+            const button=root.querySelector("[data-action="+action+"]");
+            if(button)button.disabled=arrangeParticipants.size<3;
+        });
         if(preview)preview.style.display=state.mode==="print"&&state.previewViewport?
             "block":"none";
         fields.style.visibility=state.mode==="print"&&!state.printOverlay?"hidden":"visible";
@@ -4121,20 +4381,30 @@ method RenderHTML() class WebExLabelDesigner
     }
     function add(type,options){
         options=options||{};
-        const previous=selected();
+        const previous=selected(),chained=previous&&state.layout.editor.snap.chainMode===true&&
+            options.box===undefined&&options.x===undefined&&options.y===undefined;
         const mnemonic=String(defined(options.mnemonic,type==="barcode"?"barcode":"texto"));
-        const item=elementBase(type,mnemonic);
+        let item=elementBase(type,mnemonic);
         applyElementPatch(item,options);
-        if(previous&&state.layout.editor.snap.chainMode===true&&
-            options.box===undefined&&options.x===undefined&&options.y===undefined){
-            const gap=Math.max(0,num(role("stack-gap")&&role("stack-gap").value,1));
-            item.box.x=previous.box.x;
-            item.box.y=previous.box.y+previous.box.height+gap;
-            if(item.box.y+item.box.height>page().height)
-                setStatus("A sequ\u00eancia ultrapassou a p\u00e1gina; ajuste a posi\u00e7\u00e3o.","error");
-        }
         if(elements().some(function(existing){return existing.id===item.id;}))item.id=uid();
-        elements().push(item);state.selected=item.id;
+        elements().push(item);
+        if(chained){
+            const gap=Math.max(0,num(role("stack-gap")&&role("stack-gap").value,1)),
+                direction=String(role("position-direction")&&
+                    role("position-direction").value||"below"),
+                crossAlign=String(role("cross-align")&&role("cross-align").value||"start"),
+                api=window.FWWebExLabels&&window.FWWebExLabels.layout,
+                result=api&&api.arrange(state.layout,[item.id],"position-"+direction,{
+                    referenceId:previous.id,gap:gap,crossAlign:crossAlign
+                });
+            if(result&&!result.overflowIds.length){
+                state.layout=attachLayoutAccessors(clone(result.layout));ensureEditor();
+                item=elements().find(function(candidate){return candidate.id===item.id;})||item;
+            }else if(result)setStatus(
+                "A posicao encadeada ultrapassaria a pagina; o novo componente foi mantido na posicao inicial.",
+                "warning");
+        }
+        state.selected=item.id;
         state.selection=[item.id]; render(); return item;
     }
     function remove(){
@@ -4176,8 +4446,58 @@ method RenderHTML() class WebExLabelDesigner
         return api&&typeof api.textBaselineOffset==="function"?
             api.textBaselineOffset(item,(metrics||currentTextMetrics())[item.id]):null;
     }
+    function arrangementReference(options){
+        options=options||{};
+        const explicit=options.referenceId&&elements().find(function(item){
+                return item.id===options.referenceId;
+            }),magneticId=state.layout.editor&&state.layout.editor.snap&&
+                state.layout.editor.snap.referenceElementId,
+            magnetic=magneticId&&elements().find(function(item){return item.id===magneticId;});
+        return explicit||magnetic||selected();
+    }
+    function arrangeSelection(command,options){
+        options=options||{};
+        const api=window.FWWebExLabels&&window.FWWebExLabels.layout;
+        if(!api||typeof api.arrange!=="function")
+            throw new Error("FWWebEx Labels: comando de organizacao indisponivel.");
+        const reference=arrangementReference(options),ids=Array.isArray(options.ids)?
+                options.ids.slice():state.selection.slice();
+        if(!reference)throw new Error("Selecione uma referencia para organizar os elementos.");
+        const arrangeOptions=Object.assign({},options,{referenceId:reference.id}),
+            result=api.arrange(exportLayout(),ids,command,arrangeOptions);
+        result.applied=false;
+        if(!result.changedIds.length)return clone(result);
+        if(result.overflowIds.length&&options.overflow==="reject"){
+            result.previewLayout=clone(result.layout);return clone(result);
+        }
+        if(result.overflowIds.length&&options.overflow==="confirm"&&
+            typeof window.confirm==="function"&&!window.confirm(
+                "A organizacao deixa "+result.overflowIds.length+
+                " elemento(s) fora da pagina. Aplicar mesmo assim?")){
+            result.previewLayout=clone(result.layout);return clone(result);
+        }
+        if(options.apply===false)return clone(result);
+        state.layout=attachLayoutAccessors(clone(result.layout));ensureEditor();
+        if(options.advanceReference===true&&state.layout.editor.snap.chainMode===true){
+            const next=state.selection.slice().reverse().find(function(id){
+                return id!==reference.id&&result.changedIds.indexOf(id)>=0;
+            });
+            if(next){
+                state.layout.editor.snap.referenceElementId=next;
+                state.selected=next;
+            }
+        }
+        result.applied=true;render();
+        if(role("toolbar"))root.dispatchEvent(new CustomEvent("fwwebex:label-arrange",{
+            detail:{command:command,referenceId:result.referenceId,
+                changedIds:result.changedIds.slice(),skippedIds:result.skippedIds.slice(),
+                overflowIds:result.overflowIds.slice()},bubbles:true
+        }));
+        return clone(result);
+    }
     function align(mode){
-        const reference=selected(),items=selectedItems(),metrics=currentTextMetrics();
+        if(mode!=="baseline")return arrangeSelection("align-"+mode,{});
+        const reference=arrangementReference(),items=selectedItems(),metrics=currentTextMetrics();
         if(!reference||items.length<2)return;
         const referenceBaseline=mode==="baseline"?baselineOffset(reference,metrics):null;
         items.forEach(function(item){
@@ -4194,6 +4514,11 @@ method RenderHTML() class WebExLabelDesigner
                     item.box.y=reference.box.y+referenceBaseline-itemBaseline;
             }
         });render();
+        return {applied:true,changedIds:items.filter(function(item){
+            return item.id!==reference.id&&item.locked!==true;
+        }).map(function(item){return item.id;}),skippedIds:items.filter(function(item){
+            return item.id!==reference.id&&item.locked===true;
+        }).map(function(item){return item.id;}),overflowIds:[]};
     }
     function copyStyle(){
         const reference=selected(),items=selectedItems();if(!reference||items.length<2)return;
@@ -4217,47 +4542,28 @@ method RenderHTML() class WebExLabelDesigner
         });render();
     }
     function stack(direction,gap,crossAlign){
-        const items=state.selection.map(function(id){
-            return elements().find(function(item){return item.id===id;});
-        }).filter(Boolean);
-        if(items.length<2)return {overflow:false,count:items.length};
-        const anchor=items[0];
-        let cursor=direction==="horizontal"?anchor.box.x+anchor.box.width:
-            anchor.box.y+anchor.box.height;
-        gap=Math.max(0,num(gap,0));
-        items.slice(1).forEach(function(item){
-            if(item.locked===true)return;
-            cursor+=gap;
-            if(direction==="horizontal"){
-                item.box.x=cursor;
-                if(crossAlign==="top")item.box.y=anchor.box.y;
-                if(crossAlign==="middle")item.box.y=anchor.box.y+
-                    (anchor.box.height-item.box.height)/2;
-                if(crossAlign==="bottom")item.box.y=anchor.box.y+
-                    anchor.box.height-item.box.height;
-                if(crossAlign==="stretch"){
-                    item.box.y=anchor.box.y;item.box.height=anchor.box.height;
-                }
-                cursor+=item.box.width;
-            }else{
-                item.box.y=cursor;
-                if(crossAlign==="left")item.box.x=anchor.box.x;
-                if(crossAlign==="center")item.box.x=anchor.box.x+
-                    (anchor.box.width-item.box.width)/2;
-                if(crossAlign==="right")item.box.x=anchor.box.x+
-                    anchor.box.width-item.box.width;
-                if(crossAlign==="stretch"){
-                    item.box.x=anchor.box.x;item.box.width=anchor.box.width;
-                }
-                cursor+=item.box.height;
-            }
-        });
-        const overflow=items.some(function(item){
-            return item.box.x<0||item.box.y<0||
-                item.box.x+item.box.width>page().width||
-                item.box.y+item.box.height>page().height;
-        });
-        render();return {overflow:overflow,count:items.length};
+        const aliases={left:"start",top:"start",middle:"center",center:"center",
+                right:"end",bottom:"end",stretch:"stretch"},
+            result=arrangeSelection(direction==="horizontal"?"position-right":
+                "position-below",{gap:gap,crossAlign:aliases[crossAlign]||"start"});
+        result.overflow=result.overflowIds.length>0;result.count=state.selection.length;
+        return result;
+    }
+    function finishArrange(result,label){
+        if(!result)return;
+        if(result.applied===false){
+            setStatus(result.overflowIds&&result.overflowIds.length?
+                "Organizacao cancelada; a posicao anterior foi preservada.":
+                "Nenhuma alteracao de organizacao foi necessaria.",
+                result.overflowIds&&result.overflowIds.length?"warning":"");
+            return result;
+        }
+        if(result.changedIds&&result.changedIds.length)checkpoint();
+        const skipped=result.skippedIds&&result.skippedIds.length?
+            " "+result.skippedIds.length+" elemento(s) travado(s) foram preservados.":"";
+        setStatus(label+" aplicada a "+(result.changedIds||[]).length+
+            " elemento(s)."+skipped,skipped?"warning":"");
+        return result;
     }
     function containerChildren(container){
         const byId=new Map(elements().map(function(item){return [item.id,item];}));
@@ -4575,12 +4881,34 @@ method RenderHTML() class WebExLabelDesigner
             if(action==="undo"){undo();return;}
             if(action==="redo"){redo();return;}
             if(action==="align"){
-                const mode=role("align-mode");align(mode?mode.value:"left");checkpoint();return;
+                const mode=role("align-mode"),value=mode?mode.value:"left",
+                    result=value==="baseline"?align(value):arrangeSelection("align-"+value,{
+                        overflow:"confirm"
+                    });
+                finishArrange(result,"Alinhamento");return;
+            }
+            if(action==="position-relative"){
+                const direction=role("position-direction"),gap=role("stack-gap"),
+                    cross=role("cross-align"),result=arrangeSelection("position-"+
+                        (direction?direction.value:"below"),{
+                        gap:gap?gap.value:1,crossAlign:cross?cross.value:"start",
+                        overflow:"confirm",advanceReference:true
+                    });
+                finishArrange(result,"Posicionamento");return;
+            }
+            if(action==="distribute-horizontal"||action==="distribute-vertical"){
+                finishArrange(arrangeSelection(action,{overflow:"confirm"}),"Distribuicao");
+                return;
+            }
+            if(action==="equal-width"||action==="equal-height"||action==="equal-size"){
+                finishArrange(arrangeSelection(action,{overflow:"confirm"}),"Dimensionamento");
+                return;
             }
             if(action==="stack-down"||action==="stack-right"){
                 const gap=role("stack-gap");
-                stack(action==="stack-down"?"vertical":"horizontal",gap?gap.value:1,
-                    action==="stack-down"?"left":"top");checkpoint();return;
+                finishArrange(stack(action==="stack-down"?"vertical":"horizontal",
+                    gap?gap.value:1,action==="stack-down"?"left":"top"),
+                    "Posicionamento");return;
             }
             if(action==="assign"){assignToContainer();checkpoint();return;}
             if(action==="reflow"){
@@ -4896,7 +5224,8 @@ method RenderHTML() class WebExLabelDesigner
         addBarcode:function(options){return add("barcode",options);},
         addContainer:function(options){return add("container",options);},
         remove:remove,duplicate:duplicate,toggleLock:toggleLock,align:align,
-        copyStyle:copyStyle,stack:stack,assignToContainer:assignToContainer,
+        arrange:arrangeSelection,copyStyle:copyStyle,stack:stack,
+        assignToContainer:assignToContainer,
         layoutContainer:layoutContainer,
         exportLayout:exportLayout,load:load,setBackground:setBackground,
         setRecords:setRecords,setOptions:setOptions,validate:validateProduct,
