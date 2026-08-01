@@ -598,7 +598,7 @@ method AddInHeader(oChild) class WebExControl
         CLASSPARAMEXCEPTION PARAM 1 VAR oChild TEXT cClassName MESSAGE "Object must inherit from FWWEBEX.WebExControl. Received: "+cClassName+"."
     endif
     __jHeader[oChild:GetID()]:=oChild
-return(oChild)
+return(self)
 
 method FindInHeader(cID) class WebExControl
     local lFound as logical
@@ -735,7 +735,7 @@ method AddScript(oScript) class WebExControl
         endif
         __jScripts[cType][oScript:GetID()]:=oScript
     endif
-return(oScript)
+return(self)
 
 method RenderHTML() class WebExControl
 

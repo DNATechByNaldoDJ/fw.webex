@@ -49,7 +49,7 @@ method ObjEnd(lAddChild) class WebExContext
         aSize(__aWithStack,--nLen)
         if (nLen>0)
             oParent:=__aWithStack[nLen]
-            if ((lAddChild).and.(!lWebExScript).and.(oParent!=oChild))
+            if ((lAddChild).and.(!lWebExScript).and.(!oParent:AmIReallyMe(oChild)))
                 oParent:AddChild(oChild)
             endif
         else
