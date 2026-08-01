@@ -1,0 +1,14 @@
+{
+  "contractVersion": 1,
+  "dataUri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR4nGP4z8DwHwwZGP7//w9kAABHygj4/BTyWgAAAABJRU5ErkJggg==",
+  "decodedImage": {
+    "mimeType": "image/png",
+    "byteLength": 79,
+    "width": 2,
+    "height": 2
+  },
+  "roundTrip": {
+    "mustPreserveExactDataUri": true,
+    "v2Path": "background.dataUrl"
+  }
+}

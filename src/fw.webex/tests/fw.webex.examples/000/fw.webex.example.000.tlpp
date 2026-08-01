@@ -50,7 +50,7 @@ static procedure FWWebExExample_000()
     local nRight as numeric
 
     local nExample as numeric
-    local nExamples:=30 as numeric
+    local nExamples:=32 as numeric
 
     local oTDlg as object
     local oTMenu as object
@@ -71,6 +71,7 @@ static procedure FWWebExExample_000()
     jExamples["Markdown"]:=JSONObject():New()
     jExamples["ASCIIArt"]:=JSONObject():New()
     jExamples["Runtime"]:=JSONObject():New()
+    jExamples["Labels"]:=JSONObject():New()
 
     for nExample:=1 to nExamples
         cExample:="u_FWWebExExample_"+StrZero(nExample,3)
@@ -103,6 +104,8 @@ static procedure FWWebExExample_000()
             jExamples["ASCIIArt"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"027")
             jExamples["Runtime"][cExample]:=&("{||"+cExample+"()}")
+        case (cRight$"031|032")
+            jExamples["Labels"][cExample]:=&("{||"+cExample+"()}")
         endcase
     next nExample
 

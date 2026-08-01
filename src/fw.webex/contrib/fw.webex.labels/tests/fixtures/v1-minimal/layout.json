@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "name": "baseline-v1-minimal",
+  "unit": "mm",
+  "page": {
+    "width": 100,
+    "height": 60,
+    "rotation": 0
+  },
+  "background": null,
+  "variables": [
+    {
+      "name": "texto",
+      "type": "string",
+      "required": false,
+      "default": "BASELINE V1"
+    }
+  ],
+  "barcodeAutoRules": [],
+  "elements": [
+    {
+      "id": "texto-baseline",
+      "type": "text",
+      "x": 5,
+      "y": 5,
+      "width": 30,
+      "height": 8,
+      "rotation": 0,
+      "value": "{{texto}}",
+      "fontFamily": "helvetica",
+      "fontSize": 10,
+      "minFontSize": 6,
+      "autoFit": true,
+      "maxLines": 1,
+      "padding": 0,
+      "lineHeightFactor": 1.15,
+      "overflow": "error",
+      "verticalAlign": "middle",
+      "bold": false,
+      "align": "left"
+    }
+  ]
+}
