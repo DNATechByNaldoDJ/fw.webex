@@ -69,14 +69,21 @@ method Load(oControl) class WebExFeatureLabels
 }
 .fwwebex-label-designer *,.fwwebex-label-generator-panel *{box-sizing:border-box}
 .fwwebex-label-designer [hidden]{display:none!important}
-.fwwebex-label-toolbar,.fwwebex-label-modebar,.fwwebex-label-panel-head,
+.fwwebex-label-toolbar,.fwwebex-label-quickbar,.fwwebex-label-toolbar-cluster,
+.fwwebex-label-modebar,.fwwebex-label-panel-head,.fwwebex-label-tablist,
 .fwwebex-label-statusbar,.fwwebex-label-generator-actions{
     display:flex;align-items:center;gap:.35rem;flex-wrap:wrap
 }
 .fwwebex-label-toolbar{
-    padding:.4rem;border:1px solid var(--fw-label-border);border-radius:.4rem;
-    background:var(--fw-label-surface);margin-bottom:.45rem
+    display:block;padding:.3rem;border:1px solid var(--fw-label-border);border-radius:.4rem;
+    background:var(--fw-label-surface);margin-bottom:.45rem;overflow:visible
 }
+.fwwebex-label-quickbar{justify-content:space-between;min-height:34px}
+.fwwebex-label-quickbar-primary,.fwwebex-label-quickbar-actions{
+    display:flex;align-items:center;gap:.35rem;flex-wrap:wrap
+}
+.fwwebex-label-canvas-head-actions{display:flex;align-items:center;gap:.35rem}
+.fwwebex-label-toolbar-cluster{padding:.35rem 0 0}
 .fwwebex-label-designer button,.fwwebex-label-generator-panel button{
     min-height:28px;padding:.25rem .5rem;border:1px solid transparent;border-radius:.3rem;
     color:#fff;background:var(--fw-label-primary);font:600 11px/1.2 Arial,sans-serif;
@@ -101,6 +108,24 @@ method Load(oControl) class WebExFeatureLabels
     border-radius:.3rem;background:var(--fw-label-bg);color:var(--fw-label-text);font-size:11px
 }
 .fwwebex-label-toolbar select,.fwwebex-label-toolbar input{width:auto;max-width:125px}
+.fwwebex-label-tablist{
+    flex-wrap:nowrap;overflow-x:auto;min-width:0;border-bottom:1px solid var(--fw-label-border)
+}
+.fwwebex-label-tablist button[role=tab]{
+    flex:0 0 auto;min-height:27px;padding:.28rem .55rem;border:0;border-bottom:2px solid transparent;
+    border-radius:.3rem .3rem 0 0;color:var(--fw-label-muted);background:transparent;
+    box-shadow:none
+}
+.fwwebex-label-tablist button[role=tab]:hover{color:var(--fw-label-text);background:#0d6efd12}
+.fwwebex-label-tablist button[role=tab][aria-selected=true]{
+    color:var(--fw-label-primary);background:var(--fw-label-bg);
+    border-bottom-color:var(--fw-label-primary);box-shadow:none
+}
+.fwwebex-label-tablist button[role=tab][aria-disabled=true]{opacity:.48;cursor:not-allowed}
+.fwwebex-label-tabpanel{min-width:0;padding:.45rem}
+.fwwebex-label-tabpanel[hidden]{display:none!important}
+.fwwebex-label-toolbar-tabs{margin-top:.25rem}
+.fwwebex-label-toolbar-tabs>.fwwebex-label-tabpanel{padding:.2rem 0 0}
 .fwwebex-label-settings{position:relative}
 .fwwebex-label-settings>summary{
     min-height:28px;padding:.35rem .55rem;border-radius:.3rem;color:#fff;
@@ -127,13 +152,26 @@ method Load(oControl) class WebExFeatureLabels
 .fwwebex-label-arrange-settings .fwwebex-label-settings-panel{
     left:0;right:auto;width:min(620px,calc(100vw - 2rem))
 }
+.fwwebex-label-background-settings .fwwebex-label-settings-panel,
+.fwwebex-label-page-settings .fwwebex-label-settings-panel{left:0;right:auto}
 .fwwebex-label-arrange-actions{
     display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem;margin-top:.45rem
 }
 .fwwebex-label-arrange-actions button{white-space:normal}
 .fwwebex-label-workspace{
-    display:grid;grid-template-columns:210px minmax(360px,1fr) 300px;
+    display:grid;grid-template-columns:210px minmax(320px,1fr) 310px;
     grid-template-areas:"layers canvas inspector";gap:.5rem;align-items:stretch
+}
+.fwwebex-label-workspace[data-elements-collapsed=true],
+.fwwebex-label-workspace[data-show-layers=false]{
+    grid-template-columns:minmax(320px,1fr) 310px;grid-template-areas:"canvas inspector"
+}
+.fwwebex-label-workspace[data-show-inspector=false]{
+    grid-template-columns:210px minmax(320px,1fr);grid-template-areas:"layers canvas"
+}
+.fwwebex-label-workspace[data-elements-collapsed=true][data-show-inspector=false],
+.fwwebex-label-workspace[data-show-layers=false][data-show-inspector=false]{
+    grid-template-columns:minmax(320px,1fr);grid-template-areas:"canvas"
 }
 .fwwebex-label-pane{
     min-width:0;border:1px solid var(--fw-label-border);border-radius:.4rem;
@@ -141,11 +179,15 @@ method Load(oControl) class WebExFeatureLabels
 }
 .fwwebex-label-layers{grid-area:layers}.fwwebex-label-canvas-pane{grid-area:canvas}
 .fwwebex-label-inspector{grid-area:inspector}
+.fwwebex-label-layers[data-minimized=true]>.fwwebex-label-panel-body{display:none}
 .fwwebex-label-panel-head{
     justify-content:space-between;padding:.35rem .45rem;border-bottom:1px solid var(--fw-label-border);
     font-weight:700;font-size:11px
 }
+.fwwebex-label-panel-toggle{min-height:22px!important;padding:.12rem .35rem!important;font-size:10px!important}
 .fwwebex-label-panel-body{padding:.45rem;overflow:auto}
+.fwwebex-label-layers>.fwwebex-label-panel-body,
+.fwwebex-label-inspector>.fwwebex-label-panel-body{padding:0}
 .fwwebex-label-canvas-pane .fwwebex-label-panel-body{padding:.5rem}
 .fwwebex-label-stage-viewport{position:relative;overflow:auto;min-height:340px;padding:22px .5rem .5rem 22px;background:#20262d}
 .fwwebex-label-ruler{position:absolute;color:#d5dbe1;font:9px/1 Arial;pointer-events:none;z-index:3}
@@ -222,6 +264,11 @@ method Load(oControl) class WebExFeatureLabels
 }
 .fwwebex-label-layer-list{list-style:none;margin:0;padding:0}
 .fwwebex-label-layers [data-role=layer-search]{margin-bottom:.4rem}
+.fwwebex-label-add-grid{display:grid;grid-template-columns:1fr;gap:.4rem}
+.fwwebex-label-add-grid button{
+    display:flex;justify-content:flex-start;align-items:center;width:100%;min-height:34px
+}
+.fwwebex-label-add-hint{margin:.45rem 0 0;color:var(--fw-label-muted);font-size:10px}
 .fwwebex-label-layer{
     display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.2rem;
     padding:.25rem;border-bottom:1px solid var(--fw-label-border);cursor:pointer
@@ -233,10 +280,23 @@ method Load(oControl) class WebExFeatureLabels
 .fwwebex-label-form-grid label{display:flex;flex-direction:column;gap:.12rem;color:var(--fw-label-muted);font-size:10px}
 .fwwebex-label-form-grid .is-wide{grid-column:1/-1}
 .fwwebex-label-drawers{
-    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.5rem;margin-top:.5rem
+    margin-top:.5rem;min-height:205px;max-height:58vh;overflow:auto;resize:vertical
 }
-.fwwebex-label-drawer textarea{min-height:150px;resize:vertical;font:11px/1.35 Consolas,monospace}
-.fwwebex-label-problems{max-height:160px;overflow:auto;white-space:pre-wrap;font-size:11px}
+.fwwebex-label-drawers[data-collapsed=true]{min-height:0;height:auto!important;resize:none}
+.fwwebex-label-drawers[data-collapsed=true] .fwwebex-label-drawer-content{display:none}
+.fwwebex-label-drawer-head{border-bottom:1px solid var(--fw-label-border)}
+.fwwebex-label-drawer-head .fwwebex-label-tablist{flex:1;border-bottom:0}
+.fwwebex-label-drawer-content{min-height:150px}
+.fwwebex-label-drawer textarea{min-height:170px;resize:vertical;font:11px/1.35 Consolas,monospace}
+.fwwebex-label-drawer-actions{margin-top:.4rem;padding:0;border:0;background:transparent}
+.fwwebex-label-problems{min-height:120px;overflow:auto;white-space:pre-wrap;font-size:11px}
+.fwwebex-label-problem-count{
+    display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+    margin-left:.2rem;padding:0 .3rem;border-radius:9px;color:#fff;background:var(--fw-label-muted);
+    font-size:9px
+}
+.fwwebex-label-problem-count[data-state=error]{background:var(--fw-label-danger)}
+.fwwebex-label-problem-count[data-state=warning]{color:#332600;background:var(--fw-label-warning)}
 .fwwebex-label-problem{padding:.25rem;border-bottom:1px solid var(--fw-label-border)}
 .fwwebex-label-problem[data-severity=error]{color:var(--fw-label-danger)}
 .fwwebex-label-problem[data-severity=warning]{color:#8a6800}
@@ -254,13 +314,57 @@ method Load(oControl) class WebExFeatureLabels
 .fwwebex-label-generator-actions{padding:.45rem;background:var(--fw-label-surface);border-radius:.4rem}
 .fwwebex-label-generator-actions input{width:min(240px,100%)}
 .fwwebex-label-generator-preview{width:100%;min-height:420px;border:1px solid var(--fw-label-border);border-radius:.4rem}
-@media(max-width:1100px){
-    .fwwebex-label-workspace{grid-template-columns:180px minmax(320px,1fr);
-        grid-template-areas:"layers canvas" "inspector inspector"}
+@media(min-width:900px){
+    .fwwebex-label-workspace[data-elements-minimized=true]:not([data-elements-collapsed=true]):not([data-show-layers=false]){
+        grid-template-columns:48px minmax(320px,1fr) 310px;
+        grid-template-areas:"layers canvas inspector"
+    }
+    .fwwebex-label-workspace[data-elements-minimized=true]:not([data-elements-collapsed=true]):not([data-show-layers=false])[data-show-inspector=false]{
+        grid-template-columns:48px minmax(320px,1fr);grid-template-areas:"layers canvas"
+    }
+    .fwwebex-label-layers[data-minimized=true]>.fwwebex-label-panel-head{
+        height:100%;padding:.3rem;flex-direction:column;justify-content:flex-start;gap:.45rem
+    }
+    .fwwebex-label-layers[data-minimized=true] [data-role=elements-title]{
+        writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap
+    }
+    .fwwebex-label-layers[data-minimized=true] .fwwebex-label-panel-toggle{
+        order:-1;width:100%;padding:.12rem!important
+    }
 }
-@media(max-width:760px){
+@media(min-width:1400px){
+    .fwwebex-label-workspace{grid-template-columns:240px minmax(420px,1fr) 360px;
+        grid-template-areas:"layers canvas inspector"}
+    .fwwebex-label-workspace[data-elements-minimized=true]:not([data-elements-collapsed=true]):not([data-show-layers=false]){
+        grid-template-columns:48px minmax(420px,1fr) 360px;
+        grid-template-areas:"layers canvas inspector"
+    }
+    .fwwebex-label-workspace[data-elements-minimized=true]:not([data-elements-collapsed=true]):not([data-show-layers=false])[data-show-inspector=false]{
+        grid-template-columns:48px minmax(420px,1fr);grid-template-areas:"layers canvas"
+    }
+    .fwwebex-label-workspace[data-elements-collapsed=true],
+    .fwwebex-label-workspace[data-show-layers=false]{
+        grid-template-columns:minmax(420px,1fr) 360px;grid-template-areas:"canvas inspector"
+    }
+    .fwwebex-label-workspace[data-show-inspector=false]{
+        grid-template-columns:240px minmax(420px,1fr);grid-template-areas:"layers canvas"
+    }
+    .fwwebex-label-workspace[data-elements-collapsed=true][data-show-inspector=false],
+    .fwwebex-label-workspace[data-show-layers=false][data-show-inspector=false]{
+        grid-template-columns:minmax(420px,1fr);grid-template-areas:"canvas"
+    }
+}
+@media(max-width:899px){
     .fwwebex-label-workspace{grid-template-columns:1fr;grid-template-areas:"canvas" "layers" "inspector"}
-    .fwwebex-label-drawers,.fwwebex-label-generator-editors{grid-template-columns:1fr}
+    .fwwebex-label-workspace[data-elements-collapsed=true],
+    .fwwebex-label-workspace[data-show-layers=false]{grid-template-columns:1fr;grid-template-areas:"canvas" "inspector"}
+    .fwwebex-label-workspace[data-show-inspector=false]{grid-template-columns:1fr;grid-template-areas:"canvas" "layers"}
+    .fwwebex-label-workspace[data-elements-collapsed=true][data-show-inspector=false],
+    .fwwebex-label-workspace[data-show-layers=false][data-show-inspector=false]{grid-template-areas:"canvas"}
+    .fwwebex-label-generator-editors{grid-template-columns:1fr}
+    .fwwebex-label-quickbar{align-items:flex-start}
+    .fwwebex-label-quickbar-actions{width:100%}
+    .fwwebex-label-toolbar-tabs>.fwwebex-label-tabpanel{overflow-x:auto}
     .fwwebex-label-stage-viewport{min-height:260px}
 }
 .fwwebex-label-generator-panel {
@@ -2996,131 +3100,198 @@ method RenderHTML() class WebExLabelDesigner
             throw new Error("FWWebEx Labels: o host nao permite criar a estrutura do designer.");
         root.insertAdjacentHTML("afterbegin",`
 <div class="fwwebex-label-toolbar" data-role="toolbar" aria-label="Ferramentas do designer">
-  <button type="button" data-action="background">Imagem de fundo</button>
-  <button type="button" data-action="remove-background">Remover fundo</button>
-  <select data-role="background-fit" aria-label="Ajuste da imagem de fundo">
-    <option value="fill">Preencher</option><option value="contain">Conter</option>
-    <option value="cover">Cobrir</option><option value="none">Tamanho original</option>
-  </select>
-  <input data-role="background-opacity" type="number" min="0" max="1" step=".05"
-    value="1" aria-label="Opacidade da imagem de fundo">
-  <select data-role="background-locked" aria-label="Bloqueio da imagem de fundo">
-    <option value="true">Fundo bloqueado</option><option value="false">Fundo desbloqueado</option>
-  </select>
-  <button type="button" data-action="apply-background">Aplicar fundo</button>
-  <button type="button" data-action="add-text">Adicionar texto</button>
-  <button type="button" data-action="add-barcode">Adicionar c&oacute;digo de barras</button>
-  <button type="button" data-action="add-container" data-tone="warning">Adicionar &aacute;rea</button>
-  <button type="button" data-action="remove" data-tone="danger">Excluir</button>
-  <button type="button" data-action="duplicate">Duplicar</button>
-  <button type="button" data-action="lock">Travar / destravar</button>
-  <button type="button" data-action="lock-reference">Travar + refer&ecirc;ncia</button>
-  <button type="button" data-action="undo" aria-label="Desfazer">Desfazer</button>
-  <button type="button" data-action="redo" aria-label="Refazer">Refazer</button>
-  <details class="fwwebex-label-settings fwwebex-label-arrange-settings"
-    data-role="arrange-menu" hidden>
-    <summary>Organizar sele&ccedil;&atilde;o</summary>
-    <div class="fwwebex-label-settings-panel">
-      <div class="fwwebex-label-settings-grid">
-        <label>Alinhamento<select data-role="align-mode" aria-label="Tipo de alinhamento">
-          <option value="left">Esquerda</option><option value="center">Centro horizontal</option>
-          <option value="right">Direita</option><option value="top">Topo</option>
-          <option value="middle">Centro vertical</option><option value="bottom">Base</option>
-          <option value="baseline">Baseline de textos</option>
-        </select></label>
-        <label>Posi&ccedil;&atilde;o<select data-role="position-direction"
-          aria-label="Posi&ccedil;&atilde;o relativa">
-          <option value="below">Abaixo</option><option value="above">Acima</option>
-          <option value="right">&Agrave; direita</option><option value="left">&Agrave; esquerda</option>
-        </select></label>
-        <label>Alinhamento transversal<select data-role="cross-align"
-          aria-label="Alinhamento transversal">
-          <option value="start">In&iacute;cio</option><option value="center">Centro</option>
-          <option value="end">Fim</option><option value="stretch">Esticar</option>
-        </select></label>
-        <label>Espa&ccedil;amento (mm)<input data-role="stack-gap" type="number"
-          min="0" step="0.1" value="1" aria-label="Espa&ccedil;amento em mil&iacute;metros"></label>
-      </div>
-      <div class="fwwebex-label-arrange-actions">
-        <button type="button" data-action="align">Alinhar</button>
-        <button type="button" data-action="position-relative">Posicionar</button>
-        <button type="button" data-action="distribute-horizontal">Distribuir horizontal</button>
-        <button type="button" data-action="distribute-vertical">Distribuir vertical</button>
-        <button type="button" data-action="equal-width">Igualar largura</button>
-        <button type="button" data-action="equal-height">Igualar altura</button>
-        <button type="button" data-action="equal-size">Igualar ambas</button>
+  <div class="fwwebex-label-quickbar">
+    <div class="fwwebex-label-quickbar-primary">
+      <span class="fwwebex-label-modebar" role="group" aria-label="Modo de visualiza&ccedil;&atilde;o">
+        <button type="button" data-action="mode" data-mode="design" aria-pressed="true">Design</button>
+        <button type="button" data-action="mode" data-mode="data" aria-pressed="false">Dados</button>
+        <button type="button" data-action="mode" data-mode="print" aria-pressed="false">Impress&atilde;o</button>
+      </span>
+      <select data-role="record-index" aria-label="Registro exibido no modo Dados"></select>
+    </div>
+    <div class="fwwebex-label-quickbar-actions">
+      <button type="button" data-action="undo" aria-label="Desfazer">Desfazer</button>
+      <button type="button" data-action="redo" aria-label="Refazer">Refazer</button>
+      <select data-role="zoom" aria-label="Zoom">
+        <option value="fit">Ajustar</option><option value="1">100%</option>
+        <option value="1.25">125%</option><option value="1.5">150%</option>
+        <option value=".75">75%</option><option value=".5">50%</option>
+      </select>
+      <button type="button" data-action="validate" data-tone="success">Validar</button>
+      <button type="button" data-action="preview" data-tone="success">Preview PDF</button>
+    </div>
+  </div>
+  <div class="fwwebex-label-toolbar-tabs">
+    <div class="fwwebex-label-tablist" role="tablist" aria-label="Categorias de ferramentas">
+      <button type="button" role="tab" data-tab-group="toolbar" data-tab-target="document"
+        aria-selected="true" tabindex="0">Documento</button>
+      <button type="button" role="tab" data-tab-group="toolbar" data-tab-target="selection"
+        aria-selected="false" tabindex="-1">Sele&ccedil;&atilde;o</button>
+      <button type="button" role="tab" data-tab-group="toolbar" data-tab-target="view"
+        aria-selected="false" tabindex="-1">Visualiza&ccedil;&atilde;o</button>
+    </div>
+    <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="toolbar"
+      data-tab-panel="document">
+      <div class="fwwebex-label-toolbar-cluster">
+        <details class="fwwebex-label-settings fwwebex-label-background-settings">
+          <summary>Imagem de fundo</summary>
+          <div class="fwwebex-label-settings-panel">
+            <div class="fwwebex-label-settings-grid">
+              <label>Ajuste<select data-role="background-fit">
+                <option value="fill">Preencher</option><option value="contain">Conter</option>
+                <option value="cover">Cobrir</option><option value="none">Tamanho original</option>
+              </select></label>
+              <label>Opacidade<input data-role="background-opacity" type="number" min="0"
+                max="1" step=".05" value="1"></label>
+              <label>Bloqueio<select data-role="background-locked">
+                <option value="true">Fundo bloqueado</option>
+                <option value="false">Fundo desbloqueado</option>
+              </select></label>
+            </div>
+            <div class="fwwebex-label-settings-actions">
+              <button type="button" data-action="background">Escolher imagem</button>
+              <button type="button" data-action="apply-background">Aplicar</button>
+              <button type="button" data-action="remove-background" data-tone="danger">Remover</button>
+            </div>
+          </div>
+        </details>
+        <details class="fwwebex-label-settings fwwebex-label-page-settings">
+          <summary>Configurar p&aacute;gina</summary>
+          <div class="fwwebex-label-settings-panel">
+            <div class="fwwebex-label-settings-grid">
+              <label>Largura (mm)<input data-role="page-width" type="number" min="1" step=".1"
+                value="__WIDTH__"></label>
+              <label>Altura (mm)<input data-role="page-height" type="number" min="1" step=".1"
+                value="__HEIGHT__"></label>
+              <label>Rota&ccedil;&atilde;o do PDF<select data-role="page-rotation">
+                <option value="0">0&deg;</option><option value="90">90&deg;</option>
+                <option value="180">180&deg;</option><option value="270">270&deg;</option>
+              </select></label>
+              <label>Margem topo<input data-role="page-margin-top" type="number" min="0" step=".1"></label>
+              <label>Margem direita<input data-role="page-margin-right" type="number" min="0" step=".1"></label>
+              <label>Margem base<input data-role="page-margin-bottom" type="number" min="0" step=".1"></label>
+              <label>Margem esquerda<input data-role="page-margin-left" type="number" min="0" step=".1"></label>
+              <label>&Aacute;rea segura<input data-role="page-safe-area" type="number" min="0" step=".1"></label>
+              <label>Sangria<input data-role="page-bleed" type="number" min="0" step=".1"></label>
+              <label>Passo do grid<input data-role="grid-step" type="number" min=".01" step=".1"></label>
+              <label>Toler&acirc;ncia do snap (px)<input data-role="snap-tolerance" type="number" min="0" step="1"></label>
+            </div>
+            <div class="fwwebex-label-settings-actions">
+              <button type="button" data-action="apply-page">Aplicar configura&ccedil;&atilde;o</button>
+            </div>
+          </div>
+        </details>
+        <button type="button" data-action="export" data-tone="success">Exportar JSON</button>
+        <button type="button" data-action="import">Importar JSON</button>
       </div>
     </div>
-  </details>
-  <button type="button" data-action="assign" data-tone="warning">Mover para &aacute;rea</button>
-  <button type="button" data-action="reflow" data-tone="warning">Reorganizar &aacute;rea</button>
-  <button type="button" data-action="grid" aria-pressed="false">Grid</button>
-  <button type="button" data-action="snap" aria-pressed="false">Snap</button>
-  <button type="button" data-action="reference" aria-pressed="false">Refer&ecirc;ncia</button>
-  <button type="button" data-action="chain" aria-pressed="false">Continuar sequ&ecirc;ncia</button>
-  <button type="button" data-action="discover-variables">Descobrir vari&aacute;veis</button>
-  <select data-role="zoom" aria-label="Zoom">
-    <option value="fit">Ajustar</option><option value="1">100%</option>
-    <option value="1.25">125%</option><option value="1.5">150%</option>
-    <option value=".75">75%</option><option value=".5">50%</option>
-  </select>
-  <details class="fwwebex-label-settings fwwebex-label-page-settings">
-    <summary>Configurar p&aacute;gina</summary>
-    <div class="fwwebex-label-settings-panel">
-      <div class="fwwebex-label-settings-grid">
-        <label>Largura (mm)<input data-role="page-width" type="number" min="1" step=".1"
-          value="__WIDTH__"></label>
-        <label>Altura (mm)<input data-role="page-height" type="number" min="1" step=".1"
-          value="__HEIGHT__"></label>
-        <label>Rota&ccedil;&atilde;o do PDF<select data-role="page-rotation">
-          <option value="0">0&deg;</option><option value="90">90&deg;</option>
-          <option value="180">180&deg;</option><option value="270">270&deg;</option>
-        </select></label>
-        <label>Margem topo<input data-role="page-margin-top" type="number" min="0" step=".1"></label>
-        <label>Margem direita<input data-role="page-margin-right" type="number" min="0" step=".1"></label>
-        <label>Margem base<input data-role="page-margin-bottom" type="number" min="0" step=".1"></label>
-        <label>Margem esquerda<input data-role="page-margin-left" type="number" min="0" step=".1"></label>
-        <label>&Aacute;rea segura<input data-role="page-safe-area" type="number" min="0" step=".1"></label>
-        <label>Sangria<input data-role="page-bleed" type="number" min="0" step=".1"></label>
-        <label>Passo do grid<input data-role="grid-step" type="number" min=".01" step=".1"></label>
-        <label>Toler&acirc;ncia do snap (px)<input data-role="snap-tolerance" type="number" min="0" step="1"></label>
-      </div>
-      <div class="fwwebex-label-settings-actions">
-        <button type="button" data-action="apply-page">Aplicar configura&ccedil;&atilde;o</button>
+    <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="toolbar"
+      data-tab-panel="selection" hidden>
+      <div class="fwwebex-label-toolbar-cluster">
+        <button type="button" data-action="remove" data-tone="danger">Excluir</button>
+        <button type="button" data-action="duplicate">Duplicar</button>
+        <button type="button" data-action="lock">Travar / destravar</button>
+        <button type="button" data-action="lock-reference">Travar + refer&ecirc;ncia</button>
+        <details class="fwwebex-label-settings fwwebex-label-arrange-settings"
+          data-role="arrange-menu" hidden>
+          <summary>Organizar sele&ccedil;&atilde;o</summary>
+          <div class="fwwebex-label-settings-panel">
+            <div class="fwwebex-label-settings-grid">
+              <label>Alinhamento<select data-role="align-mode" aria-label="Tipo de alinhamento">
+                <option value="left">Esquerda</option><option value="center">Centro horizontal</option>
+                <option value="right">Direita</option><option value="top">Topo</option>
+                <option value="middle">Centro vertical</option><option value="bottom">Base</option>
+                <option value="baseline">Baseline de textos</option>
+              </select></label>
+              <label>Posi&ccedil;&atilde;o<select data-role="position-direction"
+                aria-label="Posi&ccedil;&atilde;o relativa">
+                <option value="below">Abaixo</option><option value="above">Acima</option>
+                <option value="right">&Agrave; direita</option><option value="left">&Agrave; esquerda</option>
+              </select></label>
+              <label>Alinhamento transversal<select data-role="cross-align"
+                aria-label="Alinhamento transversal">
+                <option value="start">In&iacute;cio</option><option value="center">Centro</option>
+                <option value="end">Fim</option><option value="stretch">Esticar</option>
+              </select></label>
+              <label>Espa&ccedil;amento (mm)<input data-role="stack-gap" type="number"
+                min="0" step="0.1" value="1" aria-label="Espa&ccedil;amento em mil&iacute;metros"></label>
+            </div>
+            <div class="fwwebex-label-arrange-actions">
+              <button type="button" data-action="align">Alinhar</button>
+              <button type="button" data-action="position-relative">Posicionar</button>
+              <button type="button" data-action="distribute-horizontal">Distribuir horizontal</button>
+              <button type="button" data-action="distribute-vertical">Distribuir vertical</button>
+              <button type="button" data-action="equal-width">Igualar largura</button>
+              <button type="button" data-action="equal-height">Igualar altura</button>
+              <button type="button" data-action="equal-size">Igualar ambas</button>
+            </div>
+          </div>
+        </details>
+        <button type="button" data-action="assign" data-tone="warning">Mover para &aacute;rea</button>
+        <button type="button" data-action="reflow" data-tone="warning">Reorganizar &aacute;rea</button>
+        <button type="button" data-action="reference" aria-pressed="false">Refer&ecirc;ncia</button>
+        <button type="button" data-action="chain" aria-pressed="false">Continuar sequ&ecirc;ncia</button>
       </div>
     </div>
-  </details>
-  <span class="fwwebex-label-modebar" role="group" aria-label="Modo de visualiza&ccedil;&atilde;o">
-    <button type="button" data-action="mode" data-mode="design" aria-pressed="true">Design</button>
-    <button type="button" data-action="mode" data-mode="data" aria-pressed="false">Dados</button>
-    <button type="button" data-action="mode" data-mode="print" aria-pressed="false">Impress&atilde;o</button>
-  </span>
-  <select data-role="record-index" aria-label="Registro exibido no modo Dados"></select>
-  <button type="button" data-action="print-overlay" aria-pressed="false">Caixas no preview</button>
-  <input data-role="overlay-opacity" type="range" min=".1" max="1" step=".1" value=".5"
-    aria-label="Opacidade das caixas sobre o preview">
-  <button type="button" data-action="validate" data-tone="success">Validar</button>
-  <button type="button" data-action="preview" data-tone="success">Preview PDF</button>
-  <button type="button" data-action="export" data-tone="success">Exportar JSON</button>
-  <button type="button" data-action="import">Importar JSON</button>
+    <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="toolbar"
+      data-tab-panel="view" hidden>
+      <div class="fwwebex-label-toolbar-cluster">
+        <button type="button" data-action="grid" aria-pressed="false">Grid</button>
+        <button type="button" data-action="snap" aria-pressed="false">Snap</button>
+        <button type="button" data-action="print-overlay" aria-pressed="false">Caixas no preview</button>
+        <label data-role="overlay-opacity-field">Opacidade das caixas <input data-role="overlay-opacity" type="range"
+          min=".1" max="1" step=".1" value=".5"></label>
+        <button type="button" data-action="discover-variables">Descobrir vari&aacute;veis</button>
+      </div>
+    </div>
+  </div>
   <input data-role="background-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
   <input data-role="layout-file" type="file" accept=".json,application/json" hidden>
 </div>
-<div class="fwwebex-label-workspace" data-role="workspace">
-  <aside class="fwwebex-label-pane fwwebex-label-layers">
-    <div class="fwwebex-label-panel-head"><span>Camadas</span>
-      <span><button type="button" data-action="layer-up" aria-label="Subir camada">&#8593;</button>
-      <button type="button" data-action="layer-down" aria-label="Descer camada">&#8595;</button></span>
-    </div>
+<div class="fwwebex-label-workspace" data-role="workspace"
+  data-show-layers="true" data-show-inspector="true" data-elements-collapsed="false"
+  data-elements-minimized="false">
+  <aside class="fwwebex-label-pane fwwebex-label-layers" data-minimized="false">
+    <div class="fwwebex-label-panel-head"><span data-role="elements-title">Elementos</span>
+      <button type="button" class="fwwebex-label-panel-toggle"
+        data-action="toggle-elements-size" aria-expanded="true"
+        aria-label="Recolher painel Elementos"
+        title="Recolher painel Elementos">Recolher</button></div>
     <div class="fwwebex-label-panel-body">
-      <input data-role="layer-search" type="search"
-        placeholder="Buscar ID, nome ou mnem&ocirc;nico" aria-label="Buscar camadas">
-      <ul class="fwwebex-label-layer-list" data-role="layers"></ul>
+      <div class="fwwebex-label-tablist" role="tablist" aria-label="Elementos do r&oacute;tulo">
+        <button type="button" role="tab" data-tab-group="sidebar" data-tab-target="add"
+          aria-selected="false" tabindex="-1">Adicionar</button>
+        <button type="button" role="tab" data-tab-group="sidebar" data-tab-target="layers"
+          aria-selected="true" tabindex="0">Camadas</button>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="sidebar"
+        data-tab-panel="add" hidden>
+        <div class="fwwebex-label-add-grid">
+          <button type="button" data-action="add-text">+ Texto</button>
+          <button type="button" data-action="add-barcode">+ C&oacute;digo de barras</button>
+          <button type="button" data-action="add-container" data-tone="warning">+ &Aacute;rea / container</button>
+        </div>
+        <p class="fwwebex-label-add-hint">Selecione um tipo e ajuste suas propriedades no inspetor.</p>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="sidebar"
+        data-tab-panel="layers">
+        <div class="fwwebex-label-toolbar-cluster">
+          <input data-role="layer-search" type="search"
+            placeholder="Buscar ID, nome ou mnem&ocirc;nico" aria-label="Buscar camadas">
+          <button type="button" data-action="layer-up" aria-label="Subir camada">&#8593;</button>
+          <button type="button" data-action="layer-down" aria-label="Descer camada">&#8595;</button>
+        </div>
+        <ul class="fwwebex-label-layer-list" data-role="layers"></ul>
+      </div>
     </div>
   </aside>
   <section class="fwwebex-label-pane fwwebex-label-canvas-pane">
     <div class="fwwebex-label-panel-head"><span data-role="document-name">R&oacute;tulo</span>
-      <span data-role="canvas-metrics">__WIDTH__ x __HEIGHT__ mm</span></div>
+      <span class="fwwebex-label-canvas-head-actions">
+        <button type="button" data-action="toggle-elements" aria-expanded="true"
+          aria-label="Ocultar painel Elementos">Ocultar Elementos</button>
+        <span data-role="canvas-metrics">__WIDTH__ x __HEIGHT__ mm</span>
+      </span></div>
     <div class="fwwebex-label-panel-body">
       <div class="fwwebex-label-stage-viewport" data-role="stage-viewport">
         <div class="fwwebex-label-ruler is-x" data-role="ruler-x" aria-hidden="true"></div>
@@ -3143,100 +3314,164 @@ method RenderHTML() class WebExLabelDesigner
   <aside class="fwwebex-label-pane fwwebex-label-inspector">
     <div class="fwwebex-label-panel-head"><span>Inspetor</span><span data-role="selection-count">0 selecionados</span></div>
     <div class="fwwebex-label-panel-body" data-role="inspector">
-      <div class="fwwebex-label-form-grid">
-        <div class="is-wide" data-role="resolved-value"></div>
-        <label class="is-wide">ID<input data-property="id" type="text"></label>
-        <label class="is-wide">Nome<input data-property="name" type="text"></label>
-        <label class="is-wide">Conte&uacute;do / mnem&ocirc;nico<input data-property="template" type="text"></label>
-        <label>X (mm)<input data-property="box.x" type="number" step=".1"></label>
-        <label>Y (mm)<input data-property="box.y" type="number" step=".1"></label>
-        <label>Largura<input data-property="box.width" type="number" min=".1" step=".1"></label>
-        <label>Altura<input data-property="box.height" type="number" min=".1" step=".1"></label>
-        <label>Rota&ccedil;&atilde;o<input data-property="rotation" type="number" step="1"></label>
-        <label>Camada<input data-property="zIndex" type="number" step="1"></label>
-        <label class="is-wide">&Aacute;rea pai<select data-property="containerId"></select></label>
-        <label>Tipo <input data-property="type" type="text" readonly></label>
-        <label>Bloqueado<select data-property="locked" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
-        <label>Oculto<select data-property="hidden" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
-        <label data-for-type="text">Fam&iacute;lia<select data-property="style.fontFamily"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option></select></label>
-        <label data-for-type="text">Fonte (pt)<input data-property="style.fontSize" type="number" min="1" step=".25"></label>
-        <label data-for-type="text">Fonte m&iacute;nima<input data-property="style.minFontSize" type="number" min="1" step=".25"></label>
-        <label data-for-type="text">Estilo<select data-property="style.fontStyle"><option value="normal">Normal</option><option value="bold">Negrito</option><option value="italic">It&aacute;lico</option><option value="bolditalic">Negrito + it&aacute;lico</option></select></label>
-        <label data-for-type="text">Cor<input data-property="style.color" type="color"></label>
-        <label data-for-type="text">Altura da linha<input data-property="style.lineHeightFactor" type="number" min=".1" step=".05"></label>
-        <label data-for-type="text">Espa&ccedil;amento letras<input data-property="style.letterSpacing" type="number" step=".01"></label>
-        <label data-for-type="text">Autoajuste<select data-property="fit.mode"><option value="shrink">Reduzir at&eacute; caber</option><option value="none">Desativado</option></select></label>
-        <label data-for-type="text">Alinhamento<select data-property="style.align"><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option><option value="justify">Justificado</option></select></label>
-        <label data-for-type="text">Vertical<select data-property="style.verticalAlign"><option value="top">Topo</option><option value="middle">Centro</option><option value="bottom">Base</option></select></label>
-        <label data-for-type="text">M&aacute;x. linhas<input data-property="fit.maxLines" type="number" min="1" step="1"></label>
-        <label data-for-type="text">Excesso<select data-property="fit.overflow"><option value="error">Erro</option><option value="clip">Recortar</option><option value="ellipsis">Retic&ecirc;ncias</option></select></label>
-        <label data-for-type="text">Padding topo<input data-property="style.padding.top" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Padding direita<input data-property="style.padding.right" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Padding base<input data-property="style.padding.bottom" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Padding esquerda<input data-property="style.padding.left" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Margem topo<input data-property="style.margin.top" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Margem direita<input data-property="style.margin.right" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Margem base<input data-property="style.margin.bottom" type="number" min="0" step=".1"></label>
-        <label data-for-type="text">Margem esquerda<input data-property="style.margin.left" type="number" min="0" step=".1"></label>
-        <details class="is-wide" data-for-type="text"><summary>Avan&ccedil;ado</summary>
-          <label>textOptions (JSON)<textarea data-property="textOptions"
-            data-value-type="json"></textarea></label>
-        </details>
-        <label data-for-type="barcode">Formato<select data-property="format"><option>CODE128</option><option>EAN13</option><option>EAN8</option><option>UPC</option><option>CODE39</option><option>ITF14</option><option>MSI</option><option>pharmacode</option><option>AUTO</option></select></label>
-        <label data-for-type="barcode">M&oacute;dulo m&iacute;nimo<input data-property="minModuleWidth" type="number" min="0" step=".01"></label>
-        <label data-for-type="barcode">Zona silenciosa<input data-property="quietZone" type="number" min="0" step=".1"></label>
-        <label data-for-type="barcode">Margem do texto<input data-property="textMargin" type="number" min="0" step=".1"></label>
-        <label data-for-type="barcode">Mostrar valor<select data-property="displayValue" data-value-type="boolean"><option value="true">Sim</option><option value="false">N&atilde;o</option></select></label>
-        <label data-for-type="barcode">Autoajuste<select data-property="autoFit" data-value-type="boolean"><option value="true">Sim</option><option value="false">N&atilde;o</option></select></label>
-        <label data-for-type="barcode">Excesso<select data-property="overflow"><option value="error">Erro</option><option value="allow">Permitir com aviso</option></select></label>
-        <label data-for-type="barcode">Fonte do valor<input data-property="humanReadableFontFamily" type="text"></label>
-        <label data-for-type="barcode">Tamanho do valor<input data-property="humanReadableFontSize" type="number" min="1" step=".25"></label>
-        <label data-for-type="barcode">Tamanho m&iacute;nimo<input data-property="humanReadableMinFontSize" type="number" min="1" step=".25"></label>
-        <label data-for-type="barcode">Estilo do valor<select data-property="humanReadableFontStyle"><option value="normal">Normal</option><option value="bold">Negrito</option><option value="italic">It&aacute;lico</option><option value="bolditalic">Negrito + it&aacute;lico</option></select></label>
-        <label data-for-type="barcode">Cor do valor<input data-property="humanReadableColor" type="color"></label>
-        <label data-for-type="barcode">Posi&ccedil;&atilde;o do valor<select data-property="humanReadablePosition"><option value="top">Topo</option><option value="bottom">Base</option></select></label>
-        <label data-for-type="barcode">Alinhamento do valor<select data-property="humanReadableAlign"><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option></select></label>
-        <label data-for-type="barcode">Excesso do valor<select data-property="textOverflow"><option value="error">Erro</option><option value="clip">Recortar</option><option value="ellipsis">Retic&ecirc;ncias</option></select></label>
-        <details class="is-wide" data-for-type="barcode"><summary>Avan&ccedil;ado</summary>
-          <label>barcodeOptions (JSON)<textarea data-property="barcodeOptions"
-            data-value-type="json"></textarea></label>
-        </details>
-        <label data-for-type="container">Dire&ccedil;&atilde;o<select data-property="layout.direction"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select></label>
-        <label data-for-type="container">Espa&ccedil;amento<input data-property="layout.gap" type="number" min="0" step=".1"></label>
-        <label data-for-type="container">Padding topo<input data-property="layout.padding.top" type="number" min="0" step=".1"></label>
-        <label data-for-type="container">Padding direita<input data-property="layout.padding.right" type="number" min="0" step=".1"></label>
-        <label data-for-type="container">Padding base<input data-property="layout.padding.bottom" type="number" min="0" step=".1"></label>
-        <label data-for-type="container">Padding esquerda<input data-property="layout.padding.left" type="number" min="0" step=".1"></label>
-        <label data-for-type="container">Alinhamento transversal<select data-property="layout.crossAlign"><option value="start">In&iacute;cio</option><option value="center">Centro</option><option value="end">Fim</option><option value="stretch">Esticar</option></select></label>
-        <label data-for-type="container">Alinhamento principal<select data-property="layout.mainAlign"><option value="start">In&iacute;cio</option><option value="center">Centro</option><option value="end">Fim</option><option value="space-between">Distribuir</option></select></label>
-        <label data-for-type="container">Dimensionamento<select data-property="layout.sizing"><option value="none">Preservar</option><option value="shrink">Reduzir</option><option value="equal">Igualar</option><option value="distribute">Distribuir</option></select></label>
-        <label data-for-type="container">Excesso<select data-property="layout.overflow"><option value="error">Erro</option><option value="visible">Vis&iacute;vel</option><option value="clip">Recortar</option></select></label>
-        <label data-for-type="container">Recortar filhos<select data-property="layout.clipChildren" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
+      <div class="fwwebex-label-tablist" role="tablist" aria-label="Categorias do inspetor">
+        <button type="button" role="tab" data-tab-group="inspector" data-tab-target="element"
+          aria-selected="true" tabindex="0">Elemento</button>
+        <button type="button" role="tab" data-tab-group="inspector" data-tab-target="geometry"
+          aria-selected="false" tabindex="-1">Geometria</button>
+        <button type="button" role="tab" data-tab-group="inspector" data-tab-target="appearance"
+          data-tab-type="text" aria-selected="false" tabindex="-1">Apar&ecirc;ncia</button>
+        <button type="button" role="tab" data-tab-group="inspector" data-tab-target="layout"
+          data-tab-type="container" aria-selected="false" tabindex="-1">Layout</button>
+        <button type="button" role="tab" data-tab-group="inspector" data-tab-target="barcode"
+          data-tab-type="barcode" aria-selected="false" tabindex="-1">C&oacute;digo de barras</button>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
+        data-tab-panel="element">
+        <div class="fwwebex-label-form-grid">
+          <div class="is-wide" data-role="resolved-value"></div>
+          <label class="is-wide">ID<input data-property="id" type="text"></label>
+          <label class="is-wide">Nome<input data-property="name" type="text"></label>
+          <label class="is-wide">Conte&uacute;do / mnem&ocirc;nico<input data-property="template" type="text"></label>
+          <label class="is-wide">&Aacute;rea pai<select data-property="containerId"></select></label>
+          <label>Tipo <input data-property="type" type="text" readonly></label>
+          <label>Bloqueado<select data-property="locked" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
+          <label>Oculto<select data-property="hidden" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
+        </div>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
+        data-tab-panel="geometry" hidden>
+        <div class="fwwebex-label-form-grid">
+          <label>X (mm)<input data-property="box.x" type="number" step=".1"></label>
+          <label>Y (mm)<input data-property="box.y" type="number" step=".1"></label>
+          <label>Largura<input data-property="box.width" type="number" min=".1" step=".1"></label>
+          <label>Altura<input data-property="box.height" type="number" min=".1" step=".1"></label>
+          <label>Rota&ccedil;&atilde;o<input data-property="rotation" type="number" step="1"></label>
+          <label>Camada<input data-property="zIndex" type="number" step="1"></label>
+        </div>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
+        data-tab-panel="appearance" data-tab-type="text" hidden>
+        <div class="fwwebex-label-form-grid">
+          <label data-for-type="text">Fam&iacute;lia<select data-property="style.fontFamily"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option></select></label>
+          <label data-for-type="text">Fonte (pt)<input data-property="style.fontSize" type="number" min="1" step=".25"></label>
+          <label data-for-type="text">Fonte m&iacute;nima<input data-property="style.minFontSize" type="number" min="1" step=".25"></label>
+          <label data-for-type="text">Estilo<select data-property="style.fontStyle"><option value="normal">Normal</option><option value="bold">Negrito</option><option value="italic">It&aacute;lico</option><option value="bolditalic">Negrito + it&aacute;lico</option></select></label>
+          <label data-for-type="text">Cor<input data-property="style.color" type="color"></label>
+          <label data-for-type="text">Altura da linha<input data-property="style.lineHeightFactor" type="number" min=".1" step=".05"></label>
+          <label data-for-type="text">Espa&ccedil;amento letras<input data-property="style.letterSpacing" type="number" step=".01"></label>
+          <label data-for-type="text">Autoajuste<select data-property="fit.mode"><option value="shrink">Reduzir at&eacute; caber</option><option value="none">Desativado</option></select></label>
+          <label data-for-type="text">Alinhamento<select data-property="style.align"><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option><option value="justify">Justificado</option></select></label>
+          <label data-for-type="text">Vertical<select data-property="style.verticalAlign"><option value="top">Topo</option><option value="middle">Centro</option><option value="bottom">Base</option></select></label>
+          <label data-for-type="text">M&aacute;x. linhas<input data-property="fit.maxLines" type="number" min="1" step="1"></label>
+          <label data-for-type="text">Excesso<select data-property="fit.overflow"><option value="error">Erro</option><option value="clip">Recortar</option><option value="ellipsis">Retic&ecirc;ncias</option></select></label>
+          <label data-for-type="text">Padding topo<input data-property="style.padding.top" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Padding direita<input data-property="style.padding.right" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Padding base<input data-property="style.padding.bottom" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Padding esquerda<input data-property="style.padding.left" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Margem topo<input data-property="style.margin.top" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Margem direita<input data-property="style.margin.right" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Margem base<input data-property="style.margin.bottom" type="number" min="0" step=".1"></label>
+          <label data-for-type="text">Margem esquerda<input data-property="style.margin.left" type="number" min="0" step=".1"></label>
+          <details class="is-wide" data-for-type="text"><summary>Avan&ccedil;ado</summary>
+            <label>textOptions (JSON)<textarea data-property="textOptions"
+              data-value-type="json"></textarea></label>
+          </details>
+        </div>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
+        data-tab-panel="layout" data-tab-type="container" hidden>
+        <div class="fwwebex-label-form-grid">
+          <label data-for-type="container">Dire&ccedil;&atilde;o<select data-property="layout.direction"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select></label>
+          <label data-for-type="container">Espa&ccedil;amento<input data-property="layout.gap" type="number" min="0" step=".1"></label>
+          <label data-for-type="container">Padding topo<input data-property="layout.padding.top" type="number" min="0" step=".1"></label>
+          <label data-for-type="container">Padding direita<input data-property="layout.padding.right" type="number" min="0" step=".1"></label>
+          <label data-for-type="container">Padding base<input data-property="layout.padding.bottom" type="number" min="0" step=".1"></label>
+          <label data-for-type="container">Padding esquerda<input data-property="layout.padding.left" type="number" min="0" step=".1"></label>
+          <label data-for-type="container">Alinhamento transversal<select data-property="layout.crossAlign"><option value="start">In&iacute;cio</option><option value="center">Centro</option><option value="end">Fim</option><option value="stretch">Esticar</option></select></label>
+          <label data-for-type="container">Alinhamento principal<select data-property="layout.mainAlign"><option value="start">In&iacute;cio</option><option value="center">Centro</option><option value="end">Fim</option><option value="space-between">Distribuir</option></select></label>
+          <label data-for-type="container">Dimensionamento<select data-property="layout.sizing"><option value="none">Preservar</option><option value="shrink">Reduzir</option><option value="equal">Igualar</option><option value="distribute">Distribuir</option></select></label>
+          <label data-for-type="container">Excesso<select data-property="layout.overflow"><option value="error">Erro</option><option value="visible">Vis&iacute;vel</option><option value="clip">Recortar</option></select></label>
+          <label data-for-type="container">Recortar filhos<select data-property="layout.clipChildren" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
+        </div>
+      </div>
+      <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
+        data-tab-panel="barcode" data-tab-type="barcode" hidden>
+        <div class="fwwebex-label-form-grid">
+          <label data-for-type="barcode">Formato<select data-property="format"><option>CODE128</option><option>EAN13</option><option>EAN8</option><option>UPC</option><option>CODE39</option><option>ITF14</option><option>MSI</option><option>pharmacode</option><option>AUTO</option></select></label>
+          <label data-for-type="barcode">M&oacute;dulo m&iacute;nimo<input data-property="minModuleWidth" type="number" min="0" step=".01"></label>
+          <label data-for-type="barcode">Zona silenciosa<input data-property="quietZone" type="number" min="0" step=".1"></label>
+          <label data-for-type="barcode">Margem do texto<input data-property="textMargin" type="number" min="0" step=".1"></label>
+          <label data-for-type="barcode">Mostrar valor<select data-property="displayValue" data-value-type="boolean"><option value="true">Sim</option><option value="false">N&atilde;o</option></select></label>
+          <label data-for-type="barcode">Autoajuste<select data-property="autoFit" data-value-type="boolean"><option value="true">Sim</option><option value="false">N&atilde;o</option></select></label>
+          <label data-for-type="barcode">Excesso<select data-property="overflow"><option value="error">Erro</option><option value="allow">Permitir com aviso</option></select></label>
+          <label data-for-type="barcode">Fonte do valor<input data-property="humanReadableFontFamily" type="text"></label>
+          <label data-for-type="barcode">Tamanho do valor<input data-property="humanReadableFontSize" type="number" min="1" step=".25"></label>
+          <label data-for-type="barcode">Tamanho m&iacute;nimo<input data-property="humanReadableMinFontSize" type="number" min="1" step=".25"></label>
+          <label data-for-type="barcode">Estilo do valor<select data-property="humanReadableFontStyle"><option value="normal">Normal</option><option value="bold">Negrito</option><option value="italic">It&aacute;lico</option><option value="bolditalic">Negrito + it&aacute;lico</option></select></label>
+          <label data-for-type="barcode">Cor do valor<input data-property="humanReadableColor" type="color"></label>
+          <label data-for-type="barcode">Posi&ccedil;&atilde;o do valor<select data-property="humanReadablePosition"><option value="top">Topo</option><option value="bottom">Base</option></select></label>
+          <label data-for-type="barcode">Alinhamento do valor<select data-property="humanReadableAlign"><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option></select></label>
+          <label data-for-type="barcode">Excesso do valor<select data-property="textOverflow"><option value="error">Erro</option><option value="clip">Recortar</option><option value="ellipsis">Retic&ecirc;ncias</option></select></label>
+          <details class="is-wide" data-for-type="barcode"><summary>Avan&ccedil;ado</summary>
+            <label>barcodeOptions (JSON)<textarea data-property="barcodeOptions"
+              data-value-type="json"></textarea></label>
+          </details>
+        </div>
       </div>
     </div>
   </aside>
 </div>
-<div class="fwwebex-label-drawers" data-role="drawers">
-  <section class="fwwebex-label-pane fwwebex-label-drawer">
-    <div class="fwwebex-label-panel-head"><span>Contrato JSON do layout</span>
-      <span data-role="contract-state">Sincronizado</span></div>
-    <div class="fwwebex-label-panel-body"><textarea data-role="contract-editor"
-      aria-label="Contrato JSON do layout"></textarea>
-      <div class="fwwebex-label-toolbar"><button type="button" data-action="apply-json">Aplicar JSON editado</button>
-      <button type="button" data-action="discard-json">Descartar edi&ccedil;&atilde;o</button></div>
+<section class="fwwebex-label-pane fwwebex-label-drawer fwwebex-label-drawers"
+  data-role="drawers" data-collapsed="false">
+  <div class="fwwebex-label-panel-head fwwebex-label-drawer-head">
+    <div class="fwwebex-label-tablist" role="tablist" aria-label="Dados e diagn&oacute;sticos">
+      <button type="button" role="tab" data-tab-group="drawers" data-tab-target="data"
+        aria-selected="true" tabindex="0">Dados</button>
+      <button type="button" role="tab" data-tab-group="drawers" data-tab-target="contract"
+        aria-selected="false" tabindex="-1">Contrato</button>
+      <button type="button" role="tab" data-tab-group="drawers" data-tab-target="problems"
+        aria-selected="false" tabindex="-1">Problemas
+        <span class="fwwebex-label-problem-count" data-role="problem-count"
+          aria-label="0 problemas">0</span></button>
     </div>
-  </section>
-  <section class="fwwebex-label-pane fwwebex-label-drawer">
-    <div class="fwwebex-label-panel-head"><span>Dados JSON para valida&ccedil;&atilde;o e preview</span>
-      <button type="button" data-action="generate-sample-records" data-tone="success"
-        title="Cria os mnem&ocirc;nicos ausentes sem substituir valores existentes">
-        Gerar / completar dados</button></div>
-    <div class="fwwebex-label-panel-body"><textarea data-role="records-editor"
-      aria-label="Dados JSON para valida&ccedil;&atilde;o e preview"></textarea>
-      <div class="fwwebex-label-problems" data-role="problems" aria-live="polite"></div>
+    <button type="button" data-action="toggle-drawers" aria-expanded="true"
+      aria-label="Recolher painel inferior">Recolher</button>
+  </div>
+  <div class="fwwebex-label-drawer-content">
+    <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="drawers"
+      data-tab-panel="data">
+      <div class="fwwebex-label-panel-head"><span>Dados JSON para valida&ccedil;&atilde;o e preview</span>
+        <button type="button" data-action="generate-sample-records" data-tone="success"
+          title="Cria os mnem&ocirc;nicos ausentes sem substituir valores existentes">
+          Gerar / completar dados</button></div>
+      <div class="fwwebex-label-panel-body"><textarea data-role="records-editor"
+        aria-label="Dados JSON para valida&ccedil;&atilde;o e preview"></textarea></div>
     </div>
-  </section>
-</div>
+    <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="drawers"
+      data-tab-panel="contract" hidden>
+      <div class="fwwebex-label-panel-head"><span>Contrato JSON do layout</span>
+        <span data-role="contract-state">Sincronizado</span></div>
+      <div class="fwwebex-label-panel-body"><textarea data-role="contract-editor"
+        aria-label="Contrato JSON do layout"></textarea>
+        <div class="fwwebex-label-toolbar fwwebex-label-drawer-actions">
+          <button type="button" data-action="format-json">Formatar JSON</button>
+          <button type="button" data-action="apply-json">Aplicar JSON editado</button>
+          <button type="button" data-action="discard-json">Descartar edi&ccedil;&atilde;o</button>
+        </div>
+      </div>
+    </div>
+    <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="drawers"
+      data-tab-panel="problems" hidden>
+      <div class="fwwebex-label-panel-head"><span>Erros e avisos de valida&ccedil;&atilde;o</span></div>
+      <div class="fwwebex-label-panel-body">
+        <div class="fwwebex-label-problems" data-role="problems" aria-live="polite">
+          Valide o layout para atualizar os diagn&oacute;sticos.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 <div class="fwwebex-label-statusbar" data-role="status" aria-live="polite">
   <span data-role="status-message">Pronto.</span><span data-role="status-selection">Nenhuma sele&ccedil;&atilde;o</span>
 </div>`);
@@ -3271,6 +3506,8 @@ method RenderHTML() class WebExLabelDesigner
         records:[],selected:null,selection:[],recordIndex:0,mode:"design",
         printOverlay:false,overlayOpacity:.5,
         zoom:"fit",options:{},contractDirty:false,autoSampleRecords:true,
+        tabs:{toolbar:"document",sidebar:"layers",inspector:"element",drawers:"data"},
+        drawersCollapsed:false,elementsCollapsed:false,elementsMinimized:false,
         history:[],historyIndex:-1,
         lastReport:null,previewViewport:null,previewPending:false,
         snapFeedback:{x:null,y:null}
@@ -3623,6 +3860,165 @@ method RenderHTML() class WebExLabelDesigner
         return typeof root.querySelectorAll==="function"?
             Array.prototype.slice.call(root.querySelectorAll(selector)):[];
     }
+    function tabButtons(group){
+        return roleAll('[role="tab"][data-tab-group="'+group+'"]');
+    }
+    function tabPanels(group){
+        return roleAll('[role="tabpanel"][data-tab-group="'+group+'"]');
+    }
+    function tabAvailable(button){
+        return !!button&&button.hidden!==true&&button.getAttribute("aria-disabled")!=="true";
+    }
+    function activateTab(group,target,focus){
+        group=String(group||"");target=String(target||"");
+        const buttons=tabButtons(group),panels=tabPanels(group),available=buttons.filter(tabAvailable);
+        if(!available.length)return null;
+        let active=available.find(function(button){return button.dataset.tabTarget===target;})||
+            available.find(function(button){return button.getAttribute("aria-selected")==="true";})||
+            available[0];
+        target=active.dataset.tabTarget;
+        buttons.forEach(function(button){
+            const selected=button===active;
+            button.setAttribute("aria-selected",String(selected));
+            button.tabIndex=selected?0:-1;
+        });
+        panels.forEach(function(panel){
+            const selected=panel.dataset.tabPanel===target;
+            panel.hidden=!selected;panel.setAttribute("aria-hidden",String(!selected));
+        });
+        state.tabs[group]=target;
+        if(focus===true&&typeof active.focus==="function")active.focus();
+        return active;
+    }
+    function initializeTabs(){
+        const buttons=roleAll('[role="tab"][data-tab-group]'),groups=[];
+        buttons.forEach(function(button){
+            const group=button.dataset.tabGroup,target=button.dataset.tabTarget;
+            if(groups.indexOf(group)<0)groups.push(group);
+            const panel=tabPanels(group).find(function(candidate){
+                return candidate.dataset.tabPanel===target;
+            }),prefix=String(root.id||"fwwebex-label").replace(/[^A-Za-z0-9_-]/g,"-")+
+                "-"+group+"-"+target;
+            button.id=prefix+"-tab";
+            if(panel){
+                panel.id=prefix+"-panel";
+                button.setAttribute("aria-controls",panel.id);
+                panel.setAttribute("aria-labelledby",button.id);
+            }
+        });
+        groups.forEach(function(group){activateTab(group,state.tabs[group],false);});
+    }
+    function syncInspectorTabs(item){
+        const previous=tabPanels("inspector").find(function(panel){
+                return panel.dataset.tabPanel===state.tabs.inspector;
+            }),previousButton=tabButtons("inspector").find(function(button){
+                return button.dataset.tabTarget===state.tabs.inspector;
+            }),focusWithin=!!(previous&&typeof previous.contains==="function"&&
+                previous.contains(document.activeElement))||previousButton===document.activeElement;
+        tabButtons("inspector").forEach(function(button){
+            const type=button.dataset.tabType;
+            button.hidden=!!type&&(!item||item.type!==type);
+        });
+        const current=tabButtons("inspector").find(function(button){
+            return button.dataset.tabTarget===state.tabs.inspector;
+        }),valid=tabAvailable(current);
+        activateTab("inspector",valid?state.tabs.inspector:"element",!valid&&focusWithin);
+    }
+    function setDrawersCollapsed(collapsed,restoreFocus){
+        const drawers=role("drawers"),activeInside=!!(drawers&&
+                typeof drawers.contains==="function"&&drawers.contains(document.activeElement)),
+            button=root.querySelector('[data-action="toggle-drawers"]');
+        state.drawersCollapsed=collapsed===true;
+        if(drawers)drawers.dataset.collapsed=String(state.drawersCollapsed);
+        if(button){
+            button.setAttribute("aria-expanded",String(!state.drawersCollapsed));
+            button.setAttribute("aria-label",state.drawersCollapsed?
+                "Expandir painel inferior":"Recolher painel inferior");
+            button.textContent=state.drawersCollapsed?"Expandir":"Recolher";
+            if(state.drawersCollapsed&&(restoreFocus===true||activeInside)&&
+                typeof button.focus==="function")button.focus();
+        }
+        return state.drawersCollapsed;
+    }
+    function refreshWorkspaceViewport(){
+        if(state.mode==="print"&&state.previewViewport)schedulePreview(0);
+        else if(state.zoom==="fit")syncStageZoom();
+    }
+    function workspaceLayoutState(workspace){
+        if(!workspace)return "";
+        return ["showLayers","showInspector","elementsCollapsed","elementsMinimized"]
+            .map(function(name){return workspace.dataset[name]||"";}).join("|");
+    }
+    function setElementsCollapsed(collapsed,restoreFocus,deferRefresh){
+        const layers=role("layers"),pane=layers&&layers.closest?
+                layers.closest(".fwwebex-label-layers"):null,
+            workspace=role("workspace"),
+            button=root.querySelector('[data-action="toggle-elements"]'),
+            activeInside=!!(pane&&typeof pane.contains==="function"&&
+                pane.contains(document.activeElement)),
+            available=state.options.showLayers!==false,
+            wasHidden=workspace?workspace.dataset.elementsCollapsed==="true":
+                !!(pane&&pane.hidden);
+        state.elementsCollapsed=collapsed===true;
+        const hidden=!available||state.elementsCollapsed;
+        if(pane){
+            pane.hidden=hidden;
+            if(!pane.id)pane.id=String(root.id||"fwwebex-label").replace(
+                /[^A-Za-z0-9_-]/g,"-")+"-elements-pane";
+        }
+        if(workspace)workspace.dataset.elementsCollapsed=String(hidden);
+        if(button){
+            button.hidden=!available;
+            button.setAttribute("aria-expanded",String(!hidden));
+            button.setAttribute("aria-label",hidden?
+                "Mostrar painel Elementos":"Ocultar painel Elementos");
+            button.textContent=hidden?"Mostrar Elementos":"Ocultar Elementos";
+            if(hidden&&(restoreFocus===true||activeInside)&&
+                typeof button.focus==="function")button.focus();
+            if(pane)button.setAttribute("aria-controls",pane.id);
+        }
+        if(hidden!==wasHidden&&deferRefresh!==true)refreshWorkspaceViewport();
+        return state.elementsCollapsed;
+    }
+    function setElementsMinimized(minimized,restoreFocus,deferRefresh){
+        const layers=role("layers"),pane=layers&&layers.closest?
+                layers.closest(".fwwebex-label-layers"):null,
+            body=pane&&pane.querySelector?
+                pane.querySelector(".fwwebex-label-panel-body"):null,
+            workspace=role("workspace"),
+            button=root.querySelector('[data-action="toggle-elements-size"]'),
+            activeInside=!!(body&&typeof body.contains==="function"&&
+                body.contains(document.activeElement)),
+            wasMinimized=workspace?workspace.dataset.elementsMinimized==="true":
+                !!(pane&&pane.dataset.minimized==="true");
+        state.elementsMinimized=minimized===true;
+        if(pane){
+            pane.dataset.minimized=String(state.elementsMinimized);
+            if(!pane.id)pane.id=String(root.id||"fwwebex-label").replace(
+                /[^A-Za-z0-9_-]/g,"-")+"-elements-pane";
+        }
+        if(body){
+            body.hidden=state.elementsMinimized;
+            if(!body.id)body.id=String(root.id||"fwwebex-label").replace(
+                /[^A-Za-z0-9_-]/g,"-")+"-elements-body";
+        }
+        if(workspace)workspace.dataset.elementsMinimized=String(state.elementsMinimized);
+        if(button){
+            button.setAttribute("aria-expanded",String(!state.elementsMinimized));
+            button.setAttribute("aria-label",state.elementsMinimized?
+                "Expandir painel Elementos":"Recolher painel Elementos");
+            button.title=state.elementsMinimized?
+                "Expandir painel Elementos":"Recolher painel Elementos";
+            button.textContent=state.elementsMinimized?"\u203a":"Recolher";
+            if(state.elementsMinimized&&(restoreFocus===true||activeInside)&&
+                typeof button.focus==="function")button.focus();
+            if(body)button.setAttribute("aria-controls",body.id);
+        }
+        if(state.elementsMinimized!==wasMinimized&&
+            state.options.showLayers!==false&&!state.elementsCollapsed&&deferRefresh!==true)
+            refreshWorkspaceViewport();
+        return state.elementsMinimized;
+    }
     function dataRecord(){
         if(!state.records.length)return {};
         return state.records[Math.max(0,Math.min(state.records.length-1,state.recordIndex))]||{};
@@ -3772,6 +4168,7 @@ method RenderHTML() class WebExLabelDesigner
     }
     function renderInspector(){
         const item=selected(),count=role("selection-count");
+        syncInspectorTabs(item);
         if(count)count.textContent=state.selection.length+" selecionado(s)";
         const resolved=role("resolved-value");
         if(resolved){
@@ -3919,6 +4316,23 @@ method RenderHTML() class WebExLabelDesigner
             });
         }
     }
+    function syncStageZoom(){
+        const viewport=role("stage-viewport");
+        if(state.mode==="print"&&state.previewViewport){
+            syncViewportGeometry();
+        }else if(state.zoom==="fit"&&viewport&&viewport.clientWidth){
+            const availableWidth=Math.max(40,viewport.clientWidth-32),
+                availableHeight=Math.max(40,(viewport.clientHeight||340)-32),
+                fittedWidth=Math.min(1000,availableWidth,
+                    availableHeight*(page().width/page().height));
+            stage.style.width=fittedWidth+"px";
+            syncViewportGeometry();
+        }else{
+            const zoom=num(state.zoom,1);
+            stage.style.width=(zoom*100)+"%";
+            syncViewportGeometry();
+        }
+    }
     function renderProductUI(){
         root.dataset.mode=state.mode;
         const name=role("document-name"),metrics=role("canvas-metrics"),
@@ -3965,8 +4379,14 @@ method RenderHTML() class WebExLabelDesigner
             button.setAttribute("aria-pressed",String(button.dataset.mode===state.mode));
         });
         const overlayButton=root.querySelector("[data-action=print-overlay]");
-        if(overlayButton)overlayButton.setAttribute("aria-pressed",
-            String(state.printOverlay===true));
+        if(overlayButton){
+            overlayButton.hidden=state.mode!=="print";
+            overlayButton.setAttribute("aria-pressed",String(state.printOverlay===true));
+        }
+        const overlayOpacity=role("overlay-opacity"),overlayOpacityField=
+            role("overlay-opacity-field");
+        if(overlayOpacity)overlayOpacity.hidden=state.mode!=="print";
+        if(overlayOpacityField)overlayOpacityField.hidden=state.mode!=="print";
         const gridButton=root.querySelector("[data-action=grid]"),
             snapButton=root.querySelector("[data-action=snap]"),
             referenceButton=root.querySelector("[data-action=reference]"),
@@ -3981,6 +4401,7 @@ method RenderHTML() class WebExLabelDesigner
             String(state.layout.editor.snap.chainMode===true));
         const recordSelect=role("record-index");
         if(recordSelect){
+            recordSelect.hidden=state.mode!=="data";
             if(recordSelect.options.length!==state.records.length){
                 recordSelect.innerHTML="";
                 state.records.forEach(function(record,index){
@@ -3992,21 +4413,7 @@ method RenderHTML() class WebExLabelDesigner
             recordSelect.disabled=state.records.length<2;
             recordSelect.value=String(state.recordIndex);
         }
-        const viewport=role("stage-viewport");
-        if(state.mode==="print"&&state.previewViewport){
-            syncViewportGeometry();
-        }else if(state.zoom==="fit"&&viewport&&viewport.clientWidth){
-            const availableWidth=Math.max(40,viewport.clientWidth-32),
-                availableHeight=Math.max(40,(viewport.clientHeight||340)-32),
-                fittedWidth=Math.min(1000,availableWidth,
-                    availableHeight*(page().width/page().height));
-            stage.style.width=fittedWidth+"px";
-            syncViewportGeometry();
-        }else{
-            const zoom=num(state.zoom,1);
-            stage.style.width=(zoom*100)+"%";
-            syncViewportGeometry();
-        }
+        syncStageZoom();
         if(stage.classList)stage.classList.toggle("has-grid",
             state.layout.editor.grid.enabled===true&&
                 (state.mode!=="print"||state.printOverlay));
@@ -4050,9 +4457,18 @@ method RenderHTML() class WebExLabelDesigner
     }
     function showReport(report){
         state.lastReport=report;
+        const issues=report.issues||[],problemCount=role("problem-count"),
+            errors=issues.filter(function(problem){return problem.severity==="error";}).length,
+            warnings=issues.length-errors;
+        if(problemCount){
+            problemCount.textContent=String(issues.length);
+            problemCount.dataset.state=errors?"error":warnings?"warning":"";
+            problemCount.setAttribute("aria-label",issues.length+" problema(s): "+
+                errors+" erro(s) e "+warnings+" aviso(s)");
+        }
         const host=role("problems");if(host){
             host.innerHTML="";
-            (report.issues||[]).forEach(function(problem){
+            issues.forEach(function(problem){
                 const row=document.createElement("div");
                 row.className="fwwebex-label-problem";
                 row.dataset.severity=problem.severity||"warning";
@@ -4061,7 +4477,7 @@ method RenderHTML() class WebExLabelDesigner
                     problem.message+(problem.suggestion?" \u2014 "+problem.suggestion:"");
                 host.appendChild(row);
             });
-            if(!(report.issues||[]).length)host.textContent="Nenhum problema encontrado.";
+            if(!issues.length)host.textContent="Nenhum problema encontrado.";
         }
         setStatus(report.valid?"Layout v\u00e1lido.":"Foram encontrados erros no layout.",
             report.valid?"valid":"error");
@@ -4695,7 +5111,9 @@ method RenderHTML() class WebExLabelDesigner
     }
     function setOptions(options){
         if(typeof options==="string")options=JSON.parse(options||"{}");
-        state.options=Object.assign({},state.options,clone(options||{}));
+        const changed=clone(options||{}),workspace=role("workspace"),
+            previousWorkspaceState=workspaceLayoutState(workspace);
+        state.options=Object.assign({},state.options,changed);
         ["toolbar","layers","inspector","drawers"].forEach(function(name){
             const node=role(name),key="show"+name.charAt(0).toUpperCase()+name.slice(1);
             let region=node;
@@ -4704,6 +5122,26 @@ method RenderHTML() class WebExLabelDesigner
             if(region&&Object.prototype.hasOwnProperty.call(state.options,key))
                 region.hidden=state.options[key]===false;
         });
+        const showLayers=state.options.showLayers!==false,
+            showInspector=state.options.showInspector!==false;
+        if(workspace){
+            workspace.dataset.showLayers=String(showLayers);
+            workspace.dataset.showInspector=String(showInspector);
+        }
+        if(Object.prototype.hasOwnProperty.call(changed,"elementsCollapsed"))
+            state.elementsCollapsed=changed.elementsCollapsed===true;
+        if(Object.prototype.hasOwnProperty.call(changed,"elementsMinimized"))
+            state.elementsMinimized=changed.elementsMinimized===true;
+        setElementsCollapsed(state.elementsCollapsed,false,true);
+        setElementsMinimized(state.elementsMinimized,false,true);
+        if(workspaceLayoutState(workspace)!==previousWorkspaceState)
+            refreshWorkspaceViewport();
+        if(changed.tabs&&typeof changed.tabs==="object")
+            Object.keys(changed.tabs).forEach(function(group){
+                activateTab(group,changed.tabs[group],false);
+            });
+        if(Object.prototype.hasOwnProperty.call(changed,"drawersCollapsed"))
+            setDrawersCollapsed(changed.drawersCollapsed===true);
         return clone(state.options);
     }
     function discoverVariables(addMissing){
@@ -4826,6 +5264,12 @@ method RenderHTML() class WebExLabelDesigner
         if(!editor)return;
         const result=load(JSON.parse(editor.value),{discardDirty:true});
         setStatus("Contrato aplicado.");return result;
+    }
+    function formatEditedJSON(){
+        const editor=role("contract-editor");
+        if(!editor)return;
+        editor.value=JSON.stringify(JSON.parse(editor.value),null,2);
+        setStatus("Contrato JSON formatado.");
     }
     function applyInspector(control){
         const path=control.dataset.property,item=selected();
@@ -4992,6 +5436,16 @@ method RenderHTML() class WebExLabelDesigner
             if(action==="preview"){previewProduct().catch(function(){});return;}
             if(action==="export"){exportJSON();return;}
             if(action==="import"){const input=role("layout-file");if(input)input.click();return;}
+            if(action==="toggle-drawers"){
+                setDrawersCollapsed(!state.drawersCollapsed);return;
+            }
+            if(action==="toggle-elements"){
+                setElementsCollapsed(!state.elementsCollapsed,false);return;
+            }
+            if(action==="toggle-elements-size"){
+                setElementsMinimized(!state.elementsMinimized,false);return;
+            }
+            if(action==="format-json"){formatEditedJSON();return;}
             if(action==="apply-json"){applyEditedJSON();return;}
             if(action==="discard-json"){syncContract(true);setStatus("Edi\u00e7\u00e3o descartada.");return;}
             if(action==="layer-up"){reorderSelected(1);return;}
@@ -5011,6 +5465,15 @@ method RenderHTML() class WebExLabelDesigner
         }
     }
     listen(root,"click",function(event){
+        const tab=event.target.closest&&event.target.closest(
+            '[role="tab"][data-tab-group]');
+        if(tab){
+            if(tabAvailable(tab)){
+                activateTab(tab.dataset.tabGroup,tab.dataset.tabTarget,false);
+                if(tab.dataset.tabGroup==="drawers")setDrawersCollapsed(false);
+            }
+            return;
+        }
         const actionButton=event.target.closest&&event.target.closest("[data-action]");
         if(actionButton){handleAction(actionButton.dataset.action,actionButton);return;}
         const layer=event.target.closest&&event.target.closest(".fwwebex-label-layer");
@@ -5078,10 +5541,44 @@ method RenderHTML() class WebExLabelDesigner
         }
     });
     listen(root,"keydown",function(event){
-        const target=event.target,editing=target&&
+        const target=event.target,key=String(event.key||"").toLowerCase(),
+            tab=target&&target.closest&&target.closest(
+                '[role="tab"][data-tab-group]');
+        if(tab&&["arrowleft","arrowright","arrowup","arrowdown","home","end"].indexOf(key)>=0){
+            const buttons=tabButtons(tab.dataset.tabGroup).filter(tabAvailable),
+                index=Math.max(0,buttons.indexOf(tab));
+            let next=index;
+            if(key==="home")next=0;
+            else if(key==="end")next=buttons.length-1;
+            else if(key==="arrowleft"||key==="arrowup")
+                next=(index-1+buttons.length)%buttons.length;
+            else next=(index+1)%buttons.length;
+            event.preventDefault();
+            if(buttons[next]){
+                activateTab(tab.dataset.tabGroup,buttons[next].dataset.tabTarget,true);
+                if(tab.dataset.tabGroup==="drawers")setDrawersCollapsed(false);
+            }
+            return;
+        }
+        if(key==="escape"){
+            const openDetails=roleAll("details[open]");
+            if(openDetails.length){
+                const detail=openDetails[openDetails.length-1],summary=
+                    detail.querySelector&&detail.querySelector("summary");
+                detail.open=false;event.preventDefault();
+                if(summary&&typeof summary.focus==="function")summary.focus();
+                return;
+            }
+            const drawers=role("drawers");
+            if(!state.drawersCollapsed&&drawers&&typeof drawers.contains==="function"&&
+                drawers.contains(target)){
+                setDrawersCollapsed(true,true);event.preventDefault();return;
+            }
+        }
+        const editing=target&&
             /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName||"");
         if(editing)return;
-        const key=String(event.key||"").toLowerCase(),ctrl=event.ctrlKey||event.metaKey;
+        const ctrl=event.ctrlKey||event.metaKey;
         if(ctrl&&key==="z"){event.preventDefault();event.shiftKey?redo():undo();return;}
         if(ctrl&&key==="y"){event.preventDefault();redo();return;}
         if(ctrl&&key==="d"){event.preventDefault();duplicate();checkpoint();return;}
@@ -5231,6 +5728,13 @@ method RenderHTML() class WebExLabelDesigner
         setRecords:setRecords,setOptions:setOptions,validate:validateProduct,
         preview:previewProduct,download:downloadProduct,print:printProduct,
         undo:undo,redo:redo,exportJSON:exportJSON,
+        selectTab:function(group,target,focus){
+            return !!activateTab(group,target,focus===true);
+        },
+        getActiveTabs:function(){return clone(state.tabs);},
+        setDrawersCollapsed:setDrawersCollapsed,
+        setElementsCollapsed:setElementsCollapsed,
+        setElementsMinimized:setElementsMinimized,
         discoverVariables:discoverVariables,generateSampleRecords:function(options){
             return generateSampleRecords(Object.assign({
                 readEditor:true,forceSync:true,enableAutomatic:true,source:"api"
@@ -5347,6 +5851,8 @@ method RenderHTML() class WebExLabelDesigner
             return fallback;
         }
     }
+    initializeTabs();setDrawersCollapsed(false);setElementsCollapsed(false,false);
+    setElementsMinimized(false,false);
     resetHistory();syncStage();
     Promise.resolve().then(function(){
         const options=initialJSON('__OPTIONS_JSON__',{},"op\u00e7\u00f5es"),

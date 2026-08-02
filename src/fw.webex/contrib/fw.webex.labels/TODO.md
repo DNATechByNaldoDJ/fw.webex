@@ -133,6 +133,25 @@ Núcleo de distribuição e posicionamento executado em 01/08/2026 — **OK**:
   permanecem marcados como **Parcial** e 10 são pendências completas/opcionais;
 - 135 testes Labels: 134 aprovados, nenhuma falha e 1 raster opt-in ignorado.
 
+Reorganização funcional do Designer executada em 01/08/2026 — **OK**:
+
+- a barra superior foi reduzida às ações globais e recebeu categorias de
+  Documento, Seleção e Visualização;
+- o painel esquerdo passou a alternar entre Adicionar e Camadas, enquanto o
+  inspetor separa Elemento, Geometria, Aparência, Layout e Código de barras;
+- Dados, Contrato e Problemas ocupam um único painel inferior recolhível e
+  redimensionável, com contador acessível de erros e avisos;
+- categorias incompatíveis com o tipo selecionado são ocultadas sem deixar foco
+  em painel invisível; setas, `Home` e `End` implementam roving tabindex;
+- cada instância gera relações ARIA próprias e mantém o estado de suas abas fora
+  do contrato, dos registros, do histórico e do estado `dirty`;
+- a partir de 900 px, o workspace mantém Elementos, rótulo e Inspetor em três
+  colunas; Elementos pode ser ocultado por completo ou recolhido a uma faixa
+  lateral de 48 px, ampliando a área central sem deslocar o Inspetor;
+- o backlog detalhado passou a 342 itens concluídos e 25 abertos, dos quais 17
+  permanecem marcados como **Parcial** e 8 são pendências completas/opcionais;
+- 143 testes Labels: 142 aprovados, nenhuma falha e 1 raster opt-in ignorado.
+
 Pendências que não bloqueiam esta entrega:
 
 - compilar e executar os TLPPs em um AppServer Protheus;
@@ -916,7 +935,8 @@ Barra superior:
 Painel esquerdo:
 
 - [ ] **Parcial:** aba "Adicionar": texto, barcode, imagem, linha, retângulo e
-  container. Texto, barcode e container estão disponíveis.
+  container. A aba e os três tipos implementados estão disponíveis; imagem,
+  linha e retângulo continuam como tipos opcionais ainda não implementados.
 - [x] Aba "Camadas": árvore com z-order, parent/children, visibilidade, lock e
   busca por ID/nome/mnemônico.
 - [ ] Permitir arrastar elementos para dentro ou para fora de containers.
@@ -955,6 +975,8 @@ Painel direito com abas:
    - Variáveis utilizadas ou formato, regras AUTO, quiet zone, módulo mínimo,
      texto legível e opções avançadas.
 
+- [x] **OK:** separar o inspetor nas cinco abas funcionais, ocultando abas
+  incompatíveis com o tipo selecionado e preservando os controles existentes.
 - [x] Mostrar somente propriedades aplicáveis ao tipo selecionado.
 - [x] Oferecer uma seção "Avançado" recolhida para `textOptions` e
   `barcodeOptions`.
@@ -963,12 +985,11 @@ Painel direito com abas:
 
 Painel inferior:
 
-- [ ] **Parcial:** aba "Dados": objeto ou array de registros usados no preview.
-  O editor existe no drawer inferior; falta a navegação por abas.
-- [ ] **Parcial:** aba "Contrato": editor JSON com formatar, validar, aplicar e
-  restaurar. Edição/aplicação/restauração existem; faltam aba e ação de formatar.
-- [ ] **Parcial:** aba "Problemas": lista estruturada de erros e avisos. A lista
-  existe no drawer; falta a navegação por abas.
+- [x] **OK:** aba "Dados": objeto ou array de registros usados no preview.
+- [x] **OK:** aba "Contrato": editor JSON com formatar, validar, aplicar e
+  restaurar.
+- [x] **OK:** aba "Problemas": lista estruturada de erros e avisos, com badge
+  acessível sem troca automática de contexto.
 - [x] Controlar estado `clean/dirty` do editor JSON.
 - [x] Nunca sobrescrever JSON `dirty` durante validar ou preview.
 - [x] Se o JSON estiver `dirty`, validar exatamente seu conteúdo.
@@ -980,17 +1001,22 @@ Painel inferior:
 
 Responsividade:
 
-- [ ] **Parcial:** acima de 1400 px: três colunas e painel inferior. O shell usa
-  três colunas acima de 1100 px.
-- [ ] Entre 900 e 1399 px: painel esquerdo compacto e inspetor em drawer.
-- [ ] Abaixo de 900 px: priorizar preview, árvore e propriedades em abas; não
-  tentar reproduzir toda a experiência desktop em uma coluna interminável.
+- [x] **OK:** acima de 1400 px: três colunas e painel inferior por abas.
+- [x] **OK:** entre 900 e 1399 px: manter a ordem Elementos, rótulo e Inspetor;
+  permitir ocultar/mostrar a coluna e, independentemente, recolher/expandir
+  Elementos como faixa lateral para ampliar o rótulo sem mover o Inspetor.
+- [ ] **Parcial:** abaixo de 900 px: priorizar preview, árvore e propriedades em
+  abas. Os painéis passam a uma coluna e o conteúdo interno usa abas; falta a
+  navegação principal que mostre apenas uma das três regiões por vez.
 
 Acessibilidade:
 
 - [x] Associar labels ou nomes acessíveis aos controles.
-- [ ] **Parcial:** permitir navegação por teclado. Há atalhos e foco na
-  prancheta; falta navegação individual entre elementos.
+- [ ] **Parcial:** permitir navegação por teclado. Abas usam roving tabindex,
+  setas, `Home` e `End`, e a prancheta mantém seus atalhos; falta navegação
+  individual entre elementos.
+- [x] Usar semântica `tablist`, `tab` e `tabpanel` com relações ARIA únicas por
+  instância e sem deixar o foco em painéis ocultos.
 - [x] Manter foco visível.
 - [x] Não comunicar erro apenas por cor.
 - [x] Usar botões com texto ou `aria-label`.

@@ -47,6 +47,10 @@ Suítes executáveis:
   quatro direções, alinhamento transversal, igualação, distribuição com
   referência fixa, subárvores de containers, overflow atômico e integração do
   menu/posicionamento encadeado do designer;
+- `designer-tabs.test.mjs`: agrupamento funcional da barra, painel esquerdo,
+  inspetor e drawer inferior, contrato ARIA por instância, navegação por clique
+  e teclado, ocultação e minimização independentes de Elementos, reajuste do
+  canvas, recolhimento do painel inferior e ordem responsiva;
 - `initial-config-escaping.test.mjs`: transporte do JSON inicial entre TLPP e
   JavaScript, contagem literal de barras, proteção de `</script>` e diagnóstico
   separado para layout, dados e opções;

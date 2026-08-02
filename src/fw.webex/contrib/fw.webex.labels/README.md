@@ -54,7 +54,11 @@ resolvidos dentro da raiz da propria instancia. Duas instancias podem coexistir
 na mesma pagina.
 
 Opcoes do designer: `showToolbar`, `showLayers`, `showInspector`,
-`showDrawers`, `autoSampleRecords` e `fileName`. O editor visual oferece os
+`showDrawers`, `drawersCollapsed`, `elementsCollapsed`, `elementsMinimized`, `tabs`,
+`autoSampleRecords` e `fileName`.
+Por compatibilidade, `showLayers: false` oculta todo o painel esquerdo,
+incluindo a aba Adicionar.
+O editor visual oferece os
 modos `Design`, `Dados` e `Impressao`. O modo Dados resolve os templates usando
 o registro corrente; o
 modo Impressao gera um `ArrayBuffer` pelo renderer final e rasteriza a página
@@ -66,6 +70,55 @@ obsoletos são cancelados/ignorados. Se a rasterização falhar, o componente vo
 ao modo Design, publica `fwwebex:label-error` e mostra o erro real. Enquanto o textarea do contrato estiver
 alterado, atualizacoes visuais nao sobrescrevem o texto pendente. Validacao e
 preview usam exatamente esse JSON pendente.
+
+### Organização da interface
+
+O Designer separa as funcionalidades sem duplicar controles ou regras:
+
+- a barra compacta mantém modos, desfazer/refazer, zoom, validação e preview;
+- `Documento`, `Seleção` e `Visualização` agrupam as demais ferramentas;
+- o painel esquerdo alterna entre `Adicionar` e `Camadas`;
+- o inspetor divide propriedades em `Elemento`, `Geometria`, `Aparência`,
+  `Layout` e `Código de barras`, ocultando categorias incompatíveis com o tipo;
+- o painel inferior, recolhível e redimensionável, alterna entre `Dados`,
+  `Contrato` e `Problemas`. O badge de Problemas informa erros e avisos sem
+  trocar a aba automaticamente.
+
+As abas usam `tablist`, `tab` e `tabpanel`, possuem IDs locais à instância e
+aceitam setas, `Home` e `End`. A troca é estado transitório da interface: não
+altera layout, registros, histórico nem o estado `dirty` do contrato. A partir
+de 900 px, o workspace mantém a ordem **Elementos | rótulo | Inspetor**. O botão
+**Ocultar Elementos**, no cabeçalho do rótulo, remove temporariamente a coluna
+esquerda e amplia a área central; o mesmo botão permite reabri-la. O botão
+**Recolher**, no próprio painel Elementos, mantém uma faixa lateral de 48 px com
+o controle de expansão. Assim, ocultar e minimizar são preferências transitórias
+independentes. Abaixo de 900 px, o recolhimento preserva apenas o cabeçalho em
+largura total; canvas, elementos e propriedades seguem em uma única coluna.
+
+O estado inicial pode ser configurado sem editar o contrato:
+
+```javascript
+designer.setOptions({
+  drawersCollapsed: true,
+  elementsCollapsed: true,
+  elementsMinimized: false,
+  tabs: {
+    toolbar: "document",
+    sidebar: "layers",
+    inspector: "element",
+    drawers: "data"
+  }
+});
+
+designer.selectTab("drawers", "problems", true);
+designer.setElementsCollapsed(false);
+designer.setElementsMinimized(true);
+const activeTabs = designer.getActiveTabs();
+```
+
+Valores aceitos: `toolbar` (`document`, `selection`, `view`), `sidebar`
+(`add`, `layers`), `inspector` (`element`, `geometry`, `appearance`, `layout`,
+`barcode`) e `drawers` (`data`, `contract`, `problems`).
 
 O menu compacto **Configurar pagina** altera largura, altura, rotacao de saida,
 margens por lado, area segura, o valor de sangria mantido como metadado, passo

@@ -3,7 +3,32 @@
    Entries may not always be in chronological/commit order.
    See license at the end of file.
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add REST timeout, error handling and status UI)"
-*/
+ */
+
+2026-08-01 23:21 UTC naldodj (Reorganize Labels Designer by functional tabs)
+  Reduce visual density while preserving the reusable FWWebEx component APIs.
+    - Keep modes, history, zoom, validation and preview in a compact quick bar,
+      grouping the remaining tools as Document, Selection and View.
+    - Split the left panel into Add/Layers and the inspector into Element,
+      Geometry, Appearance, Layout and Barcode tabs.
+    - Consolidate Data, Contract and Problems in one collapsible, resizable
+      lower panel with JSON formatting and an accessible issue counter.
+    - Add instance-scoped ARIA relationships, roving tab focus, arrow/Home/End
+      navigation and safe fallback when a contextual tab becomes unavailable.
+    - Keep Elements, label canvas and Inspector in three columns from 900 px,
+      allow Elements to be either hidden or minimized to a 48 px return rail so
+      the canvas grows without moving the Inspector, and use a single-column
+      workspace below 900 px.
+    - Cover markup ownership, responsive rules, per-instance state, click,
+      keyboard and drawer behavior; 142 of 143 Labels tests pass, with only the
+      opt-in browser raster skipped.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      + src/fw.webex/contrib/fw.webex.labels/tests/designer-tabs.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * ChangeLog.txt
 
 2026-08-01 22:44 UTC naldodj (Add deterministic Labels arrangement commands)
   Complete the reusable positioning and distribution core in Labels Designer.
