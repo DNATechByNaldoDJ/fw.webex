@@ -73,6 +73,8 @@ class FakeNode {
 
     dispatchEvent(event) {
         this.events.push(event);
+        const listener = this.listeners.get(event.type);
+        if (listener) listener({currentTarget: this, target: this, ...event});
         return true;
     }
 
@@ -302,4 +304,157 @@ test("invalid editor JSON produces a structured local issue", async () => {
     assert.equal(report.issues[0].phase, "input");
     assert.equal(panels.panelA.roles.report.dataset.state, "error");
     assert.equal(panels.panelA.roles.issues.children.length, 1);
+});
+
+test("layout and record changes invalidate the previous report and result", async () => {
+    const {apiA, panels} = createHarness();
+    const {roles} = panels.panelA;
+
+    await apiA.validate();
+    assert.ok(apiA.getState().lastResult);
+    assert.ok(apiA.getState().lastReport);
+
+    apiA.setLayout({schema: "fwwebex.labels", version: 2, name: "new-layout"});
+    assert.equal(apiA.getState().lastResult, null);
+    assert.equal(apiA.getState().lastReport, null);
+    assert.equal(roles.report.dataset.state, "idle");
+    assert.match(roles.status.textContent, /Layout alterado/);
+    assert.equal(roles.issues.children.length, 0);
+    assert.equal(roles["empty-issues"].hidden, false);
+
+    await apiA.validate();
+    apiA.setRecords([{produto: "new-data"}]);
+    assert.equal(apiA.getState().lastResult, null);
+    assert.equal(apiA.getState().lastReport, null);
+    assert.equal(roles.report.dataset.state, "idle");
+    assert.match(roles.status.textContent, /Dados alterados/);
+
+    await apiA.validate();
+    roles.layout.value = '{"schema":"fwwebex.labels","version":2,"name":"typed"}';
+    roles.layout.dispatchEvent({type: "input"});
+    assert.equal(apiA.getState().lastResult, null);
+    assert.equal(apiA.getState().lastReport, null);
+    assert.match(roles.status.textContent, /Layout alterado/);
+
+    await apiA.validate();
+    roles.records.value = '[{"produto":"typed"}]';
+    roles.records.dispatchEvent({type: "input"});
+    assert.equal(apiA.getState().lastResult, null);
+    assert.equal(apiA.getState().lastReport, null);
+    assert.match(roles.status.textContent, /Dados alterados/);
+});
+
+test("effective option and rotation changes invalidate exactly once", async () => {
+    const {apiA, panels, calls} = createHarness();
+    const {roles} = panels.panelA;
+
+    await apiA.validate();
+    const initialState = apiA.getState();
+
+    apiA.setOptions({rotation: 0});
+    assert.equal(apiA.getState().inputRevision, initialState.inputRevision,
+        "an equivalent rotation supplied through options has no effect");
+    assert.equal(apiA.getState().lastReport, initialState.lastReport);
+
+    apiA.setOptions({compress: false, rotation: 0});
+    const changedState = apiA.getState();
+    assert.equal(changedState.inputRevision, initialState.inputRevision + 1);
+    assert.equal(changedState.lastResult, null);
+    assert.equal(changedState.lastReport, null);
+    assert.match(roles.status.textContent, /Op[cç][oõ]es alteradas/);
+
+    await apiA.validate();
+    const validatedState = apiA.getState();
+    apiA.setOptions({rotation: "0", compress: false});
+    assert.equal(apiA.getState().inputRevision, validatedState.inputRevision,
+        "property order and equivalent rotation types are semantically equal");
+    assert.equal(apiA.getState().lastReport, validatedState.lastReport);
+
+    roles.rotation.dispatchEvent({type: "change"});
+    assert.equal(apiA.getState().inputRevision, validatedState.inputRevision,
+        "a change event without a new selector value is ignored");
+    assert.equal(apiA.getState().lastReport, validatedState.lastReport);
+
+    roles.rotation.value = "90";
+    roles.rotation.dispatchEvent({type: "change"});
+    const rotatedState = apiA.getState();
+    assert.equal(rotatedState.inputRevision, validatedState.inputRevision + 1);
+    assert.equal(rotatedState.lastResult, null);
+    assert.equal(rotatedState.lastReport, null);
+    assert.match(roles.status.textContent, /Rota[cç][aã]o alterada/);
+
+    await apiA.validate();
+    assert.equal(calls.at(-1).options.rotation, 90);
+});
+
+test("older generations cannot beat a newer option revision", async () => {
+    const {apiA, panels, context} = createHarness();
+    const pendingGenerations = [];
+    const successfulResult = (tag) => ({
+        tag,
+        output: null,
+        report: {
+            valid: true,
+            issues: [],
+            errors: [],
+            warnings: [],
+            metrics: {}
+        }
+    });
+    context.window.FWWebExLabels.renderer.generate = () =>
+        new Promise((resolveGeneration) => {
+            pendingGenerations.push(resolveGeneration);
+        });
+
+    const older = apiA.validate();
+    apiA.setOptions({compress: false});
+    const newer = apiA.validate();
+
+    pendingGenerations[0](successfulResult("older"));
+    assert.equal(await older, null);
+    assert.equal(apiA.getState().busy, true,
+        "an obsolete completion must not clear a newer busy operation");
+
+    pendingGenerations[1](successfulResult("newer"));
+    assert.equal((await newer).tag, "newer");
+    assert.equal(apiA.getState().lastResult.tag, "newer");
+    assert.equal(apiA.getState().busy, false);
+
+    const beforeRotation = apiA.validate();
+    panels.panelA.roles.rotation.value = "180";
+    panels.panelA.roles.rotation.dispatchEvent({type: "change"});
+    pendingGenerations[2](successfulResult("before-rotation"));
+
+    assert.equal(await beforeRotation, null);
+    assert.equal(apiA.getState().lastResult, null);
+    assert.equal(apiA.getState().lastReport, null);
+    assert.match(panels.panelA.roles.status.textContent, /Rota[cç][aã]o alterada/);
+});
+
+test("an in-flight generation cannot restore a report after inputs change", async () => {
+    const {apiA, panels, context} = createHarness();
+    let finishGeneration;
+    context.window.FWWebExLabels.renderer.generate = () =>
+        new Promise((resolveGeneration) => {
+            finishGeneration = resolveGeneration;
+        });
+
+    const pending = apiA.validate();
+    apiA.setRecords([{produto: "changed-while-validating"}]);
+    finishGeneration({
+        output: null,
+        report: {
+            valid: true,
+            issues: [],
+            errors: [],
+            warnings: [],
+            metrics: {}
+        }
+    });
+
+    assert.equal(await pending, null);
+    assert.equal(apiA.getState().lastResult, null);
+    assert.equal(apiA.getState().lastReport, null);
+    assert.equal(panels.panelA.roles.report.dataset.state, "idle");
+    assert.match(panels.panelA.roles.status.textContent, /Dados alterados/);
 });

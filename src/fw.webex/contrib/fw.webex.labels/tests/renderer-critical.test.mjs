@@ -389,6 +389,26 @@ test("clip and ellipsis apply distinct overflow behavior deterministically", asy
     assert.equal(ellipsisMetrics.overflowPolicy, "ellipsis");
 });
 
+test("validateOnly measures every supplied record without drawing PDF pages", async () => {
+    const {api, pdfInstances} = loadRuntime();
+    const result = await api.generate(baseLayout({
+        elements: [textElement("produto", "{{produto}}", {
+            x: 1, y: 1, width: 30, height: 8
+        })]
+    }), [{produto: "A"}, {produto: "B"}], {
+        output: "none",
+        returnResult: true,
+        validateOnly: true
+    });
+    const pdf = pdfInstances[0];
+
+    assert.equal(result.report.valid, true);
+    assert.equal(result.report.metrics.records.length, 2);
+    assert.equal(pdf.advancedCalls, 0);
+    assert.equal(pdf.addPageCalls.length, 0);
+    assert.equal(pdf.textCalls.length, 0);
+});
+
 test("ellipsis marker is measured and never exceeds a very narrow box", async () => {
     const {api, pdfInstances} = loadRuntime();
     const layout = baseLayout({

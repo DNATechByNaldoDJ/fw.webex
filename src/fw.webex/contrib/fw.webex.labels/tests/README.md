@@ -34,7 +34,8 @@ Suítes executáveis:
 - `designer-canonical.test.mjs`: DOM mínimo offline para o designer, migração
   v1, round-trip v2 sem campos flat enumeráveis, valores zero, operações de
   edição/duplicação/trava/container, configuração de página, descoberta de
-  variáveis, teclado/referência e diagnóstico da estrutura HTML;
+  variáveis, teclado/referência, importação de background com metadados,
+  fallback proporcional, undo e proteção contra corridas assíncronas;
 - `designer-smart-snap.test.mjs`: API pública pura, prioridade das origens,
   vencedor independente por eixo, tolerância conforme zoom, histerese de
   `1,5x`, suspensão com `Alt`, feedback transitório, guias canônicas e baseline
@@ -65,6 +66,11 @@ Suítes executáveis:
 - `layout-engine-parity.test.mjs`: API pública pura do motor de layout,
   hierarquia recursiva, ordem explícita, atribuição, duplicação, remoção e
   translação de subárvores;
+- `geometry-box-model.test.mjs`: caixas externas, margens, áreas úteis,
+  mínimos estruturais, alinhamento com margens assimétricas e compressão
+  limitada, inclusive aninhada, de containers sem dimensões degeneradas;
+- `diagnostics-grouping.test.mjs`: preservação das ocorrências brutas,
+  deduplicação exata e agrupamento visual por causa, elemento e registros;
 - `designer-product.test.mjs`: shell, API e CSS autocontidos do produto
   `WebExLabelDesigner`;
 - `generator-panel.test.mjs`: configuração TLPP, delegação ao renderer,
@@ -78,7 +84,8 @@ Suítes executáveis:
   rotações, descarte de geração/raster obsoleto, debounce e fallback para
   Design;
 - `dependency-boundaries.test.mjs`: versões fixadas e separação entre a
-  dependência genérica jsPDF, o adaptador HTML opcional e JsBarcode;
+  dependência genérica jsPDF, o adaptador HTML opcional, ExifReader e
+  JsBarcode;
 - `visual-raster.opt-in.test.mjs`: comparação raster real entre PDF e canvas
   para 0, 90, 180 e 270 graus, com arte assimétrica e barcode vetorial.
 

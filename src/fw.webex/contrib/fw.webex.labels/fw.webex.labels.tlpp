@@ -148,6 +148,7 @@ method Load(oControl) class WebExFeatureLabels
 .fwwebex-label-settings-panel input,.fwwebex-label-settings-panel select{
     width:100%;max-width:none
 }
+.fwwebex-label-help{margin:.4rem 0 0;color:var(--fw-label-muted);font-size:10px}
 .fwwebex-label-settings-actions{display:flex;justify-content:flex-end;margin-top:.45rem}
 .fwwebex-label-arrange-settings .fwwebex-label-settings-panel{
     left:0;right:auto;width:min(620px,calc(100vw - 2rem))
@@ -230,12 +231,13 @@ method Load(oControl) class WebExFeatureLabels
     pointer-events:none;z-index:9999
 }
 .fwwebex-label-field{
-    position:absolute;display:flex;align-items:center;justify-content:center;border:1px dashed var(--fw-label-primary);
+    position:absolute;display:flex;align-items:center;justify-content:center;border:0;
+    outline:1px dashed var(--fw-label-primary);
     background:#0d6efd20;color:#111;font:600 12px Arial;cursor:move;user-select:none;
     transform-origin:center center;overflow:visible
 }
 .fwwebex-label-field-content{display:flex;width:100%;height:100%;box-sizing:border-box}
-.fwwebex-label-field.type-barcode{font-family:monospace;background:#19875420;border-color:var(--fw-label-success)}
+.fwwebex-label-field.type-barcode{font-family:monospace;background:#19875420;outline-color:var(--fw-label-success)}
 .fwwebex-label-field.type-barcode>.fwwebex-label-field-content{align-items:center;justify-content:center}
 .fwwebex-label-field.is-selected{outline:2px solid var(--fw-label-danger)}
 .fwwebex-label-field.is-primary{outline-style:solid}
@@ -243,10 +245,10 @@ method Load(oControl) class WebExFeatureLabels
 .fwwebex-label-field.is-reference:before{
     content:"\25c6";position:absolute;left:-7px;top:-9px;color:#9a7200;font-size:10px
 }
-.fwwebex-label-field.is-locked{cursor:not-allowed;border-style:solid;opacity:.82}
+.fwwebex-label-field.is-locked{cursor:not-allowed;outline-style:solid;opacity:.82}
 .fwwebex-label-field.is-locked:after{content:"\1F512";position:absolute;right:2px;top:0;font-size:11px}
-.fwwebex-label-field.has-overflow{border-color:var(--fw-label-danger);background:#dc354530}
-.fwwebex-label-field.has-unresolved{border-color:var(--fw-label-danger);background:#dc354535}
+.fwwebex-label-field.has-overflow{outline-color:var(--fw-label-danger);background:#dc354530}
+.fwwebex-label-field.has-unresolved{outline-color:var(--fw-label-danger);background:#dc354535}
 .fwwebex-label-field.has-issue-warning{box-shadow:inset 0 0 0 2px var(--fw-label-warning)}
 .fwwebex-label-field.has-issue-error{box-shadow:inset 0 0 0 2px var(--fw-label-danger)}
 .fwwebex-label-field i{
@@ -255,10 +257,16 @@ method Load(oControl) class WebExFeatureLabels
 }
 .fwwebex-label-field.is-selected i{display:block}.fwwebex-label-field.is-locked i{display:none}
 .fwwebex-label-field.type-container{
-    background:#ffc10718;border:2px dashed var(--fw-label-warning);color:#664d03;
+    background:#ffc10718;outline:2px dashed var(--fw-label-warning);color:#664d03;
+    align-items:flex-start;justify-content:flex-start;padding:0
+}
+.fwwebex-label-field.type-container>.fwwebex-label-field-content{
     align-items:flex-start;justify-content:flex-start;padding:3px
 }
-.fwwebex-label-field.type-container>.fwwebex-label-field-content{align-items:flex-start;justify-content:flex-start}
+.fwwebex-label-field.type-container.is-selected{outline:2px solid var(--fw-label-danger)}
+.fwwebex-label-field.type-container.is-locked{outline-style:solid}
+.fwwebex-label-field.type-container.has-overflow,
+.fwwebex-label-field.type-container.has-unresolved{outline-color:var(--fw-label-danger)}
 .fwwebex-label-field.type-container.is-empty:after{
     content:"Area sem componentes";position:absolute;inset:auto 3px 3px;color:#8a6800;font-size:10px
 }
@@ -297,9 +305,23 @@ method Load(oControl) class WebExFeatureLabels
 }
 .fwwebex-label-problem-count[data-state=error]{background:var(--fw-label-danger)}
 .fwwebex-label-problem-count[data-state=warning]{color:#332600;background:var(--fw-label-warning)}
-.fwwebex-label-problem{padding:.25rem;border-bottom:1px solid var(--fw-label-border)}
+.fwwebex-label-problem-count[data-state=stale]{color:#332600;background:#d8b24c}
+.fwwebex-label-problems[data-stale=true]:before{
+    content:attr(data-stale-message);display:block;padding:.35rem;border-bottom:1px solid var(--fw-label-border);
+    color:#6d5200;background:#fff4c7;font-weight:700
+}
+.fwwebex-label-problems[data-stale=false][data-validation-scope=active-record]:before{
+    content:attr(data-scope-message);display:block;padding:.3rem .35rem;
+    border-bottom:1px solid var(--fw-label-border);color:var(--fw-label-muted)
+}
+.fwwebex-label-problem{padding:.3rem;border-bottom:1px solid var(--fw-label-border)}
 .fwwebex-label-problem[data-severity=error]{color:var(--fw-label-danger)}
 .fwwebex-label-problem[data-severity=warning]{color:#8a6800}
+.fwwebex-label-problem>summary{cursor:pointer;font-weight:700}
+.fwwebex-label-problem-meta{margin:.2rem 0 0;color:var(--fw-label-muted);font-size:10px}
+.fwwebex-label-problem-suggestion{margin:.2rem 0 0;color:inherit}
+.fwwebex-label-problem-details{margin:.25rem 0 0;padding-left:1.25rem;color:var(--fw-label-text)}
+.fwwebex-label-problem-details code{display:block;white-space:pre-wrap;color:var(--fw-label-muted)}
 .fwwebex-label-statusbar{
     justify-content:space-between;margin-top:.4rem;padding:.3rem .45rem;border-radius:.3rem;
     background:var(--fw-label-surface);color:var(--fw-label-muted);font-size:10px
@@ -605,6 +627,79 @@ method Load(oControl) class WebExFeatureLabels
             bottom:finite(value.bottom,vertical),
             left:finite(value.left,horizontal)
         };
+    }
+    function insetBox(box,insets){
+        return {
+            x:box.x+insets.left,y:box.y+insets.top,
+            width:box.width-insets.left-insets.right,
+            height:box.height-insets.top-insets.bottom
+        };
+    }
+    function outsetBox(box,insets){
+        return {
+            x:box.x-insets.left,y:box.y-insets.top,
+            width:box.width+insets.left+insets.right,
+            height:box.height+insets.top+insets.bottom
+        };
+    }
+    function elementBoxModel(element,boxOverride){
+        element=element&&typeof element==="object"?element:{};
+        const source=boxOverride&&typeof boxOverride==="object"?
+                boxOverride:(element.box||{}),
+            elementBox={
+                x:finite(source.x,0),y:finite(source.y,0),
+                width:finite(source.width,0),height:finite(source.height,0)
+            },type=String(element.type||"").toLowerCase();
+        let margin=normalizeInsets(0,0),padding=normalizeInsets(0,0),
+            contentInsets=normalizeInsets(0,0),quietZone=0;
+        if(type==="text"){
+            const style=element.style||{};
+            margin=normalizeInsets(style.margin,0);
+            padding=normalizeInsets(style.padding,0);
+            contentInsets=clone(padding);
+        }else if(type==="container"){
+            padding=normalizeInsets(element.layout&&element.layout.padding,0);
+            contentInsets=clone(padding);
+        }else if(type==="barcode"){
+            quietZone=finite(element.quietZone,0);
+            contentInsets.left=quietZone;contentInsets.right=quietZone;
+        }
+        return {
+            elementBox:elementBox,outerBox:clone(elementBox),
+            marginBox:outsetBox(elementBox,margin),
+            contentBox:insetBox(elementBox,contentInsets),
+            margin:margin,padding:padding,contentInsets:contentInsets,
+            quietZone:quietZone
+        };
+    }
+    function minimumStructuralBox(element){
+        element=element&&typeof element==="object"?element:{};
+        const type=String(element.type||"").toLowerCase();
+        if(type==="text"){
+            const style=element.style||{},padding=normalizeInsets(style.padding,0),
+                minimumFont=Math.max(.1,finite(style.minFontSize,3)),
+                lineHeight=Math.max(.5,finite(style.lineHeightFactor,1.15)),
+                contentHeight=minimumFont*.352778*lineHeight;
+            return {width:Math.max(0,padding.left)+Math.max(0,padding.right)+.1,
+                height:Math.max(0,padding.top)+Math.max(0,padding.bottom)+contentHeight,
+                contentWidth:.1,contentHeight:contentHeight};
+        }
+        if(type==="barcode"){
+            const quiet=Math.max(0,finite(element.quietZone,0)),
+                module=Math.max(.1,finite(element.minModuleWidth,.1)),
+                readable=element.displayValue!==false?
+                    Math.max(.1,finite(element.humanReadableMinFontSize,3))*.352778+
+                        Math.max(0,finite(element.textMargin,0)):0;
+            return {width:quiet*2+module,height:readable+.1,
+                contentWidth:module,contentHeight:readable+.1};
+        }
+        if(type==="container"){
+            const padding=normalizeInsets(element.layout&&element.layout.padding,0);
+            return {width:Math.max(0,padding.left)+Math.max(0,padding.right)+.1,
+                height:Math.max(0,padding.top)+Math.max(0,padding.bottom)+.1,
+                contentWidth:.1,contentHeight:.1};
+        }
+        return {width:.1,height:.1,contentWidth:.1,contentHeight:.1};
     }
     function normalizeEditor(value){
         const source=value&&typeof value==="object"&&!Array.isArray(value)?value:{},
@@ -1285,7 +1380,8 @@ method Load(oControl) class WebExFeatureLabels
                     "Informe um valor decimal entre 0 e 1."));
         }
         elements.forEach(function(element,index){
-            const path=pointer("elements",index),box=element.box;
+            const path=pointer("elements",index),box=element.box,
+                boxes=elementBoxModel(element);
             elementIndexes.set(element,index);
             if(ids.has(element.id))issues.push(issue("ELEMENT_ID_DUPLICATE","error",path+"/id",
                 "ID duplicado: "+element.id+".","Defina um ID unico.",element.id));
@@ -1360,9 +1456,7 @@ method Load(oControl) class WebExFeatureLabels
                 if(Object.keys(padding).some(function(side){return !Number.isFinite(padding[side])||padding[side]<0;}))
                     issues.push(issue("TEXT_PADDING_INVALID","error",path+"/style/padding",
                         "Padding deve conter numeros nao negativos.","Corrija os quatro lados.",element.id));
-                const contentBox={x:box.x+padding.left,y:box.y+padding.top,
-                    width:box.width-padding.left-padding.right,
-                    height:box.height-padding.top-padding.bottom};
+                const contentBox=boxes.contentBox;
                 if(!(contentBox.width>0&&contentBox.height>0))
                     issues.push(issue("TEXT_CONTENT_BOX_INVALID","error",path+"/style/padding",
                         "O padding eliminou a area util do texto.",
@@ -1404,6 +1498,11 @@ method Load(oControl) class WebExFeatureLabels
                     issues.push(issue("BARCODE_FORMAT_REQUIRED","error",path+"/format",
                         "O barcode precisa de um formato.",
                         "Informe AUTO ou uma simbologia suportada pelo JsBarcode.",element.id));
+                if(!(boxes.contentBox.width>0&&boxes.contentBox.height>0))
+                    issues.push(issue("BARCODE_CONTENT_BOX_INVALID","error",path+"/quietZone",
+                        "A zona silenciosa eliminou a area util do codigo de barras.",
+                        "Aumente a caixa ou reduza quietZone.",element.id,null,"layout",
+                        {contentBox:boxes.contentBox,quietZone:boxes.quietZone}));
             }
             if(element.type==="container"){
                 const config=element.layout;
@@ -1438,6 +1537,12 @@ method Load(oControl) class WebExFeatureLabels
                 }))issues.push(issue("CONTAINER_SPACING_INVALID","error",path+"/layout",
                     "Padding e gap do container devem ser nao negativos.",
                     "Corrija padding e gap.",element.id));
+                if(!(boxes.contentBox.width>0&&boxes.contentBox.height>0))
+                    issues.push(issue("CONTAINER_CONTENT_BOX_INVALID","error",
+                        path+"/layout/padding",
+                        "O padding eliminou a area util do container.",
+                        "Aumente a area ou reduza o padding.",element.id,null,"layout",
+                        {contentBox:boxes.contentBox,padding:boxes.padding}));
             }
         });
         const containers=elements.filter(function(element){return element.type==="container";});
@@ -1784,10 +1889,10 @@ method Load(oControl) class WebExFeatureLabels
         return baseline;
     }
     function fitText(pdf,text,element,path,recordIndex){
-        const style=element.style||{},fit=element.fit||{},box=element.box;
-        const padding=normalizeInsets(style.padding,0);
-        const width=box.width-padding.left-padding.right;
-        const height=box.height-padding.top-padding.bottom;
+        const style=element.style||{},fit=element.fit||{},box=element.box,
+            boxes=elementBoxModel(element),padding=boxes.padding,
+            contentBox=boxes.contentBox,width=contentBox.width,
+            height=contentBox.height;
         const maximum=Math.max(0.1,finite(style.fontSize,10));
         const configuredMinimum=style.minFontSize==null?Math.max(3,maximum/3):
             finite(style.minFontSize,maximum);
@@ -1797,7 +1902,7 @@ method Load(oControl) class WebExFeatureLabels
         if(!(width>0&&height>0))throw engineError(issue("TEXT_CONTENT_BOX_INVALID","error",
             path+"/style/padding","O padding eliminou a area util do texto.",
             "Aumente a caixa ou reduza o padding.",element.id,recordIndex,"text",
-            {contentBox:{x:box.x+padding.left,y:box.y+padding.top,width:width,height:height},
+            {contentBox:clone(contentBox),
                 padding:padding}));
         if(minimum>maximum)throw engineError(issue("TEXT_FONT_RANGE_INVALID","error",
             path+"/style/minFontSize","minFontSize nao pode superar fontSize.",
@@ -1806,10 +1911,8 @@ method Load(oControl) class WebExFeatureLabels
         if(String(text)==="")
             return {lines:[],size:maximum,padding:padding,
                 lineHeight:maximum*0.352778*factor,
-                contentBox:{x:box.x+padding.left,y:box.y+padding.top,
-                    width:width,height:height},overflowed:false,
-                metrics:{contentBox:{x:box.x+padding.left,y:box.y+padding.top,
-                    width:width,height:height},fontSize:maximum,minFontSize:minimum,
+                contentBox:clone(contentBox),overflowed:false,
+                metrics:{contentBox:clone(contentBox),fontSize:maximum,minFontSize:minimum,
                     finalFontSize:maximum,lineCount:0,maxLines:maxLines,
                     overflowed:false,overflowPolicy:fit.overflow||"error",empty:true,
                     lineHeight:maximum*0.352778*factor,contentHeight:0,
@@ -1848,8 +1951,7 @@ method Load(oControl) class WebExFeatureLabels
                     'Texto "'+text+'" nao cabe no elemento '+(element.id||"sem id")+
                         fitMessage,fitSuggestion,
                     element.id,recordIndex,"text",
-                    {box:clone(box),contentBox:{x:box.x+padding.left,y:box.y+padding.top,
-                        width:width,height:height},padding:padding,fontSize:maximum,
+                    {box:clone(box),contentBox:clone(contentBox),padding:padding,fontSize:maximum,
                         minFontSize:minimum,finalFontSize:size,lineCount:referenceLines.length,
                         maxLines:maxLines,requiredHeight:requiredHeight,
                         estimatedSingleLineWidth:singleLineWidth,fitMode:fit.mode}));
@@ -1863,12 +1965,10 @@ method Load(oControl) class WebExFeatureLabels
             }else if(policy==="clip"){lines=lines.slice(0,visibleLines);}
         }
         const lineHeight=size*0.352778*factor,
-            contentBox={x:box.x+padding.left,y:box.y+padding.top,width:width,height:height},
             baselineY=textBaselineY(box,contentBox,style,size,lineHeight,lines.length);
         return {lines:lines,size:size,padding:padding,lineHeight:lineHeight,
             contentBox:contentBox,
-            overflowed:!measured.fits,metrics:{contentBox:{
-                x:box.x+padding.left,y:box.y+padding.top,width:width,height:height},
+            overflowed:!measured.fits,metrics:{contentBox:clone(contentBox),
                 fontSize:maximum,minFontSize:minimum,finalFontSize:size,
                 lineCount:lines.length,maxLines:maxLines,overflowed:!measured.fits,
                 overflowPolicy:fit.overflow||"error",lineHeight:lineHeight,
@@ -1883,6 +1983,56 @@ method Load(oControl) class WebExFeatureLabels
     function applyContainers(layout){
         const elements=layout.elements||[],byId=new Map(elements.map(function(item){return [item.id,item];}));
         const indexes=new Map(elements.map(function(item,index){return [item,index];}));
+        const minimumCache=new Map();
+        function shrinkWithMinimums(entries,available,vertical){
+            const size=vertical?"height":"width",minimum=vertical?"height":"width",
+                result=entries.map(function(entry){return entry[size];}),
+                active=entries.map(function(entry,index){return index;}),
+                minima=entries.map(function(entry){return entry.minimum[minimum];});
+            let remaining=Math.max(0,available);
+            if(minima.reduce(function(sum,value){return sum+value;},0)>remaining+.000001)
+                return minima;
+            while(active.length){
+                const basisTotal=active.reduce(function(sum,index){return sum+entries[index][size];},0);
+                if(!(basisTotal>0)){
+                    const share=remaining/active.length;
+                    active.forEach(function(index){result[index]=Math.max(minima[index],share);});
+                    break;
+                }
+                const scale=remaining/basisTotal,
+                    limited=active.filter(function(index){
+                        return entries[index][size]*scale<minima[index]-.000001;
+                    });
+                if(!limited.length){
+                    active.forEach(function(index){result[index]=entries[index][size]*scale;});
+                    break;
+                }
+                limited.forEach(function(index){
+                    result[index]=minima[index];remaining-=minima[index];
+                    active.splice(active.indexOf(index),1);
+                });
+                remaining=Math.max(0,remaining);
+            }
+            return result;
+        }
+        function equalWithMinimums(entries,available,vertical){
+            const minimum=vertical?"height":"width",
+                minima=entries.map(function(entry){return entry.minimum[minimum];}),
+                result=minima.slice(),active=entries.map(function(entry,index){return index;}),
+                minimumTotal=minima.reduce(function(sum,value){return sum+value;},0);
+            if(minimumTotal>available+.000001)return result;
+            let remaining=available;
+            while(active.length){
+                const share=remaining/active.length,
+                    limited=active.filter(function(index){return minima[index]>share+.000001;});
+                if(!limited.length){active.forEach(function(index){result[index]=share;});break;}
+                limited.forEach(function(index){
+                    result[index]=minima[index];remaining-=minima[index];
+                    active.splice(active.indexOf(index),1);
+                });
+            }
+            return result;
+        }
         function orderedChildren(container){
             const explicit=(container.layout.children||[]).map(function(id){return byId.get(id);}).filter(Boolean);
             elements.forEach(function(item){
@@ -1890,41 +2040,85 @@ method Load(oControl) class WebExFeatureLabels
             });
             return explicit;
         }
+        function minimumFor(item,visiting){
+            if(minimumCache.has(item.id))return minimumCache.get(item.id);
+            const local=minimumStructuralBox(item);
+            if(item.type!=="container"||item.layout.overflow!=="error"){
+                minimumCache.set(item.id,local);return local;
+            }
+            visiting=visiting||new Set();
+            if(visiting.has(item.id))return local;
+            visiting.add(item.id);
+            const children=orderedChildren(item),config=item.layout,
+                vertical=config.direction!=="horizontal",padding=config.padding,
+                shrinkable=config.sizing==="shrink"||config.sizing==="equal",
+                stretch=config.crossAlign==="stretch";
+            if(!children.length){visiting.delete(item.id);minimumCache.set(item.id,local);return local;}
+            let main=0,cross=0;
+            children.forEach(function(child){
+                const margin=elementBoxModel(child).margin,basis=child.basisBox||child.box,
+                    childMinimum=minimumFor(child,visiting),
+                    mainSize=vertical?(shrinkable?childMinimum.height:basis.height):
+                        (shrinkable?childMinimum.width:basis.width),
+                    crossSize=vertical?(stretch?childMinimum.width:basis.width):
+                        (stretch?childMinimum.height:basis.height);
+                main+=vertical?margin.top+mainSize+margin.bottom:
+                    margin.left+mainSize+margin.right;
+                cross=Math.max(cross,vertical?
+                    margin.left+crossSize+margin.right:
+                    margin.top+crossSize+margin.bottom);
+            });
+            main+=Math.max(0,children.length-1)*config.gap;
+            const result=vertical?{
+                width:Math.max(local.width,padding.left+cross+padding.right),
+                height:Math.max(local.height,padding.top+main+padding.bottom)
+            }:{
+                width:Math.max(local.width,padding.left+main+padding.right),
+                height:Math.max(local.height,padding.top+cross+padding.bottom)
+            };
+            result.contentWidth=Math.max(.1,result.width-padding.left-padding.right);
+            result.contentHeight=Math.max(.1,result.height-padding.top-padding.bottom);
+            visiting.delete(item.id);minimumCache.set(item.id,result);return result;
+        }
         function apply(container,visited){
             if(visited.has(container.id))return;
             visited.add(container.id);
-            const config=container.layout,children=orderedChildren(container),vertical=config.direction!=="horizontal";
-            const padding=config.padding,box=container.box,gap=config.gap;
-            const mainStart=(vertical?box.y+padding.top:box.x+padding.left);
-            const mainSize=Math.max(0,vertical?box.height-padding.top-padding.bottom:box.width-padding.left-padding.right);
-            const crossStart=vertical?box.x+padding.left:box.y+padding.top;
-            const crossSize=Math.max(0,vertical?box.width-padding.left-padding.right:box.height-padding.top-padding.bottom);
+            const config=container.layout,children=orderedChildren(container),
+                vertical=config.direction!=="horizontal",contentBox=elementBoxModel(container).contentBox,
+                gap=config.gap;
+            const mainStart=vertical?contentBox.y:contentBox.x;
+            const mainSize=Math.max(0,vertical?contentBox.height:contentBox.width);
+            const crossStart=vertical?contentBox.x:contentBox.y;
+            const crossSize=Math.max(0,vertical?contentBox.width:contentBox.height);
             const dimensions=children.map(function(item){
-                const margin=item.type==="text"?item.style.margin:normalizeInsets(0);
+                const margin=elementBoxModel(item).margin;
                 const basis=item.basisBox||item.box;
-                return {item:item,margin:margin,width:basis.width,height:basis.height};
+                return {item:item,margin:margin,width:basis.width,height:basis.height,
+                    minimum:minimumFor(item),main:null};
             });
             const baseTotal=dimensions.reduce(function(sum,entry){
                 return sum+(vertical?entry.margin.top+entry.height+entry.margin.bottom:
                     entry.margin.left+entry.width+entry.margin.right);
             },0);
             let actualGap=gap,total=baseTotal+Math.max(0,children.length-1)*gap;
-            if((config.sizing==="distribute"||config.mainAlign==="space-between")&&children.length>1&&mainSize>baseTotal){
-                actualGap=(mainSize-baseTotal)/(children.length-1);total=mainSize;
-            }
             const marginTotal=dimensions.reduce(function(sum,entry){
                 return sum+(vertical?entry.margin.top+entry.margin.bottom:entry.margin.left+entry.margin.right);
             },0);
-            const contentTotal=dimensions.reduce(function(sum,entry){return sum+(vertical?entry.height:entry.width);},0);
-            let scale=1;
-            if(config.sizing==="shrink"&&total>mainSize&&contentTotal>0){
-                scale=Math.max(0,(mainSize-marginTotal-Math.max(0,children.length-1)*gap)/contentTotal);
-            }
-            const equalMain=config.sizing==="equal"&&children.length?
-                Math.max(0,(mainSize-marginTotal-Math.max(0,children.length-1)*gap)/children.length):null;
-            const adjustedContentTotal=equalMain!==null?equalMain*children.length:
-                contentTotal*(scale<1?scale:1);
-            total=marginTotal+adjustedContentTotal+
+            const contentTotal=dimensions.reduce(function(sum,entry){return sum+(vertical?entry.height:entry.width);},0),
+                availableContent=Math.max(0,mainSize-marginTotal-
+                    Math.max(0,children.length-1)*gap);
+            let adjusted=dimensions.map(function(entry){return vertical?entry.height:entry.width;});
+            if(config.sizing==="shrink"&&total>mainSize&&contentTotal>0)
+                adjusted=shrinkWithMinimums(dimensions,availableContent,vertical);
+            if(config.sizing==="equal"&&children.length)
+                adjusted=equalWithMinimums(dimensions,availableContent,vertical);
+            dimensions.forEach(function(entry,index){entry.main=adjusted[index];});
+            const adjustedContentTotal=adjusted.reduce(function(sum,value){return sum+value;},0);
+            const adjustedBaseTotal=marginTotal+adjustedContentTotal;
+            if((config.sizing==="distribute"||config.mainAlign==="space-between")&&
+                children.length>1&&mainSize>adjustedBaseTotal)
+                actualGap=(mainSize-adjustedBaseTotal)/(children.length-1);
+            total=adjustedBaseTotal+
                 Math.max(0,children.length-1)*actualGap;
             let cursor=mainStart,crossOverflow=false;
             if(config.mainAlign==="center"&&total<mainSize)cursor+=(mainSize-total)/2;
@@ -1933,22 +2127,26 @@ method Load(oControl) class WebExFeatureLabels
                 const item=entry.item,margin=entry.margin;item.box.width=entry.width;item.box.height=entry.height;
                 if(vertical){
                     cursor+=margin.top;item.box.y=cursor;
-                    if(equalMain!==null)item.box.height=equalMain;else if(scale<1)item.box.height=entry.height*scale;
+                    if(config.sizing==="equal"||config.sizing==="shrink")item.box.height=entry.main;
                     if(config.crossAlign==="stretch"){item.box.x=crossStart+margin.left;
-                        item.box.width=Math.max(0,crossSize-margin.left-margin.right);}
+                        item.box.width=Math.max(entry.minimum.width,
+                            crossSize-margin.left-margin.right);}
                     if(config.crossAlign==="left"||config.crossAlign==="start")item.box.x=crossStart+margin.left;
-                    if(config.crossAlign==="center")item.box.x=crossStart+(crossSize-item.box.width)/2;
+                    if(config.crossAlign==="center")item.box.x=crossStart+
+                        (crossSize-margin.left-item.box.width-margin.right)/2+margin.left;
                     if(config.crossAlign==="right"||config.crossAlign==="end")
                         item.box.x=crossStart+crossSize-margin.right-item.box.width;
                     cursor+=item.box.height+margin.bottom;
                 }else{
                     cursor+=margin.left;item.box.x=cursor;
-                    if(equalMain!==null)item.box.width=equalMain;else if(scale<1)item.box.width=entry.width*scale;
+                    if(config.sizing==="equal"||config.sizing==="shrink")item.box.width=entry.main;
                     if(config.crossAlign==="stretch"){item.box.y=crossStart+margin.top;
-                        item.box.height=Math.max(0,crossSize-margin.top-margin.bottom);}
+                        item.box.height=Math.max(entry.minimum.height,
+                            crossSize-margin.top-margin.bottom);}
                     if(config.crossAlign==="top"||config.crossAlign==="start")item.box.y=crossStart+margin.top;
                     if(config.crossAlign==="middle"||config.crossAlign==="center")
-                        item.box.y=crossStart+(crossSize-item.box.height)/2;
+                        item.box.y=crossStart+
+                            (crossSize-margin.top-item.box.height-margin.bottom)/2+margin.top;
                     if(config.crossAlign==="bottom"||config.crossAlign==="end")
                         item.box.y=crossStart+crossSize-margin.bottom-item.box.height;
                     cursor+=item.box.width+margin.right;
@@ -1971,6 +2169,14 @@ method Load(oControl) class WebExFeatureLabels
                     "Os componentes nao cabem na area "+(container.name||container.id)+".",
                     "Aumente o container, reduza filhos/gap/margens ou use sizing shrink.",
                     container.id,null,"layout",{availableMainSize:mainSize,usedMainSize:used,
+                        requiredMainSize:marginTotal+
+                            dimensions.reduce(function(sum,entry){return sum+
+                                (vertical?entry.minimum.height:entry.minimum.width);},0)+
+                            Math.max(0,children.length-1)*gap,
+                        minimumLimitedChildren:dimensions.filter(function(entry){
+                            return Math.abs(entry.main-(vertical?entry.minimum.height:
+                                entry.minimum.width))<.000001;
+                        }).map(function(entry){return entry.item.id;}),
                         crossOverflow:crossOverflow,direction:config.direction}));
             children.filter(function(item){return item.type==="container";}).forEach(function(child){apply(child,visited);});
         }
@@ -2371,18 +2577,14 @@ method Load(oControl) class WebExFeatureLabels
             const item=graph.byId.get(id);
             if(!item)return;
             const parent=item.containerId&&graph.byId.get(item.containerId),
-                padding=parent&&parent.type==="container"?
-                    normalizeInsets(parent.layout&&parent.layout.padding,0):
-                    {top:0,right:0,bottom:0,left:0},
-                bounds=parent&&parent.type==="container"?{
-                    x:parent.box.x+padding.left,y:parent.box.y+padding.top,
-                    width:Math.max(0,parent.box.width-padding.left-padding.right),
-                    height:Math.max(0,parent.box.height-padding.top-padding.bottom)
-                }:{x:0,y:0,width:finite(layout.page&&layout.page.width,0),
-                    height:finite(layout.page&&layout.page.height,0)};
-            if(item.box.x<bounds.x-epsilon||item.box.y<bounds.y-epsilon||
-                item.box.x+item.box.width>bounds.x+bounds.width+epsilon||
-                item.box.y+item.box.height>bounds.y+bounds.height+epsilon)
+                nested=parent&&parent.type==="container",
+                bounds=nested?elementBoxModel(parent).contentBox:
+                    {x:0,y:0,width:finite(layout.page&&layout.page.width,0),
+                        height:finite(layout.page&&layout.page.height,0)},
+                candidate=nested?elementBoxModel(item).marginBox:item.box;
+            if(candidate.x<bounds.x-epsilon||candidate.y<bounds.y-epsilon||
+                candidate.x+candidate.width>bounds.x+bounds.width+epsilon||
+                candidate.y+candidate.height>bounds.y+bounds.height+epsilon)
                 overflowIds.push(id);
         });
         return {layout:layout,changedIds:Array.from(changed),skippedIds:skipped,
@@ -2485,10 +2687,7 @@ method Load(oControl) class WebExFeatureLabels
                     reference.name||reference.id);
             const parent=byId.get(String(item.containerId||""));
             if(parent&&parent.type==="container"&&!exclude.has(String(parent.id))){
-                const padding=normalizeInsets(parent.layout&&parent.layout.padding,0),
-                    box={x:parent.box.x+padding.left,y:parent.box.y+padding.top,
-                        width:Math.max(0,parent.box.width-padding.left-padding.right),
-                        height:Math.max(0,parent.box.height-padding.top-padding.bottom)};
+                const box=elementBoxModel(parent).contentBox;
                 addSameAnchors(parent,box,"container",parent.name||parent.id);
             }
             (Array.isArray(editor.guides)?editor.guides:[]).forEach(function(guide,index){
@@ -2678,7 +2877,7 @@ method Load(oControl) class WebExFeatureLabels
             while(parent&&parent.type==="container"&&!visited.has(parent.id)){
                 visited.add(parent.id);
                 if(parent.layout.clipChildren===true||parent.layout.overflow==="clip")
-                    boxes.unshift(clone(parent.box));
+                    boxes.unshift(clone(elementBoxModel(parent).outerBox));
                 parent=elementsById.get(parent.containerId);
             }
             return boxes;
@@ -2736,8 +2935,8 @@ method Load(oControl) class WebExFeatureLabels
                             "Confira o preview de impressao.",element.id,recordIndex,"text",
                             clone(fitted.metrics)));
                     }else if(element.type==="barcode"){
-                        const quiet=Math.max(0,finite(element.quietZone,0));
-                        const available=box.width-quiet*2;
+                        const boxes=elementBoxModel(element),quiet=boxes.quietZone,
+                            contentBox=boxes.contentBox,available=contentBox.width;
                         if(!(available>0))throw engineError(issue("BARCODE_CONTENT_BOX_INVALID","error",
                             path+"/quietZone","A zona silenciosa eliminou a largura util do barcode.",
                             "Aumente a caixa ou reduza quietZone.",element.id,recordIndex,"barcode",
@@ -2745,9 +2944,10 @@ method Load(oControl) class WebExFeatureLabels
                         let rendered=barcode(text,element,available,box.height,layout,path,recordIndex);
                         rendered=fitBarcodeText(pdf,rendered,element,available,box.height,path,recordIndex);
                         page.elements.push({element:element,text:text,barcode:rendered,
-                            quietZone:quiet,availableWidth:available,
+                            quietZone:quiet,contentBox:contentBox,availableWidth:available,
                             clipBoxes:clipBoxes(element)});
-                        recordMetrics.elements[element.id]={format:rendered.format,
+                        recordMetrics.elements[element.id]={contentBox:clone(contentBox),
+                            format:rendered.format,
                             moduleCount:rendered.moduleCount,moduleWidth:rendered.moduleWidth,
                             minModuleWidth:element.minModuleWidth,barsHeight:rendered.barsHeight,
                             humanReadableFontSize:rendered.textSize,textMargin:rendered.textMargin,
@@ -2849,7 +3049,8 @@ method Load(oControl) class WebExFeatureLabels
                     elementRotationMatrix(pdf,angle,box));
                 if(entry.barcode){
                     const rendered=entry.barcode;
-                    const contentX=box.x+entry.quietZone;
+                    const barcodeBox=entry.contentBox||elementBoxModel(element).contentBox,
+                        contentX=barcodeBox.x;
                     if(rendered.background&&rendered.background!=="transparent"&&
                         rendered.background!=="none"){
                         setPDFColor(pdf,"setFillColor",rendered.background,"#ffffff");
@@ -2897,12 +3098,70 @@ method Load(oControl) class WebExFeatureLabels
             }finally{pdf.restoreGraphicsState();}
         });
     }
+    function stableJSONValue(value){
+        if(Array.isArray(value))return value.map(stableJSONValue);
+        if(value&&typeof value==="object"){
+            const result={};Object.keys(value).sort().forEach(function(key){
+                result[key]=stableJSONValue(value[key]);
+            });return result;
+        }
+        return value;
+    }
+    function issueIdentity(item){
+        return JSON.stringify(stableJSONValue([
+            item.code,item.severity,item.path,item.elementId,item.recordIndex,
+            item.phase,item.message,item.suggestion,item.details
+        ]));
+    }
+    function diagnosticGroupPath(problem){
+        let path=String(problem.path||"");
+        if(problem.recordIndex===undefined||problem.recordIndex===null)return path;
+        const index=String(problem.recordIndex),root="/"+index,records="/records/"+index;
+        if(path===root||path.indexOf(root+"/")===0)
+            path="/*"+path.slice(root.length);
+        else if(path===records||path.indexOf(records+"/")===0)
+            path="/records/*"+path.slice(records.length);
+        return path;
+    }
+    function summarizeIssues(source){
+        const groups=[],byKey=new Map();
+        (source||[]).forEach(function(problem){
+            const key=JSON.stringify([problem.severity||"warning",
+                problem.code||problem.message||"",problem.elementId||"",
+                problem.elementId?"":diagnosticGroupPath(problem)]);
+            let group=byKey.get(key);
+            if(!group){
+                group={key:key,problem:problem,items:[],records:[],
+                    code:problem.code||null,severity:problem.severity||"warning",
+                    elementId:problem.elementId||null,paths:[],phases:[],
+                    messages:[],suggestions:[]};
+                byKey.set(key,group);groups.push(group);
+            }
+            group.items.push(problem);
+            if(problem.recordIndex!==undefined&&problem.recordIndex!==null&&
+                group.records.indexOf(problem.recordIndex)<0)
+                group.records.push(problem.recordIndex);
+            if(problem.path&&group.paths.indexOf(problem.path)<0)group.paths.push(problem.path);
+            if(problem.phase&&group.phases.indexOf(problem.phase)<0)group.phases.push(problem.phase);
+            if(problem.message&&group.messages.indexOf(problem.message)<0)
+                group.messages.push(problem.message);
+            if(problem.suggestion&&group.suggestions.indexOf(problem.suggestion)<0)
+                group.suggestions.push(problem.suggestion);
+        });
+        groups.forEach(function(group){
+            group.records.sort(function(a,b){return a-b;});
+            group.occurrenceCount=group.items.length;
+            group.affectedRecordIndexes=group.records.slice();
+            group.affectedRecordCount=group.records.length;
+            group.occurrences=group.items;
+        });
+        return groups;
+    }
     function combinedReport(layout,records,baseIssues,plan){
         const issues=[],seen=new Set();
         [baseIssues,plan?plan.issues:[]].forEach(function(group){
             (group||[]).forEach(function(item){
-                const key=[item.code,item.severity,item.path,item.elementId,
-                    item.recordIndex,item.phase,item.message].join("|");
+                const key=issueIdentity(item);
                 if(!seen.has(key)){seen.add(key);issues.push(item);}
             });
         });
@@ -2946,23 +3205,25 @@ method Load(oControl) class WebExFeatureLabels
         const plan=prepareRenderPlan(pdf,layout,records);
         report=combinedReport(layout,records,report.issues,plan);
         if(!report.valid)throw validationError(report);
-        for(let pageIndex=0;pageIndex<plan.pages.length;pageIndex++){
-            if(pageIndex)pdf.addPage([pageW,pageH],pageW>pageH?"landscape":"portrait");
-            let renderFailure=null;
-            pdf.advancedAPI(function(document){
-                document.saveGraphicsState();
-                try{
-                    if(rotation!==0)document.setCurrentTransformationMatrix(
-                        pageRotationMatrix(document,rotation,sourceW,sourceH));
-                    renderPreparedPage(document,layout,plan.pages[pageIndex]);
-                }catch(error){renderFailure=error;}
-                finally{document.restoreGraphicsState();}
-            });
-            if(renderFailure){
-                const failures=renderFailure.issues||[issue(renderFailure.code||"RENDER_FAILED",
-                    "error","",renderFailure.message||"Falha ao renderizar PDF.",
-                    "Revise o contrato e os dados.",null,pageIndex,"renderer")];
-                throw validationError(combinedReport(layout,records,report.issues.concat(failures),null));
+        if(options.validateOnly!==true){
+            for(let pageIndex=0;pageIndex<plan.pages.length;pageIndex++){
+                if(pageIndex)pdf.addPage([pageW,pageH],pageW>pageH?"landscape":"portrait");
+                let renderFailure=null;
+                pdf.advancedAPI(function(document){
+                    document.saveGraphicsState();
+                    try{
+                        if(rotation!==0)document.setCurrentTransformationMatrix(
+                            pageRotationMatrix(document,rotation,sourceW,sourceH));
+                        renderPreparedPage(document,layout,plan.pages[pageIndex]);
+                    }catch(error){renderFailure=error;}
+                    finally{document.restoreGraphicsState();}
+                });
+                if(renderFailure){
+                    const failures=renderFailure.issues||[issue(renderFailure.code||"RENDER_FAILED",
+                        "error","",renderFailure.message||"Falha ao renderizar PDF.",
+                        "Revise o contrato e os dados.",null,pageIndex,"renderer")];
+                    throw validationError(combinedReport(layout,records,report.issues.concat(failures),null));
+                }
             }
         }
         pdf.__fwwebexLabelReport=report;
@@ -2983,6 +3244,7 @@ method Load(oControl) class WebExFeatureLabels
     window.FWWebExLabels.layout=window.FWWebExLabels.layout||{};
     window.FWWebExLabels.geometry=window.FWWebExLabels.geometry||{};
     window.FWWebExLabels.snap=window.FWWebExLabels.snap||{};
+    window.FWWebExLabels.diagnostics=window.FWWebExLabels.diagnostics||{};
     window.FWWebExLabels.contract.normalize=normalizeLayout;
     window.FWWebExLabels.contract.serialize=serializeLayout;
     window.FWWebExLabels.contract.validate=validateContract;
@@ -3011,9 +3273,35 @@ method Load(oControl) class WebExFeatureLabels
     window.FWWebExLabels.geometry.pageTransform=pageTransform;
     window.FWWebExLabels.geometry.transformPoint=transformPoint;
     window.FWWebExLabels.geometry.invertMatrix=invertMatrix;
+    window.FWWebExLabels.geometry.rotatedBounds=function(element){
+        return clone(rotatedBounds(element));
+    };
+    window.FWWebExLabels.geometry.boxModel=function(element,boxOverride){
+        return clone(elementBoxModel(element,boxOverride));
+    };
+    window.FWWebExLabels.geometry.insetBox=function(box,insets){
+        return clone(insetBox(elementBoxModel({box:box||{}}).elementBox,
+            normalizeInsets(insets,0)));
+    };
+    window.FWWebExLabels.geometry.outsetBox=function(box,insets){
+        return clone(outsetBox(elementBoxModel({box:box||{}}).elementBox,
+            normalizeInsets(insets,0)));
+    };
+    window.FWWebExLabels.geometry.minimumStructuralBox=function(element){
+        return clone(minimumStructuralBox(element));
+    };
     window.FWWebExLabels.snap.resolve=resolveSnap;
     window.FWWebExLabels.snap.priorities=clone(SNAP_PRIORITIES);
     window.FWWebExLabels.snap.textBaselineOffset=snapBaselineOffset;
+    window.FWWebExLabels.diagnostics.deduplicate=function(issues){
+        const result=[],seen=new Set();
+        (issues||[]).forEach(function(item){
+            const key=issueIdentity(item);
+            if(!seen.has(key)){seen.add(key);result.push(item);}
+        });
+        return result;
+    };
+    window.FWWebExLabels.diagnostics.summarize=summarizeIssues;
     window.FWWebExLabels.layoutEngine=window.FWWebExLabels.layout;
     window.FWWebExLabels.generate=generate;
 })();
@@ -3041,6 +3329,7 @@ method New(nLabelWidth,nLabelHeight) class WebExLabelDesigner
     paramtype 1 var nLabelWidth as numeric optional default 100
     paramtype 2 var nLabelHeight as numeric optional default 60
     WebExFeatureLabels():Enable()
+    WebExFeatureExifReader():Enable(28)
     WebExFeaturePDFJS():Enable(38)
     _Super:New()
     ::nLabelWidth:=nLabelWidth
@@ -3147,7 +3436,14 @@ method RenderHTML() class WebExLabelDesigner
                 <option value="true">Fundo bloqueado</option>
                 <option value="false">Fundo desbloqueado</option>
               </select></label>
+              <label>Ajustar p&aacute;gina<select data-role="background-auto-size">
+                <option value="true">Automaticamente</option>
+                <option value="false">Manter dimens&otilde;es atuais</option>
+              </select></label>
             </div>
+            <p class="fwwebex-label-help" data-role="background-metadata">
+              Os metadados da imagem ser&atilde;o analisados durante a importa&ccedil;&atilde;o.
+            </p>
             <div class="fwwebex-label-settings-actions">
               <button type="button" data-action="background">Escolher imagem</button>
               <button type="button" data-action="apply-background">Aplicar</button>
@@ -3260,12 +3556,12 @@ method RenderHTML() class WebExLabelDesigner
     <div class="fwwebex-label-panel-body">
       <div class="fwwebex-label-tablist" role="tablist" aria-label="Elementos do r&oacute;tulo">
         <button type="button" role="tab" data-tab-group="sidebar" data-tab-target="add"
-          aria-selected="false" tabindex="-1">Adicionar</button>
+          aria-selected="true" tabindex="0">Componentes</button>
         <button type="button" role="tab" data-tab-group="sidebar" data-tab-target="layers"
-          aria-selected="true" tabindex="0">Camadas</button>
+          aria-selected="false" tabindex="-1">Camadas</button>
       </div>
       <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="sidebar"
-        data-tab-panel="add" hidden>
+        data-tab-panel="add">
         <div class="fwwebex-label-add-grid">
           <button type="button" data-action="add-text">+ Texto</button>
           <button type="button" data-action="add-barcode">+ C&oacute;digo de barras</button>
@@ -3274,7 +3570,7 @@ method RenderHTML() class WebExLabelDesigner
         <p class="fwwebex-label-add-hint">Selecione um tipo e ajuste suas propriedades no inspetor.</p>
       </div>
       <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="sidebar"
-        data-tab-panel="layers">
+        data-tab-panel="layers" hidden>
         <div class="fwwebex-label-toolbar-cluster">
           <input data-role="layer-search" type="search"
             placeholder="Buscar ID, nome ou mnem&ocirc;nico" aria-label="Buscar camadas">
@@ -3393,6 +3689,8 @@ method RenderHTML() class WebExLabelDesigner
           <label data-for-type="container">Dimensionamento<select data-property="layout.sizing"><option value="none">Preservar</option><option value="shrink">Reduzir</option><option value="equal">Igualar</option><option value="distribute">Distribuir</option></select></label>
           <label data-for-type="container">Excesso<select data-property="layout.overflow"><option value="error">Erro</option><option value="visible">Vis&iacute;vel</option><option value="clip">Recortar</option></select></label>
           <label data-for-type="container">Recortar filhos<select data-property="layout.clipChildren" data-value-type="boolean"><option value="false">N&atilde;o</option><option value="true">Sim</option></select></label>
+          <button type="button" class="is-wide" data-action="fit-container"
+            data-tone="success">Ajustar &aacute;rea ao conte&uacute;do</button>
         </div>
       </div>
       <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
@@ -3495,26 +3793,29 @@ method RenderHTML() class WebExLabelDesigner
                 width:__WIDTH__,height:__HEIGHT__,rotation:0,
                 margins:{top:0,right:0,bottom:0,left:0},safeArea:0,bleed:0
             },
-            background:null,
             editor:{
                 grid:{enabled:false,step:1},
                 snap:{enabled:false,tolerancePx:8,referenceElementId:null,chainMode:false},
                 guides:[]
             },
-            variables:[],barcodeAutoRules:[],barcodeFallbackFormat:"CODE128",elements:[]
+            variables:[],barcodeAutoRules:[],barcodeFallbackFormat:"CODE128",elements:[],
+            background:null
         },
         records:[],selected:null,selection:[],recordIndex:0,mode:"design",
         printOverlay:false,overlayOpacity:.5,
         zoom:"fit",options:{},contractDirty:false,autoSampleRecords:true,
-        tabs:{toolbar:"document",sidebar:"layers",inspector:"element",drawers:"data"},
+        backgroundMetadata:null,
+        tabs:{toolbar:"document",sidebar:"add",inspector:"element",drawers:"data"},
         drawersCollapsed:false,elementsCollapsed:false,elementsMinimized:false,
         history:[],historyIndex:-1,
-        lastReport:null,previewViewport:null,previewPending:false,
+        lastReport:null,lastReportStale:false,revision:0,
+        previewViewport:null,previewPending:false,
         snapFeedback:{x:null,y:null}
     };
     const containerOverflow=Object.create(null);
     let action=null,renderFrame=null,previewTimer=null,previewToken=0,
-        previewAbort=null,previewHandle=null;
+        previewAbort=null,previewHandle=null,validationTimer=null,validationToken=0;
+    let backgroundImportToken=0;
 
     function uid(){ return "field-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,6); }
     function clone(value){return value==null?value:JSON.parse(JSON.stringify(value));}
@@ -3530,6 +3831,28 @@ method RenderHTML() class WebExLabelDesigner
             top:num(value.top,vertical),right:num(value.right,horizontal),
             bottom:num(value.bottom,vertical),left:num(value.left,horizontal)
         };
+    }
+    function canonicalBoxModel(item,boxOverride){
+        const geometry=window.FWWebExLabels&&window.FWWebExLabels.geometry;
+        if(geometry&&typeof geometry.boxModel==="function")
+            return geometry.boxModel(item,boxOverride);
+        const source=boxOverride||item.box||{},box={x:num(source.x,0),y:num(source.y,0),
+                width:num(source.width,0),height:num(source.height,0)},
+            style=item.type==="text"?item.style||{}:{},
+            margin=item.type==="text"?normalizeInsets(style.margin,0):normalizeInsets(0,0),
+            padding=item.type==="text"?normalizeInsets(style.padding,0):
+                item.type==="container"?normalizeInsets(item.layout&&item.layout.padding,0):
+                    normalizeInsets(0,0),
+            quiet=item.type==="barcode"?num(item.quietZone,0):0,
+            contentInsets=item.type==="barcode"?
+                {top:0,right:quiet,bottom:0,left:quiet}:padding;
+        return {elementBox:box,outerBox:clone(box),margin:margin,padding:padding,quietZone:quiet,
+            marginBox:{x:box.x-margin.left,y:box.y-margin.top,
+                width:box.width+margin.left+margin.right,
+                height:box.height+margin.top+margin.bottom},
+            contentBox:{x:box.x+contentInsets.left,y:box.y+contentInsets.top,
+                width:box.width-contentInsets.left-contentInsets.right,
+                height:box.height-contentInsets.top-contentInsets.bottom}};
     }
     function insetShortcut(value){
         value=normalizeInsets(value,0);
@@ -3609,6 +3932,14 @@ method RenderHTML() class WebExLabelDesigner
     }
     function selected(){ return elements().find(function(item){return item.id===state.selected;}); }
     function selectedItems(){return elements().filter(function(item){return state.selection.indexOf(item.id)>=0;});}
+    function syncBasisSize(item,widthChanged,heightChanged){
+        if(!item||widthChanged!==true&&heightChanged!==true)return false;
+        item.basisBox=item.basisBox&&typeof item.basisBox==="object"?
+            item.basisBox:{width:item.box.width,height:item.box.height};
+        if(widthChanged===true)item.basisBox.width=item.box.width;
+        if(heightChanged===true)item.basisBox.height=item.box.height;
+        return true;
+    }
     function defineLegacy(item,name,getter,setter){
         if(Object.prototype.hasOwnProperty.call(item,name))return;
         Object.defineProperty(item,name,{
@@ -3816,7 +4147,7 @@ method RenderHTML() class WebExLabelDesigner
         const minimum=Math.min(maximum,Math.max(1,num(style.minFontSize,Math.max(3,maximum/3))));
         let size=maximum;
         const fontStyle=String(style.fontStyle||"normal").toLowerCase();
-        const padding=normalizeInsets(style.padding,0);
+        const padding=canonicalBoxModel(item).padding;
         content.style.fontFamily=style.fontFamily||"Arial";
         content.style.fontWeight=fontStyle.indexOf("bold")>=0?"700":"400";
         content.style.fontStyle=fontStyle.indexOf("italic")>=0?"italic":"normal";
@@ -4106,12 +4437,13 @@ method RenderHTML() class WebExLabelDesigner
         const result=contract.createSampleRecords(state.layout,records,options);
         state.records=clone(result.records);
         state.recordIndex=Math.min(state.recordIndex,Math.max(0,state.records.length-1));
-        state.lastReport=null;
         if(options.enableAutomatic===true)
             state.autoSampleRecords=state.options.autoSampleRecords!==false;
         if(result.changed||options.forceSync===true)syncRecordsEditor(true);
         if(result.changed){
-            schedulePreview();emitRecordsChange(options.source||"sample",clone(result));
+            invalidateReport();
+            schedulePreview();scheduleValidation();
+            emitRecordsChange(options.source||"sample",clone(result));
         }
         if(options.render!==false)
             render({emit:false,skipAutoSample:true});
@@ -4174,9 +4506,8 @@ method RenderHTML() class WebExLabelDesigner
         if(resolved){
             let description=item&&item.type!=="container"?
                 "Template: "+item.template+" \u00b7 Valor: "+resolvedTemplate(item.template):"";
-            const recordMetrics=state.lastReport&&state.lastReport.metrics&&
-                state.lastReport.metrics.records&&
-                state.lastReport.metrics.records[state.recordIndex],
+            const report=activeReport(),recordMetrics=report&&report.metrics&&
+                report.metrics.records&&report.metrics.records[state.recordIndex],
                 metric=item&&recordMetrics&&recordMetrics.elements&&
                     recordMetrics.elements[item.id];
             if(metric&&metric.finalFontSize!==undefined)
@@ -4186,6 +4517,17 @@ method RenderHTML() class WebExLabelDesigner
                 description+=" \u00b7 \u00c1rea \u00fatil: "+
                     metric.contentBox.width.toFixed(2)+" x "+
                     metric.contentBox.height.toFixed(2)+" mm";
+            if(item){
+                const minimum=minimumResizeBox(item);
+                description+=" \u00b7 M\u00ednimo estrutural: "+
+                    minimum.width.toFixed(2)+" x "+minimum.height.toFixed(2)+" mm";
+                if(item.type==="text")description+=" \u00b7 Pol\u00edtica: "+
+                    item.fit.mode+" / "+item.fit.overflow;
+                if(item.type==="barcode")description+=" \u00b7 Pol\u00edtica: "+
+                    item.overflow+" / texto "+item.textOverflow;
+                if(item.type==="container")description+=" \u00b7 Pol\u00edtica: "+
+                    item.layout.sizing+" / "+item.layout.overflow;
+            }
             resolved.textContent=description;
         }
         roleAll("[data-property]").forEach(function(control){
@@ -4448,39 +4790,194 @@ method RenderHTML() class WebExLabelDesigner
             ["background-opacity",state.layout.background?
                 num(state.layout.background.opacity,1):1],
             ["background-locked",state.layout.background?
-                state.layout.background.locked!==false:true]
+                state.layout.background.locked!==false:true],
+            ["background-auto-size",state.options.autoSizePageFromBackground!==false]
         ].forEach(function(entry){
             const control=role(entry[0]);
             if(control&&document.activeElement!==control)control.value=String(entry[1]);
         });
+        const backgroundMetadata=role("background-metadata");
+        if(backgroundMetadata)
+            backgroundMetadata.textContent=describeBackgroundMetadata(state.backgroundMetadata);
         renderLayers();renderInspector();renderRulers();syncContract(false);
     }
-    function showReport(report){
-        state.lastReport=report;
-        const issues=report.issues||[],problemCount=role("problem-count"),
-            errors=issues.filter(function(problem){return problem.severity==="error";}).length,
-            warnings=issues.length-errors;
+    function issueInspectorTab(problem){
+        const item=problem.elementId&&elements().find(function(candidate){
+                return candidate.id===problem.elementId;
+            }),code=String(problem.code||"").toUpperCase(),path=String(problem.path||"");
+        if(item&&item.type==="barcode"||code.indexOf("BARCODE")>=0)return "barcode";
+        if(item&&item.type==="container"||code.indexOf("CONTAINER")>=0||
+            path.indexOf("/layout/")>=0)return "layout";
+        if(item&&item.type==="text"&&(code.indexOf("TEXT")>=0||
+            path.indexOf("/style/")>=0||path.indexOf("/fit/")>=0))return "appearance";
+        return "geometry";
+    }
+    function groupIssues(issues){
+        const diagnostics=window.FWWebExLabels&&window.FWWebExLabels.diagnostics;
+        if(diagnostics&&typeof diagnostics.summarize==="function")
+            return diagnostics.summarize(issues||[]);
+        const groups=[],byKey=new Map();
+        (issues||[]).forEach(function(problem){
+            const key=[problem.severity||"warning",problem.code||problem.message||"",
+                problem.elementId||"",problem.path||""].join("\u001f");
+            let group=byKey.get(key);
+            if(!group){
+                group={problem:problem,items:[],records:[]};
+                byKey.set(key,group);groups.push(group);
+            }
+            group.items.push(problem);
+            if(problem.recordIndex!==undefined&&problem.recordIndex!==null&&
+                group.records.indexOf(problem.recordIndex)<0)
+                group.records.push(problem.recordIndex);
+        });
+        groups.forEach(function(group){group.records.sort(function(a,b){return a-b;});});
+        return groups;
+    }
+    function formatRecordRanges(records){
+        const ranges=[];let start=null,previous=null;
+        (records||[]).forEach(function(index){
+            const current=index+1;
+            if(start===null){start=current;previous=current;return;}
+            if(current===previous+1){previous=current;return;}
+            ranges.push(start===previous?String(start):start+"-"+previous);
+            start=current;previous=current;
+        });
+        if(start!==null)ranges.push(start===previous?String(start):start+"-"+previous);
+        if(ranges.length>8)return ranges.slice(0,8).join(", ")+
+            " e mais "+(ranges.length-8)+" faixa(s)";
+        return ranges.join(", ");
+    }
+    function diagnosticDetails(value){
+        if(value===undefined||value===null)return "";
+        try{return JSON.stringify(value);}
+        catch(ignore){return String(value);}
+    }
+    function activeReport(){
+        return state.lastReport&&state.lastReportStale!==true?state.lastReport:null;
+    }
+    function invalidateReport(message){
+        validationToken++;state.revision++;
+        const hadReport=state.lastReport!==null;
+        state.lastReportStale=hadReport;
+        Object.keys(containerOverflow).forEach(function(id){delete containerOverflow[id];});
+        const problemCount=role("problem-count"),host=role("problems"),notice=message||
+            (state.options.autoValidate===false?
+                "Diagn\u00f3stico anterior. Clique em Validar para atualizar.":
+                "Diagn\u00f3stico anterior. A valida\u00e7\u00e3o ser\u00e1 atualizada automaticamente.");
         if(problemCount){
-            problemCount.textContent=String(issues.length);
+            if(!hadReport)problemCount.textContent="0";
+            problemCount.dataset.state=hadReport?"stale":"";
+            problemCount.setAttribute("aria-label",hadReport?
+                "Diagn\u00f3sticos anteriores; atualiza\u00e7\u00e3o pendente":
+                "Nenhum diagn\u00f3stico atual");
+        }
+        if(host){
+            host.dataset.stale=String(hadReport);
+            host.dataset.staleMessage=notice;
+            if(!hadReport)host.textContent=notice;
+        }
+        if(hadReport){render({emit:false,visualOnly:true});renderInspector();}
+        return hadReport;
+    }
+    function showReport(report,options){
+        options=options||{};state.lastReport=report;state.lastReportStale=false;
+        Object.keys(containerOverflow).forEach(function(id){delete containerOverflow[id];});
+        if(report.layout&&Array.isArray(report.layout.elements))
+            report.layout.elements.filter(function(item){return item.type==="container";})
+                .forEach(function(item){containerOverflow[item.id]=item.hasOverflow===true;});
+        const issues=report.issues||[],groups=groupIssues(issues),
+            scope=report.validationScope||{},activeRecordScope=
+                scope.mode==="active-record",
+            scopeMessage=activeRecordScope?
+                "Valida\u00e7\u00e3o autom\u00e1tica do registro "+
+                    (num(scope.recordIndex,0)+1)+" de "+
+                    Math.max(1,num(scope.sourceRecordCount,1))+".":"",
+            problemCount=role("problem-count"),
+            errors=groups.filter(function(group){
+                return group.problem.severity==="error";
+            }).length,warnings=groups.length-errors,
+            errorOccurrences=issues.filter(function(problem){
+                return problem.severity==="error";
+            }).length,warningOccurrences=issues.length-errorOccurrences;
+        if(problemCount){
+            problemCount.textContent=String(groups.length);
             problemCount.dataset.state=errors?"error":warnings?"warning":"";
-            problemCount.setAttribute("aria-label",issues.length+" problema(s): "+
-                errors+" erro(s) e "+warnings+" aviso(s)");
+            problemCount.setAttribute("aria-label",errors+" causa(s) de erro e "+
+                warnings+" causa(s) de aviso; "+errorOccurrences+
+                " ocorrencia(s) de erro e "+warningOccurrences+
+                " ocorrencia(s) de aviso"+(scopeMessage?"; "+scopeMessage:""));
         }
         const host=role("problems");if(host){
+            host.dataset.stale="false";host.dataset.staleMessage="";
+            host.dataset.validationScope=activeRecordScope?"active-record":"all-records";
+            host.dataset.scopeMessage=scopeMessage;
             host.innerHTML="";
-            issues.forEach(function(problem){
-                const row=document.createElement("div");
+            groups.forEach(function(group){
+                const problem=group.problem,item=problem.elementId&&
+                        elements().find(function(candidate){return candidate.id===problem.elementId;}),
+                    row=document.createElement("details"),summary=document.createElement("summary"),
+                    meta=document.createElement("div"),target=item?
+                        (item.name||item.id)+" ["+item.id+"]":problem.elementId||"Layout";
                 row.className="fwwebex-label-problem";
                 row.dataset.severity=problem.severity||"warning";
                 row.dataset.elementId=problem.elementId||"";
-                row.textContent=(problem.severity==="error"?"Erro: ":"Aviso: ")+
-                    problem.message+(problem.suggestion?" \u2014 "+problem.suggestion:"");
+                row.dataset.inspectorTab=issueInspectorTab(problem);
+                row.dataset.code=problem.code||"";
+                summary.textContent=(problem.severity==="error"?"Erro":"Aviso")+
+                    " \u00b7 "+(problem.code||"DIAGNOSTICO")+" \u00b7 "+target+
+                    (group.items.length>1?" \u00b7 "+group.items.length+" ocorr\u00eancias":"")+
+                    " \u2014 "+problem.message;
+                row.appendChild(summary);
+                meta.className="fwwebex-label-problem-meta";
+                meta.textContent=(problem.code?"C\u00f3digo "+problem.code:"Diagn\u00f3stico")+
+                    (group.items.length>1?" \u00b7 "+group.items.length+" ocorr\u00eancias":"")+
+                    (group.records.length?" \u00b7 registros "+
+                        formatRecordRanges(group.records):"")+
+                    (group.paths&&group.paths.length?" \u00b7 "+
+                        group.paths.slice(0,4).join(", "):problem.path?" \u00b7 "+problem.path:"")+
+                    (group.phases&&group.phases.length?" \u00b7 fases "+
+                        group.phases.join(", "):"");
+                row.appendChild(meta);
+                const suggestions=group.suggestions&&group.suggestions.length?
+                    group.suggestions:[problem.suggestion].filter(Boolean);
+                if(suggestions.length){
+                    const suggestion=document.createElement("div");
+                    suggestion.className="fwwebex-label-problem-suggestion";
+                    suggestion.textContent="Como corrigir: "+suggestions.slice(0,3).join(" | ");
+                    row.appendChild(suggestion);
+                }
+                if(group.items.length>1||problem.details){
+                    const details=document.createElement("ul");
+                    details.className="fwwebex-label-problem-details";
+                    group.items.slice(0,25).forEach(function(entry){
+                        const detail=document.createElement("li");
+                        detail.textContent=(entry.recordIndex!==undefined&&entry.recordIndex!==null?
+                            "Registro "+(entry.recordIndex+1)+" \u00b7 ":"")+
+                            (entry.phase?entry.phase+" \u00b7 ":"")+
+                            (entry.path?entry.path+": ":"")+entry.message;
+                        const measured=diagnosticDetails(entry.details);
+                        if(measured){
+                            const code=document.createElement("code");
+                            code.textContent=measured;detail.appendChild(code);
+                        }
+                        details.appendChild(detail);
+                    });
+                    if(group.items.length>25){
+                        const remaining=document.createElement("li");
+                        remaining.textContent=(group.items.length-25)+
+                            " ocorr\u00eancias adicionais permanecem no relat\u00f3rio bruto.";
+                        details.appendChild(remaining);
+                    }
+                    row.appendChild(details);
+                }
                 host.appendChild(row);
             });
             if(!issues.length)host.textContent="Nenhum problema encontrado.";
         }
-        setStatus(report.valid?"Layout v\u00e1lido.":"Foram encontrados erros no layout.",
-            report.valid?"valid":"error");
+        if(options.silentStatus!==true)
+            setStatus(report.valid?"Layout v\u00e1lido.":groups.length+
+                " grupo(s) de problema encontrado(s).",
+                report.valid?"valid":"error");
         render({emit:false,visualOnly:true});
         renderInspector();
         if(role("toolbar"))
@@ -4500,26 +4997,93 @@ method RenderHTML() class WebExLabelDesigner
         if(state.contractDirty&&editor)return JSON.parse(editor.value);
         return exportLayout();
     }
-    async function validateProduct(){
+    function remapAutomaticReport(report,recordIndex,recordCount){
+        const sourceRoot="/0",targetRoot="/"+recordIndex,
+            sourceRecords="/records/0",targetRecords="/records/"+recordIndex;
+        const seen=new Set(),problems=[];
+        [report.issues,report.errors,report.warnings].forEach(function(list){
+            (list||[]).forEach(function(problem){
+                if(!seen.has(problem)){seen.add(problem);problems.push(problem);}
+            });
+        });
+        problems.forEach(function(problem){
+            if(problem.recordIndex===0){
+                problem.recordIndex=recordIndex;
+                const path=String(problem.path||"");
+                if(path===sourceRecords||path.indexOf(sourceRecords+"/")===0)
+                    problem.path=targetRecords+path.slice(sourceRecords.length);
+                else if(path===sourceRoot||path.indexOf(sourceRoot+"/")===0)
+                    problem.path=targetRoot+path.slice(sourceRoot.length);
+            }
+        });
+        if(report.metrics&&Array.isArray(report.metrics.records)){
+            const metric=report.metrics.records[0];
+            report.metrics.records=[];
+            if(metric!==undefined)report.metrics.records[recordIndex]=metric;
+        }
+        report.validationScope={mode:"active-record",recordIndex:recordIndex,
+            sourceRecordCount:recordCount};
+        return report;
+    }
+    async function validateProduct(options){
+        options=options||{};
+        if(options.automatic===true&&state.contractDirty)return null;
+        if(options.automatic!==true&&validationTimer!==null&&
+            typeof window.clearTimeout==="function"){
+            window.clearTimeout(validationTimer);validationTimer=null;
+        }
+        const token=++validationToken,automaticRecordIndex=state.recordIndex;
+        let sourceRecordCount=0;
         try{
             const api=window.FWWebExLabels&&window.FWWebExLabels.renderer;
             if(!api||typeof api.generate!=="function")
                 throw new Error("Renderer Labels indispon\u00edvel.");
-            setStatus("Validando\u2026");
-            const result=await api.generate(currentLayout(),currentRecords(),{
-                output:"none",returnResult:true
+            if(options.automatic!==true)setStatus("Validando\u2026");
+            const allRecords=currentRecords();
+            sourceRecordCount=allRecords.length;
+            const records=options.automatic===true&&allRecords.length>1?
+                    [allRecords[Math.max(0,Math.min(
+                        state.recordIndex,allRecords.length-1))]]:allRecords,
+                result=await api.generate(currentLayout(),records,{
+                output:"none",returnResult:true,validateOnly:options.automatic===true
             });
-            return showReport(result.report);
+            if(token!==validationToken)return null;
+            if(options.automatic===true)
+                remapAutomaticReport(result.report,automaticRecordIndex,sourceRecordCount);
+            else result.report.validationScope={mode:"all-records",
+                sourceRecordCount:sourceRecordCount};
+            return showReport(result.report,{silentStatus:options.automatic===true});
         }catch(error){
+            if(token!==validationToken)return null;
             const report=error.report||{valid:false,issues:error.issues||[{
                 severity:"error",message:error.message||String(error),suggestion:"Revise o contrato e os dados."
             }],errors:error.issues||[]};
-            showReport(report);
-            if(role("toolbar"))root.dispatchEvent(new CustomEvent("fwwebex:label-error",{
+            if(options.automatic===true)
+                remapAutomaticReport(report,automaticRecordIndex,sourceRecordCount);
+            else report.validationScope={mode:"all-records",
+                sourceRecordCount:sourceRecordCount};
+            showReport(report,{silentStatus:options.automatic===true});
+            if(options.automatic!==true&&role("toolbar"))root.dispatchEvent(new CustomEvent("fwwebex:label-error",{
                 detail:{error:error,report:report},bubbles:true
             }));
             throw error;
         }
+    }
+    function scheduleValidation(delay){
+        if(state.mode==="print"||state.options.autoValidate===false||
+            state.contractDirty||
+            typeof window.setTimeout!=="function")return;
+        if(validationTimer!==null&&typeof window.clearTimeout==="function")
+            window.clearTimeout(validationTimer);
+        validationTimer=window.setTimeout(function(){
+            validationTimer=null;
+            validateProduct({automatic:true}).catch(function(){});
+        },Math.max(120,num(delay,320)));
+    }
+    function stopPendingValidation(){
+        if(validationTimer!==null&&typeof window.clearTimeout==="function")
+            window.clearTimeout(validationTimer);
+        validationTimer=null;validationToken++;
     }
     function previewTargetSize(){
         const geometry=pageGeometry(),viewport=role("stage-viewport"),
@@ -4551,9 +5115,10 @@ method RenderHTML() class WebExLabelDesigner
     }
     async function previewProduct(options){
         options=options||{};
+        stopPendingValidation();
         if(previewTimer!==null){window.clearTimeout(previewTimer);previewTimer=null;}
         if(previewAbort&&typeof previewAbort.abort==="function")previewAbort.abort();
-        const token=++previewToken,
+        const token=++previewToken,revision=state.revision,
             controller=typeof AbortController==="function"?new AbortController():{
                 signal:null,abort:function(){}
             };
@@ -4576,7 +5141,7 @@ method RenderHTML() class WebExLabelDesigner
             const result=await api.generate(currentLayout(),records,{
                 output:"arraybuffer",returnResult:true
             });
-            if(token!==previewToken)return null;
+            if(token!==previewToken||revision!==state.revision)return null;
             const canvas=role("preview-canvas"),target=previewTargetSize(),
                 raster=await viewer.renderPage(result.output,{
                     canvas:canvas,
@@ -4586,7 +5151,7 @@ method RenderHTML() class WebExLabelDesigner
                     pixelRatio:Math.max(1,num(window.devicePixelRatio,1)),
                     signal:controller.signal
                 });
-            if(token!==previewToken){
+            if(token!==previewToken||revision!==state.revision){
                 if(raster&&typeof raster.destroy==="function")await raster.destroy();
                 return null;
             }
@@ -4611,7 +5176,7 @@ method RenderHTML() class WebExLabelDesigner
             }));
             return result;
         }catch(error){
-            if(token!==previewToken||error&&(
+            if(token!==previewToken||revision!==state.revision||error&&(
                 error.code==="FWPDFVIEWER_RENDER_CANCELLED"||error.name==="AbortError"))
                 return null;
             const report=error.report||{valid:false,issues:error.issues||[{
@@ -4637,7 +5202,8 @@ method RenderHTML() class WebExLabelDesigner
         }
     }
     function snapshot(){
-        return {layout:exportLayout(),selection:state.selection.slice(),selected:state.selected};
+        return {layout:exportLayout(),selection:state.selection.slice(),selected:state.selected,
+            backgroundMetadata:clone(state.backgroundMetadata)};
     }
     function resetHistory(){
         state.history=[snapshot()];state.historyIndex=0;
@@ -4648,7 +5214,9 @@ method RenderHTML() class WebExLabelDesigner
         state.history.push(next);
         if(state.history.length>60)state.history.shift();
         state.historyIndex=state.history.length-1;
+        invalidateReport();
         schedulePreview();
+        scheduleValidation();
     }
     function restoreHistory(index){
         if(index<0||index>=state.history.length)return false;
@@ -4656,11 +5224,14 @@ method RenderHTML() class WebExLabelDesigner
         const entry=state.history[index];
         state.historyIndex=index;
         state.layout=attachLayoutAccessors(clone(entry.layout));
+        backgroundImportToken++;
+        state.backgroundMetadata=clone(entry.backgroundMetadata||null);
         state.selection=entry.selection.filter(function(id){
             return elements().some(function(item){return item.id===id;});
         });
         state.selected=state.selection.indexOf(entry.selected)>=0?entry.selected:
             state.selection[state.selection.length-1]||null;
+        invalidateReport();scheduleValidation();
         syncStage();return true;
     }
     function undo(){return restoreHistory(state.historyIndex-1);}
@@ -4700,6 +5271,10 @@ method RenderHTML() class WebExLabelDesigner
             target.safeArea=Math.max(0,num(source.safeArea,target.safeArea));
         if(source.bleed!==undefined)
             target.bleed=Math.max(0,num(source.bleed,target.bleed));
+        if(state.backgroundMetadata)
+            state.backgroundMetadata.pageSizing={applied:false,mode:"manual",
+                width:target.width,height:target.height};
+        invalidateReport();scheduleValidation();
         syncStage();return clone(target);
     }
     function render(options){
@@ -4714,7 +5289,7 @@ method RenderHTML() class WebExLabelDesigner
         }
         fields.innerHTML="";
         const issueSeverity={};
-        ((state.lastReport&&state.lastReport.issues)||[]).forEach(function(problem){
+        ((activeReport()&&activeReport().issues)||[]).forEach(function(problem){
             if(!problem.elementId)return;
             if(problem.severity==="error"||!issueSeverity[problem.elementId])
                 issueSeverity[problem.elementId]=problem.severity||"warning";
@@ -4751,6 +5326,13 @@ method RenderHTML() class WebExLabelDesigner
             const grip=document.createElement("i"); grip.dataset.resize="1"; el.appendChild(grip);
             fields.appendChild(el);
             if(item.type==="text")styleTextPreview(el,item);
+            if(item.type==="barcode"){
+                const boxes=canonicalBoxModel(item),scale=pxmm();
+                content.style.paddingLeft=Math.max(0,boxes.contentInsets&&
+                    boxes.contentInsets.left||boxes.quietZone||0)*scale+"px";
+                content.style.paddingRight=Math.max(0,boxes.contentInsets&&
+                    boxes.contentInsets.right||boxes.quietZone||0)*scale+"px";
+            }
         });
         if(options.visualOnly!==true)renderProductUI();
         renderSnapFeedback();
@@ -4771,7 +5353,19 @@ method RenderHTML() class WebExLabelDesigner
             render({emit:false,visualOnly:true});
         });
     }
-    function finishPointerAction(){
+    function showResizeFailure(error){
+        const report=error&&error.report||{valid:false,
+            issues:error&&error.issues||[{severity:"error",
+                code:error&&error.code||"CONTAINER_OVERFLOW",
+                message:error&&error.message||String(error),
+                suggestion:"Aumente a area ou reduza seus componentes."}],
+            errors:error&&error.issues||[]};
+        showReport(report);
+        setStatus("A \u00e1rea ficou menor que o conte\u00fado. O tamanho editado foi preservado; "+
+            "ajuste os componentes ou aumente a \u00e1rea.","error");
+        return report;
+    }
+    function finishPointerAction(event){
         if(!action){clearSnapFeedback();return;}
         const completed=action;
         if(renderFrame!==null&&typeof window.cancelAnimationFrame==="function"){
@@ -4780,6 +5374,14 @@ method RenderHTML() class WebExLabelDesigner
         }
         action=null;
         clearSnapFeedback();
+        if(event&&event.type==="pointercancel"&&!completed.marquee){
+            completed.item.box.x=completed.ox;completed.item.box.y=completed.oy;
+            completed.item.box.width=completed.ow;completed.item.box.height=completed.oh;
+            completed.children.forEach(function(child){
+                child.item.box.x=child.x;child.item.box.y=child.y;
+            });
+            render();return;
+        }
         if(completed.marquee){
             const box=role("selection-box");
             if(box)box.style.display="none";
@@ -4792,7 +5394,30 @@ method RenderHTML() class WebExLabelDesigner
                     item.box.y<y2&&item.box.y+item.box.height>y1;
             }).map(function(item){return item.id;});
             state.selected=state.selection[state.selection.length-1]||null;
-        }else checkpoint();
+        }else{
+            let resizeError=null,reflowResult=null;
+            const moved=Math.abs(completed.item.box.x-completed.ox)>.0001||
+                    Math.abs(completed.item.box.y-completed.oy)>.0001,
+                resized=Math.abs(completed.item.box.width-completed.ow)>.0001||
+                    Math.abs(completed.item.box.height-completed.oh)>.0001;
+            if(!moved&&!resized){render();return;}
+            if(completed.resize){
+                const widthChanged=Math.abs(completed.item.box.width-completed.ow)>.0001,
+                    heightChanged=Math.abs(completed.item.box.height-completed.oh)>.0001;
+                syncBasisSize(completed.item,widthChanged,heightChanged);
+                const containerId=completed.item.type==="container"?completed.item.id:
+                    completed.item.containerId;
+                if(containerId&&(widthChanged||heightChanged)){
+                    try{reflowResult=layoutContainer(containerId,{render:false});}
+                    catch(error){resizeError=error;}
+                }
+            }
+            checkpoint();render();
+            if(resizeError)showResizeFailure(resizeError);
+            else if(reflowResult)
+                setStatus("Tamanho atualizado e componentes reorganizados pelo layout da area.");
+            return;
+        }
         render();
     }
     function add(type,options){
@@ -4852,8 +5477,8 @@ method RenderHTML() class WebExLabelDesigner
         items.forEach(function(item){item.locked=lock;});render();
     }
     function currentTextMetrics(){
-        const records=state.lastReport&&state.lastReport.metrics&&
-                state.lastReport.metrics.records,
+        const report=activeReport(),records=report&&report.metrics&&
+                report.metrics.records,
             record=records&&records[state.recordIndex];
         return record&&record.elements||{};
     }
@@ -4992,9 +5617,10 @@ method RenderHTML() class WebExLabelDesigner
         return ordered;
     }
     function elementMargins(item){
-        return item.type==="text"?normalizeInsets(item.style.margin,0):normalizeInsets(0,0);
+        return canonicalBoxModel(item).margin;
     }
-    function layoutContainer(containerOrId){
+    function layoutContainer(containerOrId,options){
+        options=options||{};
         const container=typeof containerOrId==="string"?
             elements().find(function(item){return item.id===containerOrId;}):containerOrId;
         if(!container||container.type!=="container")return {overflow:false,count:0};
@@ -5013,8 +5639,93 @@ method RenderHTML() class WebExLabelDesigner
             .forEach(function(item){containerOverflow[item.id]=item.hasOverflow===true;});
         const current=elements().find(function(item){return item.id===container.id;});
         const overflow=current&&current.hasOverflow===true;
-        render();
+        if(options.render!==false)render();
         return {overflow:overflow,count:count,report:resolved.report};
+    }
+    function elementPageBounds(item,box){
+        const candidate=clone(item);
+        candidate.box=Object.assign({},candidate.box,box||{});
+        const geometry=window.FWWebExLabels&&window.FWWebExLabels.geometry;
+        if(geometry&&typeof geometry.rotatedBounds==="function")
+            return geometry.rotatedBounds(candidate);
+        return clone(candidate.box);
+    }
+    function fitsInsidePage(bounds){
+        const tolerance=.001;
+        return bounds.x>=-tolerance&&bounds.y>=-tolerance&&
+            bounds.x+bounds.width<=page().width+tolerance&&
+            bounds.y+bounds.height<=page().height+tolerance;
+    }
+    function fitContainerToContents(containerOrId){
+        const container=typeof containerOrId==="string"?
+                elements().find(function(item){return item.id===containerOrId;}):containerOrId;
+        if(!container||container.type!=="container")
+            return {applied:false,count:0};
+        if(container.locked===true){
+            setStatus("Destrave a area antes de ajustar seu tamanho.","warning");
+            return {applied:false,locked:true,count:0};
+        }
+        const children=containerChildren(container);
+        if(!children.length){
+            setStatus("A area nao possui componentes para calcular o tamanho.","warning");
+            return {applied:false,count:0};
+        }
+        const layout=container.layout,
+            vertical=layout.direction!=="horizontal",
+            padding=canonicalBoxModel(container).padding,
+            main=children.reduce(function(total,item){
+                const margin=elementMargins(item),basis=item.basisBox||item.box;
+                return total+(vertical?margin.top+basis.height+margin.bottom:
+                    margin.left+basis.width+margin.right);
+            },0)+Math.max(0,children.length-1)*layout.gap,
+            cross=children.reduce(function(maximum,item){
+                const margin=elementMargins(item),basis=item.basisBox||item.box;
+                return Math.max(maximum,vertical?
+                    margin.left+basis.width+margin.right:
+                    margin.top+basis.height+margin.bottom);
+            },0),
+            width=Math.max(.1,vertical?padding.left+cross+padding.right:
+                padding.left+main+padding.right),
+            height=Math.max(.1,vertical?padding.top+main+padding.bottom:
+                padding.top+cross+padding.bottom),
+            previous=exportLayout(),requestedBounds=elementPageBounds(container,{
+                width:width,height:height
+            });
+        if(!container.containerId&&!fitsInsidePage(requestedBounds)){
+            setStatus("O conte\u00fado exige "+width.toFixed(2)+" x "+height.toFixed(2)+
+                " mm e ultrapassaria a p\u00e1gina nesta posi\u00e7\u00e3o.","error");
+            return {applied:false,overflow:true,width:width,height:height,
+                count:children.length};
+        }
+        container.box.width=width;container.box.height=height;
+        syncBasisSize(container,true,true);
+        try{layoutContainer(container.id,{render:false});}
+        catch(error){
+            state.layout=attachLayoutAccessors(previous);ensureEditor();
+            throw error;
+        }
+        const current=elements().find(function(item){return item.id===container.id;}),
+            actualWidth=current.box.width,actualHeight=current.box.height,
+            actualBounds=elementPageBounds(current);
+        if(!fitsInsidePage(actualBounds)){
+            state.layout=attachLayoutAccessors(previous);ensureEditor();render();
+            setStatus("O fluxo da \u00e1rea pai faria o componente ultrapassar a p\u00e1gina. "+
+                "A geometria anterior foi preservada.","error");
+            return {applied:false,overflow:true,width:actualWidth,height:actualHeight,
+                basisWidth:width,basisHeight:height,count:children.length};
+        }
+        checkpoint();render();
+        const constrained=Math.abs(actualWidth-width)>.001||
+            Math.abs(actualHeight-height)>.001;
+        setStatus(constrained?
+            "Tamanho-base ajustado ao conte\u00fado: "+width.toFixed(2)+" x "+
+                height.toFixed(2)+" mm; o fluxo da \u00e1rea pai resultou em "+
+                actualWidth.toFixed(2)+" x "+actualHeight.toFixed(2)+" mm.":
+            "\u00c1rea ajustada ao conte\u00fado: "+actualWidth.toFixed(2)+" x "+
+                actualHeight.toFixed(2)+" mm.",constrained?"warning":"valid");
+        return {applied:true,width:actualWidth,height:actualHeight,
+            basisWidth:width,basisHeight:height,constrainedByParent:constrained,
+            count:children.length};
     }
     function assignToContainer(){
         const containers=selectedItems().filter(function(item){return item.type==="container";});
@@ -5065,7 +5776,10 @@ method RenderHTML() class WebExLabelDesigner
             !normalized.page||!Array.isArray(normalized.elements))
             throw new Error("FWWebEx Labels: o normalizador retornou um contrato v2 invalido.");
         const next=attachLayoutAccessors(clone(normalized));
-        state.layout=next;state.selected=null;state.selection=[];ensureEditor();
+        backgroundImportToken++;
+        state.layout=next;state.selected=null;state.selection=[];
+        state.backgroundMetadata=null;ensureEditor();
+        invalidateReport("Layout carregado. Valide ou edite para atualizar os diagn\u00f3sticos.");
         const reference=state.layout.editor&&state.layout.editor.snap?
             state.layout.editor.snap.referenceElementId:null;
         const invalidReference=reference&&
@@ -5078,21 +5792,192 @@ method RenderHTML() class WebExLabelDesigner
         if(invalidReference)setStatus(
             "A referencia "+invalidReference+" nao existe e foi removida do layout.","warning");
         if(options.discardDirty===true)syncContract(true);
+        scheduleValidation();
         return exportLayout();
     }
-    function setBackground(file){
+    function backgroundMetadataAPI(){
+        const namespace=window.FWWebEx&&window.FWWebEx.ImageMetadata;
+        return namespace&&namespace.ExifReader;
+    }
+    function readBackgroundDataURL(file){
         return new Promise(function(resolve,reject){
             const reader=new FileReader();
-            reader.onload=function(){
-                const current=state.layout.background||{};
-                state.layout.background={
-                    dataUrl:String(defined(reader.result,"")),
-                    fit:String(defined(current.fit,"fill")),
-                    opacity:num(current.opacity,1),locked:current.locked!==false
-                };
-                syncStage();resolve(reader.result);
+            reader.onload=function(){resolve(String(defined(reader.result,"")));};
+            reader.onerror=function(){
+                reject(reader.error||new Error("Nao foi possivel ler a imagem selecionada."));
             };
-            reader.onerror=reject; reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
+        });
+    }
+    function decodeBackgroundSize(dataUrl){
+        if(typeof window.Image!=="function")return Promise.resolve(null);
+        return new Promise(function(resolve,reject){
+            const probe=new window.Image();
+            probe.onload=function(){
+                resolve({pixelWidth:num(probe.naturalWidth||probe.width,0),
+                    pixelHeight:num(probe.naturalHeight||probe.height,0)});
+            };
+            probe.onerror=function(){reject(new Error(
+                "O navegador nao conseguiu decodificar a imagem selecionada."));};
+            probe.src=dataUrl;
+        });
+    }
+    function backgroundNumber(value){
+        value=Number(value);return Number.isFinite(value)&&value>0?value:null;
+    }
+    function backgroundSummary(metadata,decoded,metadataError,decodeError){
+        metadata=metadata&&typeof metadata==="object"?metadata:{};
+        decoded=decoded&&typeof decoded==="object"?decoded:{};
+        const physical=metadata.physicalSize||metadata.physical||{},
+            resolution=metadata.resolution||{},warnings=[],warningCodes=[];
+        (Array.isArray(metadata.warnings)?metadata.warnings:[]).forEach(function(warning){
+            if(warning&&typeof warning==="object"&&warning.code)
+                warningCodes.push(String(warning.code));
+            warnings.push(typeof warning==="string"?warning:
+                String(warning&&warning.message||warning&&warning.code||warning));
+        });
+        if(metadataError){
+            warningCodes.push(String(metadataError.code||"FWIMAGEMETADATA_READ_FAILED"));
+            warnings.push("Metadados indisponiveis: "+
+                (metadataError.message||String(metadataError)));
+        }
+        if(decodeError){
+            warningCodes.push("FWIMAGEMETADATA_DECODE_FAILED");
+            warnings.push(decodeError.message||String(decodeError));
+        }
+        const pixelWidth=backgroundNumber(metadata.pixelWidth)||
+                backgroundNumber(decoded.pixelWidth),
+            pixelHeight=backgroundNumber(metadata.pixelHeight)||
+                backgroundNumber(decoded.pixelHeight),
+            dpiX=backgroundNumber(metadata.dpiX)||backgroundNumber(resolution.dpiX)||
+                backgroundNumber(resolution.xDpi),
+            dpiY=backgroundNumber(metadata.dpiY)||backgroundNumber(resolution.dpiY)||
+                backgroundNumber(resolution.yDpi),
+            physicalWidth=backgroundNumber(metadata.physicalWidthMm)||
+                backgroundNumber(physical.widthMm)||
+                (pixelWidth&&dpiX?pixelWidth*25.4/dpiX:null),
+            physicalHeight=backgroundNumber(metadata.physicalHeightMm)||
+                backgroundNumber(physical.heightMm)||
+                (pixelHeight&&dpiY?pixelHeight*25.4/dpiY:null);
+        return {
+            format:String(metadata.format||metadata.fileType||""),
+            mimeType:String(metadata.mimeType||""),
+            pixelWidth:pixelWidth,pixelHeight:pixelHeight,dpiX:dpiX,dpiY:dpiY,
+            physicalWidthMm:physicalWidth,physicalHeightMm:physicalHeight,
+            orientation:backgroundNumber(metadata.orientation)||1,
+            resolutionSource:String(metadata.resolutionSource||resolution.source||""),
+            warnings:warnings,warningCodes:warningCodes,pageSizing:null
+        };
+    }
+    function roundedPageDimension(value){
+        return Math.max(1,Math.round(Number(value)*1000)/1000);
+    }
+    function backgroundAutoSizeEnabled(options){
+        if(Object.prototype.hasOwnProperty.call(options,"autoSizePageFromBackground"))
+            return options.autoSizePageFromBackground!==false;
+        if(Object.prototype.hasOwnProperty.call(options,"autoSizePage"))
+            return options.autoSizePage!==false;
+        return state.options.autoSizePageFromBackground!==false;
+    }
+    function applyBackgroundPageSize(metadata,options){
+        const result={applied:false,mode:"none",width:page().width,height:page().height};
+        if(!backgroundAutoSizeEnabled(options))return result;
+        const resolutionIsImplausible=metadata.warningCodes&&
+                metadata.warningCodes.indexOf(
+                    "FWIMAGEMETADATA_RESOLUTION_IMPLAUSIBLE")>=0,
+            allowImplausible=options.allowImplausibleDpi===true||
+                state.options.allowImplausibleBackgroundDpi===true;
+        let width=!resolutionIsImplausible||allowImplausible?
+                backgroundNumber(metadata.physicalWidthMm):null,
+            height=!resolutionIsImplausible||allowImplausible?
+                backgroundNumber(metadata.physicalHeightMm):null,
+            mode="metadata";
+        const pixelWidth=backgroundNumber(metadata.pixelWidth),
+            pixelHeight=backgroundNumber(metadata.pixelHeight),configuredDpi=
+                backgroundNumber(options.fallbackDpi)||
+                backgroundNumber(state.options.backgroundFallbackDpi);
+        if((!width||!height)&&configuredDpi&&pixelWidth&&pixelHeight){
+            width=pixelWidth*25.4/configuredDpi;
+            height=pixelHeight*25.4/configuredDpi;mode="configured-dpi";
+        }
+        if((!width||!height)&&pixelWidth&&pixelHeight){
+            width=page().width;height=width*pixelHeight/pixelWidth;mode="aspect-ratio";
+        }
+        if(!backgroundNumber(width)||!backgroundNumber(height))return result;
+        page().width=roundedPageDimension(width);
+        page().height=roundedPageDimension(height);
+        result.applied=true;result.mode=mode;
+        result.width=page().width;result.height=page().height;
+        return result;
+    }
+    function formatBackgroundNumber(value,digits){
+        value=backgroundNumber(value);if(!value)return "";
+        const text=value.toFixed(digits);
+        return (digits>0?text.replace(/\.?0+$/,""):text).replace(".",",");
+    }
+    function describeBackgroundMetadata(metadata){
+        if(!metadata)return state.layout.background?
+            "Imagem carregada; metadados disponiveis somente durante a importacao.":
+            "Os metadados da imagem serao analisados durante a importacao.";
+        const parts=[];
+        if(metadata.pixelWidth&&metadata.pixelHeight)
+            parts.push(formatBackgroundNumber(metadata.pixelWidth,0)+" x "+
+                formatBackgroundNumber(metadata.pixelHeight,0)+" px");
+        if(metadata.dpiX&&metadata.dpiY)
+            parts.push(formatBackgroundNumber(metadata.dpiX,2)+" x "+
+                formatBackgroundNumber(metadata.dpiY,2)+" DPI"+
+                (metadata.resolutionSource?" ("+metadata.resolutionSource+")":""));
+        if(metadata.pageSizing&&metadata.pageSizing.applied)
+            parts.push("pagina "+formatBackgroundNumber(metadata.pageSizing.width,3)+" x "+
+                formatBackgroundNumber(metadata.pageSizing.height,3)+" mm"+
+                (metadata.pageSizing.mode==="aspect-ratio"?
+                    " pela proporcao; confira a medida fisica":""));
+        if(!parts.length)parts.push("Imagem importada sem dimensoes identificaveis");
+        if(metadata.warnings&&metadata.warnings.length)
+            parts.push(metadata.warnings[0]);
+        return parts.join(" · ");
+    }
+    function supersededBackgroundError(){
+        const error=new Error("A importacao foi substituida por uma imagem mais recente.");
+        error.name="FWWebExLabelBackgroundImportError";
+        error.code="LABEL_BACKGROUND_IMPORT_SUPERSEDED";
+        return error;
+    }
+    function setBackground(file,options){
+        options=options&&typeof options==="object"?options:{};
+        if(!file)return Promise.reject(new Error("Selecione uma imagem de fundo."));
+        const token=++backgroundImportToken,api=backgroundMetadataAPI(),
+            metadataPromise=api&&typeof api.inspect==="function"?
+                Promise.resolve(api.inspect(file,{timeout:num(options.timeout,
+                    num(state.options.backgroundMetadataTimeout,10000))})):
+                Promise.reject(new Error("WebExFeatureExifReader nao esta disponivel."));
+        return Promise.all([
+            readBackgroundDataURL(file),
+            metadataPromise.then(function(value){return {value:value,error:null};})
+                .catch(function(error){return {value:null,error:error};})
+        ]).then(function(results){
+            const dataUrl=results[0],metadataResult=results[1];
+            return decodeBackgroundSize(dataUrl)
+                .then(function(decoded){return {dataUrl:dataUrl,metadataResult:metadataResult,
+                    decoded:decoded,decodeError:null};})
+                .catch(function(error){return {dataUrl:dataUrl,metadataResult:metadataResult,
+                    decoded:null,decodeError:error};});
+        }).then(function(result){
+            if(token!==backgroundImportToken)throw supersededBackgroundError();
+            const current=state.layout.background||{},metadata=backgroundSummary(
+                result.metadataResult.value,result.decoded,
+                result.metadataResult.error,result.decodeError);
+            metadata.pageSizing=applyBackgroundPageSize(metadata,options);
+            state.layout.background={
+                dataUrl:result.dataUrl,fit:String(defined(current.fit,"fill")),
+                opacity:num(current.opacity,1),locked:current.locked!==false
+            };
+            state.backgroundMetadata=metadata;
+            syncStage();
+            setStatus(describeBackgroundMetadata(metadata),
+                metadata.warnings.length||metadata.pageSizing.mode==="aspect-ratio"?
+                    "warning":"success");
+            return result.dataUrl;
         });
     }
     function setRecords(records){
@@ -5105,6 +5990,7 @@ method RenderHTML() class WebExLabelDesigner
         });
         state.recordIndex=Math.min(state.recordIndex,Math.max(0,state.records.length-1));
         syncRecordsEditor(true);
+        invalidateReport();scheduleValidation();
         if(state.mode==="data")render({emit:false});
         schedulePreview();
         return clone(state.records);
@@ -5142,6 +6028,15 @@ method RenderHTML() class WebExLabelDesigner
             });
         if(Object.prototype.hasOwnProperty.call(changed,"drawersCollapsed"))
             setDrawersCollapsed(changed.drawersCollapsed===true);
+        if(Object.prototype.hasOwnProperty.call(changed,"autoValidate")){
+            if(changed.autoValidate===false)stopPendingValidation();
+            else scheduleValidation();
+        }
+        if(Object.prototype.hasOwnProperty.call(changed,"autoSizePageFromBackground")){
+            const control=role("background-auto-size");
+            if(control&&document.activeElement!==control)
+                control.value=String(changed.autoSizePageFromBackground!==false);
+        }
         return clone(state.options);
     }
     function discoverVariables(addMissing){
@@ -5280,13 +6175,13 @@ method RenderHTML() class WebExLabelDesigner
         if(control.dataset.valueType === "json")value=JSON.parse(value||"{}");
         if(path==="containerId")value=value?String(value):null;
         root.__labelDesigner.updateSelected(propertyPatch(path,value,item));
-        checkpoint();
     }
     function handleAction(action,button){
         try{
             if(action==="background"){const input=role("background-file");if(input)input.click();return;}
             if(action==="remove-background"){
-                state.layout.background=null;syncStage();checkpoint();return;
+                backgroundImportToken++;state.layout.background=null;
+                state.backgroundMetadata=null;syncStage();checkpoint();return;
             }
             if(action==="apply-background"){
                 if(state.layout.background){
@@ -5360,6 +6255,11 @@ method RenderHTML() class WebExLabelDesigner
                 if(item&&item.type==="container"){layoutContainer(item.id);checkpoint();}
                 return;
             }
+            if(action==="fit-container"){
+                const item=selected();
+                if(item&&item.type==="container")fitContainerToContents(item.id);
+                return;
+            }
             if(action==="grid"){
                 state.layout.editor.grid.enabled=!state.layout.editor.grid.enabled;
                 render();checkpoint();return;
@@ -5427,7 +6327,7 @@ method RenderHTML() class WebExLabelDesigner
                 const mode=button.dataset.mode;
                 if(mode==="print"){previewProduct().catch(function(){});return;}
                 stopPendingPreview();
-                state.mode=mode;render({emit:false});return;
+                state.mode=mode;render({emit:false});scheduleValidation();return;
             }
             if(action==="print-overlay"){
                 state.printOverlay=!state.printOverlay;render({emit:false});return;
@@ -5447,7 +6347,10 @@ method RenderHTML() class WebExLabelDesigner
             }
             if(action==="format-json"){formatEditedJSON();return;}
             if(action==="apply-json"){applyEditedJSON();return;}
-            if(action==="discard-json"){syncContract(true);setStatus("Edi\u00e7\u00e3o descartada.");return;}
+            if(action==="discard-json"){
+                syncContract(true);invalidateReport();scheduleValidation();
+                setStatus("Edi\u00e7\u00e3o descartada.");return;
+            }
             if(action==="layer-up"){reorderSelected(1);return;}
             if(action==="layer-down"){reorderSelected(-1);return;}
             if(action==="visibility"||action==="layer-lock"){
@@ -5481,6 +6384,8 @@ method RenderHTML() class WebExLabelDesigner
         const problem=event.target.closest&&event.target.closest(".fwwebex-label-problem");
         if(problem&&problem.dataset.elementId){
             selectId(problem.dataset.elementId,false);
+            if(problem.dataset.inspectorTab)
+                activateTab("inspector",problem.dataset.inspectorTab,false);
             const target=Array.prototype.find.call(fields.children,function(child){
                 return child.dataset.id===problem.dataset.elementId;
             });
@@ -5499,8 +6404,16 @@ method RenderHTML() class WebExLabelDesigner
             state.zoom=control.value;render({emit:false});return;
         }
         if(isRole(control,"record-index")){
+            const previous=state.recordIndex;
             state.recordIndex=Math.max(0,Math.min(state.records.length-1,
                 num(control.value,0)));
+            const scope=state.lastReport&&state.lastReport.validationScope;
+            if(previous!==state.recordIndex){
+                stopPendingValidation();
+                if(scope&&scope.mode==="active-record"){
+                    invalidateReport();scheduleValidation();
+                }else if(!state.lastReport)scheduleValidation();
+            }
             if(state.mode==="data")render({emit:false});
             schedulePreview();
             return;
@@ -5509,9 +6422,16 @@ method RenderHTML() class WebExLabelDesigner
             state.overlayOpacity=Math.max(.1,Math.min(1,num(control.value,.5)));
             render({emit:false});return;
         }
-        if(isRole(control,"background-file")&&control.files&&control.files[0])
+        if(isRole(control,"background-auto-size")){
+            state.options.autoSizePageFromBackground=control.value!=="false";return;
+        }
+        if(isRole(control,"background-file")&&control.files&&control.files[0]){
             setBackground(control.files[0]).then(function(){checkpoint();})
-                .catch(function(error){setStatus(error.message||String(error),"error");});
+                .catch(function(error){
+                    if(!error||error.code!=="LABEL_BACKGROUND_IMPORT_SUPERSEDED")
+                        setStatus(error.message||String(error),"error");
+                }).finally(function(){control.value="";});
+        }
         if(isRole(control,"layout-file")&&control.files&&control.files[0]){
             if(state.contractDirty&&typeof window.confirm==="function"&&!window.confirm(
                 "H\u00e1 uma edi\u00e7\u00e3o JSON pendente. Descartar e importar o arquivo?")){
@@ -5528,12 +6448,22 @@ method RenderHTML() class WebExLabelDesigner
     listen(root,"input",function(event){
         const control=event.target;
         if(isRole(control,"layer-search")){renderLayers();return;}
-        if(isRole(control,"contract-editor")){setDirty(true);return;}
+        if(isRole(control,"contract-editor")){
+            setDirty(true);stopPendingValidation();
+            invalidateReport("O contrato possui uma edi\u00e7\u00e3o pendente. "+
+                "Aplique o JSON ou clique em Validar para conferir o rascunho.");
+            return;
+        }
         if(isRole(control,"records-editor")){
             state.autoSampleRecords=false;
+            stopPendingValidation();
+            invalidateReport("Dados em edi\u00e7\u00e3o. Conclua o JSON para atualizar a valida\u00e7\u00e3o.");
             try{
                 const value=JSON.parse(control.value||"[]");
                 state.records=clone(Array.isArray(value)?value:[value]);
+                state.recordIndex=Math.min(state.recordIndex,
+                    Math.max(0,state.records.length-1));
+                scheduleValidation();
                 emitRecordsChange("editor",null);
                 if(state.mode==="data")render({emit:false});
                 schedulePreview();
@@ -5634,6 +6564,33 @@ method RenderHTML() class WebExLabelDesigner
         box.style.width=((bounds.right-bounds.left)/width*100)+"%";
         box.style.height=((bounds.bottom-bounds.top)/height*100)+"%";
     }
+    function minimumResizeBox(item){
+        const geometry=window.FWWebExLabels&&window.FWWebExLabels.geometry;
+        if(geometry&&typeof geometry.minimumStructuralBox==="function")
+            return geometry.minimumStructuralBox(item);
+        if(item.type==="text"){
+            const style=item.style||{},padding=normalizeInsets(style.padding,0),
+                minimumFont=Math.max(.1,num(style.minFontSize,3)),
+                lineHeight=Math.max(.5,num(style.lineHeightFactor,1.15));
+            return {width:Math.max(0,padding.left)+Math.max(0,padding.right)+.1,
+                height:Math.max(0,padding.top)+Math.max(0,padding.bottom)+
+                    minimumFont*.352778*lineHeight};
+        }
+        if(item.type==="barcode"){
+            const quiet=Math.max(0,num(item.quietZone,0)),
+                module=Math.max(.1,num(item.minModuleWidth,.1)),
+                readable=item.displayValue!==false?
+                    Math.max(.1,num(item.humanReadableMinFontSize,3))*.352778+
+                        Math.max(0,num(item.textMargin,0)):0;
+            return {width:quiet*2+module,height:readable+.1};
+        }
+        if(item.type==="container"){
+            const padding=normalizeInsets(item.layout&&item.layout.padding,0);
+            return {width:Math.max(0,padding.left)+Math.max(0,padding.right)+.1,
+                height:Math.max(0,padding.top)+Math.max(0,padding.bottom)+.1};
+        }
+        return {width:.1,height:.1};
+    }
     listen(stage,"pointerdown",function(ev){
         clearSnapFeedback();
         const field=ev.target.closest(".fwwebex-label-field");
@@ -5678,7 +6635,7 @@ method RenderHTML() class WebExLabelDesigner
             startX:start.x,startY:start.y,
             ox:item.box.x,oy:item.box.y,ow:item.box.width,oh:item.box.height,
             children:movingChildren,snapLatch:{x:null,y:null},
-            snapMetrics:currentTextMetrics()};
+            snapMetrics:currentTextMetrics(),minimumSize:minimumResizeBox(item)};
         field.setPointerCapture(ev.pointerId); render(); ev.preventDefault();
     });
     listen(stage,"pointermove",function(ev){
@@ -5690,8 +6647,8 @@ method RenderHTML() class WebExLabelDesigner
         if(!action)return;
         const point=pointerSourcePoint(ev),dx=point.x-action.startX,dy=point.y-action.startY;
         if(action.resize){
-            action.item.box.width=Math.max(3,action.ow+dx);
-            action.item.box.height=Math.max(3,action.oh+dy);
+            action.item.box.width=Math.max(action.minimumSize.width,action.ow+dx);
+            action.item.box.height=Math.max(action.minimumSize.height,action.oh+dy);
         }else{
             const target=snapPosition(action.item,
                 Math.max(0,Math.min(page().width-action.item.box.width,action.ox+dx)),
@@ -5713,18 +6670,77 @@ method RenderHTML() class WebExLabelDesigner
             window.prompt("Nome da area:",item.name||"Area de layout"):
             window.prompt("Conteudo dinamico (use {{campo}}):",item.template);
         if(next!==null){
+            const previous=item.type==="container"?item.name:item.template;
+            if(next===previous){render();return;}
             if(item.type==="container")item.name=next;else item.template=next;
-            render();
+            checkpoint();render();
         }
     });
-    root.__labelDesigner={addText:function(options){return add("text",options);},
-        addBarcode:function(options){return add("barcode",options);},
-        addContainer:function(options){return add("container",options);},
-        remove:remove,duplicate:duplicate,toggleLock:toggleLock,align:align,
-        arrange:arrangeSelection,copyStyle:copyStyle,stack:stack,
-        assignToContainer:assignToContainer,
-        layoutContainer:layoutContainer,
-        exportLayout:exportLayout,load:load,setBackground:setBackground,
+    function checkpointPublic(result,changed){
+        if(changed===true)checkpoint();
+        return result;
+    }
+    root.__labelDesigner={addText:function(options){
+            return checkpointPublic(add("text",options),true);
+        },
+        addBarcode:function(options){
+            return checkpointPublic(add("barcode",options),true);
+        },
+        addContainer:function(options){
+            return checkpointPublic(add("container",options),true);
+        },
+        remove:function(){
+            const result=remove();
+            return checkpointPublic(result,!!(result&&result.removedIds&&
+                result.removedIds.length));
+        },
+        duplicate:function(){
+            const result=duplicate();
+            return checkpointPublic(result,Array.isArray(result)&&result.length>0);
+        },
+        toggleLock:function(){
+            const changed=selectedItems().length>0,result=toggleLock();
+            return checkpointPublic(result,changed);
+        },
+        align:function(mode){
+            const result=align(mode);
+            return checkpointPublic(result,!!(result&&result.changedIds&&
+                result.changedIds.length));
+        },
+        arrange:function(command,options){
+            const result=arrangeSelection(command,options);
+            return checkpointPublic(result,!!(result&&result.applied===true&&
+                result.changedIds&&result.changedIds.length));
+        },
+        copyStyle:function(){
+            const reference=selected(),changed=selectedItems().some(function(item){
+                return reference&&item.id!==reference.id&&item.type===reference.type&&
+                    item.locked!==true;
+            }),result=copyStyle();
+            return checkpointPublic(result,changed);
+        },
+        stack:function(direction,gap,crossAlign){
+            const result=stack(direction,gap,crossAlign);
+            return checkpointPublic(result,!!(result&&result.applied===true&&
+                result.changedIds&&result.changedIds.length));
+        },
+        assignToContainer:function(){
+            const result=assignToContainer();
+            return checkpointPublic(result,!!(result&&!result.error&&result.count>0));
+        },
+        layoutContainer:function(containerOrId,options){
+            const exists=(typeof containerOrId==="string"?
+                elements().find(function(item){return item.id===containerOrId;}):
+                containerOrId),result=layoutContainer(containerOrId,options);
+            return checkpointPublic(result,!!(exists&&exists.type==="container"));
+        },
+        fitContainerToContents:fitContainerToContents,
+        exportLayout:exportLayout,load:load,setBackground:function(file,options){
+            return setBackground(file,options).then(function(result){
+                checkpoint();return result;
+            });
+        },
+        getBackgroundMetadata:function(){return clone(state.backgroundMetadata);},
         setRecords:setRecords,setOptions:setOptions,validate:validateProduct,
         preview:previewProduct,download:downloadProduct,print:printProduct,
         undo:undo,redo:redo,exportJSON:exportJSON,
@@ -5735,7 +6751,11 @@ method RenderHTML() class WebExLabelDesigner
         setDrawersCollapsed:setDrawersCollapsed,
         setElementsCollapsed:setElementsCollapsed,
         setElementsMinimized:setElementsMinimized,
-        discoverVariables:discoverVariables,generateSampleRecords:function(options){
+        discoverVariables:function(addMissing){
+            const result=discoverVariables(addMissing);
+            if(addMissing!==false&&result.missing.length){render();checkpoint();}
+            return result;
+        },generateSampleRecords:function(options){
             return generateSampleRecords(Object.assign({
                 readEditor:true,forceSync:true,enableAutomatic:true,source:"api"
             },options||{}));
@@ -5744,14 +6764,20 @@ method RenderHTML() class WebExLabelDesigner
             if(["design","data","print"].indexOf(mode)<0)
                 throw new Error("Modo do designer invalido.");
             if(mode==="print")return previewProduct();
-            stopPendingPreview();state.mode=mode;return render({emit:false});
+            stopPendingPreview();state.mode=mode;render({emit:false});
+            scheduleValidation();return;
         },
         setPage:setPage,getSelected:selected,getSelectedItems:selectedItems,
         updateSelected:function(patch){
             const item=selected();
             if(item){
                 patch=patch||{};
-                const oldId=item.id,oldContainerId=item.containerId;
+                const oldId=item.id,oldContainerId=item.containerId,
+                    widthEdited=patch.width!==undefined||patch.box&&
+                        patch.box.width!==undefined,
+                    heightEdited=patch.height!==undefined||patch.box&&
+                        patch.box.height!==undefined;
+                let reflowError=null,membershipChanged=false;
                 if(patch.id!==undefined&&!String(patch.id).trim())
                     throw new Error("O ID do elemento nao pode ficar vazio.");
                 if(patch.id!==undefined&&String(patch.id)!==oldId&&
@@ -5760,20 +6786,7 @@ method RenderHTML() class WebExLabelDesigner
                     }))
                     throw new Error("Ja existe um elemento com o ID "+patch.id+".");
                 applyElementPatch(item,patch);
-                if(item.type!=="container"&&(
-                    patch.width!==undefined||patch.height!==undefined||
-                    patch.box&&(
-                        patch.box.width!==undefined||patch.box.height!==undefined
-                    )
-                )){
-                    item.basisBox=item.basisBox||{
-                        width:item.box.width,height:item.box.height
-                    };
-                    if(patch.width!==undefined||patch.box&&patch.box.width!==undefined)
-                        item.basisBox.width=item.box.width;
-                    if(patch.height!==undefined||patch.box&&patch.box.height!==undefined)
-                        item.basisBox.height=item.box.height;
-                }
+                syncBasisSize(item,widthEdited,heightEdited);
                 if(item.id!==oldId){
                     state.selection=state.selection.map(function(id){return id===oldId?item.id:id;});
                     state.selected=item.id;
@@ -5793,6 +6806,7 @@ method RenderHTML() class WebExLabelDesigner
                     }
                 }
                 if(item.containerId!==oldContainerId){
+                    membershipChanged=true;
                     elements().filter(function(candidate){return candidate.type==="container";})
                         .forEach(function(candidate){
                             candidate.layout.children=candidate.layout.children
@@ -5804,19 +6818,32 @@ method RenderHTML() class WebExLabelDesigner
                     if(nextContainer&&nextContainer.layout.children.indexOf(item.id)<0)
                         nextContainer.layout.children.push(item.id);
                 }
-                render();schedulePreview();
+                if(widthEdited||heightEdited||membershipChanged){
+                    const containerId=item.type==="container"?item.id:
+                        (item.containerId||oldContainerId);
+                    if(containerId){
+                        try{layoutContainer(containerId,{render:false});}
+                        catch(error){reflowError=error;}
+                    }
+                }
+                checkpoint();render();
+                if(reflowError)showResizeFailure(reflowError);
             }
-            return item;
+            return selected()||item;
         },
         setVariables:function(variables){
-            state.layout.variables=clone(Array.isArray(variables)?variables:[]);render();
+            state.layout.variables=clone(Array.isArray(variables)?variables:[]);
+            invalidateReport();render();scheduleValidation();
         },
         setBarcodeAutoRules:function(rules){
-            state.layout.barcodeAutoRules=clone(Array.isArray(rules)?rules:[]);render();
+            state.layout.barcodeAutoRules=clone(Array.isArray(rules)?rules:[]);
+            invalidateReport();render();scheduleValidation();
         },
         render:render,
         destroy:function(){
+            backgroundImportToken++;
             clearSnapFeedback();
+            stopPendingValidation();
             stopPendingPreview();
             if(renderFrame!==null&&typeof window.cancelAnimationFrame==="function")
                 window.cancelAnimationFrame(renderFrame);

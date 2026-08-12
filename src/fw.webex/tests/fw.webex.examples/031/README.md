@@ -30,6 +30,8 @@ líquido e barcode são apenas dados demonstrativos; nenhuma regra do
 
 Para outro modelo de rótulo, substitua o contrato e os registros sem alterar o
 designer. Uma imagem de fundo pode ser escolhida pela própria barra de
-ferramentas.
+ferramentas. Ao importar, a feature genérica ExifReader ajusta a página pelas
+medidas físicas da imagem; se não houver DPI, mantém a proporção e solicita a
+conferência da medida.
 
 Execute `u_FWWebExExample_031()` ou abra o item 031 pelo menu de exemplos.

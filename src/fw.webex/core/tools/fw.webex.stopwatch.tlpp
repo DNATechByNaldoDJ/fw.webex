@@ -21,7 +21,7 @@ static __cCRLF:=CRLF
 
 */
 
-class StopWatch from FWWebEx.ClassBase
+class StopWatch
 
     data cID as character
     data cName as character
@@ -59,6 +59,7 @@ class StopWatch from FWWebEx.ClassBase
     // Controle de intervalos/subprocessos
     public method HasInterval(cIntervalName as character) as logical
     public method GetInterval(cIntervalName as character) as object
+    public method DelInterval(cIntervalName as character) as logical
     public method StartInterval(cIntervalName as character) as object
     public method StopInterval(cIntervalName as character) as object
     public method PauseInterval(cIntervalName as character) as object
@@ -308,7 +309,7 @@ method Reset() class StopWatch
             self:jIntervals[cIntervalName]:Reset()
             FreeObj(@self:jIntervals[cIntervalName])
         endif
-        self:jIntervals:DelName(cIntervalName)
+        self:DelInterval(cIntervalName)
     next i
     FWFreeArray(@aIntervalNames)
 
@@ -355,7 +356,16 @@ return(self:jIntervals:HasProperty(cIntervalName))
 
 method GetInterval(cIntervalName) class StopWatch
     paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
 return(self:jIntervals[cIntervalName])
+
+method DelInterval(cIntervalName) class StopWatch
+    paramtype 1 var cIntervalName as character optional default ("INTERVAL_"+self:cID)
+    cIntervalName:=NormalizeName(cIntervalName)
+    if (self:jIntervals:HasProperty(cIntervalName))
+        self:jIntervals:DelName(cIntervalName)
+    endif
+return(!self:jIntervals:HasProperty(cIntervalName))
 
 method StartInterval(cIntervalName) class StopWatch
 

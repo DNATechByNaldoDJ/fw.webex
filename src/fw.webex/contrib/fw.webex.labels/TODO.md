@@ -17,6 +17,8 @@ Arquivos principais:
   como feature genérica e dependência do recurso Labels
 - `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.pdfjs.tlpp`
   como feature genérica e independente para visualização/rasterização
+- `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.exifreader.tlpp`
+  como feature genérica e independente para leitura de metadados de imagem
 - `fw.webex.markdown.tlpp` somente como consumidor potencial por adaptador; não
   como dependência de Labels
 - README do componente e READMEs dos exemplos
@@ -137,7 +139,7 @@ Reorganização funcional do Designer executada em 01/08/2026 — **OK**:
 
 - a barra superior foi reduzida às ações globais e recebeu categorias de
   Documento, Seleção e Visualização;
-- o painel esquerdo passou a alternar entre Adicionar e Camadas, enquanto o
+- o painel esquerdo passou a alternar entre Componentes (`add`) e Camadas, enquanto o
   inspetor separa Elemento, Geometria, Aparência, Layout e Código de barras;
 - Dados, Contrato e Problemas ocupam um único painel inferior recolhível e
   redimensionável, com contador acessível de erros e avisos;
@@ -152,6 +154,100 @@ Reorganização funcional do Designer executada em 01/08/2026 — **OK**:
   permanecem marcados como **Parcial** e 8 são pendências completas/opcionais;
 - 143 testes Labels: 142 aprovados, nenhuma falha e 1 raster opt-in ignorado.
 
+Correções de redimensionamento, Componentes e diagnósticos executadas em
+08/08/2026 — **OK**:
+
+- a aba visível **Componentes** passou a abrir por padrão e expõe diretamente
+  Texto, Código de barras e Área/container; o identificador público `add` foi
+  preservado por compatibilidade;
+- redimensionamentos pelo handle e pelo Inspetor agora sincronizam `basisBox`,
+  inclusive para containers aninhados, impedindo que validação, preview ou PDF
+  restaurem silenciosamente o tamanho anterior;
+- ao concluir um resize dentro de uma área, o Designer reaplica o mesmo
+  LayoutEngine usado pela geração; overflow preserva a edição e produz uma
+  orientação objetiva, sem lançar exceção no evento de ponteiro;
+- o Inspetor de containers recebeu **Ajustar área ao conteúdo**, usando padding,
+  gap, margens e tamanhos-base dos filhos, recusando overflow nos quatro lados
+  mesmo com rotação e distinguindo tamanho-base do tamanho final imposto pelo
+  fluxo de uma área pai;
+- relatórios obsoletos deixam de pintar o canvas ou alimentar métricas, e
+  mudanças confirmadas disparam validação automática consolidada por debounce;
+  o modo automático mede apenas o registro ativo, sem desenhar a página PDF,
+  enquanto **Validar**, preview e geração continuam cobrindo o lote completo;
+  `autoValidate: false` mantém disponível o fluxo exclusivamente manual;
+- mutadores públicos do Designer passaram a criar o mesmo checkpoint das ações
+  visuais; previews antigos, inclusive os que terminam em erro, não podem
+  restaurar diagnóstico ou raster incompatível com uma edição mais recente;
+- o resize pelo handle passou a respeitar o mínimo estrutural calculado a partir
+  de padding, fonte mínima/line-height, quiet zone, texto legível e padding de
+  containers; o Inspetor apresenta esse limite e a política aplicada;
+- `FWWebExLabels.diagnostics` passou a preservar ocorrências brutas e agrupar a
+  apresentação por severidade, código e elemento, informando quantidade e
+  registros afetados no Designer e no painel gerador;
+- a deduplicação interna passou a considerar também sugestão e detalhes físicos,
+  sem colidir mensagens que contenham separadores;
+- o painel gerador invalida relatório e resultado quando layout, dados, opções
+  ou rotação mudam e impede que uma geração assíncrona obsoleta restaure estado
+  antigo ou encerre o indicador de uma execução mais nova;
+- os layouts equivalentes dos exemplos 031/032 ganharam pelo menos 4 mm de
+  reserva vertical e `sizing: "shrink"`, sem relaxar `overflow: "error"`,
+  `minFontSize`, quiet zone ou módulo mínimo do código de barras;
+- 175 testes Labels: 174 aprovados, nenhuma falha e 1 raster opt-in ignorado na
+  suíte padrão.
+
+Box model canônico e proteção estrutural do LayoutEngine implementados em
+11/08/2026 — **OK**:
+
+- `FWWebExLabels.geometry` passou a expor as APIs puras `boxModel()`,
+  `insetBox()`, `outsetBox()` e `minimumStructuralBox()`;
+- `boxModel()` distingue a caixa declarada (`elementBox`/`outerBox`), a caixa
+  externa com margin (`marginBox`) e a caixa útil após padding ou quiet zone
+  (`contentBox`), preservando todas as medidas em milímetros;
+- validação, LayoutEngine, canvas do Designer e renderer PDF consomem a mesma
+  geometria canônica para padding, margin, quiet zone e área útil;
+- os modos `shrink` e `equal` do LayoutEngine respeitam o mínimo estrutural de
+  cada filho; quando os mínimos não cabem, o overflow permanece explícito e
+  diagnosticável em vez de produzir uma caixa degenerada;
+- containers aninhados com `overflow: "error"` propagam seus mínimos
+  estruturais ao pai, que redistribui o espaço antes de concluir que há
+  overflow;
+- o mínimo intrínseco dependente do valor resolvido, da quantidade de linhas ou
+  módulos e de `maxLines` permanece como evolução separada;
+- o backlog detalhado está em 351 itens concluídos e 23 abertos, dos quais 17
+  permanecem marcados como **Parcial** e 6 são pendências completas/opcionais;
+- 186 testes Labels: 185 aprovados, nenhuma falha e 1 raster opt-in ignorado na
+  suíte padrão.
+
+Leitura de metadados e ajuste da página pela imagem implementados em
+11/08/2026 — **OK**:
+
+- ExifReader 4.42.0 foi isolado em `WebExFeatureExifReader`, com versão fixada,
+  carregamento idempotente, readiness, conflito de versão e erros tipados;
+- a API genérica `FWWebEx.ImageMetadata.ExifReader` lê os metadados brutos e
+  normaliza pixels, orientação, densidade e dimensões físicas sem conhecer
+  Labels;
+- PNG `pHYs`, EXIF e JFIF são convertidos para DPI e milímetros; WebP recebe
+  tamanho físico quando possui EXIF, e a orientação 5–8 troca os eixos;
+- somente `WebExLabelDesigner` carrega a dependência; painel gerador e uso
+  headless não recebem esse custo;
+- ao importar o background, a página usa as dimensões físicas disponíveis; sem
+  densidade, preserva a largura corrente e ajusta a altura pela proporção, sem
+  presumir 72 ou 96 DPI;
+- `autoSizePageFromBackground` permite desligar a automação e
+  `backgroundFallbackDpi` permite declarar explicitamente o DPI conhecido pelo
+  processo produtivo;
+- densidades classificadas como implausíveis não redimensionam a página sem
+  opt-in explícito e seguem o fallback proporcional/configurável;
+- falha da biblioteca não bloqueia a arte, importações concorrentes não se
+  sobrescrevem e página/background pertencem ao mesmo checkpoint;
+- os metadados permanecem transitórios no Designer: o contrato continua
+  armazenando apenas a imagem e as dimensões canônicas da página.
+- o backlog detalhado está em 352 itens concluídos e 22 abertos, dos quais 17
+  permanecem marcados como **Parcial** e 5 são pendências completas/opcionais;
+- 193 testes Labels: 192 aprovados, nenhuma falha e 1 raster opt-in ignorado;
+  19 testes das features genéricas aprovados, totalizando 212 testes nas duas
+  suítes.
+
 Pendências que não bloqueiam esta entrega:
 
 - compilar e executar os TLPPs em um AppServer Protheus;
@@ -162,8 +258,12 @@ Pendências que não bloqueiam esta entrega:
 
 Próximos blocos recomendados, em ordem:
 
-1. completar a UX de guias manuais, gaps, sangria e responsividade;
-2. incluir imagem, linha e retângulo como novos tipos, se confirmados como
+1. ampliar o mínimo estrutural já usado no resize para mínimos intrínsecos
+   dependentes do conteúdo real de texto, `maxLines` e módulos do barcode;
+2. permitir arrastar componentes para dentro/fora de áreas e acrescentar a
+   prévia fantasma da operação antes da confirmação;
+3. completar a UX de guias manuais, gaps, sangria e responsividade;
+4. incluir imagem, linha e retângulo como novos tipos, se confirmados como
    necessários para os modelos reais.
 
 As listas detalhadas da seção 2 permanecem como catálogo de evolução de UX. O
@@ -676,9 +776,23 @@ Semântica:
 ### 2.4 Motor de layout e renderização
 
 - [x] Criar `normalizeInsets`.
-- [ ] Calcular uma caixa externa, uma caixa com margin e uma caixa útil após
-  padding.
-- [ ] Usar exatamente as mesmas caixas no canvas, validação e PDF.
+- [x] **OK:** calcular, por `geometry.boxModel()`, a caixa declarada
+  (`elementBox`/`outerBox`), a caixa externa com margin (`marginBox`) e a caixa
+  útil após padding ou quiet zone (`contentBox`).
+- [x] **OK:** usar a mesma geometria canônica no LayoutEngine, canvas,
+  validação e PDF; diferenças de medição tipográfica continuam tratadas pelo
+  preview fiel gerado pelo próprio renderer.
+- [x] **OK:** sincronizar `basisBox` ao redimensionar pelo handle ou pelo
+  Inspetor e provar que um novo reflow não restaura o tamanho anterior.
+- [x] **OK:** reaplicar o LayoutEngine ao concluir o resize de um container ou
+  de um filho, preservando a tentativa e diagnosticando overflow.
+- [x] **OK:** oferecer `Ajustar área ao conteúdo`, calculando a caixa pelo
+  padding, gap, margens e tamanhos-base dos filhos sem ultrapassar nenhum lado
+  da página, inclusive com rotação ou restrição por uma área pai.
+- [ ] **Parcial:** o handle já respeita o mínimo estrutural de padding,
+  `minFontSize`/line-height, quiet zone, módulo mínimo e texto legível; falta
+  calcular o mínimo intrínseco dependente do valor efetivamente resolvido e de
+  `maxLines`, para que `sizing: "shrink"` antecipe todas as restrições físicas.
 - [x] Separar `fit.mode` de `fit.overflow`.
 - [x] Nunca reduzir fonte abaixo de `minFontSize`.
 - [x] Implementar clipping real para `overflow: "clip"`.
@@ -862,8 +976,8 @@ Implementar três modos claros:
   O destaque existe; falta apresentar o diagnóstico imediatamente.
 - [ ] **Parcial:** mostrar no inspetor o valor original, o valor resolvido e o
   texto final. Template e valor resolvido já são exibidos.
-- [ ] **Parcial:** exibir tamanho final da fonte, quantidade de linhas, área útil e política
-  aplicada.
+- [x] **OK:** exibir tamanho final da fonte, quantidade de linhas, área útil,
+  mínimo estrutural e política aplicada no Inspetor após a validação.
 
 Para o modo Impressão:
 
@@ -893,8 +1007,9 @@ Modo de sobreposição:
 
 Fidelidade e comparação:
 
-- [ ] **Parcial:** criar visual diff automatizado entre preview fiel e PDF
-  renderizado. O teste raster cobre o renderer, ainda não o viewport do preview.
+- [ ] **Parcial:** automatizar uma captura do viewport/overlay do Designer. O
+  modo Impressão já exibe o próprio PDF rasterizado pelo PDF.js e o teste raster
+  cobre o renderer; falta comparar visualmente a camada interativa sobre ele.
 - [x] Definir tolerância para antialiasing sem aceitar deslocamentos de layout.
 - [ ] **Parcial:** testar fontes, bold/italic, alinhamentos, padding, rotação, barcode e
   background.
@@ -934,9 +1049,10 @@ Barra superior:
 
 Painel esquerdo:
 
-- [ ] **Parcial:** aba "Adicionar": texto, barcode, imagem, linha, retângulo e
-  container. A aba e os três tipos implementados estão disponíveis; imagem,
-  linha e retângulo continuam como tipos opcionais ainda não implementados.
+- [ ] **Parcial:** aba visível "Componentes" (identificador público `add`):
+  texto, barcode, imagem, linha, retângulo e container. A aba abre por padrão e
+  os três tipos implementados estão disponíveis; imagem, linha e retângulo
+  continuam como tipos opcionais ainda não implementados.
 - [x] Aba "Camadas": árvore com z-order, parent/children, visibilidade, lock e
   busca por ID/nome/mnemônico.
 - [ ] Permitir arrastar elementos para dentro ou para fora de containers.
@@ -990,6 +1106,10 @@ Painel inferior:
   restaurar.
 - [x] **OK:** aba "Problemas": lista estruturada de erros e avisos, com badge
   acessível sem troca automática de contexto.
+- [x] **OK:** agrupar ocorrências repetidas por causa/elemento apenas na
+  apresentação, mantendo o relatório bruto e os detalhes físicos completos.
+- [x] **OK:** invalidar diagnósticos e métricas antigos após mutações semânticas
+  e revalidar de forma automática/debounced depois da confirmação da edição.
 - [x] Controlar estado `clean/dirty` do editor JSON.
 - [x] Nunca sobrescrever JSON `dirty` durante validar ou preview.
 - [x] Se o JSON estiver `dirty`, validar exatamente seu conteúdo.
@@ -1030,7 +1150,8 @@ Acessibilidade:
   exemplo caber.
 - [x] Exibir as opções reais de geração: rotação, arquivo, download, preview e
   impressão.
-- [ ] Incluir um layout de teste assimétrico com marcadores nos quatro cantos.
+- [x] **OK:** incluir fixture de teste assimétrica com marcadores nos quatro
+  cantos, coberta por oráculos determinísticos e pelo raster opt-in.
 - [x] Permitir gerar 0, 90, 180 e 270 graus para comparação.
 - [x] Verificar que 0/180 geram página 100 x 60 mm e 90/270 geram 60 x 100 mm.
 - [x] Usar o mesmo contrato normalizado pelo exemplo 031.
@@ -1135,9 +1256,19 @@ Acessibilidade:
 | Caminho `produto.codigo` | Resolver, validar default e gerar teste corretamente |
 | Container sem filhos | Aviso visual e na lista de problemas |
 | Container com ciclo | Contrato rejeitado |
+| Resize de filho pelo handle | `basisBox` acompanha o novo tamanho e o reflow não restaura o valor anterior |
+| Resize moderado dos containers 031/032 | Reflow usa a reserva disponível sem `CONTAINER_OVERFLOW` |
+| Resize menor que o limite físico | Edição é preservada e causa acionável é exibida sem exceção no ponteiro |
+| Mesmo problema em 100 registros | Uma causa visual expansível preserva as 100 ocorrências brutas |
+| Editar após validar | Diagnóstico e métricas antigos deixam de influenciar canvas e Inspetor |
+| Mutação pela API pública após validar | Mesmo checkpoint/invalidação das ações visuais; `undo` restaura o estado |
+| Preview antigo rejeita após nova edição | Erro antigo é ignorado e não substitui o diagnóstico corrente |
+| Alterar opções/rotação durante geração | Painel invalida o resultado e a execução antiga não vence a mais nova |
 | Elemento fora da página | Aviso ou erro conforme política |
 | JSON editado e não aplicado | Preview usa o JSON editado ou pede decisão; não sobrescreve |
 | Background Data URI | Exportar/importar restaura exatamente a imagem |
+| Imagem com densidade física | Importação ajusta a página para os milímetros normalizados |
+| Imagem sem DPI | Preserva proporção, não inventa densidade e solicita conferência |
 | Múltiplos registros | Uma página correta por registro |
 | Elemento travado como referência | Próximo elemento alinha sem mover a referência |
 | Referência fixa | Vários elementos usam a mesma origem |
@@ -1157,6 +1288,11 @@ Acessibilidade:
 | Falha no jsPDF | Erro de dependência descritivo antes da geração |
 | Feature jsPDF isolada | Cria PDF mínimo sem carregar JsBarcode ou Labels |
 | Markdown -> PDF | Adaptador opcional usa DOM renderizado, sem depender de Labels |
+
+- [x] Ao importar uma imagem, recalcular e ajustar automaticamente as dimensões
+  da página usando a medida física normalizada pelo ExifReader; quando a imagem
+  não declarar densidade, preservar a proporção sem inventar DPI e manter ajuste
+  manual/configurável disponível.
 
 ### 3.3 Critérios de aceite
 

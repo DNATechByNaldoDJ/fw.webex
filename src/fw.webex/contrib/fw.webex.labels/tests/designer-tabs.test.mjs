@@ -115,6 +115,14 @@ test("designer shell groups each feature category in an accessible tab contract"
             assert.equal(attribute(tag, "tabindex"), selected ? "0" : "-1");
         });
     }
+    assert.match(
+        shellMarkup,
+        /data-tab-group="sidebar" data-tab-target="add"[\s\S]*?>Componentes<\/button>/
+    );
+    assert.match(
+        shellMarkup,
+        /data-tab-target="add"[\s\S]*?aria-selected="true" tabindex="0"/
+    );
 
     const typedInspectorTabs = new Map(tabButtons
         .filter(({tag}) => attribute(tag, "data-tab-group") === "inspector")
@@ -553,7 +561,7 @@ function createRoot(id) {
             root, "toolbar", expectedGroups.toolbar, "document"
         ),
         sidebar: appendTabGroup(
-            root, "sidebar", expectedGroups.sidebar, "layers"
+            root, "sidebar", expectedGroups.sidebar, "add"
         ),
         inspector: appendTabGroup(
             inspectorBody,
@@ -663,13 +671,13 @@ test("tab APIs generate instance-scoped ARIA IDs and keep state independent", ()
 
     assert.deepEqual(plain(firstDesigner.getActiveTabs()), {
         toolbar: "document",
-        sidebar: "layers",
+        sidebar: "add",
         inspector: "element",
         drawers: "data"
     });
     assert.deepEqual(plain(secondDesigner.getActiveTabs()), {
         toolbar: "document",
-        sidebar: "layers",
+        sidebar: "add",
         inspector: "element",
         drawers: "data"
     });

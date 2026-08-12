@@ -2,8 +2,45 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add REST timeout, error handling and status UI)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Reorganize Labels Designer by functional tabs)"
  */
+
+2026-08-12 12:38 UTC naldodj (Reorganize Labels Designer by functional tabs)
+  Add ExifReader feature and label/engine improvements
+      Introduce WebExFeatureExifReader (pins ExifReader 4.42.0) with a normalized ImageMetadata.ExifReader runtime and comprehensive tests.
+      Integrate background metadata handling into the Designer: automatic page sizing from PNG/EXIF/JFIF, fallback proportional sizing, import time warnings, per-import and global opt-outs, and import concurrency protection.
+      Large Labels runtime updates: canonical box-model API (boxModel/insetBox/outsetBox/minimumStructuralBox), diagnostics deduplication & grouping, structural minimums, improved LayoutEngine (shrink/equal with minimums, distribute/space-between, fit-to-content), synchronized basisBox on resize, validation/preview scheduling and stale-report handling, and many UI/UX fixes to generator panel and designer.
+      Add tests covering ExifReader, diagnostics grouping, geometry/engine parity, designer behaviors and generator-panel invalidation.
+      Minor changes: README/TODO updates, example layout adjustments, StopWatch DelInterval and small WebExPage fixes.
+      Overall: image metadata support + robustness and UX/validation improvements across Labels and Designer.
+        + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.exifreader.tlpp
+        + src/fw.webex/contrib/fw.webex.features/tests/exifreader-feature.test.mjs
+        + src/fw.webex/contrib/fw.webex.labels/tests/diagnostics-grouping.test.mjs
+        + src/fw.webex/contrib/fw.webex.labels/tests/geometry-box-model.test.mjs
+        * README.md
+        * src/fw.webex/contrib/fw.webex.features/README.md
+        * src/fw.webex/contrib/fw.webex.labels/fw.webex.label.generator.panel.tlpp
+        * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+        * src/fw.webex/contrib/fw.webex.labels/README.md
+        * src/fw.webex/contrib/fw.webex.labels/tests/dependency-boundaries.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-canonical.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-inspector-coverage.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-p0-regressions.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-print-preview.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-product.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-tabs.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/examples-products.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/generator-panel.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/layout-engine-parity.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/renderer-critical.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+        * src/fw.webex/contrib/fw.webex.labels/TODO.md
+        * src/fw.webex/core/component/fw.webex.page.tlpp
+        * src/fw.webex/core/tools/fw.webex.stopwatch.tlpp
+        * src/fw.webex/tests/fw.webex.examples/031/fw.webex.example.031.tlpp
+        * src/fw.webex/tests/fw.webex.examples/031/README.md
+        * src/fw.webex/tests/fw.webex.examples/032/fw.webex.example.032.tlpp
+        * TODO.md
 
 2026-08-01 23:21 UTC naldodj (Reorganize Labels Designer by functional tabs)
   Reduce visual density while preserving the reusable FWWebEx component APIs.

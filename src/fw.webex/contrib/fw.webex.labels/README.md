@@ -14,6 +14,9 @@ Componentes FWWebEx para desenhar rotulos e gerar PDFs no navegador.
   `FWWebEx.PDF`.
 - `WebExFeaturePDFJS`: feature generica e separada que rasteriza PDFs prontos
   em canvas por `FWWebEx.PDFViewer`.
+- `WebExFeatureExifReader`: feature generica, carregada somente pelo Designer,
+  que publica `FWWebEx.ImageMetadata.ExifReader` para ler e normalizar
+  metadados de imagens sem conhecer o contrato de rotulos.
 - `WebExFeatureLabels`: depende da feature generica e registra somente JsBarcode
   e os assets especificos de rotulos.
 
@@ -23,7 +26,7 @@ opcional `WebExFeatureJsPDFHTML` adiciona html2canvas e DOMPurify. O adaptador d
 Markdown para PDF deve permanecer fora de Labels e tratar explicitamente
 paginacao, fontes, imagens/CORS e as limitacoes de CSS do renderer HTML.
 
-jsPDF, PDF.js, JsBarcode e as dependências opcionais de HTML têm versões fixadas, mas
+jsPDF, PDF.js, ExifReader, JsBarcode e as dependências opcionais de HTML têm versões fixadas, mas
 são carregados atualmente por `cdn.jsdelivr.net`. Ambientes sem acesso ao CDN
 precisam da futura política de fallback local/offline acompanhada por `NX-017`.
 
@@ -51,13 +54,19 @@ END WEBEXOBJECT
 `SetLayout` e `SetOptions` aceitam string ou `JSONObject`. `SetRecords` aceita
 string, array ou JSON. IDs internos nao sao exigidos; todos os controles sao
 resolvidos dentro da raiz da propria instancia. Duas instancias podem coexistir
-na mesma pagina.
+na mesma pagina. No painel gerador, qualquer alteração efetiva de layout, dados,
+opções ou rotação — por API ou pela interface — invalida o resultado anterior;
+uma geração assíncrona antiga também não pode restaurar PDF ou relatório
+incompatível com as entradas atuais.
 
 Opcoes do designer: `showToolbar`, `showLayers`, `showInspector`,
 `showDrawers`, `drawersCollapsed`, `elementsCollapsed`, `elementsMinimized`, `tabs`,
-`autoSampleRecords` e `fileName`.
+`autoSampleRecords`, `autoValidate`, `autoSizePageFromBackground`,
+`backgroundFallbackDpi`, `allowImplausibleBackgroundDpi`,
+`backgroundMetadataTimeout` e `fileName`.
 Por compatibilidade, `showLayers: false` oculta todo o painel esquerdo,
-incluindo a aba Adicionar.
+incluindo a aba Componentes. O identificador público dessa aba continua sendo
+`tabs.sidebar: "add"` para preservar os consumidores existentes.
 O editor visual oferece os
 modos `Design`, `Dados` e `Impressao`. O modo Dados resolve os templates usando
 o registro corrente; o
@@ -66,10 +75,17 @@ selecionada em um canvas com PDF.js. O overlay permanece em coordenadas-fonte e
 recebe a mesma matriz global usada pelo PDF em 0, 90, 180 e 270 graus; assim,
 caixas, guias, handles, marquee e arraste continuam expressos em milímetros.
 Mudanças confirmadas são consolidadas por debounce, e gerações ou rasters
-obsoletos são cancelados/ignorados. Se a rasterização falhar, o componente volta
+obsoletos — inclusive rejeições iniciadas antes de uma edição — são
+cancelados/ignorados. Se a rasterização falhar, o componente volta
 ao modo Design, publica `fwwebex:label-error` e mostra o erro real. Enquanto o textarea do contrato estiver
 alterado, atualizacoes visuais nao sobrescrevem o texto pendente. Validacao e
 preview usam exatamente esse JSON pendente.
+
+Os mutadores públicos do Designer (`addText`, `addBarcode`, `addContainer`,
+`remove`, `duplicate`, organização, containers, background e descoberta de
+variáveis) criam o mesmo checkpoint, invalidam métricas e disparam a mesma
+atualização usada pelos botões. Assim, consumidores JavaScript/ADVPL não ficam
+com um relatório aparentemente atual depois de alterar o layout por API.
 
 ### Organização da interface
 
@@ -77,12 +93,15 @@ O Designer separa as funcionalidades sem duplicar controles ou regras:
 
 - a barra compacta mantém modos, desfazer/refazer, zoom, validação e preview;
 - `Documento`, `Seleção` e `Visualização` agrupam as demais ferramentas;
-- o painel esquerdo alterna entre `Adicionar` e `Camadas`;
+- o painel esquerdo abre em `Componentes`, com as ações para inserir texto,
+  código de barras e área/container, e alterna para `Camadas` quando for
+  necessário organizar o que já existe;
 - o inspetor divide propriedades em `Elemento`, `Geometria`, `Aparência`,
   `Layout` e `Código de barras`, ocultando categorias incompatíveis com o tipo;
 - o painel inferior, recolhível e redimensionável, alterna entre `Dados`,
-  `Contrato` e `Problemas`. O badge de Problemas informa erros e avisos sem
-  trocar a aba automaticamente.
+  `Contrato` e `Problemas`. Diagnósticos iguais são agrupados por causa e
+  elemento, com a quantidade e os registros afetados; o relatório bruto não é
+  alterado e o badge não troca a aba automaticamente.
 
 As abas usam `tablist`, `tab` e `tabpanel`, possuem IDs locais à instância e
 aceitam setas, `Home` e `End`. A troca é estado transitório da interface: não
@@ -104,7 +123,7 @@ designer.setOptions({
   elementsMinimized: false,
   tabs: {
     toolbar: "document",
-    sidebar: "layers",
+    sidebar: "add",
     inspector: "element",
     drawers: "data"
   }
@@ -137,6 +156,41 @@ designer.setPage({
   bleed: 0
 });
 ```
+
+Ao escolher uma imagem de fundo, o Designer usa o ExifReader para identificar
+as dimensoes em pixels e, quando presentes, a densidade fisica de PNG `pHYs`,
+EXIF ou JFIF. A pagina e ajustada em milimetros sem gravar os metadados no
+contrato; somente `page.width` e `page.height` resultantes permanecem
+canonicos. Orientacoes EXIF que trocam os eixos tambem sao consideradas.
+
+Se a imagem nao declarar uma resolucao fisica confiavel, o Designer nao assume
+silenciosamente 72 ou 96 DPI: conserva a largura atual da pagina, ajusta a
+altura pela proporcao dos pixels e mostra um aviso para conferencia. Um DPI de
+fallback pode ser configurado explicitamente quando o processo produtivo o
+conhecer. Densidades que o leitor classifica como implausiveis nao sao aplicadas
+automaticamente, salvo com `allowImplausibleBackgroundDpi: true`. O menu
+**Imagem de fundo** permite desligar o ajuste automatico.
+
+```javascript
+designer.setOptions({
+  autoSizePageFromBackground: true,
+  backgroundFallbackDpi: 300,
+  backgroundMetadataTimeout: 10000
+});
+
+await designer.setBackground(file);
+const metadata = designer.getBackgroundMetadata();
+
+// Excecao pontual: importa a arte sem alterar a pagina.
+await designer.setBackground(file, {autoSizePageFromBackground: false});
+```
+
+Falha ou indisponibilidade do leitor de metadados nao impede a importacao: o
+Designer tenta obter as dimensoes decodificadas pelo navegador e usa o fallback
+proporcional. Importacoes concorrentes sao serializadas; uma leitura antiga nao
+pode substituir a imagem mais recente. Pagina e background formam um unico
+checkpoint de desfazer/refazer, e os elementos existentes nao sao escalados
+automaticamente.
 
 Atalhos principais:
 
@@ -194,11 +248,33 @@ As ações disponíveis são:
 A referência magnética explícita tem prioridade sobre o elemento primário da
 seleção e nunca é movida. Alvos travados são preservados e informados no status.
 Quando um container é movido, sua subárvore acompanha o deslocamento uma única
-vez; igualação de tamanho também atualiza `basisBox`, para que o tamanho não seja
-perdido no próximo reflow. Filhos de containers continuam sujeitos ao fluxo do
-container na validação e no PDF; para organizá-los de forma persistente, ajuste
-`direction`, `gap`, `crossAlign`, `mainAlign` e `sizing` da área e use
-**Reorganizar área**.
+vez. Igualação e redimensionamento pelo handle ou pelo Inspetor atualizam
+`basisBox`, para que o tamanho não seja perdido no próximo reflow. Ao concluir
+um redimensionamento, o designer reaplica automaticamente o mesmo fluxo usado
+na validação e no PDF. Se a política da área não comportar o novo tamanho, a
+edição é preservada e um diagnóstico acionável é exibido. O comando
+**Reorganizar área** continua disponível para reaplicar o fluxo explicitamente.
+No Inspetor de um container, **Ajustar área ao conteúdo** calcula largura e
+altura a partir de padding, gap, margens e `basisBox` dos filhos, recusando a
+operação quando a caixa, inclusive rotacionada, ultrapassaria qualquer lado da
+página. Em uma área aninhada, o fluxo do pai ainda pode aplicar `stretch`; nesse
+caso o status e o retorno da API distinguem tamanho-base solicitado e tamanho
+final efetivamente aplicado.
+
+Por padrão, mudanças confirmadas invalidam métricas antigas e disparam uma
+validação consolidada por debounce. Para manter a edição responsiva mesmo com
+lotes grandes, essa validação automática mede somente o registro selecionado e
+não desenha páginas PDF; **Validar**, preview, download e impressão continuam
+processando todos os registros. O relatório informa seu `validationScope` e os
+índices permanecem referenciados ao lote original. Use `autoValidate: false`
+quando o consumidor preferir validação exclusivamente manual.
+
+Durante o resize pelo handle, o Designer impede apenas caixas estruturalmente
+inválidas (padding sem área útil, quiet zone sem módulo ou texto legível sem
+altura). O Inspetor mostra esse mínimo estrutural, a área útil, métricas finais e
+a política aplicada. Restrições dependentes do conteúdo — por exemplo, número
+real de módulos e linhas — permanecem verificadas pelo renderer e aparecem como
+causas agrupadas, sem esconder as ocorrências brutas.
 
 O designer calcula o resultado em uma cópia antes de aplicá-lo. Se alguma caixa
 ultrapassar a página ou a área útil do container, solicita confirmação e mantém
@@ -341,6 +417,14 @@ divide a area igualmente. `distribute` preserva as dimensoes e distribui o espac
 livre entre os filhos. O autoajuste do texto e do codigo de barras continua sendo
 executado dentro da caixa final de cada filho.
 
+Em `shrink` e `equal`, o LayoutEngine nunca reduz um filho abaixo de
+`geometry.minimumStructuralBox()`. Se a soma desses limites, margens e gaps não
+couber na área útil do container, o motor conserva os mínimos e produz overflow
+diagnosticável; ele não cria caixas degeneradas apenas para forçar o encaixe.
+Para containers aninhados com `overflow: "error"`, o motor deriva esse limite
+recursivamente a partir do padding, gap, margens, política de sizing e mínimos
+dos descendentes, evitando rejeitar uma distribuição viável no container pai.
+
 `WebExFeatureLabels` registra uma única instância do runtime compartilhado.
 `WebExLabelDesigner`, `WebExLabelGeneratorPanel` e a fachada headless
 `WebExLabelPDFGenerator` usam esse mesmo contrato, layout e renderer; o exemplo
@@ -373,6 +457,37 @@ const copied = labels.layout.duplicate(layout, ["area-dados"]);
 const removed = labels.layout.remove(layout, ["area-dados"]);
 const moved = labels.layout.translate(layout, "area-dados", {dx: 2, dy: 1});
 ```
+
+As caixas físicas também são expostas por uma API pura e compartilhada pelo
+LayoutEngine, validação, canvas e renderer PDF:
+
+```javascript
+const boxes = labels.geometry.boxModel(element);
+
+// caixa declarada pelo elemento (as duas propriedades são equivalentes)
+console.log(boxes.elementBox, boxes.outerBox);
+
+// caixa externa, incluindo margin, e área realmente disponível ao conteúdo
+console.log(boxes.marginBox, boxes.contentBox);
+
+const inner = labels.geometry.insetBox(element.box, 1);
+const outer = labels.geometry.outsetBox(element.box, {
+  top: 1,
+  right: 2,
+  bottom: 1,
+  left: 2
+});
+const minimum = labels.geometry.minimumStructuralBox(element);
+```
+
+`boxModel()` aceita opcionalmente uma caixa substituta como segundo argumento,
+sem modificar o elemento. O retorno inclui ainda os insets normalizados em
+`margin`, `padding` e `contentInsets`, além de `quietZone`. Para texto,
+`contentBox` desconta o padding; para container, desconta `layout.padding`; para
+barcode, desconta a quiet zone horizontal. `minimumStructuralBox()` protege
+somente limites independentes dos dados. O mínimo intrínseco de um texto ou
+barcode concreto continua sendo determinado durante a resolução do registro e
+informado pelos diagnósticos do renderer.
 
 O resolvedor de snap também é público e puro:
 
@@ -429,9 +544,11 @@ do componente; o comportamento final ainda depende do visualizador/navegador.
 - `opacity`: numero entre 0 e 1;
 - `letterSpacing`: valor repassado ao jsPDF no contexto da fonte.
 
-`padding` reduz a caixa util do conteudo. `margin` participa somente do fluxo de
-containers. `quietZone` reserva espaco fisico dos dois lados do barcode e
-`textMargin` separa as barras do texto legivel.
+`outerBox`/`elementBox` representa a caixa declarada em `element.box`;
+`marginBox` acrescenta a margem externa e `contentBox` é a caixa útil após os
+insets aplicáveis. `padding` reduz essa caixa útil. `margin` participa somente
+do fluxo de containers. `quietZone` reserva espaço físico dos dois lados do
+barcode e `textMargin` separa as barras do texto legível.
 
 Na migracao v1, `barcodeOptions.fontSize` e `barcodeOptions.textMargin` sao
 interpretados como valores legados do JsBarcode em pixels e convertidos,

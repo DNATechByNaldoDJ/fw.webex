@@ -51,7 +51,6 @@ static function FWWebExExample_032(cHTML as character) as character
     "safeArea": 2,
     "bleed": 0
   },
-  "background": null,
   "editor": {
     "grid": {"enabled": true, "step": 0.5},
     "snap": {
@@ -111,8 +110,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "C\u00f3digo do produto",
       "type": "text",
       "template": "Produto: {{codigoProduto}}",
-      "box": {"x": 6, "y": 14.5, "width": 52, "height": 6},
-      "basisBox": {"width": 52, "height": 6},
+      "box": {"x": 6, "y": 14.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
       "rotation": 0,
       "zIndex": 11,
       "locked": false,
@@ -139,8 +138,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "Lote",
       "type": "text",
       "template": "Lote: {{lote}}",
-      "box": {"x": 6, "y": 21, "width": 52, "height": 6},
-      "basisBox": {"width": 52, "height": 6},
+      "box": {"x": 6, "y": 20.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
       "rotation": 0,
       "zIndex": 12,
       "locked": false,
@@ -167,8 +166,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "Validade",
       "type": "text",
       "template": "Validade: {{validade}}",
-      "box": {"x": 6, "y": 27.5, "width": 52, "height": 6},
-      "basisBox": {"width": 52, "height": 6},
+      "box": {"x": 6, "y": 26.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
       "rotation": 0,
       "zIndex": 13,
       "locked": false,
@@ -195,8 +194,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "Volume",
       "type": "text",
       "template": "Volume: {{volume}}",
-      "box": {"x": 6, "y": 34, "width": 52, "height": 6},
-      "basisBox": {"width": 52, "height": 6},
+      "box": {"x": 6, "y": 32.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
       "rotation": 0,
       "zIndex": 14,
       "locked": false,
@@ -223,8 +222,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "Esp\u00e9cie",
       "type": "text",
       "template": "Esp\u00e9cie: {{especie}}",
-      "box": {"x": 6, "y": 40.5, "width": 52, "height": 6},
-      "basisBox": {"width": 52, "height": 6},
+      "box": {"x": 6, "y": 38.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
       "rotation": 0,
       "zIndex": 15,
       "locked": false,
@@ -251,8 +250,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "Peso l\u00edquido",
       "type": "text",
       "template": "Peso l\u00edquido: {{pesoLiquido}}",
-      "box": {"x": 6, "y": 47, "width": 52, "height": 6},
-      "basisBox": {"width": 52, "height": 6},
+      "box": {"x": 6, "y": 44.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
       "rotation": 0,
       "zIndex": 16,
       "locked": false,
@@ -307,8 +306,8 @@ static function FWWebExExample_032(cHTML as character) as character
       "name": "C\u00f3digo de barras",
       "type": "barcode",
       "template": "{{barcode}}",
-      "box": {"x": 64, "y": 13, "width": 30, "height": 41},
-      "basisBox": {"width": 30, "height": 41},
+      "box": {"x": 64, "y": 13, "width": 30, "height": 36},
+      "basisBox": {"width": 30, "height": 36},
       "rotation": 0,
       "zIndex": 21,
       "locked": false,
@@ -349,7 +348,7 @@ static function FWWebExExample_032(cHTML as character) as character
         "gap": 0.5,
         "crossAlign": "stretch",
         "mainAlign": "start",
-        "sizing": "none",
+        "sizing": "shrink",
         "overflow": "error",
         "clipChildren": false,
         "children": [
@@ -380,13 +379,14 @@ static function FWWebExExample_032(cHTML as character) as character
         "gap": 1,
         "crossAlign": "stretch",
         "mainAlign": "start",
-        "sizing": "none",
+        "sizing": "shrink",
         "overflow": "error",
         "clipChildren": false,
         "children": ["codigo-produto-barra", "barcode"]
       }
     }
-  ]
+  ],
+  "background": null
 }
     endContent
 

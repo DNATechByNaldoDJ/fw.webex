@@ -107,3 +107,62 @@ A versão fixada é PDF.js 3.11.174, usando o build clássico que publica
 `window.pdfjsLib`; o worker usa obrigatoriamente a mesma versão. Aplicações com
 CSP restritiva precisam autorizar o script e `worker-src` do CDN. A política de
 asset local/same-origin, SRI e modo offline continua acompanhada por `NX-017`.
+
+## ExifReader
+
+`WebExFeatureExifReader` oferece leitura genérica de metadados de imagens, sem
+depender de Labels ou de outro domínio consumidor. A feature fixa ExifReader
+4.42.0 e publica `FWWebEx.ImageMetadata.ExifReader`:
+
+```tlpp
+WebExFeatureExifReader():Enable()
+```
+
+```javascript
+const metadata = await FWWebEx.ImageMetadata.ExifReader.inspect(file);
+
+console.log(metadata.pixelWidth, metadata.pixelHeight);
+console.log(metadata.dpiX, metadata.dpiY);
+console.log(metadata.physicalWidthMm, metadata.physicalHeightMm);
+console.log(metadata.resolutionSource, metadata.warnings);
+```
+
+A API pública contém `version`, `isReady()`, `whenReady(timeout)`,
+`getLibrary()`, `load(source, options)` e `inspect(source, options)`. `load()`
+mantém acesso aos grupos originais do ExifReader e ativa `expanded` e
+`computed` por padrão. Opções nativas podem ser passadas diretamente ou em
+`readerOptions`.
+Quando a origem vier do usuário, passe `File`, `Blob` ou bytes; uma string é
+interpretada pelo ExifReader como URL e não deve receber um caminho/endereço
+não confiável.
+
+`inspect()` normaliza PNG (`pHYs`), JPEG (EXIF com fallback JFIF) e WebP
+(EXIF). Para manter esse contrato, `inspect()` sempre força a saída agrupada
+`expanded: true` e os valores calculados `computed: true`, mesmo que o chamador
+forneça valores diferentes; `load()` permanece o acesso configurável aos tags
+brutos. O resultado inclui os aliases planos abaixo e também os objetos
+`pixelSize`, `resolution` e `physicalSize`:
+
+- `format` e `mimeType`;
+- `pixelWidth` e `pixelHeight` já orientados;
+- `storedPixelWidth` e `storedPixelHeight` antes da orientação EXIF;
+- `dpiX`, `dpiY`, `physicalWidthMm` e `physicalHeightMm`;
+- `orientation`, `orientationDescription` e `orientationSwapsAxes`;
+- `resolutionSource` (`png-pHYs`, `exif` ou `jpeg-jfif`);
+- `warnings`, uma lista de objetos `{code, message, details?}`.
+
+As orientações EXIF de 5 a 8 trocam os eixos de pixels e DPI. Metadados
+ausentes, parciais, conflitantes ou fora da faixa usual geram avisos, sem
+inventar uma resolução física. Use `{includeRaw: true}` somente quando o
+resultado bruto também for necessário.
+
+Falhas usam códigos estáveis: `FWIMAGEMETADATA_SOURCE_INVALID`,
+`FWIMAGEMETADATA_READ_FAILED`,
+`FWIMAGEMETADATA_EXIFREADER_DEPENDENCY_MISSING` e
+`FWIMAGEMETADATA_EXIFREADER_VERSION_CONFLICT`.
+
+ExifReader é distribuído sob [MPL-2.0](https://github.com/mattiasw/ExifReader/blob/main/LICENSE).
+Metadados são conteúdo não confiável e
+devem ser escapados antes de aparecerem em HTML. O asset ainda é servido por
+`cdn.jsdelivr.net`; fallback local, SRI e modo offline seguem a política geral
+acompanhada por `NX-017`.

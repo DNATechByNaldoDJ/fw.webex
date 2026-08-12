@@ -19,6 +19,8 @@ Esta geração inicia uma nova arquitetura do fw.webex com foco em:
 - exemplos reais de aplicações completas, além de exemplos isolados por componente;
 - infraestrutura genérica de geração de PDF no navegador, reutilizável por
   diferentes features sem acoplamento entre domínios;
+- encapsulamento de bibliotecas externas em features independentes por
+  provider; ExifReader, jsPDF e PDF.js não pertencem ao domínio consumidor;
 - qualidade operacional mínima (CI, catálogo de exemplos, geração de patch e governança de assets);
 - fechamento orientado a prioridade dos TODOs legados críticos.
 

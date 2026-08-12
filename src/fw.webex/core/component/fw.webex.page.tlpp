@@ -520,7 +520,7 @@ method RenderHTML() class WebExPage
             jHeader:=::oPageHeader:GetHeader()
             aEval(;
                  aSort(jHeader:GetNames(),nil,nil,{|x as character,y as character|jHeader[x]:GetPriority()<jHeader[y]:GetPriority()});
-                ,{|cName|::GetMemberData("oPageHeader"):AddChild(jHeader[cName])};
+                ,{|cName as character|::GetMemberData("oPageHeader"):AddChild(jHeader[cName])};
             )
             ***************************************************************************************************************************
             //Custom Styles
@@ -528,14 +528,14 @@ method RenderHTML() class WebExPage
                 .:SetContent("Custom Styles")
             END WEBEXOBJECT
             jPageStyle:=::jPageStyle
-            aEval(jPageStyle:GetNames(),{|cName|::GetMemberData("oPageHeader"):AddChild(jPageStyle[cName])})
+            aEval(jPageStyle:GetNames(),{|cName as character|::GetMemberData("oPageHeader"):AddChild(jPageStyle[cName])})
             ***************************************************************************************************************************
             //Custom Scripts Head
             WITH WEBEXOBJECT CLASS WebExComment
                 .:SetContent("Custom Scripts Head")
             END WEBEXOBJECT
             jHeadScripts:=::oPageHeader:GetHeadScripts()
-            aEval(jHeadScripts:GetNames(),{|cName|::GetMemberData("oPageHeader"):AddChild(jHeadScripts[cName])})
+            aEval(jHeadScripts:GetNames(),{|cName as character|::GetMemberData("oPageHeader"):AddChild(jHeadScripts[cName])})
             ***************************************************************************************************************************
             //TotvsTec Scripts
                 if (lIsDir("\http-root\app-root\fwwebex\totvstec\"))
@@ -549,7 +549,7 @@ method RenderHTML() class WebExPage
                     .:SetContent("TOTVS Scripts")
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent(cAPPRootURI+cEnvServer+"twebchannel.js")
+                    .:SetContent("https://cdn.jsdelivr.net/gh/totvs/twebchannel-js@master/twebchannel.js")
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
                     .:SetContent(cAPPRootURI+cEnvServer+"totvstec.js")
@@ -654,7 +654,7 @@ method RenderHTML() class WebExPage
         jPageScripts:=::oPage:GetPageScriptBundle()
         aEval(;
             jPageScripts:GetNames();
-            ,{|cName|;
+            ,{|cName as character|;
                 if(;
                     !lExternalAssets;
                     ,lExternalAssets:=jPageScripts[cName]:GetExternalAssets(),nil);

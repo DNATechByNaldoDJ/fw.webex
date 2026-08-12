@@ -589,6 +589,46 @@ test("a stale preview cannot replace a newer raster", async () => {
     assert.equal(harness.previewCanvas.dataset.raster, "2");
 });
 
+test("a stale rejected preview cannot restore an obsolete error", async () => {
+    const generation = deferred();
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.load(layoutAt(0));
+    await harness.api.validate();
+    harness.setGenerate(() => generation.promise);
+
+    const pending = harness.api.preview();
+    harness.api.setPage({safeArea: 2});
+    const issue = {
+        code: "OLD_PREVIEW_ERROR",
+        severity: "error",
+        message: "Erro do layout anterior."
+    };
+    const error = new Error(issue.message);
+    error.report = {
+        valid: false,
+        issues: [issue],
+        errors: [issue],
+        warnings: [],
+        metrics: {}
+    };
+    generation.reject(error);
+
+    assert.equal(await pending, null);
+    assert.equal(harness.roles.problems.dataset.stale, "true");
+    assert.doesNotMatch(
+        harness.roles["status-message"].textContent,
+        /Erro do layout anterior/
+    );
+    assert.equal(
+        harness.root.dispatched.some((event) =>
+            event.type === "fwwebex:label-error" &&
+            event.detail?.error?.message === issue.message
+        ),
+        false
+    );
+});
+
 test("a pending PDF.js raster is cancelled or isolated when a newer preview wins", async () => {
     const rasters = [deferred(), deferred()];
     const viewerCanvases = [];
@@ -678,6 +718,24 @@ test("print preview refresh is debounced after document changes", async () => {
     await harness.flushTimers();
     assert.equal(harness.rendererCalls.length, 2);
     assert.equal(harness.viewerCalls.length, 2);
+});
+
+test("leaving Print mode resumes pending automatic validation", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.load(layoutAt(0));
+    await harness.api.preview();
+    const callsBeforeEdit = harness.rendererCalls.length;
+
+    harness.api.setPage({safeArea: 2});
+    assert.equal(harness.timers.size, 1, "Print mode must queue only its preview refresh");
+    harness.api.setMode("design");
+
+    assert.equal(harness.root.dataset.mode, "design");
+    assert.equal(harness.timers.size, 1, "leaving Print must replace preview with validation");
+    await harness.flushTimers();
+    assert.equal(harness.rendererCalls.length, callsBeforeEdit + 1);
+    assert.equal(harness.rendererCalls.at(-1).options.validateOnly, true);
 });
 
 test("raster failure returns to Design and reports the real error", async () => {

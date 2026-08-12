@@ -19,6 +19,7 @@ assert.ok(designer, "designer runtime was not found");
 test("WebExLabelDesigner is a configured, self-contained FWWebEx product", () => {
     assert.match(source, /class WebExLabelDesigner from WebExDiv/);
     assert.match(source, /WebExFeatureLabels\(\):Enable\(\)/);
+    assert.match(source, /WebExFeatureExifReader\(\):Enable\(28\)/);
     assert.match(
         source,
         /jObjectsContainer\["script-fwwebex-labels-runtime"\]/
@@ -48,8 +49,7 @@ test("designer exposes product workflows without duplicating PDF rules", () => {
         download: "downloadProduct",
         print: "printProduct",
         undo: "undo",
-        redo: "redo",
-        discoverVariables: "discoverVariables"
+        redo: "redo"
     };
     for (const [name, implementation] of Object.entries(methods)) {
         assert.match(
@@ -58,6 +58,11 @@ test("designer exposes product workflows without duplicating PDF rules", () => {
             `designer API must expose ${name}`
         );
     }
+    assert.match(
+        designer,
+        /discoverVariables:(?:discoverVariables|function\s*\()/,
+        "designer API must expose discoverVariables directly or through its commit wrapper"
+    );
     assert.match(designer, /window\.FWWebExLabels\.renderer/);
     assert.doesNotMatch(designer, /new\s+(?:window\.)?jspdf/i);
     assert.doesNotMatch(designer, /\bJsBarcode\s*\(/);
@@ -91,7 +96,8 @@ test("designer exposes compact page, editor and background settings", () => {
         "page-width", "page-height", "page-rotation",
         "page-margin-top", "page-margin-right", "page-margin-bottom",
         "page-margin-left", "page-safe-area", "page-bleed",
-        "grid-step", "snap-tolerance", "background-locked", "layer-search"
+        "grid-step", "snap-tolerance", "background-locked",
+        "background-auto-size", "background-metadata", "layer-search"
     ]) {
         assert.match(
             designer,

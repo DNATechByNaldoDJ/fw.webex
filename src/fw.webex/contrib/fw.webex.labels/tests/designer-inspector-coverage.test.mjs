@@ -124,6 +124,11 @@ test("container inspector exposes independent padding and clipping controls", ()
         /<(?:input|select)\b[^>]*data-property=["']layout\.clipChildren["'][^>]*data-value-type=["']boolean["'][^>]*>|<(?:input|select)\b[^>]*data-value-type=["']boolean["'][^>]*data-property=["']layout\.clipChildren["'][^>]*>/i,
         "layout.clipChildren must round-trip as a boolean"
     );
+    assert.match(
+        inspector,
+        /data-action=["']fit-container["'][\s\S]*?Ajustar &aacute;rea ao conte&uacute;do/i,
+        "container inspector must expose the fit-to-content action"
+    );
 });
 
 test("inspector provides advanced JSON editors with parse and render support", () => {

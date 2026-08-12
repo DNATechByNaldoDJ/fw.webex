@@ -419,6 +419,147 @@ test("designer reflow is recursive and follows every explicit children order", (
     assert.deepEqual(b.box, {x: 24, y: 17, width: 12, height: 6});
 });
 
+test("pointer resize persists the child basis through automatic container reflow", () => {
+    const {designer, layoutEngine, roles} = createHarness();
+    designer.load(nestedLayout());
+    designer.layoutContainer("outer");
+
+    let field = roles.fields.children.find((child) => child.dataset.id === "a");
+    const grip = field.children.find((child) => child.dataset.resize === "1");
+    assert.ok(grip, "child a resize grip must exist");
+    roles.stage.dispatch("pointerdown", {
+        target: grip,
+        shiftKey: false,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 3,
+        preventDefault() {}
+    });
+    roles.stage.dispatch("pointermove", {
+        target: grip,
+        clientX: 150,
+        clientY: 100,
+        pointerId: 3
+    });
+    roles.stage.dispatch("pointerup", {});
+
+    const edited = plain(designer.exportLayout());
+    const child = edited.elements.find((item) => item.id === "a");
+    assert.equal(child.box.width, 15);
+    assert.equal(child.basisBox.width, 15);
+
+    const resolved = plain(layoutEngine.resolve(edited, []).layout);
+    assert.equal(
+        resolved.elements.find((item) => item.id === "a").box.width,
+        15,
+        "validation/PDF reflow must not restore the old 10 mm width"
+    );
+});
+
+test("designer can fit a container box exactly to its configured child bases", () => {
+    const {designer} = createHarness();
+    designer.load(nestedLayout());
+
+    const result = plain(designer.fitContainerToContents("outer"));
+    const outer = plain(designer.exportLayout()).elements.find(
+        (item) => item.id === "outer"
+    );
+
+    assert.equal(result.applied, true);
+    assert.equal(result.count, 2);
+    assert.deepEqual(outer.box, {x: 10, y: 10, width: 34, height: 27});
+    assert.deepEqual(outer.basisBox, {width: 34, height: 27});
+});
+
+test("fitting a nested container reports both its basis and parent-constrained size", () => {
+    const {designer} = createHarness();
+    const layout = nestedLayout();
+    layout.elements.find((item) => item.id === "inner").locked = false;
+    designer.load(layout);
+
+    const result = plain(designer.fitContainerToContents("inner"));
+    const inner = plain(designer.exportLayout()).elements.find(
+        (item) => item.id === "inner"
+    );
+
+    assert.equal(result.applied, true);
+    assert.equal(result.constrainedByParent, true);
+    assert.deepEqual(
+        {width: result.basisWidth, height: result.basisHeight},
+        {width: 25, height: 8}
+    );
+    assert.deepEqual(
+        {width: result.width, height: result.height},
+        {width: 76, height: 8}
+    );
+    assert.deepEqual(inner.basisBox, {width: 25, height: 8});
+    assert.deepEqual(
+        {width: inner.box.width, height: inner.box.height},
+        {width: result.width, height: result.height},
+        "the API result must describe the final visible box after parent reflow"
+    );
+});
+
+test("fit-to-content lets the parent reflow an initially out-of-page child", () => {
+    const {designer} = createHarness();
+    const layout = nestedLayout();
+    const inner = layout.elements.find((item) => item.id === "inner");
+    inner.locked = false;
+    inner.box.x = 95;
+    inner.box.y = 55;
+    designer.load(layout);
+
+    const result = plain(designer.fitContainerToContents("inner"));
+    const current = plain(designer.exportLayout()).elements.find(
+        (item) => item.id === "inner"
+    );
+
+    assert.equal(result.applied, true);
+    assert.ok(current.box.x >= 0 && current.box.y >= 0);
+    assert.ok(current.box.x + current.box.width <= layout.page.width);
+    assert.ok(current.box.y + current.box.height <= layout.page.height);
+});
+
+test("fit-to-content refuses negative and rotation-induced page overflow", async (t) => {
+    const cases = [{
+        name: "negative position",
+        configure(outer) {
+            outer.box.x = -1;
+            outer.basisBox.width = outer.box.width;
+            outer.basisBox.height = outer.box.height;
+        }
+    }, {
+        name: "rotated bounds",
+        configure(outer) {
+            outer.box.x = 0;
+            outer.box.y = 0;
+            outer.rotation = 45;
+        }
+    }];
+
+    for (const scenario of cases) {
+        await t.test(scenario.name, () => {
+            const {designer} = createHarness();
+            const layout = nestedLayout();
+            const outer = layout.elements.find((item) => item.id === "outer");
+            scenario.configure(outer);
+            const previousBox = plain(outer.box);
+            const previousBasis = plain(outer.basisBox);
+            designer.load(layout);
+
+            const result = plain(designer.fitContainerToContents("outer"));
+            const current = plain(designer.exportLayout()).elements.find(
+                (item) => item.id === "outer"
+            );
+
+            assert.equal(result.applied, false);
+            assert.equal(result.overflow, true);
+            assert.deepEqual(current.box, previousBox);
+            assert.deepEqual(current.basisBox, previousBasis);
+        });
+    }
+});
+
 test("duplicating one child preserves the bidirectional explicit membership", () => {
     const {designer, roles} = createHarness();
     designer.load(nestedLayout());

@@ -193,6 +193,7 @@ class FakeNode {
 
     dispatch(type, event = {}) {
         const payload = {
+            type,
             target: this,
             currentTarget: this,
             preventDefault() {},
@@ -234,6 +235,7 @@ class FakeNode {
     }
 
     closest(selector) {
+        if (selector === "[data-action]" && this.dataset.action) return this;
         if (selector === ".fwwebex-label-pane" &&
             this.classList.contains("fwwebex-label-pane")) {
             return this;
@@ -308,7 +310,9 @@ function createHarness() {
         drawers: new FakeNode("div"),
         "contract-editor": new FakeNode("textarea"),
         "records-editor": new FakeNode("textarea"),
+        "record-index": new FakeNode("select"),
         problems: new FakeNode("div"),
+        "resolved-value": new FakeNode("div"),
         status: new FakeNode("div"),
         "status-message": new FakeNode("span"),
         "contract-state": new FakeNode("span"),
@@ -331,9 +335,12 @@ function createHarness() {
         warnings: [],
         metrics: {records: []}
     };
+    let rendererErrorReport = null;
     let confirmResult = false;
     let confirmCalls = 0;
     let fileText = "";
+    let promptResult = null;
+    const rendererCalls = [];
 
     class FakeFileReader {
         readAsText() {
@@ -369,7 +376,17 @@ function createHarness() {
             }
         },
         renderer: {
-            async generate(layout) {
+            async generate(layout, records, options) {
+                rendererCalls.push({
+                    layout: plain(layout),
+                    records: plain(records),
+                    options: plain(options || {})
+                });
+                if (rendererErrorReport) {
+                    const error = new Error("Validation failed");
+                    error.report = plain(rendererErrorReport);
+                    throw error;
+                }
                 return {
                     output: null,
                     layout: plain(layout),
@@ -390,7 +407,7 @@ function createHarness() {
             confirmCalls += 1;
             return confirmResult;
         },
-        prompt: () => null,
+        prompt: () => promptResult,
         requestAnimationFrame(callback) {
             frameQueue.push(callback);
             return frameQueue.length;
@@ -457,8 +474,21 @@ function createHarness() {
         setFileText(value) {
             fileText = value;
         },
+        setPromptResult(value) {
+            promptResult = value;
+        },
+        getRendererCalls() {
+            return rendererCalls;
+        },
+        clearRendererCalls() {
+            rendererCalls.length = 0;
+        },
         setRendererReport(report) {
             rendererReport = plain(report);
+            rendererErrorReport = null;
+        },
+        setRendererErrorReport(report) {
+            rendererErrorReport = plain(report);
         }
     };
 }
@@ -593,4 +623,512 @@ test("structured element issues are reflected on their canvas boxes", async () =
         visualClass || visualData || accessibleState,
         "TEXT_OVERFLOW must mark the produto canvas box"
     );
+});
+
+test("pointer resize synchronizes basisBox and does not restore the old size", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+
+    const field = harness.fields.children.find(
+        (child) => child.dataset.id === "produto"
+    );
+    const grip = field.children.find((child) => child.dataset.resize === "1");
+    assert.ok(grip, "produto resize grip must exist");
+
+    harness.roles.stage.dispatch("pointerdown", {
+        target: grip,
+        clientX: 400,
+        clientY: 180,
+        pointerId: 7
+    });
+    harness.roles.stage.dispatch("pointermove", {
+        target: grip,
+        clientX: 450,
+        clientY: 210,
+        pointerId: 7
+    });
+    harness.flushFrames();
+    harness.roles.stage.dispatch("pointerup", {
+        target: grip,
+        clientX: 450,
+        clientY: 210,
+        pointerId: 7
+    });
+
+    const produto = harness.api.exportLayout().elements.find(
+        (item) => item.id === "produto"
+    );
+    assert.deepEqual(plain(produto.box), {
+        x: 10, y: 10, width: 35, height: 11
+    });
+    assert.deepEqual(plain(produto.basisBox), {width: 35, height: 11});
+});
+
+test("pointer resize preserves the structural content minimum", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    const layout = canonicalLayout();
+    layout.elements[0].style.padding = {top: 1, right: 2, bottom: 1, left: 2};
+    harness.api.load(layout);
+
+    const field = harness.fields.children.find(
+        (child) => child.dataset.id === "produto"
+    );
+    const grip = field.children.find((child) => child.dataset.resize === "1");
+    harness.roles.stage.dispatch("pointerdown", {
+        target: grip,
+        clientX: 400,
+        clientY: 180,
+        pointerId: 8
+    });
+    harness.roles.stage.dispatch("pointermove", {
+        target: grip,
+        clientX: 0,
+        clientY: 0,
+        pointerId: 8
+    });
+    harness.roles.stage.dispatch("pointerup", {target: grip, pointerId: 8});
+
+    const produto = harness.api.exportLayout().elements.find(
+        (item) => item.id === "produto"
+    );
+    const minimumHeight = 2 + 5 * 0.352778 * 1.15;
+    assert.equal(produto.box.width, 4.1);
+    assert.ok(Math.abs(produto.box.height - minimumHeight) < 0.000001);
+    assert.deepEqual(plain(produto.basisBox), plain({
+        width: produto.box.width,
+        height: produto.box.height
+    }));
+    assert.match(harness.roles["resolved-value"].textContent, /Mínimo estrutural/);
+    assert.match(harness.roles["resolved-value"].textContent, /Política: shrink \/ error/);
+});
+
+test("a simple click keeps the report while a real resize invalidates it", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    const issue = {
+        code: "TEXT_OVERFLOW",
+        severity: "error",
+        path: "/elements/0/fit/overflow",
+        elementId: "produto",
+        recordIndex: 0,
+        phase: "renderer",
+        message: "Texto nao cabe.",
+        suggestion: "Aumente a caixa.",
+        details: {requiredWidth: 42, availableWidth: 30}
+    };
+    harness.setRendererReport({
+        valid: false,
+        issues: [issue],
+        errors: [issue],
+        warnings: [],
+        metrics: {records: []}
+    });
+    await harness.api.validate();
+
+    const previousCause = harness.roles.problems.children[0];
+    const previousDetails = previousCause.children.find((child) =>
+        child.className === "fwwebex-label-problem-details"
+    );
+    assert.ok(previousDetails, "the current diagnostic must expose measurements");
+    assert.match(
+        previousDetails.children[0].children[0].textContent,
+        /requiredWidth.*42/
+    );
+
+    let field = harness.fields.children.find(
+        (child) => child.dataset.id === "produto"
+    );
+    harness.roles.stage.dispatch("pointerdown", {
+        target: field,
+        clientX: 100,
+        clientY: 100
+    });
+    harness.roles.stage.dispatch("pointerup", {target: field});
+    field = harness.fields.children.find((child) => child.dataset.id === "produto");
+    assert.match(field.className, /has-issue-error/);
+
+    const grip = field.children.find((child) => child.dataset.resize === "1");
+    harness.roles.stage.dispatch("pointerdown", {
+        target: grip,
+        clientX: 400,
+        clientY: 180
+    });
+    harness.roles.stage.dispatch("pointermove", {
+        target: grip,
+        clientX: 420,
+        clientY: 190
+    });
+    harness.flushFrames();
+    harness.roles.stage.dispatch("pointerup", {target: grip});
+
+    field = harness.fields.children.find((child) => child.dataset.id === "produto");
+    assert.doesNotMatch(field.className, /has-issue-error/);
+    assert.equal(harness.roles.problems.dataset.stale, "true");
+    assert.equal(
+        harness.roles.problems.children.length,
+        1,
+        "the previous expandable diagnosis must remain available while stale"
+    );
+    assert.equal(
+        harness.roles.problems.children[0],
+        previousCause,
+        "invalidation must preserve the expanded diagnostic DOM"
+    );
+    assert.equal(
+        previousDetails.children[0].children[0].textContent,
+        JSON.stringify(issue.details),
+        "stale diagnostics must retain their measurement details"
+    );
+});
+
+test("designer renders repeated record diagnostics as one expandable cause", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.load(canonicalLayout());
+    const issues = [0, 1].map((recordIndex) => ({
+        code: "TEXT_OVERFLOW",
+        severity: "error",
+        path: "/elements/0/fit/overflow",
+        elementId: "produto",
+        recordIndex,
+        phase: "renderer",
+        message: "Texto nao cabe.",
+        suggestion: "Aumente a caixa."
+    }));
+    harness.setRendererReport({
+        valid: false,
+        issues,
+        errors: issues,
+        warnings: [],
+        metrics: {records: []}
+    });
+
+    await harness.api.validate();
+    assert.equal(harness.roles.problems.children.length, 1);
+    const cause = harness.roles.problems.children[0];
+    assert.equal(cause.tagName, "DETAILS");
+    assert.equal(cause.dataset.code, "TEXT_OVERFLOW");
+    assert.match(
+        cause.children.map((child) => child.textContent).join(" "),
+        /2 ocorr.ncias|registros 1, 2/i
+    );
+});
+
+test("designer caps occurrence rows while retaining the raw diagnostic count", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    const issues = Array.from({length: 100}, (_, recordIndex) => ({
+        code: "TEXT_OVERFLOW",
+        severity: "error",
+        path: "/elements/0/fit/overflow",
+        elementId: "produto",
+        recordIndex,
+        phase: "renderer",
+        message: "Texto nao cabe.",
+        suggestion: "Aumente a caixa."
+    }));
+    harness.setRendererReport({
+        valid: false,
+        issues,
+        errors: issues,
+        warnings: [],
+        metrics: {records: []}
+    });
+
+    await harness.api.validate();
+    assert.equal(harness.roles.problems.children.length, 1);
+    const cause = harness.roles.problems.children[0];
+    const occurrenceList = cause.children.find((child) =>
+        child.className === "fwwebex-label-problem-details"
+    );
+    assert.ok(occurrenceList);
+    assert.equal(
+        occurrenceList.children.length,
+        26,
+        "only 25 occurrences plus one continuation row should enter the DOM"
+    );
+    assert.match(occurrenceList.children[25].textContent, /75 ocorr[eê]ncias adicionais/);
+    assert.match(cause.children[0].textContent, /100 ocorr[eê]ncias/);
+});
+
+test("double-click editing invalidates diagnostics and creates an undo checkpoint", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    const issue = {
+        code: "TEXT_OVERFLOW",
+        severity: "error",
+        path: "/elements/0/fit/overflow",
+        elementId: "produto",
+        recordIndex: 0,
+        phase: "renderer",
+        message: "Texto nao cabe.",
+        suggestion: "Aumente a caixa.",
+        details: {requiredWidth: 42}
+    };
+    harness.setRendererReport({
+        valid: false,
+        issues: [issue],
+        errors: [issue],
+        warnings: [],
+        metrics: {records: []}
+    });
+    await harness.api.validate();
+
+    const field = harness.fields.children.find(
+        (child) => child.dataset.id === "produto"
+    );
+    harness.setPromptResult("Produto: {{produto}}");
+    harness.roles.stage.dispatch("dblclick", {target: field});
+
+    assert.equal(
+        harness.api.exportLayout().elements[0].template,
+        "Produto: {{produto}}"
+    );
+    assert.equal(harness.roles.problems.dataset.stale, "true");
+    assert.equal(harness.roles.problems.children.length, 1);
+    assert.equal(harness.api.undo(), true);
+    assert.equal(harness.api.exportLayout().elements[0].template, "{{produto}}");
+});
+
+test("public add mutator invalidates diagnostics and participates in history", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    await harness.api.validate();
+
+    harness.api.addText({id: "lote", template: "{{lote}}"});
+    assert.equal(harness.roles.problems.dataset.stale, "true");
+    assert.ok(harness.api.exportLayout().elements.some((item) => item.id === "lote"));
+    assert.equal(harness.api.undo(), true);
+    assert.equal(
+        harness.api.exportLayout().elements.some((item) => item.id === "lote"),
+        false
+    );
+});
+
+test("automatic validation uses the active record and remaps its report", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    const records = [
+        {produto: "PRIMEIRO"},
+        {produto: "REGISTRO ATIVO"},
+        {produto: "TERCEIRO"}
+    ];
+    harness.api.setRecords(records);
+    harness.roles["record-index"].value = "1";
+    harness.root.dispatch("change", {
+        target: harness.roles["record-index"]
+    });
+
+    const issues = [{
+        code: "TEXT_OVERFLOW",
+        severity: "error",
+        path: "/0/produto",
+        elementId: "produto",
+        recordIndex: 0,
+        phase: "renderer",
+        message: "Texto nao cabe."
+    }, {
+        code: "DATA_REQUIRED",
+        severity: "error",
+        path: "/records/0/produto",
+        elementId: "produto",
+        recordIndex: 0,
+        phase: "data",
+        message: "Valor obrigatorio."
+    }];
+    harness.setRendererReport({
+        valid: false,
+        issues,
+        errors: [],
+        warnings: [],
+        metrics: {records: [{elements: {produto: {fontSize: 7}}}]}
+    });
+    harness.clearRendererCalls();
+
+    const validation = await harness.api.validate({automatic: true});
+
+    const calls = harness.getRendererCalls();
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].records, [records[1]]);
+    assert.deepEqual(calls[0].options, {
+        output: "none",
+        returnResult: true,
+        validateOnly: true
+    });
+
+    assert.deepEqual(
+        plain(validation.issues.map((issue) => ({
+            recordIndex: issue.recordIndex,
+            path: issue.path
+        }))),
+        [
+            {recordIndex: 1, path: "/1/produto"},
+            {recordIndex: 1, path: "/records/1/produto"}
+        ]
+    );
+    assert.deepEqual(plain(validation.validationScope), {
+        mode: "active-record",
+        recordIndex: 1,
+        sourceRecordCount: 3
+    });
+    assert.equal(harness.roles.problems.dataset.validationScope, "active-record");
+    assert.match(harness.roles.problems.dataset.scopeMessage, /registro 2 de 3/i);
+    assert.equal(validation.metrics.records[0], undefined);
+    assert.deepEqual(
+        plain(validation.metrics.records[1]),
+        {elements: {produto: {fontSize: 7}}}
+    );
+});
+
+test("manual validation keeps the complete record batch", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    const records = [
+        {produto: "A"},
+        {produto: "B"},
+        {produto: "C"}
+    ];
+    harness.api.setRecords(records);
+    harness.clearRendererCalls();
+
+    const report = await harness.api.validate();
+    const calls = harness.getRendererCalls();
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].records, records);
+    assert.equal(calls[0].options.validateOnly, false);
+    assert.deepEqual(plain(report.validationScope), {
+        mode: "all-records",
+        sourceRecordCount: 3
+    });
+});
+
+test("records editor clamps the active index before automatic validation", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    harness.api.setRecords([
+        {produto: "A"},
+        {produto: "B"},
+        {produto: "C"}
+    ]);
+    harness.roles["record-index"].value = "2";
+    harness.root.dispatch("change", {target: harness.roles["record-index"]});
+
+    harness.roles["records-editor"].value = '[{"produto":"UNICO"}]';
+    harness.root.dispatch("input", {target: harness.roles["records-editor"]});
+    const report = await harness.api.validate({automatic: true});
+
+    assert.deepEqual(plain(report.validationScope), {
+        mode: "active-record",
+        recordIndex: 0,
+        sourceRecordCount: 1
+    });
+    assert.match(harness.roles.problems.dataset.scopeMessage, /registro 1 de 1/i);
+});
+
+test("automatic validation remaps reports rejected by the renderer", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: false});
+    harness.api.load(canonicalLayout());
+    harness.api.setRecords([{produto: "A"}, {produto: "B"}]);
+    harness.roles["record-index"].value = "1";
+    harness.root.dispatch("change", {target: harness.roles["record-index"]});
+    const issue = {
+        code: "TEXT_OVERFLOW",
+        severity: "error",
+        path: "/0/produto",
+        elementId: "produto",
+        recordIndex: 0,
+        message: "Texto nao cabe."
+    };
+    harness.setRendererErrorReport({
+        valid: false,
+        issues: [issue],
+        errors: [issue],
+        warnings: [],
+        metrics: {records: [{elements: {produto: {lineCount: 2}}}]}
+    });
+
+    await assert.rejects(
+        harness.api.validate({automatic: true}),
+        (error) => {
+            assert.equal(error.report.issues[0].recordIndex, 1);
+            assert.equal(error.report.issues[0].path, "/1/produto");
+            assert.equal(error.report.errors[0].recordIndex, 1);
+            assert.equal(error.report.errors[0].path, "/1/produto");
+            assert.equal(error.report.metrics.records[0], undefined);
+            assert.equal(error.report.metrics.records[1].elements.produto.lineCount, 2);
+            assert.deepEqual(plain(error.report.validationScope), {
+                mode: "active-record",
+                recordIndex: 1,
+                sourceRecordCount: 2
+            });
+            return true;
+        }
+    );
+});
+
+test("pending contract JSON blocks automatic validation", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: true});
+    harness.api.load(canonicalLayout());
+    await Promise.resolve();
+    await Promise.resolve();
+    harness.clearRendererCalls();
+
+    const editor = harness.roles["contract-editor"];
+    editor.value = JSON.stringify(canonicalLayout("rascunho"));
+    harness.root.dispatch("input", {target: editor});
+    const report = await harness.api.validate({automatic: true});
+    harness.api.setRecords([{produto: "ALTERADO"}]);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    assert.equal(report, null);
+    assert.equal(harness.getRendererCalls().length, 0);
+    assert.equal(harness.roles["contract-state"].dataset.state, "dirty");
+});
+
+test("discarding a pending contract resumes automatic validation", async () => {
+    const harness = createHarness();
+    await Promise.resolve();
+    harness.api.setOptions({autoValidate: true});
+    harness.api.load(canonicalLayout());
+    await Promise.resolve();
+    harness.clearRendererCalls();
+
+    harness.roles["contract-editor"].value = "{";
+    harness.root.dispatch("input", {target: harness.roles["contract-editor"]});
+    assert.equal(harness.getRendererCalls().length, 0);
+
+    const discard = new FakeNode("button");
+    discard.dataset.action = "discard-json";
+    harness.root.dispatch("click", {target: discard});
+    await Promise.resolve();
+
+    assert.equal(harness.roles["contract-state"].dataset.state, "clean");
+    assert.equal(harness.getRendererCalls().length, 1);
+    assert.equal(harness.getRendererCalls()[0].options.validateOnly, true);
 });

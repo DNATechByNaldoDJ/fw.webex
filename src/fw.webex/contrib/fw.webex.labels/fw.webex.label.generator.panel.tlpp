@@ -15,6 +15,7 @@ namespace FWWebEx
 #include "fw.webex.th"
 
 class WebExLabelGeneratorPanel from WebExDiv
+
     protected data oPanelScript as object
     protected data cLayoutJSON as character
     protected data cRecordsJSON as character
@@ -27,18 +28,21 @@ class WebExLabelGeneratorPanel from WebExDiv
     public method SetFileName(cFileName as character) as object
     public method SetOptions(xOptions as variant) as object
     public method RenderHTML() as character
+
 endclass
 
 method New() class WebExLabelGeneratorPanel
+
     WebExFeatureLabels():Enable()
+
     _Super:New()
 
     ::cLayoutJSON:=;
         '{"schema":"fwwebex.labels","version":2,"name":"rotulo","unit":"mm",'+;
         '"page":{"width":100,"height":60,"rotation":0,'+;
         '"margins":{"top":0,"right":0,"bottom":0,"left":0},'+;
-        '"safeArea":0,"bleed":0},"background":null,"variables":[],'+;
-        '"barcodeAutoRules":[],"barcodeFallbackFormat":"CODE128","elements":[]}'
+        '"safeArea":0,"bleed":0},"variables":[],'+;
+        '"barcodeAutoRules":[],"barcodeFallbackFormat":"CODE128","elements":[],"background":null}'
     ::cRecordsJSON:='[{}]'
     ::cFileName:="rotulos-fwwebex.pdf"
     ::cOptionsJSON:="{}"
@@ -88,6 +92,7 @@ method SetOptions(xOptions) class WebExLabelGeneratorPanel
 return(self)
 
 method RenderHTML() class WebExLabelGeneratorPanel
+
     local cHTML as character
     local cScript as character
     local cLayoutJSON:=WebExHelper():EscapeHTMLScript(::cLayoutJSON) as character
@@ -116,8 +121,8 @@ method RenderHTML() class WebExLabelGeneratorPanel
                 aria-label="Nome do arquivo PDF">
         </label>
         <label class="fwwebex-label-generator-field">
-            <span>Rotacao</span>
-            <select data-role="rotation" aria-label="Rotacao do PDF">
+            <span>Rota&ccedil;&atilde;o</span>
+            <select data-role="rotation" aria-label="Rota&ccedil;&atilde;o do PDF">
                 <option value="0">0 graus</option>
                 <option value="90">90 graus</option>
                 <option value="180">180 graus</option>
@@ -167,9 +172,12 @@ method RenderHTML() class WebExLabelGeneratorPanel
     };
     const state={
         options:{},
+        rotation:0,
         busy:false,
         lastResult:null,
         lastReport:null,
+        inputRevision:0,
+        executionToken:0,
         objectURLs:new Set()
     };
     const listeners=[];
@@ -187,6 +195,29 @@ method RenderHTML() class WebExLabelGeneratorPanel
 
     function clone(value){
         return value==null?value:JSON.parse(JSON.stringify(value));
+    }
+    function stableValue(value){
+        if(Array.isArray(value))return value.map(stableValue);
+        if(value&&typeof value==="object"){
+            const result={};
+            Object.keys(value).sort().forEach(function(key){
+                result[key]=stableValue(value[key]);
+            });
+            return result;
+        }
+        return value;
+    }
+    function normalizedRotation(value,fallback){
+        const rotation=Number(value);
+        return [0,90,180,270].indexOf(rotation)>=0?
+            rotation:Number(fallback)||0;
+    }
+    function effectiveOptionsKey(options,rotation){
+        const effective=clone(options)||{};
+        ["rotation","output","returnResult","autoPrint","fileName"].
+            forEach(function(key){delete effective[key];});
+        effective.rotation=normalizedRotation(rotation,0);
+        return JSON.stringify(stableValue(effective));
     }
     function asSource(value,fallback){
         if(value===undefined||value===null||value==="")value=fallback;
@@ -283,9 +314,26 @@ method RenderHTML() class WebExLabelGeneratorPanel
         parent.appendChild(node);
         return node;
     }
+    function invalidateGeneratedState(message){
+        state.inputRevision+=1;
+        state.lastResult=null;
+        state.lastReport=null;
+        reportNode.dataset.state="idle";
+        statusNode.textContent=message||
+            "Entradas alteradas. Valide novamente antes de gerar o PDF.";
+        issuesNode.innerHTML="";
+        emptyIssuesNode.hidden=false;
+    }
     function renderReport(report,title,forcedState){
         report=report||{};
         const issues=Array.isArray(report.issues)?report.issues:[];
+        const diagnostics=window.FWWebExLabels&&window.FWWebExLabels.diagnostics,
+            groups=diagnostics&&typeof diagnostics.summarize==="function"?
+                diagnostics.summarize(issues):issues.map(function(problem){
+                    return {problem:problem,items:[problem],records:
+                        problem.recordIndex===undefined||problem.recordIndex===null?[]:
+                            [problem.recordIndex]};
+                });
         const errors=Array.isArray(report.errors)?report.errors:
             issues.filter(function(item){return item.severity!=="warning";});
         const warnings=Array.isArray(report.warnings)?report.warnings:
@@ -293,10 +341,12 @@ method RenderHTML() class WebExLabelGeneratorPanel
         const visualState=forcedState||(errors.length?"error":
             warnings.length?"warning":"success");
         reportNode.dataset.state=visualState;
-        statusNode.textContent=(title||"Relatorio")+
-            " — "+errors.length+" erro(s), "+warnings.length+" alerta(s).";
+        statusNode.textContent=(title||"Relat\u00f3rio")+
+            " — "+groups.length+" causa(s), "+issues.length+" ocorrencia(s): "+
+            errors.length+" erro(s), "+warnings.length+" alerta(s).";
         issuesNode.innerHTML="";
-        issues.forEach(function(item){
+        groups.forEach(function(group){
+            const item=group.problem;
             const row=document.createElement("li");
             row.className="fwwebex-label-generator-issue";
             const header=document.createElement("div");
@@ -311,19 +361,20 @@ method RenderHTML() class WebExLabelGeneratorPanel
             appendText(row,"fwwebex-label-generator-message",
                 item.message||"Erro sem mensagem.");
             const location=[
-                item.path||"",
+                (group.paths||[item.path]).filter(Boolean).join(", "),
                 item.elementId?"elemento "+item.elementId:"",
-                item.recordIndex!==undefined&&item.recordIndex!==null?
-                    "registro "+item.recordIndex:""
+                group.records&&group.records.length?
+                    "registro(s) "+group.records.map(function(index){return index+1;}).join(", "):"",
+                group.items.length>1?group.items.length+" ocorr\u00eancias":""
             ].filter(Boolean).join(" · ");
             if(location)appendText(row,
                 "fwwebex-label-generator-path",location);
             if(item.suggestion)appendText(row,
                 "fwwebex-label-generator-suggestion",
-                "Sugestao: "+item.suggestion);
+                "Sugest\u00e3o: "+item.suggestion);
             issuesNode.appendChild(row);
         });
-        emptyIssuesNode.hidden=issues.length>0;
+        emptyIssuesNode.hidden=groups.length>0;
         state.lastReport=report;
     }
     function setBusy(value,label){
@@ -378,7 +429,7 @@ method RenderHTML() class WebExLabelGeneratorPanel
     function rendererOptions(mode){
         const output=mode==="validate"?"none":"blob";
         return Object.assign({},clone(state.options),{
-            rotation:Number(rotationInput.value),
+            rotation:state.rotation,
             output:output,
             returnResult:true,
             autoPrint:mode==="print",
@@ -386,6 +437,8 @@ method RenderHTML() class WebExLabelGeneratorPanel
         });
     }
     async function execute(mode){
+        const inputRevision=state.inputRevision;
+        const executionToken=++state.executionToken;
         const needsWindow=mode==="preview"||mode==="print";
         const targetWindow=needsWindow?
             window.open("about:blank","_blank"):null;
@@ -395,6 +448,7 @@ method RenderHTML() class WebExLabelGeneratorPanel
             popupError.code="POPUP_BLOCKED";
             const popupReport=reportFromError(popupError);
             renderReport(popupReport,"Falha","error");
+            setBusy(false);
             emit("error",{mode:mode,error:popupError,report:popupReport});
             return null;
         }
@@ -404,6 +458,11 @@ method RenderHTML() class WebExLabelGeneratorPanel
             const result=await pipeline().generate(
                 input.layout,input.records,rendererOptions(mode)
             );
+            if(inputRevision!==state.inputRevision||
+                executionToken!==state.executionToken){
+                if(targetWindow&&!targetWindow.closed)targetWindow.close();
+                return null;
+            }
             if(mode==="download")
                 downloadBlob(result.output,safeFileName(fileNameInput.value));
             else if(needsWindow)showBlob(result.output,targetWindow);
@@ -416,20 +475,34 @@ method RenderHTML() class WebExLabelGeneratorPanel
             return result;
         }catch(error){
             if(targetWindow&&!targetWindow.closed)targetWindow.close();
+            if(inputRevision!==state.inputRevision||
+                executionToken!==state.executionToken)return null;
             const report=reportFromError(error);
             renderReport(report,"Falha","error");
             emit("error",{mode:mode,error:error,report:report});
             return null;
         }finally{
-            setBusy(false);
+            if(executionToken===state.executionToken)setBusy(false);
         }
     }
     function setLayout(value){
-        layoutInput.value=asSource(value,"{}");
+        const source=asSource(value,"{}");
+        if(layoutInput.value!==source){
+            layoutInput.value=source;
+            invalidateGeneratedState(
+                "Layout alterado. Valide novamente antes de gerar o PDF."
+            );
+        }
         return api;
     }
     function setRecords(value){
-        recordsInput.value=asSource(value,"[]");
+        const source=asSource(value,"[]");
+        if(recordsInput.value!==source){
+            recordsInput.value=source;
+            invalidateGeneratedState(
+                "Dados alterados. Valide novamente antes de gerar o PDF."
+            );
+        }
         return api;
     }
     function setFileName(value){
@@ -451,12 +524,19 @@ method RenderHTML() class WebExLabelGeneratorPanel
             failure.issues=[problem];
             throw failure;
         }
-        state.options=clone(value);
+        const nextOptions=clone(value);
+        let nextRotation=state.rotation;
         if(Object.prototype.hasOwnProperty.call(value,"rotation")){
-            const rotation=String(Number(value.rotation));
-            if(["0","90","180","270"].indexOf(rotation)>=0)
-                rotationInput.value=rotation;
+            nextRotation=normalizedRotation(value.rotation,state.rotation);
         }
+        const changed=effectiveOptionsKey(state.options,state.rotation)!==
+            effectiveOptionsKey(nextOptions,nextRotation);
+        state.options=nextOptions;
+        state.rotation=nextRotation;
+        rotationInput.value=String(state.rotation);
+        if(changed)invalidateGeneratedState(
+            "Op\u00e7\u00f5es alteradas. Valide novamente antes de gerar o PDF."
+        );
         return api;
     }
     function load(config,records){
@@ -496,6 +576,7 @@ method RenderHTML() class WebExLabelGeneratorPanel
         getState:function(){
             return {
                 busy:state.busy,
+                inputRevision:state.inputRevision,
                 lastResult:state.lastResult,
                 lastReport:state.lastReport
             };
@@ -532,6 +613,26 @@ method RenderHTML() class WebExLabelGeneratorPanel
             const action=button.dataset.action;
             if(typeof api[action]==="function")api[action]();
         });
+    });
+    listen(layoutInput,"input",function(){
+        invalidateGeneratedState(
+            "Layout alterado. Valide novamente antes de gerar o PDF."
+        );
+    });
+    listen(recordsInput,"input",function(){
+        invalidateGeneratedState(
+            "Dados alterados. Valide novamente antes de gerar o PDF."
+        );
+    });
+    listen(rotationInput,"change",function(){
+        const rotation=normalizedRotation(rotationInput.value,state.rotation);
+        rotationInput.value=String(rotation);
+        if(rotation===state.rotation)return;
+        state.rotation=rotation;
+        state.options.rotation=rotation;
+        invalidateGeneratedState(
+            "Rota\u00e7\u00e3o alterada. Valide novamente antes de gerar o PDF."
+        );
     });
     setLayout(initial.layout);
     setRecords(initial.records);

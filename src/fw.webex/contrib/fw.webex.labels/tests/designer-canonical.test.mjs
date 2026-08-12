@@ -118,10 +118,32 @@ function createRoot({missingRole = null} = {}) {
     return {root, roles};
 }
 
-function createHarness() {
+function createHarness({metadata, imageSize = {width: 1200, height: 600}} = {}) {
     const {root, roles} = createRoot();
+    class FakeFileReader {
+        readAsDataURL(file) {
+            this.result = file.dataUrl;
+            Promise.resolve().then(() => this.onload());
+        }
+    }
+    class FakeImage {
+        constructor() {
+            this.naturalWidth = imageSize.width;
+            this.naturalHeight = imageSize.height;
+        }
+
+        set src(value) {
+            this._src = value;
+            Promise.resolve().then(() => this.onload());
+        }
+
+        get src() {
+            return this._src;
+        }
+    }
     const context = {
         console,
+        FileReader: FakeFileReader,
         CustomEvent: class {
             constructor(type, options) {
                 this.type = type;
@@ -133,6 +155,19 @@ function createHarness() {
             getElementById: () => root
         },
         window: {
+            Image: FakeImage,
+            FWWebEx: {
+                ImageMetadata: {
+                    ExifReader: {
+                        inspect: typeof metadata === "function" ? metadata :
+                            () => Promise.resolve(metadata || {
+                                pixelWidth: imageSize.width,
+                                pixelHeight: imageSize.height,
+                                warnings: []
+                            })
+                    }
+                }
+            },
             prompt: () => null
         }
     };
@@ -146,6 +181,180 @@ function createHarness() {
         roles
     };
 }
+
+test("background metadata adjusts the page in one undoable import", async () => {
+    const {designer, roles} = createHarness({
+        metadata: {
+            pixelWidth: 1200,
+            pixelHeight: 600,
+            dpiX: 300,
+            dpiY: 300,
+            physicalWidthMm: 101.6,
+            physicalHeightMm: 50.8,
+            resolutionSource: "EXIF",
+            warnings: []
+        }
+    });
+    const dataUrl = "data:image/png;base64,METADATA";
+
+    assert.equal(await designer.setBackground({dataUrl}), dataUrl);
+    let layout = plain(designer.exportLayout());
+    assert.equal(layout.page.width, 101.6);
+    assert.equal(layout.page.height, 50.8);
+    assert.equal(layout.background.dataUrl, dataUrl);
+    assert.match(roles["status-message"].textContent, /1200 x 600 px/);
+    assert.match(roles["status-message"].textContent, /300 x 300 DPI \(EXIF\)/);
+    assert.equal(designer.getBackgroundMetadata().pageSizing.mode, "metadata");
+
+    assert.equal(designer.undo(), true);
+    layout = plain(designer.exportLayout());
+    assert.equal(layout.page.width, 100);
+    assert.equal(layout.page.height, 60);
+    assert.equal(layout.background, null);
+    assert.equal(designer.getBackgroundMetadata(), null);
+});
+
+test("background import preserves aspect ratio without inventing a DPI", async () => {
+    const {designer, roles} = createHarness({
+        metadata: {
+            pixelWidth: 1600,
+            pixelHeight: 900,
+            warnings: [{code: "RESOLUTION_MISSING", message: "Resolucao fisica ausente."}]
+        },
+        imageSize: {width: 1600, height: 900}
+    });
+
+    await designer.setBackground({dataUrl: "data:image/webp;base64,ASPECT"});
+    const layout = plain(designer.exportLayout());
+    assert.equal(layout.page.width, 100);
+    assert.equal(layout.page.height, 56.25);
+    assert.equal(designer.getBackgroundMetadata().dpiX, null);
+    assert.equal(designer.getBackgroundMetadata().pageSizing.mode, "aspect-ratio");
+    assert.match(roles["status-message"].textContent, /confira a medida fisica/);
+});
+
+test("decoded WebP pixels complete physical metadata without image dimensions", async () => {
+    const {designer} = createHarness({
+        metadata: {
+            format: "webp",
+            dpiX: 300,
+            dpiY: 300,
+            resolutionSource: "exif",
+            warnings: []
+        },
+        imageSize: {width: 1200, height: 600}
+    });
+
+    await designer.setBackground({dataUrl: "data:image/webp;base64,EXIF"});
+    const layout = plain(designer.exportLayout());
+    assert.equal(layout.page.width, 101.6);
+    assert.equal(layout.page.height, 50.8);
+    assert.equal(designer.getBackgroundMetadata().pageSizing.mode, "metadata");
+});
+
+test("automatic page sizing can be disabled per designer or per import", async () => {
+    const metadata = {
+        pixelWidth: 1200,
+        pixelHeight: 600,
+        physicalWidthMm: 101.6,
+        physicalHeightMm: 50.8,
+        warnings: []
+    };
+    const first = createHarness({metadata});
+    first.designer.setOptions({autoSizePageFromBackground: false});
+    await first.designer.setBackground({dataUrl: "data:image/jpeg;base64,KEEP"});
+    assert.deepEqual(plain(first.designer.exportLayout().page), {
+        width: 100,
+        height: 60,
+        rotation: 0,
+        margins: {top: 0, right: 0, bottom: 0, left: 0},
+        safeArea: 0,
+        bleed: 0
+    });
+
+    const second = createHarness({metadata});
+    await second.designer.setBackground(
+        {dataUrl: "data:image/jpeg;base64,KEEP-ONCE"},
+        {autoSizePageFromBackground: false}
+    );
+    assert.equal(second.designer.exportLayout().page.height, 60);
+});
+
+test("metadata dependency failure does not block the background fallback", async () => {
+    const {designer} = createHarness({
+        metadata: () => Promise.reject(new Error("CDN indisponivel")),
+        imageSize: {width: 1000, height: 500}
+    });
+
+    await designer.setBackground({dataUrl: "data:image/png;base64,FALLBACK"});
+    const layout = plain(designer.exportLayout());
+    assert.equal(layout.page.width, 100);
+    assert.equal(layout.page.height, 50);
+    assert.match(designer.getBackgroundMetadata().warnings[0], /CDN indisponivel/);
+});
+
+test("implausible embedded DPI is not applied automatically", async () => {
+    const {designer} = createHarness({
+        metadata: {
+            pixelWidth: 1000,
+            pixelHeight: 500,
+            dpiX: 0.0254,
+            dpiY: 0.0254,
+            physicalWidthMm: 1000000,
+            physicalHeightMm: 500000,
+            warnings: [{
+                code: "FWIMAGEMETADATA_RESOLUTION_IMPLAUSIBLE",
+                message: "Resolucao fora da faixa usual."
+            }]
+        },
+        imageSize: {width: 1000, height: 500}
+    });
+
+    await designer.setBackground({dataUrl: "data:image/png;base64,IMPLAUSIBLE"});
+    const layout = plain(designer.exportLayout());
+    assert.equal(layout.page.width, 100);
+    assert.equal(layout.page.height, 50);
+    assert.equal(designer.getBackgroundMetadata().pageSizing.mode, "aspect-ratio");
+});
+
+test("a slower background import cannot overwrite the latest image", async () => {
+    let resolveFirst;
+    let calls = 0;
+    const {designer} = createHarness({
+        metadata: () => {
+            calls += 1;
+            if (calls === 1) return new Promise((resolve) => {
+                resolveFirst = resolve;
+            });
+            return Promise.resolve({
+                pixelWidth: 600,
+                pixelHeight: 600,
+                physicalWidthMm: 50,
+                physicalHeightMm: 50,
+                warnings: []
+            });
+        },
+        imageSize: {width: 600, height: 600}
+    });
+    const first = designer.setBackground({dataUrl: "data:image/png;base64,FIRST"});
+    const second = designer.setBackground({dataUrl: "data:image/png;base64,SECOND"});
+
+    await second;
+    resolveFirst({
+        pixelWidth: 1200,
+        pixelHeight: 600,
+        physicalWidthMm: 100,
+        physicalHeightMm: 50,
+        warnings: []
+    });
+    await assert.rejects(first, (error) =>
+        error.code === "LABEL_BACKGROUND_IMPORT_SUPERSEDED"
+    );
+    const layout = plain(designer.exportLayout());
+    assert.equal(layout.background.dataUrl, "data:image/png;base64,SECOND");
+    assert.equal(layout.page.width, 50);
+    assert.equal(layout.page.height, 50);
+});
 
 function fieldKeys(element) {
     return Object.keys(element).sort();
@@ -515,7 +724,7 @@ test("designer operations retain canonical element structures", () => {
     const beforeDuplicate = plain(designer.exportLayout());
     const original = beforeDuplicate.elements.find((item) => item.id === "produto");
     const originalArea = beforeDuplicate.elements.find((item) => item.id === "area");
-    assert.deepEqual(original.box, {x: 15, y: 12, width: 34, height: 9});
+    assert.deepEqual(original.box, {x: 17, y: 11, width: 34, height: 9});
     assert.equal(original.style.fontFamily, "courier");
     assert.equal(original.style.fontStyle, "bold");
     assert.equal(original.style.align, "center");
@@ -538,7 +747,7 @@ test("designer operations retain canonical element structures", () => {
     const copies = plain(designer.duplicate());
     assert.equal(copies.length, 1);
     assert.notEqual(copies[0].id, "produto");
-    assert.deepEqual(copies[0].box, {x: 17, y: 14, width: 34, height: 9});
+    assert.deepEqual(copies[0].box, {x: 19, y: 13, width: 34, height: 9});
     assert.deepEqual(copies[0].style, original.style);
     assert.deepEqual(copies[0].fit, original.fit);
     assert.equal(copies[0].locked, false);
