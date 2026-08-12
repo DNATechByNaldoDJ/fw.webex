@@ -1,0 +1,456 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+FWWebEx example 031 - Self-contained label designer
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_031()
+    local bExecute as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_031(@cHTML)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
+        fErase(cHTMLFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_031(cHTML as character) as character
+
+    local cHTMLFile:=ProcName() as character
+    local cLayoutJSON as character
+    local cOptionsJSON as character
+    local cRecordsJSON as character
+    local oFWWebExPage as object
+
+    beginContent var cLayoutJSON
+{
+  "schema": "fwwebex.labels",
+  "version": 2,
+  "name": "rotulo-demonstracao",
+  "unit": "mm",
+  "page": {
+    "width": 100,
+    "height": 60,
+    "rotation": 0,
+    "margins": {"top": 0, "right": 0, "bottom": 0, "left": 0},
+    "safeArea": 2,
+    "bleed": 0
+  },
+  "editor": {
+    "grid": {"enabled": true, "step": 0.5},
+    "snap": {
+      "enabled": true,
+      "tolerancePx": 8,
+      "referenceElementId": null,
+      "chainMode": false
+    },
+    "guides": []
+  },
+  "variables": [
+    {"name": "produto", "label": "Produto", "type": "string", "required": true},
+    {"name": "codigoProduto", "label": "C\u00f3digo do produto", "type": "string", "required": true},
+    {"name": "lote", "label": "Lote", "type": "string", "required": true},
+    {"name": "validade", "label": "Validade", "type": "string", "required": true},
+    {"name": "volume", "label": "Volume", "type": "string", "required": true},
+    {"name": "especie", "label": "Esp\u00e9cie", "type": "string", "required": true},
+    {"name": "pesoLiquido", "label": "Peso l\u00edquido", "type": "string", "required": true},
+    {"name": "barcode", "label": "C\u00f3digo de barras", "type": "string", "required": true}
+  ],
+  "barcodeAutoRules": [
+    {"pattern": "^[0-9]{13}$", "format": "EAN13"},
+    {"pattern": ".+", "format": "CODE128"}
+  ],
+  "barcodeFallbackFormat": "CODE128",
+  "elements": [
+    {
+      "id": "produto",
+      "name": "Produto",
+      "type": "text",
+      "template": "{{produto}}",
+      "box": {"x": 6, "y": 6, "width": 52, "height": 8},
+      "basisBox": {"width": 52, "height": 8},
+      "rotation": 0,
+      "zIndex": 10,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 13,
+        "minFontSize": 6,
+        "fontStyle": "bold",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.4, "right": 0.5, "bottom": 0.4, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 2, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "codigo-produto",
+      "name": "C\u00f3digo do produto",
+      "type": "text",
+      "template": "Produto: {{codigoProduto}}",
+      "box": {"x": 6, "y": 14.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
+      "rotation": 0,
+      "zIndex": 11,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "normal",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.5, "bottom": 0.3, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "lote",
+      "name": "Lote",
+      "type": "text",
+      "template": "Lote: {{lote}}",
+      "box": {"x": 6, "y": 20.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
+      "rotation": 0,
+      "zIndex": 12,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "normal",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.5, "bottom": 0.3, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "validade",
+      "name": "Validade",
+      "type": "text",
+      "template": "Validade: {{validade}}",
+      "box": {"x": 6, "y": 26.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
+      "rotation": 0,
+      "zIndex": 13,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "normal",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.5, "bottom": 0.3, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "volume",
+      "name": "Volume",
+      "type": "text",
+      "template": "Volume: {{volume}}",
+      "box": {"x": 6, "y": 32.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
+      "rotation": 0,
+      "zIndex": 14,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "bold",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.5, "bottom": 0.3, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "especie",
+      "name": "Esp\u00e9cie",
+      "type": "text",
+      "template": "Esp\u00e9cie: {{especie}}",
+      "box": {"x": 6, "y": 38.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
+      "rotation": 0,
+      "zIndex": 15,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "bold",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.5, "bottom": 0.3, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "peso-liquido",
+      "name": "Peso l\u00edquido",
+      "type": "text",
+      "template": "Peso l\u00edquido: {{pesoLiquido}}",
+      "box": {"x": 6, "y": 44.5, "width": 52, "height": 5.5},
+      "basisBox": {"width": 52, "height": 5.5},
+      "rotation": 0,
+      "zIndex": 16,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-dados",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "bold",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.5, "bottom": 0.3, "left": 0.5},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "codigo-produto-barra",
+      "name": "Identifica\u00e7\u00e3o do c\u00f3digo",
+      "type": "text",
+      "template": "{{codigoProduto}}",
+      "box": {"x": 64, "y": 6, "width": 30, "height": 6},
+      "basisBox": {"width": 30, "height": 6},
+      "rotation": 0,
+      "zIndex": 20,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-barcode",
+      "style": {
+        "fontFamily": "helvetica",
+        "fontSize": 8,
+        "minFontSize": 4,
+        "fontStyle": "bold",
+        "color": "#000000",
+        "lineHeightFactor": 1.1,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "middle",
+        "padding": {"top": 0.3, "right": 0.3, "bottom": 0.3, "left": 0.3},
+        "margin": {"top": 0, "right": 0, "bottom": 0, "left": 0}
+      },
+      "fit": {"mode": "shrink", "maxLines": 1, "overflow": "ellipsis"},
+      "textOptions": {}
+    },
+    {
+      "id": "barcode",
+      "name": "C\u00f3digo de barras",
+      "type": "barcode",
+      "template": "{{barcode}}",
+      "box": {"x": 64, "y": 13, "width": 30, "height": 36},
+      "basisBox": {"width": 30, "height": 36},
+      "rotation": 0,
+      "zIndex": 21,
+      "locked": false,
+      "hidden": false,
+      "containerId": "area-barcode",
+      "format": "AUTO",
+      "fallbackFormat": "CODE128",
+      "displayValue": true,
+      "quietZone": 1,
+      "minModuleWidth": 0.19,
+      "overflow": "error",
+      "humanReadableFontSize": 8,
+      "humanReadableMinFontSize": 5,
+      "humanReadableFontFamily": "courier",
+      "humanReadableFontStyle": "normal",
+      "humanReadableColor": "#000000",
+      "humanReadablePosition": "bottom",
+      "humanReadableAlign": "center",
+      "textMargin": 1,
+      "autoFit": true,
+      "textOverflow": "ellipsis",
+      "barcodeOptions": {}
+    },
+    {
+      "id": "area-dados",
+      "name": "\u00c1rea de dados",
+      "type": "container",
+      "template": "",
+      "box": {"x": 4, "y": 4, "width": 56, "height": 52},
+      "rotation": 0,
+      "zIndex": 1,
+      "locked": false,
+      "hidden": false,
+      "containerId": null,
+      "layout": {
+        "direction": "vertical",
+        "padding": {"top": 2, "right": 2, "bottom": 2, "left": 2},
+        "gap": 0.5,
+        "crossAlign": "stretch",
+        "mainAlign": "start",
+        "sizing": "shrink",
+        "overflow": "error",
+        "clipChildren": false,
+        "children": [
+          "produto",
+          "codigo-produto",
+          "lote",
+          "validade",
+          "volume",
+          "especie",
+          "peso-liquido"
+        ]
+      }
+    },
+    {
+      "id": "area-barcode",
+      "name": "\u00c1rea do c\u00f3digo de barras",
+      "type": "container",
+      "template": "",
+      "box": {"x": 62, "y": 4, "width": 34, "height": 52},
+      "rotation": 0,
+      "zIndex": 2,
+      "locked": false,
+      "hidden": false,
+      "containerId": null,
+      "layout": {
+        "direction": "vertical",
+        "padding": {"top": 2, "right": 2, "bottom": 2, "left": 2},
+        "gap": 1,
+        "crossAlign": "stretch",
+        "mainAlign": "start",
+        "sizing": "shrink",
+        "overflow": "error",
+        "clipChildren": false,
+        "children": ["codigo-produto-barra", "barcode"]
+      }
+    }
+  ],
+  "background": null
+}
+    endContent
+
+    beginContent var cRecordsJSON
+[
+  {
+    "produto": "DETERGENTE ALCALINO CONCENTRADO",
+    "codigoProduto": "PRD-00042",
+    "lote": "L260728-A",
+    "validade": "28/07/2028",
+    "volume": "5 L",
+    "especie": "BOMBONA",
+    "pesoLiquido": "5,120 kg",
+    "barcode": "7891234567895"
+  },
+  {
+    "produto": "DESINFETANTE MULTIUSO",
+    "codigoProduto": "PRD-00151",
+    "lote": "L260728-B",
+    "validade": "28/07/2028",
+    "volume": "2 L",
+    "especie": "FRASCO",
+    "pesoLiquido": "2,080 kg",
+    "barcode": "7894900011517"
+  }
+]
+    endContent
+
+    beginContent var cOptionsJSON
+{
+  "fileName": "rotulos-demonstracao.pdf",
+  "showToolbar": true,
+  "showLayers": true,
+  "showInspector": true,
+  "showDrawers": true,
+  "autoValidate": true,
+  "tabs": {"sidebar": "add"}
+}
+    endContent
+
+    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: Designer de r&oacute;tulos"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-3")
+                    WITH WEBEXOBJECT CLASS WebExH2
+                        .:SetContent("Designer de r&oacute;tulos")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExParagraph
+                        .:SetContent("Componente autocontido com contrato v2, dados din&acirc;micos, valida&ccedil;&atilde;o e preview.")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExLabelDesigner ARGS 100,60
+                        .:SetFixedID("label-designer-example-031")
+                        .:SetLayout(cLayoutJSON)
+                        .:SetRecords(cRecordsJSON)
+                        .:SetOptions(cOptionsJSON)
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END WEBEXOBJECT NOADDCHILD
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)

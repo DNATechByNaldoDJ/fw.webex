@@ -1,0 +1,69 @@
+{
+  "sourcePage": {
+    "width": 100,
+    "height": 60
+  },
+  "elementRotationArgument": {
+    "elementId": "own-rotation",
+    "degrees": 30,
+    "mustRemainRelativeAtEveryPageRotation": true
+  },
+  "rotations": {
+    "0": {
+      "page": {
+        "width": 100,
+        "height": 60
+      },
+      "matrix": [1, 0, 0, 1, 0, 0],
+      "boxes": {
+        "top-left": [2, 3, 9, 5],
+        "top-right": [86, 4, 11, 7],
+        "bottom-right": [82, 48, 15, 9],
+        "bottom-left": [3, 47, 8, 10],
+        "own-rotation": [37, 21, 23, 11]
+      }
+    },
+    "90": {
+      "page": {
+        "width": 60,
+        "height": 100
+      },
+      "matrix": [0, 1, -1, 0, 60, 0],
+      "boxes": {
+        "top-left": [52, 2, 5, 9],
+        "top-right": [49, 86, 7, 11],
+        "bottom-right": [3, 82, 9, 15],
+        "bottom-left": [3, 3, 10, 8],
+        "own-rotation": [28, 37, 11, 23]
+      }
+    },
+    "180": {
+      "page": {
+        "width": 100,
+        "height": 60
+      },
+      "matrix": [-1, 0, 0, -1, 100, 60],
+      "boxes": {
+        "top-left": [89, 52, 9, 5],
+        "top-right": [3, 49, 11, 7],
+        "bottom-right": [3, 3, 15, 9],
+        "bottom-left": [89, 3, 8, 10],
+        "own-rotation": [40, 28, 23, 11]
+      }
+    },
+    "270": {
+      "page": {
+        "width": 60,
+        "height": 100
+      },
+      "matrix": [0, -1, 1, 0, 0, 100],
+      "boxes": {
+        "top-left": [3, 89, 5, 9],
+        "top-right": [4, 3, 7, 11],
+        "bottom-right": [48, 3, 9, 15],
+        "bottom-left": [47, 89, 10, 8],
+        "own-rotation": [21, 40, 11, 23]
+      }
+    }
+  }
+}

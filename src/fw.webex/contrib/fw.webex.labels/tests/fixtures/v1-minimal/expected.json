@@ -1,0 +1,12 @@
+{
+  "contractVersion": 1,
+  "mustLoadWithoutManualMigration": true,
+  "canonicalUnit": "mm",
+  "page": {
+    "width": 100,
+    "height": 60,
+    "rotation": 0
+  },
+  "elementCount": 1,
+  "background": null
+}

@@ -54,11 +54,11 @@ static method EscapeHTMLScript(cHTML) class WebExHelper
         cHTML;
        ,{;
              {"</","<\/"};
-            ,{"\\","\\\\"};
-            ,{"'","\\'"};
-            ,{'"','\\\"'};
-            ,{__cCHR13,"\\r"};
-            ,{__cCHR10,"\\n"};
+            ,{"\","\\"};
+            ,{"'","\'"};
+            ,{'"','\"'};
+            ,{__cCHR13,"\r"};
+            ,{__cCHR10,"\n"};
        };
     )
 return(cHTML)
@@ -68,11 +68,11 @@ static method EscapeJavaScript(cScript) class WebExHelper
     cScript:=WebExHelper():StrReplace(;
         cScript;
        ,{;
-             {"\\","\\\\"};
-            ,{"'","\\'"};
-            ,{'"','\\\"'};
-            ,{__cCHR13,"\\r"};
-            ,{__cCHR10,"\\n"};
+             {"\","\\"};
+            ,{"'","\'"};
+            ,{'"','\"'};
+            ,{__cCHR13,"\r"};
+            ,{__cCHR10,"\n"};
        };
     )
 return(cScript)

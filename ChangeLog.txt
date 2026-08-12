@@ -2,8 +2,235 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add REST timeout, error handling and status UI)"
-*/
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Reorganize Labels Designer by functional tabs)"
+ */
+
+2026-08-12 12:38 UTC naldodj (Reorganize Labels Designer by functional tabs)
+  Add ExifReader feature and label/engine improvements
+      Introduce WebExFeatureExifReader (pins ExifReader 4.42.0) with a normalized ImageMetadata.ExifReader runtime and comprehensive tests.
+      Integrate background metadata handling into the Designer: automatic page sizing from PNG/EXIF/JFIF, fallback proportional sizing, import time warnings, per-import and global opt-outs, and import concurrency protection.
+      Large Labels runtime updates: canonical box-model API (boxModel/insetBox/outsetBox/minimumStructuralBox), diagnostics deduplication & grouping, structural minimums, improved LayoutEngine (shrink/equal with minimums, distribute/space-between, fit-to-content), synchronized basisBox on resize, validation/preview scheduling and stale-report handling, and many UI/UX fixes to generator panel and designer.
+      Add tests covering ExifReader, diagnostics grouping, geometry/engine parity, designer behaviors and generator-panel invalidation.
+      Minor changes: README/TODO updates, example layout adjustments, StopWatch DelInterval and small WebExPage fixes.
+      Overall: image metadata support + robustness and UX/validation improvements across Labels and Designer.
+        + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.exifreader.tlpp
+        + src/fw.webex/contrib/fw.webex.features/tests/exifreader-feature.test.mjs
+        + src/fw.webex/contrib/fw.webex.labels/tests/diagnostics-grouping.test.mjs
+        + src/fw.webex/contrib/fw.webex.labels/tests/geometry-box-model.test.mjs
+        * README.md
+        * src/fw.webex/contrib/fw.webex.features/README.md
+        * src/fw.webex/contrib/fw.webex.labels/fw.webex.label.generator.panel.tlpp
+        * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+        * src/fw.webex/contrib/fw.webex.labels/README.md
+        * src/fw.webex/contrib/fw.webex.labels/tests/dependency-boundaries.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-canonical.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-inspector-coverage.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-p0-regressions.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-print-preview.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-product.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/designer-tabs.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/examples-products.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/generator-panel.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/layout-engine-parity.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/renderer-critical.test.mjs
+        * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+        * src/fw.webex/contrib/fw.webex.labels/TODO.md
+        * src/fw.webex/core/component/fw.webex.page.tlpp
+        * src/fw.webex/core/tools/fw.webex.stopwatch.tlpp
+        * src/fw.webex/tests/fw.webex.examples/031/fw.webex.example.031.tlpp
+        * src/fw.webex/tests/fw.webex.examples/031/README.md
+        * src/fw.webex/tests/fw.webex.examples/032/fw.webex.example.032.tlpp
+        * TODO.md
+
+2026-08-01 23:21 UTC naldodj (Reorganize Labels Designer by functional tabs)
+  Reduce visual density while preserving the reusable FWWebEx component APIs.
+    - Keep modes, history, zoom, validation and preview in a compact quick bar,
+      grouping the remaining tools as Document, Selection and View.
+    - Split the left panel into Add/Layers and the inspector into Element,
+      Geometry, Appearance, Layout and Barcode tabs.
+    - Consolidate Data, Contract and Problems in one collapsible, resizable
+      lower panel with JSON formatting and an accessible issue counter.
+    - Add instance-scoped ARIA relationships, roving tab focus, arrow/Home/End
+      navigation and safe fallback when a contextual tab becomes unavailable.
+    - Keep Elements, label canvas and Inspector in three columns from 900 px,
+      allow Elements to be either hidden or minimized to a 48 px return rail so
+      the canvas grows without moving the Inspector, and use a single-column
+      workspace below 900 px.
+    - Cover markup ownership, responsive rules, per-instance state, click,
+      keyboard and drawer behavior; 142 of 143 Labels tests pass, with only the
+      opt-in browser raster skipped.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      + src/fw.webex/contrib/fw.webex.labels/tests/designer-tabs.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * ChangeLog.txt
+
+2026-08-01 22:44 UTC naldodj (Add deterministic Labels arrangement commands)
+  Complete the reusable positioning and distribution core in Labels Designer.
+    - Add the pure `layout.arrange()` API and align, position, distribute and
+      match-size aliases with explicit reference and immutable input semantics.
+    - Support four relative directions, configurable gap/cross alignment,
+      equal dimensions and deterministic equal-gap distribution.
+    - Keep magnetic references and locked targets fixed, move container
+      subtrees exactly once and update `basisBox` when dimensions change.
+    - Pre-calculate page/container overflow and preserve the previous layout
+      when the user cancels the operation.
+    - Replace exposed quick controls with a compact organization menu and keep
+      direction, gap and cross alignment in chained positioning.
+    - Add deterministic coverage for geometry, selection order, locking,
+      subtrees, overflow and Designer integration.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      + src/fw.webex/contrib/fw.webex.labels/tests/designer-arrange.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * ChangeLog.txt
+
+2026-08-01 14:36 UTC naldodj (Harden FWWebEx control chaining and identity)
+  Align core object handling with the existing fluent control API.
+    - Make `AddInHeader()` and `AddScript()` return the receiving control, as
+      `AddChild()` and the other mutating methods already do.
+    - Use `AmIReallyMe()` when the context closes nested objects so wrapper or
+      proxy identity does not accidentally add an object as its own child.
+    - Correct the shared JavaScript escaping helper used to transport JSON and
+      multiline strings into browser-side literals.
+    Files changed:
+      * src/fw.webex/core/control/fw.webex.control.tlpp
+      * src/fw.webex/core/tools/fw.webex.context.tlpp
+      * src/fw.webex/core/tools/fw.webex.helper.tlpp
+      * ChangeLog.txt
+
+2026-08-01 14:20 UTC naldodj (Add automatic sample data to Labels Designer)
+  Keep validation and preview records synchronized with the evolving layout.
+    - Add the pure `contract.createSampleRecords()` API to discover declared and
+      used mnemonics and derive deterministic values from examples, defaults,
+      types and barcode formats.
+    - Automatically complete empty generated records while preserving manual
+      JSON byte for byte after the first user edit.
+    - Add a Designer action that merges only missing paths across every record,
+      preserves all existing values and reports nested-path conflicts.
+    - Publish `fwwebex:label-datachange` and expose the generation operation in
+      the Designer JavaScript API.
+    - Add offline regression coverage for pure generation, barcode formats,
+      non-destructive merging, automatic evolution and manual-data protection.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      + src/fw.webex/contrib/fw.webex.labels/tests/designer-sample-records.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * src/fw.webex/tests/fw.webex.examples/031/README.md
+      * ChangeLog.txt
+
+2026-08-01 13:42 UTC naldodj (Fix Labels initial JSON escaping)
+  Preserve server-provided JSON when initializing Labels products.
+    - Correct literal backslash counts in the shared TLPP JavaScript and HTML
+      script escaping helpers so valid JSON no longer reaches the browser as
+      a doubly escaped string such as `{\"rotation\":0}`.
+    - Identify layout, data or options in Designer initialization diagnostics
+      and identify options in Generator Panel initialization diagnostics.
+    - Add regression coverage for multiline JSON, paths, apostrophes and safe
+      embedded closing-script text.
+    Files changed:
+      * src/fw.webex/core/tools/fw.webex.helper.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.label.generator.panel.tlpp
+      + src/fw.webex/contrib/fw.webex.labels/tests/initial-config-escaping.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * ChangeLog.txt
+
+2026-07-31 23:54 UTC naldodj (Add deterministic smart snap to Labels Designer)
+  Complete the first smart-positioning block of the Labels backlog.
+    - Add a pure public snap resolver with independent winners per axis and the
+      documented reference, parent container, manual guide, visible element,
+      grid and page priority hierarchy.
+    - Keep visual tolerance stable across zoom, preserve a winner with 1.5x
+      hysteresis and allow Alt to suspend every snap source during dragging.
+    - Share canonical TextEngine baseline metrics with PDF rendering and use
+      them for text snapping and the baseline alignment command.
+    - Render non-interactive transient guides with winning origin, anchor and
+      correction in millimeters, and distinguish the active reference by icon.
+    - Normalize manual-guide metadata without letting editor state affect PDF
+      validation or output.
+    - Add deterministic coverage for hierarchy, zoom, grid independence,
+      padded containers, locked/hidden elements, feedback cleanup and baseline.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      + src/fw.webex/contrib/fw.webex.labels/tests/designer-smart-snap.test.mjs
+      * src/fw.webex/contrib/fw.webex.labels/tests/README.md
+      * ChangeLog.txt
+
+2026-07-31 23:28 UTC naldodj (Add controlled PDF.js preview for Labels)
+  Replace the native Labels print-preview iframe with a controlled raster canvas.
+    - Add the independent WebExFeaturePDFJS feature with pinned PDF.js/worker,
+      readiness, safe byte loading, cancellation and explicit disposal.
+    - Generate preview input as ArrayBuffer and rasterize the selected record
+      page without changing the headless Labels dependency boundary.
+    - Apply the renderer page matrix to the source-coordinate overlay at 0,
+      90, 180 and 270 degrees, including inverse pointer mapping.
+    - Debounce confirmed edits, cancel stale generation/raster work and return
+      to Design with a structured error when faithful preview fails.
+    - Add deterministic feature, viewport, rotation and race coverage and
+      update the Labels/Features documentation and backlog.
+    Files changed:
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.pdfjs.tlpp
+      * src/fw.webex/contrib/fw.webex.features/README.md
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      * src/fw.webex/contrib/fw.webex.labels/tests/
+      * README.md
+      * TODO.md
+      * MIGRATION.md
+
+2026-07-31 23:07 UTC naldodj (Harden Labels contract and expose document settings)
+  Continue the reusable FWWebEx Labels backlog.
+    - Canonicalize editor metadata and serialize the embedded background as the
+      final top-level member without changing its Data URI.
+    - Add compact Designer controls and a compatible setPage object API for
+      page geometry, margins, safe area, bleed, grid step and snap tolerance.
+    - Expose background locking and accept the original-size background mode
+      consistently in the Designer and validator.
+    - Add layer filtering, combined lock/reference handling, invalid-reference
+      warnings and deterministic 0.1/1 mm keyboard movement.
+    - Audit the detailed Labels TODO against implementation and tests, marking
+      completed and partial work explicitly.
+    - Extend automated coverage for contract ordering, editor isolation,
+      document settings and background fitting.
+    Files changed:
+      * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+      * src/fw.webex/contrib/fw.webex.labels/README.md
+      * src/fw.webex/contrib/fw.webex.labels/TODO.md
+      * src/fw.webex/contrib/fw.webex.labels/tests/
+
+2026-07-28 11:25 UTC naldodj (Add reusable FWWebEx Labels designer and PDF products)
+  Add a reusable browser-side label design and PDF generation stack.
+    - Add the self-contained WebExLabelDesigner, WebExLabelGeneratorPanel and
+      headless WebExLabelPDFGenerator products with contract v1 migration,
+      canonical v2 serialization, structured validation, shared layout engine,
+      text autofit, vector barcodes, containers and orthogonal PDF rotation.
+    - Extract jsPDF into the generic WebExFeatureJsPDF feature and keep
+      JsBarcode and label-domain rendering inside WebExFeatureLabels.
+    - Replace examples 031 and 032 with minimal FWWebEx consumers that share
+      the same layout and records.
+    - Add fixtures and automated coverage for contract, renderer, layout
+      parity, isolated instances, large backgrounds, product boundaries and
+      the optional real-browser raster comparison.
+    - Document the public APIs, migration path, units, renderer behavior and
+      remaining environment-dependent validation.
+    Files changed:
+      + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.jspdf.tlpp
+      + src/fw.webex/contrib/fw.webex.features/README.md
+      + src/fw.webex/contrib/fw.webex.labels/
+      + src/fw.webex/tests/fw.webex.examples/031/
+      + src/fw.webex/tests/fw.webex.examples/032/
+      * TODO.md
+      * MIGRATION.md
 
 2026-06-07 01:03 UTC naldodj (Add REST timeout, error handling and status UI)
   Improve REST client behavior in fw.webex example pages and tools.

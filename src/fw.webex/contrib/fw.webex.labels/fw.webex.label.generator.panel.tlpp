@@ -1,0 +1,662 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+FWWebEx Labels - self-contained label PDF generator panel
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.th"
+
+class WebExLabelGeneratorPanel from WebExDiv
+
+    protected data oPanelScript as object
+    protected data cLayoutJSON as character
+    protected data cRecordsJSON as character
+    protected data cFileName as character
+    protected data cOptionsJSON as character
+
+    public method New() as object
+    public method SetLayout(xLayout as variant) as object
+    public method SetRecords(xRecords as variant) as object
+    public method SetFileName(cFileName as character) as object
+    public method SetOptions(xOptions as variant) as object
+    public method RenderHTML() as character
+
+endclass
+
+method New() class WebExLabelGeneratorPanel
+
+    WebExFeatureLabels():Enable()
+
+    _Super:New()
+
+    ::cLayoutJSON:=;
+        '{"schema":"fwwebex.labels","version":2,"name":"rotulo","unit":"mm",'+;
+        '"page":{"width":100,"height":60,"rotation":0,'+;
+        '"margins":{"top":0,"right":0,"bottom":0,"left":0},'+;
+        '"safeArea":0,"bleed":0},"variables":[],'+;
+        '"barcodeAutoRules":[],"barcodeFallbackFormat":"CODE128","elements":[],"background":null}'
+    ::cRecordsJSON:='[{}]'
+    ::cFileName:="rotulos-fwwebex.pdf"
+    ::cOptionsJSON:="{}"
+
+    ::AddClass("fwwebex-label-generator-panel")
+
+    ::oPanelScript:=WebExScript():New()
+
+return(self)
+
+method SetLayout(xLayout) class WebExLabelGeneratorPanel
+    paramtype 1 var xLayout as character,json
+    if (ValType(xLayout)=="J")
+        ::cLayoutJSON:=xLayout:ToJSON()
+    else
+        ::cLayoutJSON:=xLayout
+    endif
+return(self)
+
+method SetRecords(xRecords) class WebExLabelGeneratorPanel
+    paramtype 1 var xRecords as array,character,json
+    do case
+    case ValType(xRecords)=="C"
+        ::cRecordsJSON:=xRecords
+    case ValType(xRecords)=="J"
+        ::cRecordsJSON:=xRecords:ToJSON()
+    otherwise
+        ::cRecordsJSON:=FWJsonSerialize(xRecords)
+    endcase
+return(self)
+
+method SetFileName(cFileName) class WebExLabelGeneratorPanel
+    paramtype 1 var cFileName as character
+    ::cFileName:=AllTrim(cFileName)
+    if (Empty(::cFileName))
+        ::cFileName:="rotulos-fwwebex.pdf"
+    endif
+return(self)
+
+method SetOptions(xOptions) class WebExLabelGeneratorPanel
+    paramtype 1 var xOptions as character,json
+    if (ValType(xOptions)=="J")
+        ::cOptionsJSON:=xOptions:ToJSON()
+    else
+        ::cOptionsJSON:=xOptions
+    endif
+return(self)
+
+method RenderHTML() class WebExLabelGeneratorPanel
+
+    local cHTML as character
+    local cScript as character
+    local cLayoutJSON:=WebExHelper():EscapeHTMLScript(::cLayoutJSON) as character
+    local cRecordsJSON:=WebExHelper():EscapeHTMLScript(::cRecordsJSON) as character
+    local cFileName:=WebExHelper():EscapeHTMLScript(::cFileName) as character
+    local cOptionsJSON:=WebExHelper():EscapeHTMLScript(::cOptionsJSON) as character
+
+    beginContent var cHTML
+<section class="fwwebex-label-generator-shell" aria-label="Gerador de PDF de rotulos">
+    <div class="fwwebex-label-generator-editors">
+        <label class="fwwebex-label-generator-field">
+            <span>Contrato JSON do layout</span>
+            <textarea data-role="layout" spellcheck="false"
+                aria-label="Contrato JSON do layout"></textarea>
+        </label>
+        <label class="fwwebex-label-generator-field">
+            <span>Dados JSON</span>
+            <textarea data-role="records" spellcheck="false"
+                aria-label="Dados JSON dos rotulos"></textarea>
+        </label>
+    </div>
+    <div class="fwwebex-label-generator-controls">
+        <label class="fwwebex-label-generator-field">
+            <span>Nome do arquivo</span>
+            <input data-role="file-name" type="text" autocomplete="off"
+                aria-label="Nome do arquivo PDF">
+        </label>
+        <label class="fwwebex-label-generator-field">
+            <span>Rota&ccedil;&atilde;o</span>
+            <select data-role="rotation" aria-label="Rota&ccedil;&atilde;o do PDF">
+                <option value="0">0 graus</option>
+                <option value="90">90 graus</option>
+                <option value="180">180 graus</option>
+                <option value="270">270 graus</option>
+            </select>
+        </label>
+        <div class="fwwebex-label-generator-actions" role="group"
+            aria-label="Acoes do gerador">
+            <button type="button" data-action="validate">Validar</button>
+            <button type="button" data-action="preview">Preview</button>
+            <button type="button" data-action="download">Baixar PDF</button>
+            <button type="button" data-action="print">Imprimir</button>
+        </div>
+    </div>
+    <section class="fwwebex-label-generator-report" data-role="report"
+        data-state="idle" aria-live="polite" aria-atomic="false">
+        <p class="fwwebex-label-generator-status" data-role="status">Pronto.</p>
+        <ol class="fwwebex-label-generator-issues" data-role="issues"></ol>
+        <p class="fwwebex-label-generator-empty" data-role="empty-issues">
+            Nenhum erro ou alerta.
+        </p>
+    </section>
+</section>
+    endContent
+    ::SetContent(cHTML)
+
+    beginContent var cScript
+(function(){
+    "use strict";
+    const root=document.getElementById("__ID__");
+    if(!root||root.__labelGeneratorPanel)return;
+
+    const layoutInput=root.querySelector('[data-role="layout"]');
+    const recordsInput=root.querySelector('[data-role="records"]');
+    const fileNameInput=root.querySelector('[data-role="file-name"]');
+    const rotationInput=root.querySelector('[data-role="rotation"]');
+    const reportNode=root.querySelector('[data-role="report"]');
+    const statusNode=root.querySelector('[data-role="status"]');
+    const issuesNode=root.querySelector('[data-role="issues"]');
+    const emptyIssuesNode=root.querySelector('[data-role="empty-issues"]');
+    const actionButtons=Array.from(root.querySelectorAll("[data-action]"));
+    const initial={
+        layout:'__LAYOUT__',
+        records:'__RECORDS__',
+        fileName:'__FILE_NAME__',
+        options:'__OPTIONS__'
+    };
+    const state={
+        options:{},
+        rotation:0,
+        busy:false,
+        lastResult:null,
+        lastReport:null,
+        inputRevision:0,
+        executionToken:0,
+        objectURLs:new Set()
+    };
+    const listeners=[];
+    function listen(target,type,handler,options){
+        target.addEventListener(type,handler,options);
+        listeners.push({target:target,type:type,handler:handler,options:options});
+    }
+    function removeListeners(){
+        listeners.splice(0).forEach(function(entry){
+            if(typeof entry.target.removeEventListener==="function")
+                entry.target.removeEventListener(
+                    entry.type,entry.handler,entry.options);
+        });
+    }
+
+    function clone(value){
+        return value==null?value:JSON.parse(JSON.stringify(value));
+    }
+    function stableValue(value){
+        if(Array.isArray(value))return value.map(stableValue);
+        if(value&&typeof value==="object"){
+            const result={};
+            Object.keys(value).sort().forEach(function(key){
+                result[key]=stableValue(value[key]);
+            });
+            return result;
+        }
+        return value;
+    }
+    function normalizedRotation(value,fallback){
+        const rotation=Number(value);
+        return [0,90,180,270].indexOf(rotation)>=0?
+            rotation:Number(fallback)||0;
+    }
+    function effectiveOptionsKey(options,rotation){
+        const effective=clone(options)||{};
+        ["rotation","output","returnResult","autoPrint","fileName"].
+            forEach(function(key){delete effective[key];});
+        effective.rotation=normalizedRotation(rotation,0);
+        return JSON.stringify(stableValue(effective));
+    }
+    function asSource(value,fallback){
+        if(value===undefined||value===null||value==="")value=fallback;
+        if(typeof value==="string"){
+            try{return JSON.stringify(JSON.parse(value),null,2);}
+            catch(error){return value;}
+        }
+        return JSON.stringify(value,null,2);
+    }
+    function safeFileName(value){
+        value=String(value||"rotulos-fwwebex.pdf").trim()||
+            "rotulos-fwwebex.pdf";
+        return /\.pdf$/i.test(value)?value:value+".pdf";
+    }
+    function structuredIssue(code,message,path,details){
+        return {
+            code:code,severity:"error",path:path||"",elementId:null,
+            recordIndex:null,phase:"input",message:message,
+            suggestion:"Corrija o valor informado e tente novamente.",
+            details:details||null
+        };
+    }
+    function parseJSON(source,path){
+        try{return JSON.parse(source);}
+        catch(error){
+            const problem=structuredIssue(
+                "JSON_INPUT_INVALID",
+                "JSON invalido: "+error.message,
+                path,
+                {input:path}
+            );
+            const failure=new Error(problem.message);
+            failure.code=problem.code;
+            failure.issues=[problem];
+            throw failure;
+        }
+    }
+    function pipeline(){
+        const labels=window.FWWebExLabels;
+        if(!labels||!labels.renderer||
+            typeof labels.renderer.generate!=="function"){
+            const problem=structuredIssue(
+                "LABEL_RENDERER_UNAVAILABLE",
+                "O renderer FWWebExLabels ainda nao esta disponivel.",
+                "",
+                null
+            );
+            problem.phase="dependency";
+            problem.suggestion="Confirme o carregamento de WebExFeatureLabels.";
+            const failure=new Error(problem.message);
+            failure.code=problem.code;
+            failure.issues=[problem];
+            throw failure;
+        }
+        return labels.renderer;
+    }
+    function currentInput(){
+        return {
+            layout:parseJSON(layoutInput.value,"/layout"),
+            records:parseJSON(recordsInput.value,"/records")
+        };
+    }
+    function reportFromError(error){
+        if(error&&error.report)return error.report;
+        let issues=[];
+        if(error&&Array.isArray(error.issues))issues=error.issues;
+        else if(error&&Array.isArray(error.errors))issues=error.errors;
+        if(!issues.length)issues=[structuredIssue(
+            error&&error.code||"UNEXPECTED_ERROR",
+            String(error&&error.message||error||"Erro desconhecido."),
+            "",
+            null
+        )];
+        const errors=issues.filter(function(item){
+            return String(item.severity||"error").toLowerCase()!=="warning";
+        });
+        return {
+            valid:false,
+            issues:issues,
+            errors:errors,
+            warnings:issues.filter(function(item){
+                return String(item.severity||"").toLowerCase()==="warning";
+            }),
+            metrics:{}
+        };
+    }
+    function text(value){
+        return value===undefined||value===null?"":String(value);
+    }
+    function appendText(parent,className,value){
+        const node=document.createElement("span");
+        node.className=className;
+        node.textContent=text(value);
+        parent.appendChild(node);
+        return node;
+    }
+    function invalidateGeneratedState(message){
+        state.inputRevision+=1;
+        state.lastResult=null;
+        state.lastReport=null;
+        reportNode.dataset.state="idle";
+        statusNode.textContent=message||
+            "Entradas alteradas. Valide novamente antes de gerar o PDF.";
+        issuesNode.innerHTML="";
+        emptyIssuesNode.hidden=false;
+    }
+    function renderReport(report,title,forcedState){
+        report=report||{};
+        const issues=Array.isArray(report.issues)?report.issues:[];
+        const diagnostics=window.FWWebExLabels&&window.FWWebExLabels.diagnostics,
+            groups=diagnostics&&typeof diagnostics.summarize==="function"?
+                diagnostics.summarize(issues):issues.map(function(problem){
+                    return {problem:problem,items:[problem],records:
+                        problem.recordIndex===undefined||problem.recordIndex===null?[]:
+                            [problem.recordIndex]};
+                });
+        const errors=Array.isArray(report.errors)?report.errors:
+            issues.filter(function(item){return item.severity!=="warning";});
+        const warnings=Array.isArray(report.warnings)?report.warnings:
+            issues.filter(function(item){return item.severity==="warning";});
+        const visualState=forcedState||(errors.length?"error":
+            warnings.length?"warning":"success");
+        reportNode.dataset.state=visualState;
+        statusNode.textContent=(title||"Relat\u00f3rio")+
+            " — "+groups.length+" causa(s), "+issues.length+" ocorrencia(s): "+
+            errors.length+" erro(s), "+warnings.length+" alerta(s).";
+        issuesNode.innerHTML="";
+        groups.forEach(function(group){
+            const item=group.problem;
+            const row=document.createElement("li");
+            row.className="fwwebex-label-generator-issue";
+            const header=document.createElement("div");
+            header.className="fwwebex-label-generator-issue-header";
+            const severity=appendText(header,
+                "fwwebex-label-generator-severity",
+                item.severity||"error");
+            severity.dataset.severity=String(item.severity||"error").toLowerCase();
+            appendText(header,"fwwebex-label-generator-code",
+                item.code||"UNEXPECTED_ERROR");
+            row.appendChild(header);
+            appendText(row,"fwwebex-label-generator-message",
+                item.message||"Erro sem mensagem.");
+            const location=[
+                (group.paths||[item.path]).filter(Boolean).join(", "),
+                item.elementId?"elemento "+item.elementId:"",
+                group.records&&group.records.length?
+                    "registro(s) "+group.records.map(function(index){return index+1;}).join(", "):"",
+                group.items.length>1?group.items.length+" ocorr\u00eancias":""
+            ].filter(Boolean).join(" · ");
+            if(location)appendText(row,
+                "fwwebex-label-generator-path",location);
+            if(item.suggestion)appendText(row,
+                "fwwebex-label-generator-suggestion",
+                "Sugest\u00e3o: "+item.suggestion);
+            issuesNode.appendChild(row);
+        });
+        emptyIssuesNode.hidden=groups.length>0;
+        state.lastReport=report;
+    }
+    function setBusy(value,label){
+        state.busy=value===true;
+        root.setAttribute("aria-busy",String(state.busy));
+        actionButtons.forEach(function(button){button.disabled=state.busy;});
+        if(state.busy){
+            reportNode.dataset.state="idle";
+            statusNode.textContent=label||"Processando...";
+            issuesNode.innerHTML="";
+            emptyIssuesNode.hidden=true;
+        }
+    }
+    function emit(type,detail){
+        if(typeof CustomEvent==="function")
+            root.dispatchEvent(new CustomEvent(
+                "fwwebex:label-generator:"+type,{detail:detail}
+            ));
+    }
+    function releaseURL(url,delay){
+        window.setTimeout(function(){
+            URL.revokeObjectURL(url);
+            state.objectURLs.delete(url);
+        },delay);
+    }
+    function downloadBlob(blob,fileName){
+        const url=URL.createObjectURL(blob);
+        state.objectURLs.add(url);
+        const link=document.createElement("a");
+        link.href=url;
+        link.download=fileName;
+        link.hidden=true;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        releaseURL(url,2000);
+    }
+    function showBlob(blob,targetWindow){
+        const url=URL.createObjectURL(blob);
+        state.objectURLs.add(url);
+        if(targetWindow)targetWindow.location.replace(url);
+        else{
+            const opened=window.open(url,"_blank");
+            if(!opened){
+                URL.revokeObjectURL(url);
+                state.objectURLs.delete(url);
+                throw new Error("O navegador bloqueou a janela do PDF.");
+            }
+        }
+        releaseURL(url,60000);
+    }
+    function rendererOptions(mode){
+        const output=mode==="validate"?"none":"blob";
+        return Object.assign({},clone(state.options),{
+            rotation:state.rotation,
+            output:output,
+            returnResult:true,
+            autoPrint:mode==="print",
+            fileName:safeFileName(fileNameInput.value)
+        });
+    }
+    async function execute(mode){
+        const inputRevision=state.inputRevision;
+        const executionToken=++state.executionToken;
+        const needsWindow=mode==="preview"||mode==="print";
+        const targetWindow=needsWindow?
+            window.open("about:blank","_blank"):null;
+        if(needsWindow&&!targetWindow){
+            const popupError=new Error(
+                "O navegador bloqueou a janela de preview/impressao.");
+            popupError.code="POPUP_BLOCKED";
+            const popupReport=reportFromError(popupError);
+            renderReport(popupReport,"Falha","error");
+            setBusy(false);
+            emit("error",{mode:mode,error:popupError,report:popupReport});
+            return null;
+        }
+        setBusy(true,mode==="validate"?"Validando...":"Gerando PDF...");
+        try{
+            const input=currentInput();
+            const result=await pipeline().generate(
+                input.layout,input.records,rendererOptions(mode)
+            );
+            if(inputRevision!==state.inputRevision||
+                executionToken!==state.executionToken){
+                if(targetWindow&&!targetWindow.closed)targetWindow.close();
+                return null;
+            }
+            if(mode==="download")
+                downloadBlob(result.output,safeFileName(fileNameInput.value));
+            else if(needsWindow)showBlob(result.output,targetWindow);
+            state.lastResult=result;
+            const title=mode==="validate"?"Validacao concluida":
+                mode==="preview"?"Preview gerado":
+                mode==="download"?"PDF baixado":"PDF preparado para impressao";
+            renderReport(result.report,title);
+            emit("result",{mode:mode,result:result,report:result.report});
+            return result;
+        }catch(error){
+            if(targetWindow&&!targetWindow.closed)targetWindow.close();
+            if(inputRevision!==state.inputRevision||
+                executionToken!==state.executionToken)return null;
+            const report=reportFromError(error);
+            renderReport(report,"Falha","error");
+            emit("error",{mode:mode,error:error,report:report});
+            return null;
+        }finally{
+            if(executionToken===state.executionToken)setBusy(false);
+        }
+    }
+    function setLayout(value){
+        const source=asSource(value,"{}");
+        if(layoutInput.value!==source){
+            layoutInput.value=source;
+            invalidateGeneratedState(
+                "Layout alterado. Valide novamente antes de gerar o PDF."
+            );
+        }
+        return api;
+    }
+    function setRecords(value){
+        const source=asSource(value,"[]");
+        if(recordsInput.value!==source){
+            recordsInput.value=source;
+            invalidateGeneratedState(
+                "Dados alterados. Valide novamente antes de gerar o PDF."
+            );
+        }
+        return api;
+    }
+    function setFileName(value){
+        fileNameInput.value=safeFileName(value);
+        return api;
+    }
+    function setOptions(value){
+        if(value===undefined||value===null||value==="")value={};
+        if(typeof value==="string")value=parseJSON(value,"/options");
+        if(!value||typeof value!=="object"||Array.isArray(value)){
+            const problem=structuredIssue(
+                "OPTIONS_INVALID",
+                "As opcoes devem ser um objeto JSON.",
+                "/options",
+                null
+            );
+            const failure=new Error(problem.message);
+            failure.code=problem.code;
+            failure.issues=[problem];
+            throw failure;
+        }
+        const nextOptions=clone(value);
+        let nextRotation=state.rotation;
+        if(Object.prototype.hasOwnProperty.call(value,"rotation")){
+            nextRotation=normalizedRotation(value.rotation,state.rotation);
+        }
+        const changed=effectiveOptionsKey(state.options,state.rotation)!==
+            effectiveOptionsKey(nextOptions,nextRotation);
+        state.options=nextOptions;
+        state.rotation=nextRotation;
+        rotationInput.value=String(state.rotation);
+        if(changed)invalidateGeneratedState(
+            "Op\u00e7\u00f5es alteradas. Valide novamente antes de gerar o PDF."
+        );
+        return api;
+    }
+    function load(config,records){
+        if(arguments.length>1){
+            setLayout(config);
+            setRecords(records);
+            return api;
+        }
+        if(config&&typeof config==="object"&&!Array.isArray(config)&&
+            ("layout" in config||"records" in config||"data" in config||
+                "fileName" in config||"options" in config||"rotation" in config)){
+            if("layout" in config)setLayout(config.layout);
+            if("records" in config)setRecords(config.records);
+            else if("data" in config)setRecords(config.data);
+            if("fileName" in config)setFileName(config.fileName);
+            if("options" in config)setOptions(config.options);
+            if("rotation" in config)setOptions(Object.assign(
+                {},state.options,{rotation:config.rotation}
+            ));
+        }else setLayout(config);
+        return api;
+    }
+
+    const api={
+        load:load,
+        setLayout:setLayout,
+        setRecords:setRecords,
+        setFileName:setFileName,
+        setOptions:setOptions,
+        validate:function(){return execute("validate");},
+        preview:function(){return execute("preview");},
+        download:function(){return execute("download");},
+        print:function(){return execute("print");},
+        getLayout:function(){return parseJSON(layoutInput.value,"/layout");},
+        getRecords:function(){return parseJSON(recordsInput.value,"/records");},
+        getOptions:function(){return clone(state.options);},
+        getState:function(){
+            return {
+                busy:state.busy,
+                inputRevision:state.inputRevision,
+                lastResult:state.lastResult,
+                lastReport:state.lastReport
+            };
+        },
+        destroy:function(){
+            removeListeners();
+            state.objectURLs.forEach(function(url){URL.revokeObjectURL(url);});
+            state.objectURLs.clear();
+            root.__labelGeneratorPanel=null;
+        }
+    };
+    root.__labelGeneratorPanel=api;
+    window.FWWebExLabels=window.FWWebExLabels||{};
+    window.FWWebExLabels.generatorPanel=window.FWWebExLabels.generatorPanel||{};
+    window.FWWebExLabels.generatorPanel.get=function(rootOrId){
+        const element=typeof rootOrId==="string"?
+            document.getElementById(rootOrId):rootOrId;
+        return element&&element.__labelGeneratorPanel||null;
+    };
+    window.FWWebExLabels.generatorPanel.create=function(rootOrId,options){
+        const instance=window.FWWebExLabels.generatorPanel.get(rootOrId);
+        if(!instance)throw new Error(
+            "FWWebEx Labels: use WebExLabelGeneratorPanel para preparar o host.");
+        if(options)instance.setOptions(options);
+        return instance;
+    };
+    window.FWWebExLabels.generatorPanel.destroy=function(rootOrId){
+        const instance=window.FWWebExLabels.generatorPanel.get(rootOrId);
+        if(instance)instance.destroy();
+    };
+
+    actionButtons.forEach(function(button){
+        listen(button,"click",function(){
+            const action=button.dataset.action;
+            if(typeof api[action]==="function")api[action]();
+        });
+    });
+    listen(layoutInput,"input",function(){
+        invalidateGeneratedState(
+            "Layout alterado. Valide novamente antes de gerar o PDF."
+        );
+    });
+    listen(recordsInput,"input",function(){
+        invalidateGeneratedState(
+            "Dados alterados. Valide novamente antes de gerar o PDF."
+        );
+    });
+    listen(rotationInput,"change",function(){
+        const rotation=normalizedRotation(rotationInput.value,state.rotation);
+        rotationInput.value=String(rotation);
+        if(rotation===state.rotation)return;
+        state.rotation=rotation;
+        state.options.rotation=rotation;
+        invalidateGeneratedState(
+            "Rota\u00e7\u00e3o alterada. Valide novamente antes de gerar o PDF."
+        );
+    });
+    setLayout(initial.layout);
+    setRecords(initial.records);
+    setFileName(initial.fileName);
+    try{
+        setOptions(initial.options);
+        reportNode.dataset.state="idle";
+        statusNode.textContent="Pronto.";
+        emptyIssuesNode.hidden=false;
+    }catch(error){
+        renderReport(reportFromError(error),
+            "Configura\u00e7\u00e3o inicial inv\u00e1lida em op\u00e7\u00f5es","error");
+    }
+})();
+    endContent
+
+    cScript:=WebExHelper():StrReplaceEx(;
+        cScript;
+        ,{"__ID__",::GetFixedID()};
+        ,{"__LAYOUT__",cLayoutJSON};
+        ,{"__RECORDS__",cRecordsJSON};
+        ,{"__FILE_NAME__",cFileName};
+        ,{"__OPTIONS__",cOptionsJSON};
+    )
+    ::oPanelScript:SetContent(cScript)
+
+return(_Super:RenderHTML())

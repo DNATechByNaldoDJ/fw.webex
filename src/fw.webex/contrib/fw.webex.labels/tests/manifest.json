@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "v1-minimal",
+      "purpose": "Compatibilidade de leitura do contrato v1 sem background"
+    },
+    {
+      "id": "v1-background-data-uri",
+      "purpose": "Round-trip byte a byte de background Data URI"
+    },
+    {
+      "id": "v1-asymmetric-rotation",
+      "purpose": "Geometria esperada nas rotações globais 0, 90, 180 e 270"
+    },
+    {
+      "id": "v1-product-min-font",
+      "purpose": "Overflow sem violar minFontSize no campo produto"
+    }
+  ]
+}

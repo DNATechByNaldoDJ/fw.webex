@@ -1,0 +1,359 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureExifReader from WebExControl
+    protected data oFeature as object
+    public method Enable(nPriority as numeric) as object
+    public method Load(oControl as object,nPriority as numeric) as object
+end class
+
+method Enable(nPriority) class WebExFeatureExifReader
+    local oFeature as object
+    paramtype 1 var nPriority as numeric optional default 28
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl as object|oFeature:Load(oControl,nPriority)},nPriority)
+return(self)
+
+method Load(oControl,nPriority) class WebExFeatureExifReader
+    local cRuntime as character
+    paramtype 1 var oControl as object
+    paramtype 2 var nPriority as numeric optional default 28
+
+    beginContent var cRuntime
+(function(root){
+    "use strict";
+    const VERSION="4.42.0";
+    const MM_PER_INCH=25.4;
+    const ORIENTATION_NAMES={
+        1:"normal",2:"mirror-horizontal",3:"rotate-180",4:"mirror-vertical",
+        5:"transpose",6:"rotate-90-cw",7:"transverse",8:"rotate-90-ccw"
+    };
+
+    function featureError(message,code,name,cause){
+        const error=new Error(message);
+        error.name=name||"FWWebExImageMetadataError";
+        error.code=code||"FWIMAGEMETADATA_EXIFREADER_FAILED";
+        if(cause!==undefined)error.cause=cause;
+        return error;
+    }
+    function dependencyError(message,code,cause){
+        return featureError(message,code||
+            "FWIMAGEMETADATA_EXIFREADER_DEPENDENCY_MISSING",
+            "FWWebExImageMetadataDependencyError",cause);
+    }
+    function sourceError(message,cause){
+        return featureError(message,"FWIMAGEMETADATA_SOURCE_INVALID",
+            "FWWebExImageMetadataSourceError",cause);
+    }
+    function readError(cause){
+        const detail=cause&&cause.message?cause.message:String(cause||"falha desconhecida");
+        return featureError("Nao foi possivel ler os metadados da imagem: "+detail,
+            "FWIMAGEMETADATA_READ_FAILED","FWWebExImageMetadataReadError",cause);
+    }
+    function warning(code,message,details){
+        const result={code:code,message:message};
+        if(details!==undefined)result.details=details;
+        return result;
+    }
+    function library(){return root.ExifReader;}
+    function tagPrimitive(tag){
+        if(tag===undefined||tag===null)return undefined;
+        if(typeof tag!=="object")return tag;
+        if(tag.computed!==undefined&&tag.computed!==null)return tag.computed;
+        if(tag.value!==undefined&&tag.value!==null)return tag.value;
+        if(tag.description!==undefined&&tag.description!==null)return tag.description;
+        return undefined;
+    }
+    function finiteNumber(value){
+        value=tagPrimitive(value);
+        if(Array.isArray(value)){
+            if(value.length===1)return finiteNumber(value[0]);
+            if(value.length===2&&!Array.isArray(value[0])){
+                const numerator=Number(value[0]),denominator=Number(value[1]);
+                if(Number.isFinite(numerator)&&Number.isFinite(denominator)&&denominator!==0)
+                    return numerator/denominator;
+            }
+            if(value.length)return finiteNumber(value[0]);
+            return null;
+        }
+        if(value&&typeof value==="object"){
+            if(value.numerator!==undefined&&value.denominator!==undefined){
+                const numerator=Number(value.numerator),denominator=Number(value.denominator);
+                if(Number.isFinite(numerator)&&Number.isFinite(denominator)&&denominator!==0)
+                    return numerator/denominator;
+            }
+            return null;
+        }
+        const result=Number(value);
+        return Number.isFinite(result)?result:null;
+    }
+    function positiveNumber(value){
+        value=finiteNumber(value);
+        return value!==null&&value>0?value:null;
+    }
+    function group(tags,name){
+        return tags&&tags[name]&&typeof tags[name]==="object"?tags[name]:{};
+    }
+    function firstPositive(pairs){
+        for(let index=0;index<pairs.length;index++){
+            const value=positiveNumber(pairs[index]);
+            if(value!==null)return value;
+        }
+        return null;
+    }
+    function normalizedFormat(value){
+        value=String(value||"").trim().toLowerCase();
+        if(value==="jpg"||value==="image/jpg"||value==="image/jpeg")return "jpeg";
+        if(value==="image/png")return "png";
+        if(value==="image/webp")return "webp";
+        return value;
+    }
+    function mimeFor(format,source){
+        const supplied=source&&typeof source.type==="string"?
+            String(source.type).toLowerCase():"";
+        if(/^image\/(jpeg|png|webp)$/.test(supplied))return supplied;
+        return format==="jpeg"?"image/jpeg":format==="png"?"image/png":
+            format==="webp"?"image/webp":"";
+    }
+    function detectFormat(tags,source){
+        const file=group(tags,"file");
+        let format=normalizedFormat(tagPrimitive(file.FileType||tags.FileType));
+        if(!format&&source&&source.type)format=normalizedFormat(source.type);
+        if(!format&&Object.keys(group(tags,"png")).length)format="png";
+        if(!format&&Object.keys(group(tags,"riff")).length)format="webp";
+        if(!format&&Object.keys(group(tags,"jfif")).length)format="jpeg";
+        return format;
+    }
+    function resolutionUnit(groupName,tag){
+        const primitive=tagPrimitive(tag),numeric=finiteNumber(primitive),
+            text=String(tag&&tag.description!==undefined?tag.description:primitive||"")
+                .toLowerCase();
+        if(groupName==="png"){
+            if(numeric===1||text.indexOf("meter")>=0)return "meter";
+            return null;
+        }
+        if(groupName==="jfif"){
+            if(numeric===1||text.indexOf("inch")>=0)return "inch";
+            if(numeric===2||text==="cm"||text.indexOf("centimeter")>=0)return "cm";
+            return null;
+        }
+        if(numeric===2||text.indexOf("inch")>=0)return "inch";
+        if(numeric===3||text==="cm"||text.indexOf("centimeter")>=0)return "cm";
+        return null;
+    }
+    function toDpi(value,unit){
+        value=positiveNumber(value);
+        if(value===null||!unit)return null;
+        if(unit==="inch")return value;
+        if(unit==="cm")return value*2.54;
+        if(unit==="meter")return value*0.0254;
+        return null;
+    }
+    function resolutionCandidate(sourceName,groupName,x,y,unitTag){
+        const unit=resolutionUnit(groupName,unitTag),rawX=positiveNumber(x),
+            rawY=positiveNumber(y);
+        if(!unit||(!rawX&&!rawY))return null;
+        const inferredX=rawX===null&&rawY!==null,inferredY=rawY===null&&rawX!==null;
+        const dpiX=toDpi(rawX===null?rawY:rawX,unit),
+            dpiY=toDpi(rawY===null?rawX:rawY,unit);
+        if(!dpiX||!dpiY)return null;
+        return {source:sourceName,dpiX:dpiX,dpiY:dpiY,unit:unit,
+            inferredX:inferredX,inferredY:inferredY};
+    }
+    function relativeDifference(left,right){
+        return Math.abs(left-right)/Math.max(Math.abs(left),Math.abs(right),1);
+    }
+    function resolutionCandidates(tags,format){
+        const png=group(tags,"png"),exif=group(tags,"exif"),jfif=group(tags,"jfif");
+        const candidates={
+            png:resolutionCandidate("png-pHYs","png",png["Pixels Per Unit X"],
+                png["Pixels Per Unit Y"],png["Pixel Units"]),
+            exif:resolutionCandidate("exif","exif",exif.XResolution,
+                exif.YResolution,exif.ResolutionUnit),
+            jfif:resolutionCandidate("jpeg-jfif","jfif",jfif.XResolution,
+                jfif.YResolution,jfif["Resolution Unit"]||jfif.ResolutionUnit)
+        };
+        const order=format==="png"?["png","exif","jfif"]:
+            format==="jpeg"?["exif","jfif","png"]:
+            format==="webp"?["exif","png","jfif"]:["exif","png","jfif"];
+        return {all:candidates,ordered:order.map(function(name){return candidates[name];})
+            .filter(function(item){return !!item;})};
+    }
+    function normalize(tags,source,options){
+        tags=tags&&typeof tags==="object"?tags:{};
+        options=options||{};
+        const warnings=[],format=detectFormat(tags,source),file=group(tags,"file"),
+            png=group(tags,"png"),pngFile=group(tags,"pngFile"),
+            riff=group(tags,"riff"),exif=group(tags,"exif");
+        let storedPixelWidth=firstPositive([
+                pngFile["Image Width"],png["Image Width"],file["Image Width"],
+                riff.ImageWidth,exif.PixelXDimension,exif.ImageWidth
+            ]),
+            storedPixelHeight=firstPositive([
+                pngFile["Image Height"],png["Image Height"],file["Image Height"],
+                riff.ImageHeight,exif.PixelYDimension,exif.ImageLength
+            ]);
+        if(storedPixelWidth!==null)storedPixelWidth=Math.round(storedPixelWidth);
+        if(storedPixelHeight!==null)storedPixelHeight=Math.round(storedPixelHeight);
+        const orientationValue=finiteNumber(exif.Orientation);
+        let orientation=orientationValue===null?1:Math.round(orientationValue);
+        if(orientation<1||orientation>8){
+            warnings.push(warning("FWIMAGEMETADATA_ORIENTATION_INVALID",
+                "A orientacao da imagem e invalida; foi assumida a orientacao normal.",
+                {value:orientation}));
+            orientation=1;
+        }
+        const orientationSwapsAxes=orientation>=5&&orientation<=8;
+        const resolutions=resolutionCandidates(tags,format),selected=resolutions.ordered[0]||null;
+        let storedDpiX=selected?selected.dpiX:null,
+            storedDpiY=selected?selected.dpiY:null;
+        if(!storedPixelWidth||!storedPixelHeight)
+            warnings.push(warning("FWIMAGEMETADATA_PIXEL_SIZE_MISSING",
+                "A imagem nao informou largura e altura completas em pixels."));
+        if(!selected){
+            warnings.push(warning("FWIMAGEMETADATA_RESOLUTION_MISSING",
+                "A imagem nao possui resolucao fisica utilizavel; informe DPI ou uma medida manualmente."));
+        }else{
+            if(selected.inferredX||selected.inferredY)
+                warnings.push(warning("FWIMAGEMETADATA_RESOLUTION_AXIS_INFERRED",
+                    "A resolucao de um eixo estava ausente e foi copiada do outro eixo."));
+            resolutions.ordered.slice(1).forEach(function(candidate){
+                if(relativeDifference(selected.dpiX,candidate.dpiX)>0.02||
+                    relativeDifference(selected.dpiY,candidate.dpiY)>0.02)
+                    warnings.push(warning("FWIMAGEMETADATA_RESOLUTION_CONFLICT",
+                        "Existem resolucoes divergentes nos metadados; foi usada a origem "+
+                            selected.source+".",
+                        {selected:selected.source,ignored:candidate.source,
+                            selectedDpiX:selected.dpiX,selectedDpiY:selected.dpiY,
+                            ignoredDpiX:candidate.dpiX,ignoredDpiY:candidate.dpiY}));
+            });
+            if(relativeDifference(storedDpiX,storedDpiY)>0.05)
+                warnings.push(warning("FWIMAGEMETADATA_NON_SQUARE_PIXELS",
+                    "As resolucoes horizontal e vertical sao diferentes."));
+            if(storedDpiX<10||storedDpiY<10||storedDpiX>2400||storedDpiY>2400)
+                warnings.push(warning("FWIMAGEMETADATA_RESOLUTION_IMPLAUSIBLE",
+                    "A resolucao informada pela imagem esta fora da faixa usual; confirme as medidas."));
+        }
+        const pixelWidth=orientationSwapsAxes?storedPixelHeight:storedPixelWidth,
+            pixelHeight=orientationSwapsAxes?storedPixelWidth:storedPixelHeight,
+            dpiX=orientationSwapsAxes?storedDpiY:storedDpiX,
+            dpiY=orientationSwapsAxes?storedDpiX:storedDpiY,
+            physicalWidthMm=pixelWidth&&dpiX?pixelWidth*MM_PER_INCH/dpiX:null,
+            physicalHeightMm=pixelHeight&&dpiY?pixelHeight*MM_PER_INCH/dpiY:null;
+        const result={
+            provider:"ExifReader",providerVersion:VERSION,
+            format:format,mimeType:mimeFor(format,source),
+            storedPixelWidth:storedPixelWidth,storedPixelHeight:storedPixelHeight,
+            pixelWidth:pixelWidth,pixelHeight:pixelHeight,
+            storedDpiX:storedDpiX,storedDpiY:storedDpiY,dpiX:dpiX,dpiY:dpiY,
+            physicalWidthMm:physicalWidthMm,physicalHeightMm:physicalHeightMm,
+            orientation:orientation,orientationDescription:ORIENTATION_NAMES[orientation],
+            orientationSwapsAxes:orientationSwapsAxes,
+            resolutionSource:selected?selected.source:null,warnings:warnings
+        };
+        result.pixelSize={width:pixelWidth,height:pixelHeight,unit:"px",
+            storedWidth:storedPixelWidth,storedHeight:storedPixelHeight};
+        result.resolution={dpiX:dpiX,dpiY:dpiY,xDpi:dpiX,yDpi:dpiY,
+            unit:"dpi",source:result.resolutionSource};
+        result.physicalSize={widthMm:physicalWidthMm,heightMm:physicalHeightMm,unit:"mm"};
+        if(options.includeRaw===true)result.raw=tags;
+        return result;
+    }
+    function readerOptions(options){
+        options=options||{};
+        let result=options.readerOptions&&typeof options.readerOptions==="object"?
+            Object.assign({},options.readerOptions):Object.assign({},options);
+        ["timeout","readerOptions","includeRaw"].forEach(function(name){delete result[name];});
+        if(result.expanded===undefined)result.expanded=true;
+        if(result.computed===undefined)result.computed=true;
+        return result;
+    }
+
+    const namespace=root.FWWebEx=root.FWWebEx||{};
+    const imageMetadata=namespace.ImageMetadata=namespace.ImageMetadata||{};
+    const api=imageMetadata.ExifReader=imageMetadata.ExifReader||{};
+    if(api.__fwwebexExifReaderVersion&&api.__fwwebexExifReaderVersion!==VERSION)
+        throw dependencyError("FWWebEx.ImageMetadata.ExifReader ja foi inicializado com "+
+            "ExifReader "+api.__fwwebexExifReaderVersion+
+            "; a feature solicitou "+VERSION+".",
+            "FWIMAGEMETADATA_EXIFREADER_VERSION_CONFLICT");
+    api.__fwwebexExifReaderVersion=VERSION;
+    api.version=VERSION;
+    api.isReady=function(){
+        const lib=library();return !!lib&&typeof lib.load==="function";
+    };
+    api.getLibrary=function(){
+        const lib=library();
+        if(!lib||typeof lib.load!=="function")
+            throw dependencyError("ExifReader "+VERSION+" nao esta disponivel.");
+        return lib;
+    };
+    api.whenReady=function(timeout){
+        timeout=Number.isFinite(Number(timeout))?Math.max(0,Number(timeout)):10000;
+        return new Promise(function(resolve,reject){
+            const started=Date.now();
+            (function check(){
+                if(api.isReady()){resolve(api);return;}
+                if(Date.now()-started>=timeout){
+                    reject(dependencyError("ExifReader "+VERSION+
+                        " nao foi carregado no prazo esperado."));return;
+                }
+                root.setTimeout(check,25);
+            })();
+        });
+    };
+    api.load=async function(source,options){
+        if(source===undefined||source===null||
+            (typeof source==="string"&&!source.trim()))
+            throw sourceError("Informe um arquivo, Blob, ArrayBuffer ou URL de imagem valido.");
+        options=options||{};
+        await api.whenReady(options.timeout);
+        try{return await Promise.resolve(api.getLibrary().load(source,readerOptions(options)));}
+        catch(error){
+            if(error&&String(error.code||"").indexOf("FWIMAGEMETADATA_")===0)throw error;
+            throw readError(error);
+        }
+    };
+    api.inspect=async function(source,options){
+        options=options||{};
+        const parseOptions=options.readerOptions&&typeof options.readerOptions==="object"?
+            Object.assign({},options.readerOptions):Object.assign({},options);
+        ["timeout","readerOptions","includeRaw"].forEach(function(name){
+            delete parseOptions[name];
+        });
+        parseOptions.expanded=true;parseOptions.computed=true;
+        const tags=await api.load(source,{
+            timeout:options.timeout,readerOptions:parseOptions
+        });
+        return normalize(tags,source,options);
+    };
+})(window);
+    endContent
+
+    WITH WEBEXOBJECT oControl
+        WITH WEBEXOBJECT ::jObjectsContainer["script-exifreader"] CLASS WebExScript ARGS .F.
+            .:SetAttr("src","https://cdn.jsdelivr.net/npm/exifreader@4.42.0/dist/exif-reader.js")
+            .:AddInHeader(.this)
+            .:SetPriority(nPriority)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT ::jObjectsContainer["script-exifreader-runtime"] CLASS WebExScript
+            .:SetContent(cRuntime,.F.)
+            .:AddInHeader(.this)
+            .:SetPriority(nPriority+1)
+        END WEBEXOBJECT NOADDCHILD
+    END WEBEXOBJECT NOADDCHILD
+return(self)

@@ -12,3 +12,4 @@ _commit.txt
 package-lock.json
 package.json
 *.ppo
+/tds-ls.*/

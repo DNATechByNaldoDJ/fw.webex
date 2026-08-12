@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "name": "baseline-v1-background-data-uri",
+  "unit": "mm",
+  "page": {
+    "width": 25,
+    "height": 15,
+    "rotation": 0
+  },
+  "background": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR4nGP4z8DwHwwZGP7//w9kAABHygj4/BTyWgAAAABJRU5ErkJggg==",
+  "variables": [],
+  "barcodeAutoRules": [],
+  "elements": [
+    {
+      "id": "background-marker",
+      "type": "text",
+      "x": 2,
+      "y": 2,
+      "width": 12,
+      "height": 4,
+      "rotation": 0,
+      "value": "BACKGROUND",
+      "fontFamily": "helvetica",
+      "fontSize": 6,
+      "minFontSize": 6,
+      "autoFit": false,
+      "maxLines": 1,
+      "padding": 0,
+      "lineHeightFactor": 1,
+      "overflow": "error",
+      "verticalAlign": "top",
+      "bold": false,
+      "align": "left"
+    }
+  ]
+}

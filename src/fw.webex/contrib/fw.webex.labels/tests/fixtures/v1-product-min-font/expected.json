@@ -1,0 +1,37 @@
+{
+  "elementId": "produto",
+  "usefulBox": {
+    "width": 16.03,
+    "height": 1
+  },
+  "font": {
+    "requestedSize": 8,
+    "minimumSize": 8,
+    "expectedFinalSize": 8,
+    "mustNeverGoBelowMinimum": true
+  },
+  "fit": {
+    "fitsAtMinimum": false,
+    "minimumSingleLineContentHeight": 3.24556,
+    "minimumBoxHeightWithPadding": 5.24556,
+    "mustReportOverflow": true
+  },
+  "validationIssue": {
+    "minimumSeverity": "warning",
+    "requiredFields": [
+      "code",
+      "severity",
+      "path",
+      "elementId",
+      "message",
+      "suggestion"
+    ],
+    "suggestionTopics": [
+      "aumentar caixa",
+      "reduzir padding",
+      "reduzir fonte minima",
+      "permitir mais linhas",
+      "alterar overflow"
+    ]
+  }
+}

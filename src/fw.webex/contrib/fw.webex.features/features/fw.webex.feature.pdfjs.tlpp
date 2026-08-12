@@ -1,0 +1,298 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeaturePDFJS from WebExControl
+    protected data oFeature as object
+    public method Enable(nPriority as numeric) as object
+    public method Load(oControl as object,nPriority as numeric) as object
+end class
+
+method Enable(nPriority) class WebExFeaturePDFJS
+    local oFeature as object
+    paramtype 1 var nPriority as numeric optional default 38
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl as object|oFeature:Load(oControl,nPriority)},nPriority)
+return(self)
+
+method Load(oControl,nPriority) class WebExFeaturePDFJS
+    local cRuntime as character
+    paramtype 1 var oControl as object
+    paramtype 2 var nPriority as numeric optional default 38
+
+    beginContent var cRuntime
+(function(root){
+    "use strict";
+    const VERSION="3.11.174";
+    const WORKER_SRC=
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    const documentTasks=typeof WeakMap==="function"?new WeakMap():null;
+    const canvasRenders=typeof WeakMap==="function"?new WeakMap():null;
+
+    function viewerError(message,code,cause){
+        const error=new Error(message);
+        error.name="FWWebExPDFViewerDependencyError";
+        error.code=code||"FWPDFVIEWER_DEPENDENCY_MISSING";
+        if(cause!==undefined)error.cause=cause;
+        return error;
+    }
+    function cancelledError(cause){
+        const error=viewerError("A renderizacao da pagina PDF foi cancelada.",
+            "FWPDFVIEWER_RENDER_CANCELLED",cause);
+        error.name="FWWebExPDFViewerRenderError";
+        return error;
+    }
+    function library(){return root.pdfjsLib;}
+    function assertVersion(lib){
+        const found=lib&&lib.version?String(lib.version):"";
+        if(found&&found!==VERSION)
+            throw viewerError(
+                "PDF.js "+found+" esta carregado; a feature requer "+VERSION+".",
+                "FWPDFVIEWER_VERSION_CONFLICT"
+            );
+        return lib;
+    }
+    function isDocument(source){
+        return !!source&&typeof source.getPage==="function";
+    }
+    function isCancelled(error,signal){
+        return !!(signal&&signal.aborted)||!!(error&&(
+            error.code==="FWPDFVIEWER_RENDER_CANCELLED"||
+            error.name==="AbortError"||error.name==="RenderingCancelledException"
+        ));
+    }
+    async function copySource(source){
+        if(isDocument(source))return source;
+        if(source&&isDocument(source.document))return source.document;
+        if(typeof root.Blob!=="undefined"&&source instanceof root.Blob)
+            source=await source.arrayBuffer();
+        if(source instanceof ArrayBuffer)
+            return new Uint8Array(source.slice(0));
+        if(ArrayBuffer.isView(source)){
+            const begin=source.byteOffset,end=begin+source.byteLength;
+            return new Uint8Array(source.buffer.slice(begin,end));
+        }
+        if(typeof source==="string"&&source)return source;
+        throw viewerError(
+            "Informe um ArrayBuffer, TypedArray, Blob, URL ou documento PDF.js valido.",
+            "FWPDFVIEWER_SOURCE_INVALID"
+        );
+    }
+    async function destroyDocument(document){
+        if(!document)return;
+        const task=documentTasks&&documentTasks.get(document);
+        if(documentTasks)documentTasks.delete(document);
+        if(typeof document.destroy==="function"){
+            await document.destroy();
+            return;
+        }
+        if(task&&typeof task.destroy==="function")await task.destroy();
+    }
+
+    const namespace=root.FWWebEx=root.FWWebEx||{};
+    const api=namespace.PDFViewer=namespace.PDFViewer||{};
+    if(api.__fwwebexPDFJSVersion&&api.__fwwebexPDFJSVersion!==VERSION)
+        throw viewerError(
+            "FWWebEx.PDFViewer ja foi inicializado com PDF.js "+
+                api.__fwwebexPDFJSVersion+"; a feature solicitou "+VERSION+".",
+            "FWPDFVIEWER_VERSION_CONFLICT"
+        );
+    api.__fwwebexPDFJSVersion=VERSION;
+    api.version=VERSION;
+    api.workerSrc=api.workerSrc||WORKER_SRC;
+    api.isReady=function(){
+        const lib=library();
+        return !!lib&&typeof lib.getDocument==="function"&&
+            (!lib.version||String(lib.version)===VERSION);
+    };
+    api.getLibrary=function(){
+        const lib=library();
+        if(!lib||typeof lib.getDocument!=="function")
+            throw viewerError("PDF.js "+VERSION+" nao esta disponivel.",
+                "FWPDFVIEWER_DEPENDENCY_MISSING");
+        assertVersion(lib);
+        if(lib.GlobalWorkerOptions)lib.GlobalWorkerOptions.workerSrc=api.workerSrc;
+        return lib;
+    };
+    api.configure=function(options){
+        options=options||{};
+        if(options.workerSrc)api.workerSrc=String(options.workerSrc);
+        const lib=library();
+        if(lib&&lib.GlobalWorkerOptions)lib.GlobalWorkerOptions.workerSrc=api.workerSrc;
+        return api;
+    };
+    api.whenReady=function(timeout){
+        timeout=Number.isFinite(Number(timeout))?Math.max(0,Number(timeout)):10000;
+        return new Promise(function(resolve,reject){
+            const started=Date.now();
+            (function check(){
+                const lib=library();
+                if(lib&&typeof lib.getDocument==="function"){
+                    try{api.getLibrary();resolve(api);}catch(error){reject(error);}
+                    return;
+                }
+                if(Date.now()-started>=timeout){
+                    reject(viewerError("PDF.js "+VERSION+
+                        " nao foi carregado no prazo esperado.",
+                        "FWPDFVIEWER_DEPENDENCY_MISSING"));
+                    return;
+                }
+                root.setTimeout(check,25);
+            })();
+        });
+    };
+    api.load=async function(source,options){
+        options=options||{};
+        if(isDocument(source))return source;
+        if(source&&isDocument(source.document))return source.document;
+        await api.whenReady(options.timeout);
+        const lib=api.getLibrary();
+        let normalized;
+        try{normalized=await copySource(source);}
+        catch(error){throw error;}
+        const parameters=Object.assign({},options.documentOptions||{});
+        if(typeof normalized==="string")parameters.url=normalized;
+        else parameters.data=normalized;
+        let task;
+        try{
+            task=lib.getDocument(parameters);
+            const document=await task.promise;
+            if(documentTasks)documentTasks.set(document,task);
+            return document;
+        }catch(error){
+            if(task&&typeof task.destroy==="function"){
+                try{await task.destroy();}catch(ignore){}
+            }
+            throw viewerError("Nao foi possivel carregar o documento PDF: "+
+                (error&&error.message?error.message:String(error)),
+                "FWPDFVIEWER_LOAD_FAILED",error);
+        }
+    };
+    api.destroy=destroyDocument;
+    api.renderPage=async function(source,canvasOrOptions,renderOptions){
+        let options,canvas;
+        if(canvasOrOptions&&typeof canvasOrOptions.getContext==="function"){
+            canvas=canvasOrOptions;
+            options=Object.assign({},renderOptions||{},{canvas:canvas});
+        }else{
+            options=canvasOrOptions||{};
+            canvas=options.canvas;
+        }
+        if(!canvas||typeof canvas.getContext!=="function")
+            throw viewerError("Informe um canvas 2D para renderizar a pagina PDF.",
+                "FWPDFVIEWER_SOURCE_INVALID");
+        const signal=options.signal;
+        if(signal&&signal.aborted)throw cancelledError();
+        const previous=canvasRenders&&canvasRenders.get(canvas);
+        if(previous&&typeof previous.cancel==="function"){
+            try{previous.cancel();}catch(ignore){}
+        }
+        let document,ownedDocument=false,page,task,abortListener;
+        try{
+            if(isDocument(source))document=source;
+            else if(source&&isDocument(source.document))document=source.document;
+            else{
+                document=await api.load(source,options);
+                ownedDocument=true;
+            }
+            if(signal&&signal.aborted)throw cancelledError();
+            const pageNumber=Math.max(1,Math.floor(Number(options.pageNumber)||1));
+            if(document.numPages&&pageNumber>document.numPages)
+                throw viewerError("A pagina "+pageNumber+" nao existe no documento PDF.",
+                    "FWPDFVIEWER_RENDER_FAILED");
+            page=await document.getPage(pageNumber);
+            const rotation=Number.isFinite(Number(options.rotation))?
+                Number(options.rotation):0;
+            let scale=Number(options.scale);
+            if(!(scale>0)){
+                const base=page.getViewport({scale:1,rotation:rotation}),ratios=[];
+                if(Number(options.targetWidth)>0)
+                    ratios.push(Number(options.targetWidth)/base.width);
+                if(Number(options.targetHeight)>0)
+                    ratios.push(Number(options.targetHeight)/base.height);
+                scale=ratios.length?Math.min.apply(Math,ratios):1;
+            }
+            const viewport=page.getViewport({scale:scale,rotation:rotation});
+            const pixelRatio=Number(options.pixelRatio)>0?
+                Number(options.pixelRatio):Math.max(1,Number(root.devicePixelRatio)||1);
+            const context=canvas.getContext("2d");
+            canvas.width=Math.max(1,Math.round(viewport.width*pixelRatio));
+            canvas.height=Math.max(1,Math.round(viewport.height*pixelRatio));
+            if(canvas.style){
+                canvas.style.width=viewport.width+"px";
+                canvas.style.height=viewport.height+"px";
+            }
+            const parameters={canvasContext:context,viewport:viewport};
+            if(pixelRatio!==1)
+                parameters.transform=[pixelRatio,0,0,pixelRatio,0,0];
+            task=page.render(parameters);
+            if(canvasRenders)canvasRenders.set(canvas,task);
+            if(signal&&typeof signal.addEventListener==="function"){
+                abortListener=function(){
+                    if(task&&typeof task.cancel==="function")task.cancel();
+                };
+                signal.addEventListener("abort",abortListener,{once:true});
+            }
+            await task.promise;
+            if(signal&&signal.aborted)throw cancelledError();
+            let destroyed=false;
+            return {
+                canvas:canvas,document:document,page:page,viewport:viewport,
+                width:viewport.width,height:viewport.height,scale:scale,
+                pixelRatio:pixelRatio,pageNumber:pageNumber,
+                destroy:async function(){
+                    if(destroyed)return;destroyed=true;
+                    if(page&&typeof page.cleanup==="function")page.cleanup();
+                    if(ownedDocument)await destroyDocument(document);
+                }
+            };
+        }catch(error){
+            if(page&&typeof page.cleanup==="function"){
+                try{page.cleanup();}catch(ignore){}
+            }
+            if(ownedDocument){
+                try{await destroyDocument(document);}catch(ignore){}
+            }
+            if(isCancelled(error,signal))throw cancelledError(error);
+            if(error&&String(error.code||"").indexOf("FWPDFVIEWER_")===0)throw error;
+            const wrapped=viewerError("Nao foi possivel renderizar a pagina PDF: "+
+                (error&&error.message?error.message:String(error)),
+                "FWPDFVIEWER_RENDER_FAILED",error);
+            wrapped.name="FWWebExPDFViewerRenderError";
+            throw wrapped;
+        }finally{
+            if(signal&&abortListener&&typeof signal.removeEventListener==="function")
+                signal.removeEventListener("abort",abortListener);
+            if(canvasRenders&&canvasRenders.get(canvas)===task)canvasRenders.delete(canvas);
+        }
+    };
+    api.configure({workerSrc:api.workerSrc});
+})(window);
+    endContent
+
+    WITH WEBEXOBJECT oControl
+        WITH WEBEXOBJECT ::jObjectsContainer["script-pdfjs"] CLASS WebExScript ARGS .F.
+            .:SetAttr("src","https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js")
+            .:AddInHeader(.this)
+            .:SetPriority(nPriority)
+        END WEBEXOBJECT NOADDCHILD
+        WITH WEBEXOBJECT ::jObjectsContainer["script-pdfjs-runtime"] CLASS WebExScript
+            .:SetContent(cRuntime,.F.)
+            .:AddInHeader(.this)
+            .:SetPriority(nPriority+1)
+        END WEBEXOBJECT NOADDCHILD
+    END WEBEXOBJECT NOADDCHILD
+return(self)

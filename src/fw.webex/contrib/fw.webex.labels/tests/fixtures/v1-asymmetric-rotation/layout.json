@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "name": "baseline-v1-asymmetric-rotation",
+  "unit": "mm",
+  "page": {
+    "width": 100,
+    "height": 60,
+    "rotation": 0
+  },
+  "background": null,
+  "variables": [],
+  "barcodeAutoRules": [],
+  "elements": [
+    {
+      "id": "top-left",
+      "type": "text",
+      "x": 2,
+      "y": 3,
+      "width": 9,
+      "height": 5,
+      "rotation": 0,
+      "value": "TL",
+      "fontSize": 6,
+      "minFontSize": 6,
+      "padding": 0,
+      "maxLines": 1,
+      "overflow": "error"
+    },
+    {
+      "id": "top-right",
+      "type": "text",
+      "x": 86,
+      "y": 4,
+      "width": 11,
+      "height": 7,
+      "rotation": 0,
+      "value": "TR",
+      "fontSize": 6,
+      "minFontSize": 6,
+      "padding": 0,
+      "maxLines": 1,
+      "overflow": "error"
+    },
+    {
+      "id": "bottom-right",
+      "type": "text",
+      "x": 82,
+      "y": 48,
+      "width": 15,
+      "height": 9,
+      "rotation": 0,
+      "value": "BR",
+      "fontSize": 6,
+      "minFontSize": 6,
+      "padding": 0,
+      "maxLines": 1,
+      "overflow": "error"
+    },
+    {
+      "id": "bottom-left",
+      "type": "text",
+      "x": 3,
+      "y": 47,
+      "width": 8,
+      "height": 10,
+      "rotation": 0,
+      "value": "BL",
+      "fontSize": 6,
+      "minFontSize": 6,
+      "padding": 0,
+      "maxLines": 1,
+      "overflow": "error"
+    },
+    {
+      "id": "own-rotation",
+      "type": "text",
+      "x": 37,
+      "y": 21,
+      "width": 23,
+      "height": 11,
+      "rotation": 30,
+      "value": "R30",
+      "fontSize": 8,
+      "minFontSize": 8,
+      "padding": 0,
+      "maxLines": 1,
+      "overflow": "error"
+    }
+  ]
+}
