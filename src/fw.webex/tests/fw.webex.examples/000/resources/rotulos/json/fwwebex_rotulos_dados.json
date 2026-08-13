@@ -1,0 +1,32 @@
+[
+  {
+    "codigoProduto": "PRD-00042",
+    "lote": "L260728-A",
+    "fabricacao": "01/07/2027",
+    "validade": "28/07/2028",
+    "volume": "5 LITROS",
+    "especie": "PRODUTO PARA LIMPEZA",
+    "pesoLiquido": "5,120 kg",
+    "barcode": "07891234567895",
+    "lblProduto": "Produto",
+    "lblLote": "Lote",
+    "lblFabricado": "Fabricacao",
+    "lblValidade": "Validade",
+    "lblPeso": "Peso Liquido"
+  },
+  {
+    "codigoProduto": "PRD-00151",
+    "lote": "L260728-B",
+    "fabricacao": "01/07/2027",
+    "validade": "28/07/2028",
+    "volume": "2 L",
+    "especie": "FRASCO",
+    "pesoLiquido": "2,080 kg",
+    "barcode": "07894900011517",
+    "lblProduto": "Produto",
+    "lblLote": "Lote",
+    "lblFabricado": "Fabricacao",
+    "lblValidade": "Validade",
+    "lblPeso": "Peso Liquido"
+  }
+]

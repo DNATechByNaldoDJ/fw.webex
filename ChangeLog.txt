@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Reorganize Labels Designer by functional tabs)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add rotulos test resources)"
  */
+
+2026-08-13 00:55 UTC naldodj (Add rotulos test resources)
+  Add rotulos test resources
+    Add test resources for rotulos example: an image (fwwebex_rotulos_design_contrato_1.jpg) and a JSON data file (fwwebex_rotulos_dados.json).
+      The JSON includes two sample product entries (PRD-00042, PRD-00151) with fields like lote, fabricacao, validade, volume, especie, pesoLiquido, barcode and label keys for use in tests/examples.
+        + src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/images/fwwebex_rotulos_design_contrato_1.jpg
+        + src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/json/fwwebex_rotulos_dados.json
+        + src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/json/fwwebex_rotulos_design_contrato_1.json
 
 2026-08-12 12:38 UTC naldodj (Reorganize Labels Designer by functional tabs)
   Add ExifReader feature and label/engine improvements
