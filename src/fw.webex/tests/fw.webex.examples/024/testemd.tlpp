@@ -146,7 +146,7 @@ function u_TestaMD(lSave as logical,lAsciiToWebAccentuation as logical)
     endif
 
     if (lSave)
-        oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\md\relatorio.md")
+        oMD:Save("C:\GitHub\fw.webex\src\fw.webex\tests\resources\md\relatorio.md")
     else
         cOutPut:=oMD:BuildOutPut()
     endif

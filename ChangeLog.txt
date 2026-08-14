@@ -2,8 +2,17 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add rotulos test resources)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Test Resources)"
  */
+
+2026-08-14 10:52 UTC naldodj (Test Resources)
+  * src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/images/fwwebex_rotulos_design_contrato_1.jpg -> src/fw.webex/tests/resources/rotulos/images/fwwebex_rotulos_design_contrato_1.jpg
+  * src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/json/fwwebex_rotulos_dados.json -> src/fw.webex/tests/resources/rotulos/json/fwwebex_rotulos_dados.json
+  * src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/json/fwwebex_rotulos_design_contrato_1.json -> src/fw.webex/tests/resources/rotulos/json/fwwebex_rotulos_design_contrato_1.json
+  * src/fw.webex/tests/md/fw.webex.example_024.pdf -> src/fw.webex/tests/resources/md/fw.webex.example_024.pdf
+  * src/fw.webex/tests/md/relatorio.md -> src/fw.webex/tests/resources/md/relatorio.md
+  * src/fw.webex/tests/md/relatorio.pdf -> src/fw.webex/tests/resources/md/relatorio.pdf
+  * src/fw.webex/tests/md/testemd.tlpp -> src/fw.webex/tests/fw.webex.examples/024/testemd.tlpp
 
 2026-08-13 00:55 UTC naldodj (Add rotulos test resources)
   Add rotulos test resources
