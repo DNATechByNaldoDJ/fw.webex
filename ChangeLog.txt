@@ -2,8 +2,13 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Test Resources)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Zip Test Resources)"
  */
+
+2026-08-14 20:05 UTC naldodj (Zip Test Resources)
+  + src/fw.webex/tests/resources/rotulos/json/json.zip
+  - src/fw.webex/tests/resources/rotulos/json/fwwebex_rotulos_dados.json
+  - src/fw.webex/tests/resources/rotulos/json/fwwebex_rotulos_design_contrato_1.json
 
 2026-08-14 10:52 UTC naldodj (Test Resources)
   * src/fw.webex/tests/fw.webex.examples/000/resources/rotulos/images/fwwebex_rotulos_design_contrato_1.jpg -> src/fw.webex/tests/resources/rotulos/images/fwwebex_rotulos_design_contrato_1.jpg
