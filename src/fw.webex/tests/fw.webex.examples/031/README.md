@@ -36,15 +36,12 @@ conferência da medida.
 
 ---
 
+Execute `u_FWWebExExample_031()` ou abra o item 031 pelo menu de exemplos.
+
+---
+
 <img width="1356" height="674" alt="image" src="https://github.com/user-attachments/assets/eded3eca-451f-4f1a-aeb7-b416daeafc59" />
 <img width="1359" height="678" alt="image" src="https://github.com/user-attachments/assets/50f5383f-cd5c-41f7-b5ae-c585c5ef805e" />
 <img width="1359" height="676" alt="image" src="https://github.com/user-attachments/assets/fab63196-2b4b-4255-ba06-6180c392e766" />
 <img width="1359" height="676" alt="image" src="https://github.com/user-attachments/assets/32c98a40-b03f-42c8-9dfc-9e6fe359934f" />
 <img width="1357" height="678" alt="image" src="https://github.com/user-attachments/assets/4e5ed532-e431-4527-acda-dfe1dc51c850" />
-
-
-
-
-
-
-Execute `u_FWWebExExample_031()` ou abra o item 031 pelo menu de exemplos.
