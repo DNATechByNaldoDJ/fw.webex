@@ -26,6 +26,7 @@ static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLC
     local cFixedID as character
 
     local cClassName as character
+    local cHTMLContentUF8 as character
 
     local cSPPDrive as character
     local cSPPPath as character
@@ -66,7 +67,10 @@ static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLC
 
     cHTMLContent:=oFWWebExControl:RenderHTML()
     if (lEncodeUTF8)
-        cHTMLContent:=EncodeUTF8(cHTMLContent)
+        cHTMLContentUF8:=EncodeUTF8(cHTMLContent)
+        if (!Empty(cHTMLContentUF8))
+            cHTMLContent:=cHTMLContentUF8
+        endif
     endif
 
     cHTMLFilePath:=Lower(cHTMLFilePath)

@@ -1,12 +1,24 @@
 #include "totvs.ch"
 
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
-/*/{Protheus.doc} u_ArrayToolsSample
+/*{Protheus.doc} u_ArrayToolsSample
     Exemplos rapidos de uso.
     @type User Procedure
-/*/
+*/
 procedure u_ArrayToolsSample()
+
+    if (!FWIsInCallStack("Execute"))
+        private cCadastro:="Exemplos FWWebEx :: ArrayToolsSample" as character
+        FWExampleTools():Execute({||ArrayToolsSample()},cCadastro,.T.)
+    else
+        ArrayToolsSample()
+    endif
+
+return
+
+static procedure ArrayToolsSample()
 
     local aA      as array
     local aB      as array

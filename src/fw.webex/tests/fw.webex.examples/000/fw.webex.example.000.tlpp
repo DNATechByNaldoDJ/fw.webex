@@ -30,11 +30,25 @@ procedure u_FWWeb000()
 return
 
 procedure u_FWWebExExample_000()
-    if ((GetSrvInfo()[1]=="DNA-TECH-01").and.(GetEnvServer()!="PROTHEUS_NGROK"))
-        Final(WebExHelper():Accentuation("Ambiente Inv#1lido.","aacute"),"Utilize o Ambiente: PROTHEUS_NGROK")
+
+    local aGetSrvInfo as array
+
+    local cEnvServer:=Upper(GetEnvServer()) as character
+    local lContinue:=.T. as logical
+
+    aGetSrvInfo:=GetSrvInfo()
+    if ((Len(aGetSrvInfo)>=1).and.(aGetSrvInfo[1]=="DNA-TECH-01"))
+        lContinue:=(cEnvServer=="PROTHEUS_NGROK")
     endif
-    private cCadastro:="Exemplos FWWebEx"
+    FWFreeArray(@aGetSrvInfo)
+
+    if (!lContinue)
+        Final(WebExHelper():Accentuation("Ambiente ["+cEnvServer+"] Inv#1lido.","aacute"),"Utilize o Ambiente: PROTHEUS_NGROK")
+    endif
+
+    private cCadastro:="Exemplos FWWebEx" as character
     FWExampleTools():Execute({||FWWebExExample_000()},cCadastro,.T.)
+
 return
 
 static procedure FWWebExExample_000()
@@ -58,6 +72,10 @@ static procedure FWWebExExample_000()
     local oTBitMap as object
     local oFWDefSize as object
     local oWNDDefault as object
+
+    jExamples["Tools"]:=JSONObject():New()
+    jExamples["Tools"]["ArrayTools"]:=&("{||u_ArrayToolsSample()}")
+    jExamples["Tools"]["FlattenJSON"]:=&("{||u_FlattenJSONSample()}")
 
     jExamples["Forms"]:=JSONObject():New()
     jExamples["Tables"]:=JSONObject():New()
@@ -163,6 +181,8 @@ static procedure FWWebExExample_000()
     FreeObj(@oTPanel)
     FreeObj(@oTMenu)
     FreeObj(@oTDlg)
+
+    DelClassIntF()
 
 return
 

@@ -20,6 +20,10 @@ namespace FWWebEx
 static __cCHR10:=CHR(10) as character
 static __cCHR13:=CHR(13) as character
 
+static CHR_CRLF:=(__cCHR13+__cCHR10) as character
+static CHR_HT:=CHR(9) as character
+static CHR_LF:=__cCHR10 as character
+
 static __jEmojis as json
 
 static __aAccentuation as array
@@ -44,6 +48,8 @@ class WebExHelper
     static method Accentuation(cString as character,vAccentuation as variadic) as character
     static method AsciiToWebAccentuation(cString as character) as character
     static method WebAccentuationToAscii(cString as character) as character
+
+    static method JSONPrettify(cJSONstr as character,nPrettify as numeric) as character
 
 end class
 
@@ -795,3 +801,128 @@ return(FwNoAccent(cStrAnsiNoAc))
     __nAccentuation:=Len(__aAccentuation)
 
 return(__aAccentuation)
+
+static method JSONPrettify(cJSONstr,nPrettify) class WebExHelper
+
+    local cTab as character
+    local cLetter as character
+    local cBefore as character
+    local cJSONNew as character
+
+    local lInString as logical
+
+    local nLetter as numeric
+    local nLetters as numeric
+    local nIdentLev as numeric
+
+    paramtype 1 var cJSONstr as character
+    paramtype 2 var nPrettify as numeric optional default -1
+
+    if (nPrettify>0)
+        cTab:=Replicate(" ",nPrettify)
+    else
+        cTab:=Space(4)
+    endif
+
+    cLetter:=""
+    cJSONNew:=""
+    lInString:=.F.
+    nIdentLev:=0
+
+    nLetters:=Len(cJSONstr)
+    for nLetter:=1 to nLetters
+        cBefore:=cLetter
+        cLetter:=subStr(cJSONstr,nLetter,1)
+        if ((cLetter=="{").or.(cLetter=="["))
+            if (!lInString)
+                nIdentLev++
+                cJSONNew+=(cLetter+CHR_CRLF+Replicate(cTab,nIdentLev))
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif ((cLetter=="}").or.(cLetter=="]"))
+            if (!lInString)
+                nIdentLev--
+                cJSONNew+=(CHR_CRLF+Replicate(cTab,nIdentLev)+cLetter)
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter==",")
+            if (!lInString)
+                cJSONNew+=(cLetter+CHR_CRLF+Replicate(cTab,nIdentLev))
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter==":")
+            if (!lInString)
+                cJSONNew+=": "
+            else
+                cJSONNew+=cLetter
+            endif
+        elseif ((cLetter==" ").or.(cLetter==CHR_LF).or.(cLetter==CHR_HT))
+            if (lInString)
+                cJSONNew+=cLetter
+            endif
+        elseif (cLetter=='"')
+            if ((!(cBefore=="\")).or.(!IsComment(cJSONstr,nLetter,nLetters)))
+                lInString:=(!lInString)
+            endif
+            cJSONNew+=cLetter
+        else
+            cJSONNew+=cLetter
+        endif
+    next nLetter
+
+    return(cJSONNew)
+
+static function IsComment(cJSONstr as character,nLetter as numeric,nLetters as numeric) as logical
+    local cLetter as character
+    local cBefore as character
+    local lIsComment as logical
+    lIsComment:=.T.
+    for nLetter:=(nLetter+1) to nLetters
+        cBefore:=subStr(cJSONstr,nLetter,1)
+        if (cBefore$',}{][')
+            for nLetter:=(nLetter+1) to nLetters
+                cLetter:=subStr(cJSONstr,nLetter,1)
+                if (cLetter$'",}{][')
+                    if (cBefore$',}{][')
+                        lIsComment:=.F.
+                    endif
+                    exit
+                endif
+            next nLetter
+            if (!lIsComment)
+                exit
+            endif
+        endif
+    next nLetter
+    return(lIsComment)
+
+static function FixJSONInShowHTMLJSON(cJSON) as character
+
+    local cCHR10:=Chr(10) as character
+    local cCHR13:=Chr(13) as character
+    local cSpace2:=Space(2) as character
+
+    while (cCHR10$cJSON)
+        cJSON:=strTran(cJSON,cCHR10,"")
+    end while
+
+    while (cCHR13$cJSON)
+        cJSON:=strTran(cJSON,cCHR13,"")
+    end while
+
+    while (cSpace2$cJSON)
+        cJSON:=strTran(cJSON,cSpace2," ")
+    end while
+
+    if ("\"$cJSON)
+        cJSON:=StrTran(cJSON,"\","\\")
+    endif
+
+    if ("/"$cJSON)
+        cJSON:=StrTran(cJSON,"/","\/")
+    endif
+
+return(cJSON)

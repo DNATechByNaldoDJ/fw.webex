@@ -2,8 +2,23 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Zip Test Resources)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add FlattenJSON and example label updates)"
  */
+
+2026-08-15 21:18 UTC naldodj (Add FlattenJSON and example label updates)
+  Introduce FlattenJSON (Flatten/UnFlatten) to flatten JSON objects and arrays and add a corresponding example test.
+  Refactor label examples (031/032) to load layout/records/options via new helper functions with improved fallback JSON content.
+  Add WebExHelper:JSONPrettify and JSON-related helpers, and fix HTMLFromControl UTF-8 assignment.
+  Move array tools test into tools/ and rename the rotulos JSON zip resource.
+    + src/fw.webex/core/tools/fw.webex.jsonobject.flatten.tlpp
+    + src/fw.webex/tests/fw.webex.examples/tools/fw.webex.jsonobject.flatten.test.tlpp
+    * src/fw.webex/core/tools/fw.webex.file.tools.tlpp
+    * src/fw.webex/core/tools/fw.webex.helper.tlpp
+    * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+    * src/fw.webex/tests/fw.webex.examples/031/fw.webex.example.031.tlpp
+    * src/fw.webex/tests/fw.webex.examples/032/fw.webex.example.032.tlpp
+    * src/fw.webex/tests/fw.webex.examples/000/fw.webex.array.tools.test.tlpp -> src/fw.webex/tests/fw.webex.examples/tools/fw.webex.array.tools.test.tlpp
+    * src/fw.webex/tests/resources/rotulos/json/json.zip -> src/fw.webex/tests/resources/rotulos/json/fw.webex.rotulos.json.zip
 
 2026-08-14 20:05 UTC naldodj (Zip Test Resources)
   + src/fw.webex/tests/resources/rotulos/json/json.zip
