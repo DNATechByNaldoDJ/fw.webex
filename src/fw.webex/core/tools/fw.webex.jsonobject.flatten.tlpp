@@ -1,0 +1,359 @@
+/*
+  __  _         _    _                   _
+ / _|| |  __ _ | |_ | |_   ___  _ __    (_) ___   ___   _ __
+| |_ | | / _` || __|| __| / _ \| '_ \   | |/ __| / _ \ | '_ \
+|  _|| || (_| || |_ | |_ |  __/| | | |  | |\__ \| (_) || | | |
+|_|  |_| \__,_| \__| \__| \___||_| |_| _/ ||___/ \___/ |_| |_|
+                                      |__/
+
+    The source code `fw.webex.jsonobject.flatten.tlpp` is based on a more detailed and feature-rich
+    source code, `GitHub/naldodj-hb-flatten-json/src/core/hb_flatten_json.prg`, and implements part of the functionalities
+    present in the latter.
+
+    Released to Public Domain.
+    --------------------------------------------------------------------------------------
+*/
+
+#include "totvs.ch"
+#include "parmtype.ch"
+
+namespace FWWebEx
+using namespace FWWebEx
+
+class FlattenJSON
+
+    static method Flatten(jJSON as json,cPrefix as character) as json
+    static method UnFlatten(jFlatten as json) as json
+
+endclass
+
+method Flatten(jJSON,cPrefix) class FlattenJSON
+
+    local aNames as array
+
+    local cKey as character
+    local cType as character
+    local cNewKey as character
+    local cIndexKey as character
+
+    local jFlatten:=JSONObject():New() as json
+
+    local lHasPrefix as logical
+
+    local nKey as numeric
+    local nIndex as numeric
+
+    local uValue as variant
+
+    paramtype 1 var jJSON as json
+    paramtype 2 var cPrefix as character optional default ""
+
+    lHasPrefix:=(!Empty(cPrefix))
+
+    aNames:=jJSON:GetNames()
+    for nKey:=1 to Len(aNames)
+
+        cKey:=aNames[nKey]
+        uValue:=jJSON[cKey]
+
+        // Nova chave concatenada
+        if (lHasPrefix)
+            cNewKey:=(cPrefix+"."+cKey)
+        else
+            cNewKey:=cKey
+        endif
+
+        // Se for um hash,chamada recursiva
+        cType:=ValType(uValue)
+        if (cType=="J")
+            jFlatten[cNewKey]:="__$O:"+tlpp.ToStr(Len(uValue:GetNames()))
+            JSONObjectMerge():MergeJSON(jFlatten,FlattenJSON():Flatten(uValue,cNewKey))
+        // Se for um array,processa cada item com indice
+        elseif (cType=="A")
+            jFlatten[cNewKey]:="__$A:"+tlpp.ToStr(Len(uValue))
+            for nIndex:=1 to Len(uValue)
+                cIndexKey:=cNewKey+"["+tlpp.ToStr(nIndex-1)+"]"
+                if (valType(uValue[nIndex])=="J")
+                    jFlatten[cIndexKey]:="__$O:"+tlpp.ToStr(Len(uValue[nIndex]:GetNames()))
+                    JSONObjectMerge():MergeJSON(jFlatten,FlattenJSON():Flatten(uValue[nIndex],cIndexKey))
+                else
+                     jFlatten[cIndexKey]:=uValue[nIndex]
+                endif
+            next nIndex
+        else
+            jFlatten[cNewKey]:=uValue
+        endif
+
+    next nKey
+
+return(jFlatten)
+
+method UnFlatten(jFlatten) class FlattenJSON
+
+    local aPath as array
+    local aNames as array
+
+    local cKey as character
+    local cMarker as character
+    local cComponent as character
+    local cPartialKey as character
+    local cElementKey as character
+    local cNextComponent as character
+    local cLastComponent as character
+
+    local jUnFlattened:=JSONObject():New() as json
+
+    local n as numeric
+    local nKey as numeric
+    local nSize as numeric
+    local nIndex as numeric
+
+    local uValue as variant
+    local uMarker as variant
+    local uCurrent as variant
+
+    paramtype 1 var jFlatten as json
+
+    begin sequence
+
+        // Itera sobre todas as chaves do hash achatado
+        aNames:=jFlatten:GetNames()
+        for nKey:=1 to Len(aNames)
+            cKey:=aNames[nKey]
+            uValue:=jFlatten[cKey]
+            // Verifica se o valor e um marcador; se for,pula se nao for vazio.
+            if (ValType(uValue)=="C")
+                cMarker:=Left(uValue,5)
+                if ((cMarker=="__$O:").or.(cMarker=="__$A:").and.(IsDigit(SubStr(uValue,6))))
+                    if (SubStr(uValue,6)!="0")
+                        loop
+                    else
+                        uValue:=if((cMarker=="__$O:"),JSONObject():New(),Array(0))
+                    endif
+                endif
+            endif
+            // Processa chaves com valores folha (nao marcadores)
+            aPath:=SplitKey(cKey) // Divide a chave em componentes
+            uCurrent:=jUnFlattened
+            // Navega ou cria a estrutura para todos os componentes exceto o ultimo
+            for n:=1 to Len(aPath)-1
+                cComponent:=aPath[n]
+                if (Left(cComponent,1)=="[") // Componente e um indice de array
+                    nIndex:=Val(WebExHelper():StrReplaceEx(cComponent,{{"[","]"},""}))+1
+                    // Verifica se o proximo componente existe e seu tipo
+                    if (n<Len(aPath))
+                        cNextComponent:=aPath[n+1]
+                        if (Left(cNextComponent,1)=="[") // Proximo e array
+                            // Garantir que uCurrent seja um array
+                            if (ValType(uCurrent)!="A")
+                                // Erro: esperado array
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                            // Garantir que o elemento no indice seja um array
+                            if (nIndex>Len(uCurrent))
+                                // Erro: indice fora dos limites
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                            if (uCurrent[nIndex]==NIL)
+                                cElementKey:=BuildPartialKey(aPath,1,n)+cNextComponent
+                                uMarker:=jFlatten[cElementKey]
+                                if (ValType(uMarker)=="C").and.(Left(uMarker,5)=="__$A:")
+                                    nSize:=Val(SubStr(uMarker,6))
+                                    uCurrent[nIndex]:=Array(nSize)
+                                else
+                                    // Erro: marcador esperado nao encontrado
+                                    jUnFlattened:=JSONObject():New()
+                                    //Abandona
+                                    break
+                                endif
+                            elseif (ValType(uCurrent[nIndex])!="A")
+                                // Erro: esperado array
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                        else // Proximo e chave de objeto
+                            // Garantir que uCurrent seja um array
+                            if (ValType(uCurrent)!="A")
+                                // Erro: esperado array
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                            // Garantir que o elemento no indice seja um hash
+                            if (nIndex>Len(uCurrent))
+                                // Erro: indice fora dos limites
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                            if (uCurrent[nIndex]==NIL)
+                                cElementKey:=BuildPartialKey(aPath,1,n)
+                                uMarker:=jFlatten[cElementKey]
+                                if (ValType(uMarker)=="C").and.(Left(uMarker,5)=="__$O:")
+                                    uCurrent[nIndex]:=JSONObject():New()
+                                else
+                                    // Erro: marcador esperado nao encontrado
+                                    jUnFlattened:=JSONObject():New()
+                                    //Abandona
+                                break
+                                endif
+                            elseif (ValType(uCurrent[nIndex])!="J")
+                                // Erro: esperado hash
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                        endif
+                    else
+                        // ultimo componente antes do valor
+                        if (ValType(uCurrent)!="A")
+                            // Erro: esperado array
+                            jUnFlattened:=JSONObject():New()
+                            //Abandona
+                            break
+                        endif
+                        if (nIndex>Len(uCurrent))
+                            // Erro: indice fora dos limites
+                            jUnFlattened:=JSONObject():New()
+                            //Abandona
+                            break
+                        endif
+                    endif
+                    uCurrent:=uCurrent[nIndex]
+                else  // Componente e uma chave de hash
+                    if (!uCurrent:HasProperty(cComponent))
+                        cPartialKey:=BuildPartialKey(aPath,1,n)
+                        uMarker:=jFlatten[cPartialKey]
+                        if (ValType(uMarker)=="C")
+                            if (Left(uMarker,5)=="__$O:")
+                                uCurrent[cComponent]:=JSONObject():New()
+                            elseif (Left(uMarker,5)=="__$A:")
+                                nSize:=Val(SubStr(uMarker,6))
+                                uCurrent[cComponent]:=Array(nSize)
+                            else
+                                // Erro: marcador invalido
+                                jUnFlattened:=JSONObject():New()
+                                //Abandona
+                                break
+                            endif
+                        else
+                            // Erro: marcador esperado nao encontrado
+                            jUnFlattened:=JSONObject():New()
+                            //Abandona
+                            break
+                        endif
+                    endif
+                    uCurrent:=uCurrent[cComponent]
+                endif
+            next n
+            // Define o valor folha
+            cLastComponent:=aPath[Len(aPath)]
+            FWFreeArray(@aPath)
+            if (Left(cLastComponent,1)=="[") // ultimo componente e indice de array
+                nIndex:=Val(WebExHelper():StrReplaceEx(cLastComponent,{{"[","]"},""}))+1
+                if (ValType(uCurrent)!="A").or.(nIndex>Len(uCurrent))
+                    // Erro: array esperado ou indice fora dos limites
+                    jUnFlattened:=JSONObject():New()
+                    //Abandona
+                    break
+                endif
+                uCurrent[nIndex]:=uValue
+            else  // ultimo componente e chave de hash
+                if (ValType(uCurrent)!="J")
+                    // Erro: esperado hash
+                    jUnFlattened:=JSONObject():New()
+                    //Abandona
+                    break
+                endif
+                uCurrent[cLastComponent]:=uValue
+            endif
+        next nKey //cKey
+
+    end sequence
+
+return(jUnFlattened)
+
+// Funcao auxiliar para dividir a chave em componentes
+static function SplitKey(cKey as character) as array
+
+    local aPath:={} as array
+    local cChar as character
+    local cBuffer:="" as character
+
+    local lInBracket:=.F. as logical
+    local lInPattern:=.F. as logical
+
+    local nPos:=1 as numeric
+    local nLen:=Len(cKey) as numeric
+    local nPathLen as numeric
+
+    while (nPos<=nLen)
+        cChar:=SubStr(cKey,nPos,1)
+        if (lInPattern)
+            // Se estamos apos "patternProperties",acumula ate o proximo ponto
+            if (cChar==".")
+                aAdd(aPath,cBuffer)
+                cBuffer:=""
+                lInPattern:=.F.
+            else
+                cBuffer+=cChar
+            endif
+        elseif ((cChar=="[").and.(!lInBracket))
+            // Inicio de um indice de array
+            if (!Empty(cBuffer))
+                aAdd(aPath,cBuffer)
+                cBuffer:=""
+            endif
+            lInBracket:=.T.
+            cBuffer+=cChar
+        elseif ((cChar=="]").and.(lInBracket))
+            // Fim de um indice de array
+            cBuffer+=cChar
+            aAdd(aPath,cBuffer)
+            cBuffer:=""
+            lInBracket:=.F.
+        elseif ((cChar==".").and.(!lInBracket))
+            // Separador de componentes
+            if (!Empty(cBuffer))
+                aAdd(aPath,cBuffer)
+                cBuffer:=""
+            endif
+            // Verifica se o ultimo componente e "patternProperties"
+            nPathLen:=Len(aPath)
+            if ((nPathLen>0).and.(aPath[nPathLen]=="patternProperties"))
+                lInPattern:=.T.
+            endif
+        else
+            cBuffer+=cChar
+        endif
+        nPos++
+    end while
+
+    // Adiciona o ultimo componente,se houver
+    if (!Empty(cBuffer))
+        aAdd(aPath,cBuffer)
+    endif
+
+return(aPath)
+
+// Funcao auxiliar para construir chave parcial
+static function BuildPartialKey(aPath as array,nStart as numeric,nEnd as numeric) as character
+    local cKey:="" as character
+    local n as numeric
+    if (nEnd<nStart)
+        return("")
+    endif
+    cKey:=aPath[nStart]
+    for n:=nStart+1 to nEnd
+        if (Left(aPath[n],1)=="[")
+            cKey+=aPath[n]
+        else
+            cKey+="."+aPath[n]
+        endif
+    next n
+return(cKey)
