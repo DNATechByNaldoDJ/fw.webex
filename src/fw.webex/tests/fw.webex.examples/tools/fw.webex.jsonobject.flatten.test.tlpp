@@ -32,7 +32,7 @@ static procedure FlattenJSONSample()
 
     FreeObj(@jUFlatten)
     FreeObj(@jFlatten)
-    FreeObj(jJSON)
+    FreeObj(@jJSON)
 
 return
 
