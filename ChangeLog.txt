@@ -2,8 +2,33 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Delay WebChannel init and update date-fns CDN URL)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add FWWEBEX block commands and update examples)"
  */
+
+2026-08-16 15:16 UTC naldodj (Add FWWEBEX block commands and update examples)
+    Add FWWEBEX block commands and update examples
+        Introduce BEGIN FWWEBEX / END FWWEBEX and FWWEBEX CLEAN #xcommands in include/fw.webex.th to provide a block-style WebEx context API.
+        Replace numerous occurrences of WITH WEBEXOBJECT ... END WEBEXOBJECT (including END ... NOADDCHILD) with the new BEGIN/END FWWEBEX form across the fw.webex example tests (multiple src/fw.webex/tests/fw.webex.examples/*.tlpp files) to standardize usage and enable the new cleanup command.
+          * include/fw.webex.th
+          * src/fw.webex/tests/fw.webex.examples/001/fw.webex.example.001.tlpp
+          * src/fw.webex/tests/fw.webex.examples/002/fw.webex.example.002.tlpp
+          * src/fw.webex/tests/fw.webex.examples/003/fw.webex.example.003.tlpp
+          * src/fw.webex/tests/fw.webex.examples/004/fw.webex.example.004.tlpp
+          * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+          * src/fw.webex/tests/fw.webex.examples/011/fw.webex.example.011.tlpp
+          * src/fw.webex/tests/fw.webex.examples/016/fw.webex.example.016.tlpp
+          * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+          * src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+          * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+          * src/fw.webex/tests/fw.webex.examples/024/fw.webex.example.024.tlpp
+          * src/fw.webex/tests/fw.webex.examples/025/fw.webex.example.025.tlpp
+          * src/fw.webex/tests/fw.webex.examples/026/fw.webex.example.026.tlpp
+          * src/fw.webex/tests/fw.webex.examples/027/fw.webex.example.027.tlpp
+          * src/fw.webex/tests/fw.webex.examples/028/fw.webex.example.028.tlpp
+          * src/fw.webex/tests/fw.webex.examples/029/fw.webex.example.029.tlpp
+          * src/fw.webex/tests/fw.webex.examples/030/fw.webex.example.030.tlpp
+          * src/fw.webex/tests/fw.webex.examples/031/fw.webex.example.031.tlpp
+          * src/fw.webex/tests/fw.webex.examples/032/fw.webex.example.032.tlpp
 
 2026-08-16 14:17 UTC naldodj (Delay WebChannel init and update date-fns CDN URL)
   Delay WebChannel init and update date-fns CDN URL

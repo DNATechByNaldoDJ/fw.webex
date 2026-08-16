@@ -43,11 +43,17 @@ Released to Public Domain.
         #include "parmtype.ch"
     #ENDIF
 
+    #xcommand BEGIN FWWEBEX [<obj>] => [<obj>:=] WebExContext():ObjBegin([<obj>])
+    #xcommand BEGIN FWWEBEX [<obj>] CLASS <class> [TYPE <*type*>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<(type)>]))
+    #xcommand BEGIN FWWEBEX [<obj>] CLASS <class> [<arg: ARG, ARGS> <Args,...>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<Args>]))
+    #xcommand END FWWEBEX => (WebExContext():ObjEnd(if(.T.,.F.,.T.)),if(Type("__oWebExContextObj__")=="O",(__oWebExContextObj__:=nil),nil))
+
     #xcommand WITH WEBEXOBJECT [<obj>] => [<obj>:=] WebExContext():ObjBegin([<obj>])
     #xcommand WITH WEBEXOBJECT [<obj>] CLASS <class> [TYPE <*type*>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<(type)>]))
     #xcommand WITH WEBEXOBJECT [<obj>] CLASS <class> [<arg: ARG, ARGS> <Args,...>] => [<obj>:=] WebExContext():ObjBegin(<class>():New([<Args>]))
     #xcommand END WEBEXOBJECT [<noaddchild: NOADDCHILD>] => (WebExContext():ObjEnd(if(<.noaddchild.>,.F.,.T.)),if(Type("__oWebExContextObj__")=="O",(__oWebExContextObj__:=nil),nil))
 
+    #xcommand FWWEBEX CLEAN => WebExContext():ObjClean()
     #xcommand WEBEXOBJECT CLEAN => WebExContext():ObjClean()
 
     #xtranslate .this => (__oWebExContextObj__:=WebExContext():ObjGet())

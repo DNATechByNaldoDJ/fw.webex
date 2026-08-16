@@ -75,7 +75,7 @@ static function FWWebExExample_001() as character
 
     local oFWWebExPage as object
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
                 WITH WEBEXOBJECT CLASS WebExTemplateBulkActionTable ARGS cProcName+" (Tabela 32)"
@@ -88,7 +88,7 @@ static function FWWebExExample_001() as character
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,GetTempPath(),@cHTMLFile,@cHTML,.T.)
 

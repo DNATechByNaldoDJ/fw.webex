@@ -95,7 +95,7 @@ static procedure FWWebExExample_016(cHTML as character) as character
     FreeObj(@oZodiacSignsPage)
 
     //Page
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" (iFrame Pages)"
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName+" (iFrame Pages)"
         //Body
         WITH WEBEXOBJECT CLASS WebExBody
             //Main
@@ -278,7 +278,7 @@ static procedure FWWebExExample_016(cHTML as character) as character
             endContent
             .:SetContent(cScript)
         END WEBEXOBJECT
-    END WEBEXOBJECT
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 

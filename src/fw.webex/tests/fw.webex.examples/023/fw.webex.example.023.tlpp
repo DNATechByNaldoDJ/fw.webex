@@ -276,7 +276,7 @@ static procedure FWWebExExample_023(cHTML as character) as character
         ,{"__ID_DATATABLE__",cIDDataTable};
     )
 
-    WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
+    BEGIN FWWEBEX oFWWebExBody CLASS WebExBody
         .:SetAttr("class","sb-nav-fixed")
         WITH WEBEXOBJECT CLASS SBAdminNav
             .:NavRightLoadJSONMenu(SBAdminGetRightMenu(cYesFields))
@@ -491,7 +491,7 @@ static procedure FWWebExExample_023(cHTML as character) as character
                 //Footer
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     oFWWebExPage:=SBAdminPage():New("fw.webex.example.020.tlpp :: FWWebEx :: SBADMIN :: SBAdminNav")
     oFWWebExPage:AddChild(oFWWebExBody)

@@ -39,7 +39,7 @@ static function FWWebExExample_027(cHTML as character) as character
 
     local oFWWebExPage as object
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: Runtime Bootstrap"
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: Runtime Bootstrap"
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
                 WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
@@ -190,7 +190,7 @@ static function FWWebExExample_027(cHTML as character) as character
                 .:SetContent(cScript)
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 

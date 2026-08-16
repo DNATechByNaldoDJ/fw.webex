@@ -71,7 +71,7 @@ static function FWWebExExample_004(cHTML as character) as character
 
     local oFWWebExPage as object
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
                 // ALERTA DE ERRO
@@ -124,7 +124,7 @@ static function FWWebExExample_004(cHTML as character) as character
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 

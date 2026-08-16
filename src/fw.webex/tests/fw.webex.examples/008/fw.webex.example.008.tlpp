@@ -124,7 +124,7 @@ static procedure FWWebExExample_008(cHTML as character) as character
         endif
     endif
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" (REST + DataTable)"
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName+" (REST + DataTable)"
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
                 // Adiciona Filtro da Tabela
@@ -583,7 +583,7 @@ static procedure FWWebExExample_008(cHTML as character) as character
             .:SetContent(cScript)
         END WEBEXOBJECT
         WebExFeatureDataTable():Enable()
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 
