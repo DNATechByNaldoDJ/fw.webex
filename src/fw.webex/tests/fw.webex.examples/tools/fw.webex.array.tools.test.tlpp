@@ -50,7 +50,10 @@ static procedure ArrayToolsSample()
 
 return
 
-static function Array2JSON(aResult)
+static function Array2JSON(aResult) as character
+    local cResult as character
     local jResult:=JSONObject():New() as json
     jResult:Set(aResult)
-return(jResult:ToJSON())
+    cResult:=jResult:ToJSON()
+    FreeObj(@jResult)
+return(cResult)
