@@ -2,8 +2,45 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add FlattenJSON and example label updates)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Delay WebChannel init and update date-fns CDN URL)"
  */
+
+2026-08-16 14:17 UTC naldodj (Delay WebChannel init and update date-fns CDN URL)
+  Delay WebChannel init and update date-fns CDN URL
+      Move WebApp():GetTWebChannel() out of procedure headers and initialize oTWebChannel only when an HTML file exists to avoid creating channels unnecessarily across many examples (002–032).
+      Update chart feature to use the scoped @date-fns CDN package URL and add a short comment about legacy URLs.
+        * src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.chart.tlpp
+        * src/fw.webex/tests/fw.webex.examples/002/fw.webex.example.002.tlpp
+        * src/fw.webex/tests/fw.webex.examples/003/fw.webex.example.003.tlpp
+        * src/fw.webex/tests/fw.webex.examples/004/fw.webex.example.004.tlpp
+        * src/fw.webex/tests/fw.webex.examples/005/fw.webex.example.005.tlpp
+        * src/fw.webex/tests/fw.webex.examples/006/fw.webex.example.006.tlpp
+        * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+        * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+        * src/fw.webex/tests/fw.webex.examples/009/fw.webex.example.009.tlpp
+        * src/fw.webex/tests/fw.webex.examples/010/fw.webex.example.010.tlpp
+        * src/fw.webex/tests/fw.webex.examples/011/fw.webex.example.011.tlpp
+        * src/fw.webex/tests/fw.webex.examples/012/fw.webex.example.012.tlpp
+        * src/fw.webex/tests/fw.webex.examples/013/fw.webex.example.013.tlpp
+        * src/fw.webex/tests/fw.webex.examples/014/fw.webex.example.014.tlpp
+        * src/fw.webex/tests/fw.webex.examples/015/fw.webex.example.015.tlpp
+        * src/fw.webex/tests/fw.webex.examples/016/fw.webex.example.016.tlpp
+        * src/fw.webex/tests/fw.webex.examples/017/fw.webex.example.017.tlpp
+        * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+        * src/fw.webex/tests/fw.webex.examples/019/fw.webex.example.019.tlpp
+        * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+        * src/fw.webex/tests/fw.webex.examples/021/fw.webex.example.021.tlpp
+        * src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+        * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+        * src/fw.webex/tests/fw.webex.examples/024/fw.webex.example.024.tlpp
+        * src/fw.webex/tests/fw.webex.examples/025/fw.webex.example.025.tlpp
+        * src/fw.webex/tests/fw.webex.examples/026/fw.webex.example.026.tlpp
+        * src/fw.webex/tests/fw.webex.examples/027/fw.webex.example.027.tlpp
+        * src/fw.webex/tests/fw.webex.examples/028/fw.webex.example.028.tlpp
+        * src/fw.webex/tests/fw.webex.examples/029/fw.webex.example.029.tlpp
+        * src/fw.webex/tests/fw.webex.examples/030/fw.webex.example.030.tlpp
+        * src/fw.webex/tests/fw.webex.examples/031/fw.webex.example.031.tlpp
+        * src/fw.webex/tests/fw.webex.examples/032/fw.webex.example.032.tlpp
 
 2026-08-15 21:18 UTC naldodj (Add FlattenJSON and example label updates)
   Introduce FlattenJSON (Flatten/UnFlatten) to flatten JSON objects and arrays and add a corresponding example test.

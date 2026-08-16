@@ -54,7 +54,14 @@ method Load(oControl) class WebExFeatureChart
             .:AddInHeader(.this)
         END WEBEXOBJECT NOADDCHILD
         WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-            .:SetContent("https://cdn.jsdelivr.net/npm/date-fns/cdn.min.js")
+            /*
+                Legacy URLs still work for now but should be replaced:
+                - https://cdn.jsdelivr.net/npm/date-fns@VERSION/cdn.min.js
+                .:SetContent("https://cdn.jsdelivr.net/npm/date-fns/cdn.min.js")
+                + https://cdn.jsdelivr.net/npm/@date-fns/cdn@VERSION/cdn.min.js
+                .:SetContent("https://cdn.jsdelivr.net/npm/@date-fns/cdn/cdn.min.js")
+            */
+            .:SetContent("https://cdn.jsdelivr.net/npm/@date-fns/cdn/cdn.min.js")
             .:AddInHeader(.this)
         END WEBEXOBJECT NOADDCHILD
         //https://github.com/chartjs/chartjs-adapter-date-fns
