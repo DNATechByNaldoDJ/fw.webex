@@ -59,10 +59,11 @@ procedure u_FWWebExExample_011()
     local cHTML as character
     local cHTMLFile as character
     local cProcName:=ProcName() as character
-    local oTWebChannel:=WebApp():GetTWebChannel() as object
+    local oTWebChannel as object
     bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_011(@cHTML)},"Aguarde",cProcName)}
     FWExampleTools():Execute(bExecute,cProcName,.T.)
     if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        oTWebChannel:=WebApp():GetTWebChannel()
         FWExampleTools():htmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel)
         fErase(cHTMLFile)
     endif
