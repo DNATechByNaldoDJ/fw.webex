@@ -211,7 +211,7 @@ static function FWWebExExample_030(cHTML as character) as character
         }
     endContent
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: ASCII Page Loader"
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: ASCII Page Loader"
         .:AddPageStyle(cPageStyle)
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
@@ -462,7 +462,7 @@ static function FWWebExExample_030(cHTML as character) as character
                 .:SetContent(cScript)
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 

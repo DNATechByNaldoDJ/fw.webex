@@ -41,7 +41,7 @@ static function FWWebExExample_025(cHTML as character) as character
 
     local oFWWebExPage as object
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: ASCIIArt"
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS cProcName+" :: FWWebEx :: ASCIIArt"
         WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
             WITH WEBEXOBJECT oConteinerASCII CLASS WebExStyle
                 beginContent var cConteinerASCII
@@ -112,7 +112,7 @@ static function FWWebExExample_025(cHTML as character) as character
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     aEval(jASCIIArt:GetNames(),{|cName|FWFreeArray(jASCIIArt[cName]),jASCIIArt:DelName(cName)})
     FreeObj(@jASCIIArt)

@@ -36,7 +36,7 @@ static function FWWebExExample_032(cHTML as character) as character
     local cHTMLFile:=ProcName() as character
     local oFWWebExPage as object
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: Gerador de PDF de r&oacute;tulos"
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: Gerador de PDF de r&oacute;tulos"
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
                 WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
@@ -57,7 +57,7 @@ static function FWWebExExample_032(cHTML as character) as character
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
     WEBEXOBJECT CLEAN

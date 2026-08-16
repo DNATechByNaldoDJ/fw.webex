@@ -38,7 +38,7 @@ static function FWWebExExample_024(cHTML as character) as character
 
     local oFWWebExPage as object
 
-    WITH WEBEXOBJECT oFWWebExPage CLASS SBAdminPage ARGS cProcName+" :: FWWebEx :: SBADMIN :: Markdown"
+    BEGIN FWWEBEX oFWWebExPage CLASS SBAdminPage ARGS cProcName+" :: FWWebEx :: SBADMIN :: Markdown"
         WITH WEBEXOBJECT oFWWebExBody CLASS WebExBody
             .:SetAttr("class","sb-nav-fixed")
             WITH WEBEXOBJECT oSBAdminCardHeaderMarkDown CLASS SBAdminCardHeader ARGS "Markdown","fa-code"
@@ -63,7 +63,7 @@ static function FWWebExExample_024(cHTML as character) as character
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT
-    END WEBEXOBJECT NOADDCHILD
+    END FWWEBEX
 
     WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
 
