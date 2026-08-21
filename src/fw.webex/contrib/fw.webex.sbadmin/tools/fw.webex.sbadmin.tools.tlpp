@@ -21,65 +21,8 @@ class FWSBAdminTools
 endclass
 
 method SBAdminCheck(cSBAdminPath) class FWSBAdminTools
-
-    local aSBAdmin as array
-    local aSBAdminFiles as array
-
-    local cSBAdmin as character
-    local cAPPRootURI:=WebApp():GetAPPRoot() as character
-
-    local jSBAdmin:=JSONObject():New() as json
-
     local lRet:=.T. as logical
-
-    local i as numeric
-    local nDir as numeric
-
     paramtype cSBAdminPath as character optional
-    cSBAdminPath:=cAPPRootURI+"fwwebex/sbadmin/"
-
-    begin sequence
-
-        lRet:=(!((Empty(cAPPRootURI)).or.(cAPPRootURI=="/")))
-
-        if (!lRet)
-            ApMsgAlert("app-root Inv&aacute;lido ou inexistente ["+cAPPRootURI+"]",ProcName())
-            break
-        endif
-
-        //https://startbootstrap.com/template/sb-admin
-        jSBAdmin["fwwebex_sbadmin"]:="\http-root\app-root\fwwebex\sbadmin\"
-        jSBAdmin["fwwebex_sbadmin_assets_demo"]:="\http-root\app-root\fwwebex\sbadmin\assets\demo\"
-        jSBAdmin["fwwebex_sbadmin_assets_img"]:="\http-root\app-root\fwwebex\sbadmin\assets\img\"
-        jSBAdmin["fwwebex_sbadmin_css"]:="\http-root\app-root\fwwebex\sbadmin\css\"
-        jSBAdmin["fwwebex_sbadmin_js"]:="http-root\app-root\fwwebex\sbadmin\js\"
-
-        //Verifica se os Demais Dados do SBAdmin estao no servidor
-        aSBAdmin:=jSBAdmin:GetNames()
-        for i:=1 to Len(aSBAdmin)
-            cSBAdmin:=aSBAdmin[i]
-            lRet:=lIsDir(jSBAdmin[cSBAdmin])
-            if (!lRet)
-                ApMsgAlert("Estrutura SBAdmin n&atilde;o Encontrada ["+jSBAdmin[cSBAdmin]+"]",ProcName())
-                break
-            endif
-            aSBAdminFiles:=Directory(jSBAdmin[cSBAdmin]+"*.*")
-            while ((nDir:=aScan(aSBAdminFiles,{|x|(x[F_ATTR]=="D").or.(x[F_NAME]==".").or.(x[F_NAME]=="..")}))>0)
-                aDel(aSBAdminFiles,nDir)
-                aSize(aSBAdminFiles,(Len(aSBAdminFiles)-1))
-            end while
-            lRet:=(!Empty(aSBAdminFiles))
-            if (!lRet)
-                ApMsgAlert("Arquivos para SBAdmin n&atilde;o Encontrados ["+jSBAdmin[cSBAdmin]+"]",ProcName())
-                break
-            endif
-            FWFreeArray(@aSBAdminFiles)
-        next i
-
-    end sequence
-
-    FWFreeArray(@aSBAdminFiles)
-    FWFreeArray(@aSBAdmin)
-    FreeObj(@jSBAdmin)
-
+    //TODO: Adicionar como Feature
+    cSBAdminPath:="https://cdn.jsdelivr.net/gh/StartBootstrap/startbootstrap-sb-admin@master/dist/"
 return(lRet)

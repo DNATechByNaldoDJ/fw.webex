@@ -3649,7 +3649,7 @@ method RenderHTML() class WebExLabelDesigner
       <div class="fwwebex-label-tabpanel" role="tabpanel" data-tab-group="inspector"
         data-tab-panel="appearance" data-tab-type="text" hidden>
         <div class="fwwebex-label-form-grid">
-          <label data-for-type="text">Fam&iacute;lia<select data-property="style.fontFamily"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option></select></label>
+          <label data-for-type="text">Fam&iacute;lia<select data-property="style.fontFamily"><option value="helvetica">Helvetica</option><option value="times">Times</option><option value="courier">Courier</option><option value="roboto_black">Roboto Black</option><option value="roboto_black_italic">Roboto Black Italic</option></select></label>
           <label data-for-type="text">Fonte (pt)<input data-property="style.fontSize" type="number" min="1" step=".25"></label>
           <label data-for-type="text">Fonte m&iacute;nima<input data-property="style.minFontSize" type="number" min="1" step=".25"></label>
           <label data-for-type="text">Estilo<select data-property="style.fontStyle"><option value="normal">Normal</option><option value="bold">Negrito</option><option value="italic">It&aacute;lico</option><option value="bolditalic">Negrito + it&aacute;lico</option></select></label>

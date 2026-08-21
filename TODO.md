@@ -19,6 +19,8 @@ Esta geração inicia uma nova arquitetura do fw.webex com foco em:
 - exemplos reais de aplicações completas, além de exemplos isolados por componente;
 - infraestrutura genérica de geração de PDF no navegador, reutilizável por
   diferentes features sem acoplamento entre domínios;
+- bridge explícito e observável para a comunicação TWebChannel entre o
+  documento FWWebEx e o host Protheus;
 - encapsulamento de bibliotecas externas em features independentes por
   provider; ExifReader, jsPDF e PDF.js não pertencem ao domínio consumidor;
 - qualidade operacional mínima (CI, catálogo de exemplos, geração de patch e governança de assets);
@@ -49,7 +51,7 @@ Fora de escopo imediato:
 - [ ] Resolver TODOs P0/P1 com exemplos obrigatórios.
 
 ### Métricas
-- TODOs P0 resolvidos: `2/5`
+- TODOs P0 resolvidos: `2/6`
 - TODOs P1 resolvidos: `0/13`
 - TODOs P2 resolvidos: `0/5`
 - Exemplos novos publicados: `6/9`
@@ -88,6 +90,7 @@ Legenda:
 | NX-020 | P2 | ux/i18n/a11y | Revisar acessibilidade, ARIA, mensagens e consistência PT-BR/EN nos componentes e exemplos | `src/fw.webex/core`, `src/fw.webex/contrib`, `src/fw.webex/tests/fw.webex.examples` | Não | TODO | S6 |
 | NX-021 | P1 | integrations/dnatech-rest | Definir contrato/adaptador para dados vindos do modelo REST DNATech | `C:\GitHub\naldodj-tlpp\tlpp\wsrest\afx\wsrest`, exemplo 023 | Sim | TODO | S5 |
 | NX-022 | P1 | features/pdf | Extrair jsPDF para uma feature genérica, reutilizável por Labels, Markdown e futuros módulos | `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.jspdf.tlpp`, Labels e Markdown | Sim | IN_PROGRESS | S3 |
+| NX-023 | P0 | core/twebchannel | Isolar o bridge TWebChannel no frame FWWebEx, remover a injeção de scripts privados do WebApp e oferecer fallback/configuração/diagnóstico | `src/fw.webex/core/component/fw.webex.page.tlpp`, exemplo 023 | Sim | IN_PROGRESS | S1 |
 
 ---
 
@@ -227,6 +230,61 @@ de fronteira e documentação foram entregues. O item permanece `IN_PROGRESS`
 até receber um exemplo direto, uma prova real de saída e o adaptador Markdown
 -> PDF, que continua deliberadamente separado de Labels e relacionado a
 `NX-003`.
+
+### 4.3) Detalhamento — NX-023 Bridge TWebChannel
+
+Diagnóstico arquitetural:
+
+- o WebApp/TWebEngine pode preparar o transporte no documento pai, mas o HTML
+  FWWebEx executa em um `iframe` com outro objeto global;
+- carregar `totvstec.js` e `fwprotheus.js` novamente no documento filho
+  duplica partes privadas do bootstrap da plataforma e não é um contrato
+  estável;
+- somente o provider público `twebchannel.js` deve ser obtido pelo documento
+  FWWebEx quando `window.twebchannel` ainda não estiver disponível nele.
+
+Implementação:
+
+- [x] Remover a injeção incondicional de `totvstec.js`, `fwprotheus.js` e
+  `twebchannel.js` do cabeçalho de toda `WebExPage`.
+- [x] Criar `FWWebEx.TWebChannel` com `load`, `connect`, `send`, receptor
+  multiplexado, estado e erros tipados.
+- [x] Tornar o receptor aditivo: `true` marca a mensagem como tratada e
+  `false` preserva a delegação ao `advplToJs` anterior.
+- [x] Reutilizar um provider já publicado no frame e serializar tentativas
+  concorrentes de carga/conexão.
+- [x] Oferecer `forceReconnect` somente como recuperação explícita, sem
+  reiniciar o transporte preparado pela plataforma no fluxo normal.
+- [x] Resolver a origem por configuração, asset do ambiente Protheus e CDN
+  versionado, nessa ordem.
+- [x] Corrigir a documentação do `appserver.ini`: `GetAPPRoot` e autenticação
+  leem `[FWWEBEX_<GetEnvServer()>]`, e não `[FWWEBEX]`.
+- [x] Migrar `FWWebEx.RequestHandler` e o exemplo 023 para a API do bridge.
+- [x] Serializar requests por `callbackEvent`, aplicar `responseTimeout` de 30
+  segundos por padrão e limpar listeners/timers em todos os desfechos.
+- [x] Documentar configuração local/offline e roteiro de diagnóstico no frame.
+- [x] Executar a suíte isolada do bridge e do `RequestHandler`: 21 testes
+  aprovados em
+  `src/fw.webex/core/tests/twebchannel-bridge.test.mjs`.
+- [ ] Validar o fluxo no WebApp real antes de alterar o status para `DONE`.
+
+Critérios de aceite:
+
+- uma página que não usa comunicação ADVPL não injeta os três scripts;
+- uma página que usa o bridge carrega no máximo uma instância do provider;
+- a seção `[FWWEBEX_<ENVIRONMENT>]` corresponde ao retorno de
+  `GetEnvServer()` para que `AppRootURI` permita localizar o asset da
+  plataforma;
+- o FWWebEx não depende nem injeta `totvstec.js` ou `fwprotheus.js`; eventual
+  uso desses arquivos é interno à plataforma;
+- falhas expõem código, causa e estado observável, sem polling disperso no
+  consumidor;
+- timeout de resposta emite `FWWEBEX_TWEBCHANNEL_RESPONSE_TIMEOUT`, libera a
+  fila correspondente e não deixa listener pendente;
+- budgets compartilhados de carga/conexão e deadlines individuais preservam
+  consumidores concorrentes sem duplicar scripts ou conexões;
+- o exemplo 023 recebe `CALLBACK_RESPONSE` e entrega os dados ao DataTable pelo
+  `EventTarget` do bridge.
 
 ## 5) Definition of Ready (DoR)
 

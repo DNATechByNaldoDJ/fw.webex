@@ -537,27 +537,9 @@ method RenderHTML() class WebExPage
             jHeadScripts:=::oPageHeader:GetHeadScripts()
             aEval(jHeadScripts:GetNames(),{|cName as character|::GetMemberData("oPageHeader"):AddChild(jHeadScripts[cName])})
             ***************************************************************************************************************************
-            //TotvsTec Scripts
-                if (lIsDir("\http-root\app-root\fwwebex\totvstec\"))
-                    cEnvServer:="fwwebex/totvstec/"
-                else
-                    cEnvServer:=Alltrim(Lower(GetEnvServer()))
-                    cEnvServer:="preindex_env_"+cEnvServer+"/"
-                endif
-                cAPPRootURI:=WebApp():GetAPPRoot()
-                WITH WEBEXOBJECT CLASS WebExComment
-                    .:SetContent("TOTVS Scripts")
-                END WEBEXOBJECT
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent("https://cdn.jsdelivr.net/gh/totvs/twebchannel-js@master/twebchannel.js")
-                END WEBEXOBJECT
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent(cAPPRootURI+cEnvServer+"totvstec.js")
-                END WEBEXOBJECT
-                WITH WEBEXOBJECT CLASS WebExScript ARGS .F.
-                    .:SetContent(cAPPRootURI+cEnvServer+"fwprotheus.js")
-                END WEBEXOBJECT
-            //TOTVS Script
+            //O bridge TWebChannel e carregado sob demanda por FWWebEx.TWebChannel.
+            //O TWebEngine do WebApp fornece o transporte no frame pai, mas nao
+            //compartilha os objetos JavaScript com o documento filho.
             ***************************************************************************************************************************
             //Normalize CSS
                 //(Do Not Use WebExComment Here)
@@ -718,6 +700,7 @@ return(cHTML)
 static function FWWebExScripts() as character
 
     local cPageScript as character
+    local cTWebChannelURI:="https://cdn.jsdelivr.net/gh/totvs/twebchannel-js@master/twebchannel.js" as character
 
     //FWWebEx Scripts
     beginContent var cPageScript
@@ -779,6 +762,410 @@ static function FWWebExScripts() as character
             }
 
             return { on, once, emit, hasFired };
+
+        })();
+
+        /***********************************************************************
+        * FWWebEx.TWebChannel
+        * - Reutiliza o provider da TOTVS quando ele ja existe no documento
+        * - Carrega somente twebchannel.js quando o iframe ainda nao o possui
+        * - Nao depende dos detalhes privados de fwprotheus.js/totvstec.js
+        * - Serializa load/connect e oferece um EventTarget estavel ao FWWebEx
+        **********************************************************************/
+        FWWebEx.TWebChannel = (() => {
+
+            const PLATFORM_SOURCE = '__FWWEBEX_TWEBCHANNEL_PLATFORM_SOURCE__';
+            const PINNED_SOURCE = 'https://cdn.jsdelivr.net/npm/@totvs/twebchannel-js@1.0.3/twebchannel.js';
+            const SCRIPT_ATTRIBUTE = 'data-fwwebex-twebchannel';
+
+            let loadPromise = null;
+            let connectPromise = null;
+            let responseTarget = null;
+            let connected = false;
+            let lastError = null;
+            const receivers = new Set();
+
+            function bridgeError(code, message, cause) {
+                const error = new Error(message);
+                error.name = 'FWWebExTWebChannelError';
+                error.code = code;
+                if (cause) {
+                    error.cause = cause;
+                }
+                return error;
+            }
+
+            function withinDeadline(promise, deadline, code, message) {
+                const remaining = deadline - Date.now();
+                if (remaining <= 0) {
+                    return Promise.reject(bridgeError(code, message));
+                }
+                return new Promise((resolve, reject) => {
+                    let settled = false;
+                    const timer = setTimeout(() => {
+                        if (settled) return;
+                        settled = true;
+                        reject(bridgeError(code, message));
+                    }, remaining);
+                    const finish = callback => value => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        callback(value);
+                    };
+                    promise.then(finish(resolve), finish(reject));
+                });
+            }
+
+            function getChannel() {
+                return window.twebchannel;
+            }
+
+            function isProvider(channel) {
+                return !!channel &&
+                    typeof channel.connect === 'function' &&
+                    typeof channel.jsToAdvpl === 'function';
+            }
+
+            function getEventTarget() {
+                const channel = getChannel();
+                if (
+                    !responseTarget &&
+                    channel?.eventTarget &&
+                    typeof channel.eventTarget.addEventListener === 'function' &&
+                    typeof channel.eventTarget.removeEventListener === 'function' &&
+                    typeof channel.eventTarget.dispatchEvent === 'function'
+                ) {
+                    responseTarget = channel.eventTarget;
+                }
+                if (!responseTarget) {
+                    responseTarget = new EventTarget();
+                }
+                if (channel && !channel.eventTarget) {
+                    // Alias de compatibilidade para exemplos legados. O dono do
+                    // dispatcher continua sendo o bridge FWWebEx.
+                    channel.eventTarget = responseTarget;
+                }
+                return responseTarget;
+            }
+
+            function installReceiver(channel) {
+                if (!isProvider(channel) || channel.__fwwebexReceiverInstalled === true) {
+                    return;
+                }
+                const previous = channel.advplToJs;
+                channel.advplToJs = function (...args) {
+                    let handled = false;
+                    receivers.forEach(receiver => {
+                        try {
+                            if (receiver(...args) === true) handled = true;
+                        } catch (error) {
+                            console.error('[FWWebEx] Erro no receptor AdvPLToJS:', error);
+                        }
+                    });
+                    // Retornar true declara a mensagem como tratada. Mensagens nao
+                    // reconhecidas continuam no receptor anterior da plataforma.
+                    if (!handled && typeof previous === 'function') {
+                        try {
+                            previous.apply(channel, args);
+                        } catch (error) {
+                            console.error('[FWWebEx] Erro no receptor AdvPLToJS anterior:', error);
+                        }
+                    }
+                };
+                channel.__fwwebexReceiverInstalled = true;
+            }
+
+            function onAdvplToJs(receiver) {
+                if (typeof receiver !== 'function') {
+                    throw new TypeError('O receptor AdvPLToJS deve ser uma funcao.');
+                }
+                receivers.add(receiver);
+                installReceiver(getChannel());
+                return () => receivers.delete(receiver);
+            }
+
+            function configuredSources() {
+                const configured = FWWebEx.config?.twebchannel?.src;
+                return [configured, PLATFORM_SOURCE, PINNED_SOURCE]
+                    .filter(source => typeof source === 'string' && source.trim())
+                    .filter((source, index, sources) => sources.indexOf(source) === index);
+            }
+
+            function loadScript(source, timeout) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    let settled = false;
+                    let timer = null;
+                    const cleanup = () => {
+                        if (timer) clearTimeout(timer);
+                        script.onload = null;
+                        script.onerror = null;
+                    };
+                    const succeed = channel => {
+                        if (settled) return;
+                        settled = true;
+                        cleanup();
+                        resolve(channel);
+                    };
+                    const fail = error => {
+                        if (settled) return;
+                        settled = true;
+                        cleanup();
+                        if (typeof script.remove === 'function') script.remove();
+                        reject(error);
+                    };
+                    script.src = source;
+                    script.async = true;
+                    script.setAttribute(SCRIPT_ATTRIBUTE, source);
+                    script.onload = () => {
+                        if (isProvider(getChannel())) {
+                            installReceiver(getChannel());
+                            succeed(getChannel());
+                        } else {
+                            fail(bridgeError(
+                                'FWWEBEX_TWEBCHANNEL_PROVIDER_INVALID',
+                                'O script carregado nao publicou um twebchannel compativel.'
+                            ));
+                        }
+                    };
+                    script.onerror = () => fail(bridgeError(
+                        'FWWEBEX_TWEBCHANNEL_LOAD_FAILED',
+                        'Nao foi possivel carregar twebchannel.js de ' + source + '.'
+                    ));
+                    timer = setTimeout(() => fail(bridgeError(
+                        'FWWEBEX_TWEBCHANNEL_LOAD_TIMEOUT',
+                        'Tempo esgotado ao carregar twebchannel.js de ' + source + '.'
+                    )), Math.max(1, Number(timeout) || 1));
+                    document.head.appendChild(script);
+                });
+            }
+
+            function load(options = {}) {
+                const current = getChannel();
+                if (isProvider(current)) {
+                    getEventTarget();
+                    installReceiver(current);
+                    return Promise.resolve(current);
+                }
+                const timeout = Math.max(250, Number(options.timeout) || 5000);
+                const requestedDeadline = Number(options.deadline);
+                const callerDeadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
+                    ? requestedDeadline
+                    : Date.now() + timeout;
+                if (loadPromise) {
+                    return withinDeadline(
+                        loadPromise,
+                        callerDeadline,
+                        'FWWEBEX_TWEBCHANNEL_LOAD_TIMEOUT',
+                        'Tempo esgotado ao aguardar o carregamento de twebchannel.js.'
+                    );
+                }
+
+                // O budget da tentativa compartilhada nao pertence ao primeiro
+                // consumidor. Cada chamada conserva seu proprio deadline, enquanto
+                // a carga subjacente pode servir consumidores posteriores.
+                const loadTimeout = Math.max(
+                    250,
+                    Number(FWWebEx.config?.twebchannel?.loadTimeout) || 5000
+                );
+                const loadDeadline = Date.now() + loadTimeout;
+                const sources = configuredSources();
+                let sourceError = null;
+
+                const trySource = index => {
+                    if (index >= sources.length) {
+                        return Promise.reject(sourceError || bridgeError(
+                            'FWWEBEX_TWEBCHANNEL_DEPENDENCY_MISSING',
+                            'Nenhuma origem de twebchannel.js foi configurada.'
+                        ));
+                    }
+                    const remaining = loadDeadline - Date.now();
+                    if (remaining <= 0) {
+                        return Promise.reject(sourceError || bridgeError(
+                            'FWWEBEX_TWEBCHANNEL_LOAD_TIMEOUT',
+                            'Tempo esgotado ao localizar twebchannel.js.'
+                        ));
+                    }
+                    const sourceTimeout = Math.max(
+                        1,
+                        Math.floor(remaining / (sources.length - index))
+                    );
+                    return loadScript(sources[index], sourceTimeout).catch(error => {
+                        sourceError = error;
+                        return trySource(index + 1);
+                    });
+                };
+
+                const pending = trySource(0);
+                const shared = pending.then(channel => {
+                    if (loadPromise === shared) loadPromise = null;
+                    lastError = null;
+                    return channel;
+                }).catch(error => {
+                    if (loadPromise === shared) loadPromise = null;
+                    lastError = bridgeError(
+                        'FWWEBEX_TWEBCHANNEL_DEPENDENCY_MISSING',
+                        'twebchannel.js nao esta disponivel no documento FWWebEx.',
+                        error
+                    );
+                    FWWebEx.Events.emit('FWWebEx:twebchannel:error', { error: lastError });
+                    throw lastError;
+                });
+                loadPromise = shared;
+                return withinDeadline(
+                    loadPromise,
+                    callerDeadline,
+                    'FWWEBEX_TWEBCHANNEL_LOAD_TIMEOUT',
+                    'Tempo esgotado ao aguardar o carregamento de twebchannel.js.'
+                );
+            }
+
+            function markConnected(channel) {
+                const notify = !connected;
+                connected = true;
+                lastError = null;
+                channel.gotConnection = true;
+                getEventTarget();
+                installReceiver(channel);
+                if (notify) {
+                    FWWebEx.Events.emit('FWWebEx:twebchannel:ready', {
+                        version: channel.version || null
+                    });
+                }
+                return channel;
+            }
+
+            function connect(options = {}) {
+                const timeout = Math.max(250, Number(options.timeout) || 5000);
+                const callerDeadline = Date.now() + timeout;
+                return load({ timeout, deadline: callerDeadline }).then(channel => {
+                    const forceReconnect = options.forceReconnect === true;
+                    getEventTarget();
+                    if (!forceReconnect && (connected || channel.gotConnection === true)) {
+                        return markConnected(channel);
+                    }
+                    if (connectPromise) {
+                        return withinDeadline(
+                            connectPromise,
+                            callerDeadline,
+                            'FWWEBEX_TWEBCHANNEL_CONNECT_TIMEOUT',
+                            'Tempo esgotado ao aguardar a conexao compartilhada.'
+                        );
+                    }
+                    if (forceReconnect) {
+                        connected = false;
+                        if (Object.prototype.hasOwnProperty.call(channel, 'gotConnection')) {
+                            channel.gotConnection = false;
+                        }
+                    }
+
+                    const pending = new Promise((resolve, reject) => {
+                        let settled = false;
+                        let poll = null;
+                        let timer = null;
+
+                        const cleanup = () => {
+                            document.removeEventListener('twebchannelready', ready);
+                            if (poll) clearInterval(poll);
+                            if (timer) clearTimeout(timer);
+                        };
+                        const ready = () => {
+                            if (settled) return;
+                            settled = true;
+                            cleanup();
+                            resolve(markConnected(channel));
+                        };
+                        const fail = error => {
+                            if (settled) return;
+                            settled = true;
+                            cleanup();
+                            lastError = error;
+                            reject(error);
+                        };
+
+                        const connectTimeout = Math.max(
+                            250,
+                            Number(FWWebEx.config?.twebchannel?.connectTimeout) || 5000
+                        );
+                        const remaining = connectTimeout;
+                        timer = setTimeout(() => fail(bridgeError(
+                            'FWWEBEX_TWEBCHANNEL_CONNECT_TIMEOUT',
+                            'O TWebChannel nao conectou ao Protheus dentro do prazo.'
+                        )), remaining);
+
+                        try {
+                            const preloaderIsConnecting =
+                                channel.gotConnection === false &&
+                                (
+                                    !!channel.channel?.port1 ||
+                                    (
+                                        Number(channel.internalPort) > 0 &&
+                                        channel.remoteType !== undefined &&
+                                        channel.remoteType !== null
+                                    )
+                                );
+                            if (preloaderIsConnecting && !forceReconnect) {
+                                // O preloader ja criou o transporte. Uma segunda
+                                // chamada a connect() substituiria o MessageChannel
+                                // em uso; apenas observamos a tentativa existente.
+                                document.addEventListener('twebchannelready', ready);
+                                poll = setInterval(() => {
+                                    if (channel.gotConnection === true) ready();
+                                }, 25);
+                            } else {
+                                channel.connect(ready);
+                            }
+                        } catch (error) {
+                            fail(bridgeError(
+                                'FWWEBEX_TWEBCHANNEL_CONNECT_FAILED',
+                                'Falha ao iniciar a conexao com o TWebChannel.',
+                                error
+                            ));
+                        }
+                    });
+
+                    const shared = pending.then(result => {
+                        if (connectPromise === shared) connectPromise = null;
+                        return result;
+                    }).catch(error => {
+                        if (connectPromise === shared) connectPromise = null;
+                        FWWebEx.Events.emit('FWWebEx:twebchannel:error', { error });
+                        throw error;
+                    });
+                    connectPromise = shared;
+
+                    return withinDeadline(
+                        connectPromise,
+                        callerDeadline,
+                        'FWWEBEX_TWEBCHANNEL_CONNECT_TIMEOUT',
+                        'Tempo esgotado ao aguardar a conexao compartilhada.'
+                    );
+                });
+            }
+
+            function send(key, value, options = {}) {
+                return connect(options).then(channel => {
+                    channel.jsToAdvpl(key, value);
+                    return true;
+                });
+            }
+
+            function getState() {
+                return {
+                    loaded: isProvider(getChannel()),
+                    connected: connected || getChannel()?.gotConnection === true,
+                    loading: !!loadPromise,
+                    connecting: !!connectPromise && !connected,
+                    source: getChannel()?.version || null,
+                    lastError
+                };
+            }
+
+            return {
+                load, connect, send, onAdvplToJs,
+                getChannel, getEventTarget, getState
+            };
 
         })();
 
@@ -1158,7 +1545,29 @@ static function FWWebExScripts() as character
         **********************************************************************/
         FWWebEx.RequestHandler = (() => {
             let _debug = true;
+            const queues = new Map();
             const log = (...args) => _debug && console.log('[FWWebEx]', ...args);
+
+            function requestError(code, message, cause) {
+                const error = new Error(message);
+                error.name = 'FWWebExTWebChannelError';
+                error.code = code;
+                if (cause) error.cause = cause;
+                return error;
+            }
+
+            function enqueue(callbackEvent, operation) {
+                const previous = queues.get(callbackEvent) || Promise.resolve();
+                const current = previous.catch(() => false).then(operation);
+                let tail = null;
+                tail = current.catch(() => false).finally(() => {
+                    if (queues.get(callbackEvent) === tail) {
+                        queues.delete(callbackEvent);
+                    }
+                });
+                queues.set(callbackEvent, tail);
+                return current;
+            }
 
             function startConnectingAnimation() {
                 const status = document.getElementById('fwwebex-connection-status');
@@ -1181,49 +1590,95 @@ static function FWWebExScripts() as character
             }
 
             function waitForConnection(maxRetries = 5, interval = 1000) {
-                return new Promise((resolve, reject) => {
-                    let attempts = 0;
-                    const check = () => {
-                        log('Verificando conexao, tentativa:', attempts + 1, 'twebchannel:', twebchannel);
-                        if (twebchannel?.gotConnection) resolve(true);
-                        else if (++attempts >= maxRetries) reject(new Error('WebSocket/MessageChannel nao conectado.'));
-                        else setTimeout(check, interval);
-                    };
-                    check();
-                });
+                const timeout = Math.max(1, Number(maxRetries) || 1) *
+                    Math.max(1, Number(interval) || 1);
+                log('Aguardando TWebChannel pelo bridge FWWebEx:', { timeout });
+                return FWWebEx.TWebChannel.connect({ timeout }).then(() => true);
             }
 
-            function execute({ requestData, callbackEvent = 'CALLBACK_DATA_RESPONSE', execEvent = 'CALLBACK_EXEC', maxRetries = 5, interval = 1000, onResponse, onError }) {
-                const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                const stopAnimation = startConnectingAnimation();
-                const handleResponse = (event) => {
-                    log('Evento recebido:', event);
-                    const data = event.detail ?? event.protheusResponse;
-                    if (!data) {
-                        log('Evento sem payload esperado ? ignorado');
-                        return;
-                    }
-                    try {
-                        onResponse?.(data);
-                    } catch (err) {
-                        console.error('[FWWebEx] Erro no onResponse:', err);
-                        onError?.(err);
-                    } finally {
-                        stopAnimation();
-                        twebchannel.eventTarget.removeEventListener(callbackEvent, handleResponse);
-                    }
-                };
+            function execute({
+                requestData,
+                callbackEvent = 'CALLBACK_DATA_RESPONSE',
+                execEvent = 'CALLBACK_EXEC',
+                maxRetries = 5,
+                interval = 1000,
+                responseTimeout = 30000,
+                onResponse,
+                onError
+            } = {}) {
+                return enqueue(callbackEvent, () => {
+                    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    const connectionTimeout = Math.max(1, Number(maxRetries) || 1) *
+                        Math.max(1, Number(interval) || 1);
+                    const responseDeadline = Math.max(
+                        250,
+                        Number(responseTimeout) || 30000
+                    );
+                    const stopAnimation = startConnectingAnimation();
 
-                waitForConnection(maxRetries, interval)
-                    .then(() => {
-                        twebchannel.eventTarget.addEventListener(callbackEvent, handleResponse);
-                        twebchannel.jsToAdvpl(execEvent, JSON.stringify({ ...requestData, requestId }));
-                    })
-                    .catch(err => {
-                        stopAnimation();
-                        console.error('[FWWebEx] Erro de conexao:', err);
-                        onError?.(err);
+                    return new Promise(resolve => {
+                        let responseTarget = null;
+                        let responseTimer = null;
+                        let settled = false;
+
+                        const cleanup = () => {
+                            if (responseTimer) clearTimeout(responseTimer);
+                            responseTarget?.removeEventListener(callbackEvent, handleResponse);
+                            stopAnimation();
+                        };
+                        const notifyError = error => {
+                            console.error('[FWWebEx] Erro no request:', error);
+                            try {
+                                onError?.(error);
+                            } catch (callbackError) {
+                                console.error('[FWWebEx] Erro no onError:', callbackError);
+                            }
+                        };
+                        const fail = error => {
+                            if (settled) return;
+                            settled = true;
+                            cleanup();
+                            notifyError(error);
+                            resolve(false);
+                        };
+                        const handleResponse = event => {
+                            if (settled) return;
+                            log('Evento recebido:', event);
+                            const data = event.detail ?? event.protheusResponse;
+                            if (data === undefined || data === null) {
+                                log('Evento sem payload esperado - ignorado');
+                                return;
+                            }
+                            settled = true;
+                            cleanup();
+                            try {
+                                onResponse?.(data);
+                                resolve(true);
+                            } catch (error) {
+                                notifyError(error);
+                                resolve(false);
+                            }
+                        };
+
+                        waitForConnection(maxRetries, interval)
+                            .then(() => {
+                                if (settled) return false;
+                                responseTarget = FWWebEx.TWebChannel.getEventTarget();
+                                responseTarget.addEventListener(callbackEvent, handleResponse);
+                                responseTimer = setTimeout(() => fail(requestError(
+                                    'FWWEBEX_TWEBCHANNEL_RESPONSE_TIMEOUT',
+                                    'O Protheus nao respondeu ao request ' + requestId +
+                                        ' dentro do prazo.'
+                                )), responseDeadline);
+                                return FWWebEx.TWebChannel.send(
+                                    execEvent,
+                                    JSON.stringify({ ...requestData, requestId }),
+                                    { timeout: connectionTimeout }
+                                );
+                            })
+                            .catch(error => fail(error));
                     });
+                });
             }
 
             function debug(flag = true) { _debug = !!flag; }
@@ -1829,5 +2284,10 @@ static function FWWebExScripts() as character
             FWWebEx.init();
         });
     endContent
+
+    cPageScript:=WebExHelper():StrReplace(;
+        cPageScript;
+        ,{"__FWWEBEX_TWEBCHANNEL_PLATFORM_SOURCE__":cTWebChannelURI};
+    )
 
 return(cPageScript)
