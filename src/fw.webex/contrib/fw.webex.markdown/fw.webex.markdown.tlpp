@@ -614,27 +614,24 @@ return(::cOutput)
 // ------------------------------------------------------
 method Save(cFile) class FWMarkDown
 
-    local cSPDrive as character
-    local cSPPath as character
-    local cSPFile as character
-    local cSPExt as character
     local cDirMake as character
 
     local cOutput as character
+
+    local jSplitPath as json
 
     local lSaveOK as logical
 
     paramtype 1 var cFile as character
 
-    SplitPath(cFile,@cSPDrive,@cSPPath,@cSPFile,@cSPExt)
-
-    cDirMake:=cSPDrive
-    cDirMake+=cSPPath
-
-    lSaveOK:=lIsDir(cDirMake)
-    if (!lSaveOK)
-        lSaveOK:=FWMakeDir(cSPPath)
-    endif
+    jSplitPath:=WebFileTools():SplitPath(cFile)
+        cDirMake:=jSplitPath["drive"]
+        cDirMake+=jSplitPath["path"]
+        lSaveOK:=lIsDir(cDirMake)
+        if (!lSaveOK)
+            lSaveOK:=FWMakeDir(jSplitPath["path"])
+        endif
+    FreeObj(@jSplitPath)
 
     cOutput:=::BuildOutPut()
 

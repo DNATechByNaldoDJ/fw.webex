@@ -242,19 +242,23 @@ static procedure FWWebExExample_020(cHTML as character) as character
             });
 
             // Definir advplToJs dentro do DOMContentLoaded, mas fora do ajax
-            twebchannel = window.twebchannel || {};
-            twebchannel.advplToJs = function (codeType, codeContent, objectName) {
+            FWWebEx.TWebChannel.onAdvplToJs(function (codeType, codeContent, objectName) {
                 if (codeType === 'CALLBACK_RESPONSE') {
                     try {
                         const response = JSON.parse(codeContent);
-                        twebchannel.eventTarget.dispatchEvent(new CustomEvent('CALLBACK_DATA_RESPONSE', { detail: response }));
+                        FWWebEx.TWebChannel.getEventTarget().dispatchEvent(
+                            new CustomEvent('CALLBACK_DATA_RESPONSE', { detail: response })
+                        );
+                        return true;
                     } catch (err) {
                         console.error('[FWWebEx] Erro ao interpretar resposta:', err);
+                        return false;
                     }
                 } else {
                     console.warn('[FWWebEx] Tipo inesperado:', codeType);
+                    return false;
                 }
-            };
+            });
 
         });
 

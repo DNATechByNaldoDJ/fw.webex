@@ -67,11 +67,6 @@ static method GetMimeType(cFile) class WebApp
 
     static __jMimeType:=JSONObject():New() as json
 
-    local cSPPDrive as character
-    local cSPPPath as character
-    local cSPPFile as character
-    local cSPPExt as character
-
     local cMimeType as character
 
     if (Empty(__jMimeType:GetNames()))
@@ -109,8 +104,7 @@ static method GetMimeType(cFile) class WebApp
         __jMimeType[".zip"]:="application/zip"
     endif
 
-    SplitPath(cFile,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-    cSPPExt:=Lower(cSPPExt)
+    cSPPExt:=Lower(WebFileTools():SplitPath(cFile)["ext"])
     if (__jMimeType:HasProperty(cSPPExt))
         cMimeType:=__jMimeType[cSPPExt]
     else

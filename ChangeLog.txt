@@ -2,8 +2,50 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add FWWEBEX block commands and update examples)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add TWebChannel bridge and tests)"
  */
+
+2026-08-21 14:50 UTC naldodj (Add TWebChannel bridge and tests)
+  Introduce FWWebEx.TWebChannel: lazy-loads twebchannel.js (config -> platform -> CDN), serializes load/connect, exposes a stable EventTarget, typed errors and forceReconnect.
+  Route FWWebEx.RequestHandler through the bridge, serialize requests by callbackEvent and add a 30s default response timeout with deterministic cleanup.
+  Remove unconditional injection of totvstec.js/fwprotheus.js. Add 21 isolated bridge/RequestHandler tests and docs (README, example 023), update examples 018/020/023 to use the bridge, correct appserver.ini section naming, add WebFileTools:SplitPath and refactor path helpers.
+  Minor SBAdmin and label tweaks.
+    + src/fw.webex/core/tests/README.md
+    + src/fw.webex/core/tests/twebchannel-bridge.test.mjs
+    * README.md
+    * src/fw.webex/contrib/fw.webex.labels/fw.webex.labels.tlpp
+    * src/fw.webex/contrib/fw.webex.markdown/fw.webex.markdown.tlpp
+    * src/fw.webex/contrib/fw.webex.sbadmin/tools/fw.webex.sbadmin.tools.tlpp
+    * src/fw.webex/core/component/fw.webex.page.tlpp
+    * src/fw.webex/core/tools/fw.webex.file.tools.tlpp
+    * src/fw.webex/core/tools/fw.webex.webapp.tools.tlpp
+    * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.tools.tlpp
+    * TODO.md
+    * ChangeLog.txt
+    * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+    * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+    * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+    * src/fw.webex/tests/fw.webex.examples/023/README.md
+
+2026-08-20 22:08 UTC naldodj (Fix TWebChannel ownership and lazy loading)
+  Fix the JavaScript-to-ADVPL bridge when a FWWebEx document runs inside the WebApp iframe.
+      Remove any FWWebEx dependency on or injection of totvstec.js and fwprotheus.js; any use of those scripts remains internal to the Protheus platform.
+      Add FWWebEx.TWebChannel to reuse a provider visible in the current document or load only twebchannel.js on demand, with configured, platform and pinned-CDN sources.
+      Serialize load/connect operations, expose typed errors and diagnostic state, and provide forceReconnect as an explicit stale-channel recovery mechanism.
+      Preserve the platform's previous advplToJs receiver: FWWebEx receivers return true only for handled messages and return false to delegate.
+      Route FWWebEx.RequestHandler through the bridge, serialize calls by callbackEvent and add a 30-second default response timeout with deterministic cleanup and FWWEBEX_TWEBCHANNEL_RESPONSE_TIMEOUT.
+      Update examples 018, 020 and 023 to register their ADVPL receivers through the stable bridge EventTarget and explicit handled/delegated return contract; document configuration and diagnostics in example 023.
+      Correct the appserver.ini documentation to use [FWWEBEX_<GetEnvServer()>]; the former generic [FWWEBEX] example left AppRootURI and authentication settings empty, causing the normalized root path to point the platform twebchannel.js lookup at a likely 404.
+      Add 21 isolated bridge and RequestHandler contract tests with a network-free DOM harness, covering shared/individual deadlines, receiver delegation, reconnection, response serialization, cleanup and timeout.
+        * src/fw.webex/core/component/fw.webex.page.tlpp
+        + src/fw.webex/core/tests/twebchannel-bridge.test.mjs
+        + src/fw.webex/core/tests/README.md
+        * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+        * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+        * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+        * src/fw.webex/tests/fw.webex.examples/023/README.md
+        * README.md
+        * TODO.md
 
 2026-08-16 15:16 UTC naldodj (Add FWWEBEX block commands and update examples)
     Add FWWEBEX block commands and update examples

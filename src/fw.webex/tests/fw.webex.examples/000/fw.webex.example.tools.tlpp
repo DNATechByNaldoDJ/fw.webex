@@ -151,10 +151,7 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
     local cHTMLFileServer as character
     local cHTMLFileNavigate as character
 
-    local cSPPDrive as character
-    local cSPPPath as character
-    local cSPPFile as character
-    local cSPPExt as character
+    local jSplitPath as json
 
     local lAbrir as logical
     local lTWebChannel as logical
@@ -181,6 +178,31 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
 
     begin sequence
 
+        if (!lTWebChannel)
+            oTWebChannel:=TWebChannel():New()
+            oTWebChannel:Connect()
+        endif
+
+        if (!oTWebChannel:lConnected)
+            oTWebChannel:Connect()
+            if (!oTWebChannel:lConnected)
+                ApMsgInfo("Falha ao Conectar ao WebSocket",ProcName())
+                break
+            endif
+        endif
+
+        if (ValType(bJSToAdvPL)=="B")
+            oTWebChannel:bJSToAdvPL:=bJSToAdvPL
+        endif
+
+        if (ValType(bCallBack)=="B")
+            oTWebChannel:bSetGet:=bCallBack
+        endif
+
+        if (ValType(cCallBackActRet)=="C")
+            oTWebChannel:cMSG:=cCallBackActRet
+        endif
+
         aButtons:=array(0)
         aAdd(aButtons,{"&Print",{||oTWebEngine:Print()},OemToAnsi("Print"),OemtoAnsi("Print")})
         aAdd(aButtons,{"Print PD&F",{||oTWebEngine:PrintPDF()},OemToAnsi("Print PDF"),OemtoAnsi("Print PDF")})
@@ -202,11 +224,12 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 end sequence
                 ErrorBlock(bErrorBlock)
                 if ((Empty(cHTMLFileNavigate)).and.(lIsDir(FWWEBEX_WEB_TMP_PATH)))
-                    splitPath(cHTMLFile,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-                    cHTMLFileServer:=FWWEBEX_WEB_TMP_PATH
-                    cHTMLFileServer+=cSPPFile
-                    cHTMLFileServer+=cSPPExt
-                    cHTMLFileNavigate:=cHTMLFileServer
+                    jSplitPath:=WebFileTools():SplitPath(cHTMLFile)
+                        cHTMLFileServer:=FWWEBEX_WEB_TMP_PATH
+                        cHTMLFileServer+=jSplitPath["file"]
+                        cHTMLFileServer+=jSplitPath["ext"]
+                        cHTMLFileNavigate:=cHTMLFileServer
+                    FreeObj(@jSplitPath)
                     bErrorBlock:=ErrorBlock({|oError|Break(oError)})
                     begin sequence
                         //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
@@ -221,10 +244,11 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                     end sequence
                     ErrorBlock(bErrorBlock)
                 endif
-                splitPath(cHTMLFile,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-                cHTMLFileTmpFile:=GetTempPath()
-                cHTMLFileTmpFile+=cSPPFile
-                cHTMLFileTmpFile+=cSPPExt
+                jSplitPath:=WebFileTools():SplitPath(cHTMLFile)
+                    cHTMLFileTmpFile:=GetTempPath()
+                    cHTMLFileTmpFile+=jSplitPath["file"]
+                    cHTMLFileTmpFile+=jSplitPath["ext"]
+                FreeObj(@jSplitPath)
                 WebFileTools():CopyFile(cHTMLFile,cHTMLFileTmpFile)
                 aAdd(aButtons,{"&Abrir",{||ShellExecute("open",cHTMLFileTmpFile,"","",SW_SHOWMAXIMIZED)},OemToAnsi("Abir"),OemtoAnsi("Abir")})
                 aAdd(aButtons,{"Go&Back",{||oTWebEngine:GoBack()},OemToAnsi("Go Back"),OemtoAnsi("Go Back")})
@@ -274,31 +298,6 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 if (lRedefineBottom)
                     nBottom-=25
                 endif
-            endif
-
-            if (!lTWebChannel)
-                oTWebChannel:=TWebChannel():New()
-                oTWebChannel:Connect()
-            endif
-
-            if (!oTWebChannel:lConnected)
-                oTWebChannel:Connect()
-                if (!oTWebChannel:lConnected)
-                    ApMsgInfo("Falha ao Conectar ao WebSocket",ProcName())
-                    break
-                endif
-            endif
-
-            if (ValType(bJSToAdvPL)=="B")
-                oTWebChannel:bJSToAdvPL:=bJSToAdvPL
-            endif
-
-            if (ValType(bCallBack)=="B")
-                oTWebChannel:bSetGet:=bCallBack
-            endif
-
-            if (ValType(cCallBackActRet)=="C")
-                oTWebChannel:cMSG:=cCallBackActRet
             endif
 
             oTWebEngine:=TWebEngine():New(oDlg,nTop,nLeft,nRight,nBottom,/*cURL*/,oTWebChannel:nPort)

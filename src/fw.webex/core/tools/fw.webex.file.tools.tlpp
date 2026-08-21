@@ -19,6 +19,7 @@ class WebFileTools
     static method HTMLAssetsToFile(cAssetID as character,cAssetType as character,cAssetContent as character,cAssetFilePath as character,/*<@>*/cExternalAssetsPath,/*<@>*/cLocalAssetsFilePath) as logical
     static method ObliterateFWWebExTmpFiles(lNoMercy as logical) as logical
     static method CopyFile(cFileSource as character,cFileTarget as character) as logical
+    static method SplitPath(cPathFile as character) as json
 end class
 
 static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLContent,lEncodeUTF8) class WebFileTools
@@ -28,10 +29,7 @@ static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLC
     local cClassName as character
     local cHTMLContentUF8 as character
 
-    local cSPPDrive as character
-    local cSPPPath as character
-    local cSPPFile as character
-    local cSPPExt as character
+    local jSplitPath as json
 
     local lHTMLFromControl as logical
 
@@ -83,20 +81,21 @@ static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLC
     if (lHTMLFromControl)
 
         cHTMLFileName:=(cHTMLFilePath+Lower(cHTMLFileName))
-        SplitPath(cHTMLFileName,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-        cHTMLFileName:=cSPPDrive
-        cHTMLFileName+=cSPPPath
-        if (!cFixedID$cSPPFile)
-            cHTMLFileName+=cSPPFile
-            cHTMLFileName+="."+cFixedID
-        else
-            cHTMLFileName+=cSPPFile
-        endif
-        cHTMLFileName+="."
-        cHTMLFileName+=UUIDRandomSeq()
-        if ((Empty(cSPPExt).or.(!(cSPPExt==".html"))))
-            cHTMLFileName+=".html"
-        endif
+        jSplitPath:=WebFileTools():SplitPath(cHTMLFileName)
+            cHTMLFileName:=jSplitPath["drive"]
+            cHTMLFileName+=jSplitPath["path"]
+            if (!cFixedID$jSplitPath["file"])
+                cHTMLFileName+=jSplitPath["file"]
+                cHTMLFileName+="."+cFixedID
+            else
+                cHTMLFileName+=jSplitPath["file"]
+            endif
+            cHTMLFileName+="."
+            cHTMLFileName+=UUIDRandomSeq()
+            if ((Empty(jSplitPath["ext"]).or.(!(jSplitPath["ext"]==".html"))))
+                cHTMLFileName+=".html"
+            endif
+        FreeObj(@jSplitPath)
 
         cHTMLFileName:=Lower(cHTMLFileName)
         lHTMLFromControl:=MemoWrite(cHTMLFileName,cHTMLContent)
@@ -320,11 +319,6 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
 
     local bErrorBlock as codeblock
 
-    local cSPPDrive as character
-    local cSPPPath as character
-    local cSPPFile as character
-    local cSPPExt as character
-
     local cHTMLAssetFileName as character
     local cHTMLAssetFileNameServer as character
 
@@ -373,27 +367,32 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
 
         bErrorBlock:=ErrorBlock({|oError|Break(oError)})
         begin sequence
+            //https://tdn.totvs.com/display/tec/CpyF2Web
             //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
             cExternalAssetsFilePath:=CpyF2Web(cHTMLAssetFileName,.T.,.T.,.F.,.F.)
         recover
             begin sequence
+                //https://tdn.totvs.com/display/tec/CpyF2Web
                 //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
                 cExternalAssetsFilePath:=CpyF2Web(cHTMLAssetFileName,.F.,.T.,.F.,.F.)
             end sequence
         end sequence
         ErrorBlock(bErrorBlock)
         if ((Empty(cExternalAssetsFilePath)).and.(lIsDir(cAssetPath)))
-            splitPath(cHTMLAssetFileName,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-            cHTMLAssetFileNameServer:=cAssetPath
-            cHTMLAssetFileNameServer+=cSPPFile
-            cHTMLAssetFileNameServer+=cSPPExt
+            jSplitPath:=WebFileTools():SplitPath(cHTMLAssetFileName)
+                cHTMLAssetFileNameServer:=cAssetPath
+                cHTMLAssetFileNameServer+=jSplitPath["path"]
+                cHTMLAssetFileNameServer+=jSplitPath["ext"]
+            FreeObj(jSplitPath)
             cExternalAssetsFilePath:=cHTMLAssetFileNameServer
             bErrorBlock:=ErrorBlock({|oError|Break(oError)})
             begin sequence
+                //https://tdn.totvs.com/display/tec/CpyF2Web
                 //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
                 cExternalAssetsFilePath:=CpyF2Web(cExternalAssetsFilePath,.T.,.T.,.F.,.F.)
             recover
                 begin sequence
+                    //https://tdn.totvs.com/display/tec/CpyF2Web
                     //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
                     cExternalAssetsFilePath:=CpyF2Web(cExternalAssetsFilePath,.F.,.T.,.F.,.F.)
                 recover
@@ -402,10 +401,12 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
             end sequence
             ErrorBlock(bErrorBlock)
         endif
-        splitPath(cHTMLAssetFileName,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-        cLocalAssetsFilePath:=GetTempPath()
-        cLocalAssetsFilePath+=cSPPFile
-        cLocalAssetsFilePath+=cSPPExt
+
+        jSplitPath:=WebFileTools():SplitPath(cHTMLAssetFileName)
+            cLocalAssetsFilePath:=GetTempPath()
+            cLocalAssetsFilePath+=jSplitPath["file"]
+            cLocalAssetsFilePath+=jSplitPath["ext"]
+        FreeObj(@jSplitPath)
 
         lHTMLAssetsToFile:=WebFileTools():CopyFile(cHTMLAssetFileName,cLocalAssetsFilePath)
         if (!lHTMLAssetsToFile)
@@ -414,10 +415,11 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
 
         lHTMLAssetsToFile:=(!Empty(cExternalAssetsFilePath).and.(File(cLocalAssetsFilePath)))
         if (lHTMLAssetsToFile)
-            splitPath(cHTMLAssetFileName,@cSPPDrive,@cSPPPath,@cSPPFile,@cSPPExt)
-            cLocalAssetsFilePath:=cSPPFile
-            cLocalAssetsFilePath+=cSPPExt
-            cExternalAssetsFilePath:=cLocalAssetsFilePath
+            jSplitPath:=WebFileTools():SplitPath(cHTMLAssetFileName)
+                cLocalAssetsFilePath:=jSplitPath["file"]
+                cLocalAssetsFilePath+=jSplitPath["ext"]
+                cExternalAssetsFilePath:=cLocalAssetsFilePath
+            FreeObj(@jSplitPath)
         endif
 
     end sequence
@@ -439,3 +441,9 @@ static method CopyFile(cFileSource,cFileTarget) class WebFileTools
     paramtype 2 var cFileTarget as character
     lCopyFile:=&cEvalCopy.(cFileSource,cFileTarget)
 return(lCopyFile)
+
+static method SplitPath(cPathFile) class WebFileTools
+    local jSplitPath:={"drive":"","path":"","file":"","ext":""} as json
+    paramtype 1 var cPathFile as character
+    SplitPath(cPathFile,@jSplitPath["drive"],@jSplitPath["path"],@jSplitPath["file"],@jSplitPath["ext"])
+return(jSplitPath)

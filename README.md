@@ -207,11 +207,16 @@ return(cHTMLFile)
   - (quando `WebExFeaturePDFJS` é habilitada) PDF.js 3.11.174
   - (quando `WebExFeatureExifReader` é habilitada) ExifReader 4.42.0
   - (quando Labels é habilitado) JsBarcode 3.11.6
+  - (quando há comunicação JavaScript -> ADVPL) `@totvs/twebchannel-js`
+    1.0.3, carregado sob demanda pelo bridge `FWWebEx.TWebChannel`
   - (opcional, para HTML -> PDF) html2canvas 1.4.1 e DOMPurify 3.4.7
 
-As dependências externas possuem versões fixadas e são carregadas atualmente por
-`cdn.jsdelivr.net`. Fallback local, SRI e modo offline estão acompanhados pelo
-item `NX-017`.
+As bibliotecas encapsuladas pelas features acima e o TWebChannel usam versões
+fixadas nos respectivos fontes. Bootstrap e PO UI seguem os assets e a
+configuração da página/tema e não estão abrangidos por essa garantia. O
+TWebChannel prioriza a origem configurada e o asset da própria plataforma antes
+do CDN. Fallback local, SRI e modo offline estão acompanhados pelo item
+`NX-017`.
 
 ---
 
@@ -256,6 +261,121 @@ FWWebEx.ready(function(state, FWWebEx) {
 ```
 
 O exemplo `u_FWWebExExample_027()` demonstra `FWWebEx.init(config)`, `FWWebEx.ready(fn)`, hooks e actions declarativas.
+
+---
+
+## 🔌 Comunicação com ADVPL via TWebChannel
+
+O HTML gerado pelo FWWebEx é exibido pelo WebApp em um `iframe`. Mesmo que o
+TWebEngine já tenha preparado o TWebChannel no documento pai, objetos
+JavaScript não são compartilhados automaticamente com o documento filho.
+Por isso, a presença dos scripts no WebApp não garante que
+`window.twebchannel` exista dentro da página FWWebEx.
+
+`FWWebEx.TWebChannel` resolve essa fronteira sem copiar o bootstrap privado da
+plataforma:
+
+1. reutiliza `window.twebchannel` quando um provider compatível já existe no
+   documento atual;
+2. caso contrário, carrega somente `twebchannel.js`, sob demanda e uma única
+   vez;
+3. tenta, nesta ordem, `FWWebEx.config.twebchannel.src`, o asset publicado pelo
+   ambiente Protheus e a versão fixada no CDN;
+4. serializa `load()`/`connect()` e expõe um `EventTarget` estável para as
+   respostas ADVPL.
+
+O FWWebEx não depende nem injeta `totvstec.js` ou `fwprotheus.js`. Eventual uso
+desses arquivos é interno ao WebApp/TWebEngine e não constitui a API do
+documento FWWebEx.
+
+Para uma instalação sem acesso ao CDN, indique uma cópia confiável do script
+antes da primeira conexão:
+
+```javascript
+FWWebEx.config = FWWebEx.config || {};
+FWWebEx.config.twebchannel = {
+    src: '/webapp/meus-assets/twebchannel.js',
+    loadTimeout: 5000,
+    connectTimeout: 5000
+};
+```
+
+`loadTimeout` e `connectTimeout` são os budgets internos das operações
+compartilhadas de carga e conexão; ambos usam 5 segundos por padrão. Eles são
+distintos de `timeout` passado a `load()`, `connect()` ou `send()`, que limita a
+espera daquele consumidor. Assim, um consumidor com prazo curto pode expirar
+sem cancelar a tentativa compartilhada que ainda atende outros consumidores.
+
+Uso recomendado:
+
+```javascript
+FWWebEx.TWebChannel.onAdvplToJs(function (codeType, codeContent) {
+    if (codeType !== 'CALLBACK_RESPONSE') {
+        return false; // delega a mensagem ao receptor anterior da plataforma
+    }
+    console.debug('Resposta ADVPL:', codeType, codeContent);
+    return true; // declara que este receptor tratou a mensagem
+});
+
+FWWebEx.TWebChannel.send('CALLBACK_EXEC', JSON.stringify({ action: 'teste' }))
+    .catch(function (error) {
+        console.error(error.code, error.message);
+    });
+```
+
+O retorno do receptor faz parte do contrato: retorne `true` somente quando a
+mensagem tiver sido tratada. `false` (ou qualquer valor diferente de `true`)
+preserva a delegação ao `advplToJs` que já existia no provider da plataforma.
+
+Para chamadas com resposta, prefira `FWWebEx.RequestHandler`:
+
+```javascript
+FWWebEx.RequestHandler.execute({
+    requestData: { action: 'teste' },
+    execEvent: 'CALLBACK_EXEC',
+    callbackEvent: 'CALLBACK_DATA_RESPONSE',
+    responseTimeout: 30000,
+    onResponse: function (data) {
+        console.log(data);
+    },
+    onError: function (error) {
+        console.error(error.code, error.message);
+    }
+});
+```
+
+Requisições que usam o mesmo `callbackEvent` são serializadas para impedir que
+uma resposta seja entregue ao consumidor errado; eventos de resposta distintos
+podem continuar em paralelo. `responseTimeout` tem padrão de 30 segundos. Ao
+receber resposta, falhar ou expirar, o handler remove listener, timer e estado
+de espera. A expiração é informada como
+`FWWEBEX_TWEBCHANNEL_RESPONSE_TIMEOUT`.
+
+`forceReconnect` é uma recuperação explícita para um canal comprovadamente
+obsoleto, e não deve ser usado em toda chamada:
+
+```javascript
+FWWebEx.TWebChannel.connect({ timeout: 5000, forceReconnect: true });
+```
+
+Sem essa opção, o bridge preserva a conexão existente ou aguarda o transporte
+que o preloader da plataforma já estiver estabelecendo.
+
+Para diagnóstico no console do frame FWWebEx:
+
+```javascript
+window.twebchannel                         // provider efetivamente visível
+FWWebEx.TWebChannel.getState()             // load, conexão e último erro
+document.querySelectorAll(
+    'script[data-fwwebex-twebchannel]'
+)                                          // fontes tentadas/injetadas
+```
+
+Os eventos `FWWebEx:twebchannel:ready` e `FWWebEx:twebchannel:error` permitem
+instrumentar a conexão. Os códigos de erro distinguem falha de download,
+provider incompatível, dependência ausente, falha de conexão e timeout.
+O [exemplo 023](src/fw.webex/tests/fw.webex.examples/023/README.md) demonstra o
+fluxo completo com `FWWebEx.RequestHandler`.
 
 ---
 
@@ -360,12 +480,14 @@ Utilizamos padrão Harbour: [How to Participate](https://github.com/naldodj/nald
 
 ---
 
-### ✅ Configuration: `[FWWEBEX]` Section in `appserver.ini`
+### ✅ Configuration: `[FWWEBEX_<ENVIRONMENT>]` Section in `appserver.ini`
 
-To enable integration with the FWWebEx REST services, make sure to include the following configuration in your `appserver.ini` file:
+To enable integration with the FWWebEx REST services, create a section whose
+suffix is the exact environment returned by `GetEnvServer()`. For example, when
+`GetEnvServer()` returns `PROTHEUS`, use `[FWWEBEX_PROTHEUS]`:
 
 ```ini
-[FWWEBEX]
+[FWWEBEX_PROTHEUS]
 RestURL=<e.g.:https://localhost:8091/app-root/>
 OAuth2URL=<e.g.:https://localhost:8091/rest/tlpp/oauth2/token>
 AppRootURI=<e.g.:https://localhost:8091/app-root/>
@@ -375,7 +497,14 @@ UserName=<e.g.:admin>
 Password=<e.g.:admin>
 ```
 
-⚠️ **Note:** The `AppRootURI` value is currently required as a manual setting. Ideally, this value should be automatically retrieved from the system. A future improvement may address this limitation.
+⚠️ **Note:** `WebApp():GetAPPRoot()` and the authorization helpers read
+`FWWEBEX_` + `GetEnvServer()`, not a generic `[FWWEBEX]` section. If the suffix
+does not match, `AppRootURI` and the credentials are read as empty. An empty
+`AppRootURI` is normalized to `/`; the TWebChannel bridge therefore still tries
+the environment asset at the site root, where it may return 404 before the
+bridge proceeds to its remaining configured/CDN sources. `AppRootURI` is
+currently a manual setting; its automatic discovery remains a future
+improvement.
 
 ---
 
