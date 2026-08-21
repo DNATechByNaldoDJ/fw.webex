@@ -2,8 +2,17 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add TWebChannel bridge and tests)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add CSP meta and modularize examples)"
  */
+
+2026-08-21 20:17 UTC naldodj (Add CSP meta and modularize examples)
+  Add a Content-Security-Policy <meta> in WebExPage.New that permits 'self', 'unsafe-inline', 'unsafe-eval', http(s), ws, data, file and worker-src/child-src with blob (needed e.g. for PDF.js workers).
+  Refactor example menu registration in fw.webex.example.000:
+    replace inline Tools entries with TLPPTools and TLPPGames procedures;
+      TLPPGames dynamically detects available TLPP game entry points and registers them.
+      Minor cleanup (array frees) included.
+        * src/fw.webex/core/component/fw.webex.page.tlpp
+        * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
 
 2026-08-21 14:50 UTC naldodj (Add TWebChannel bridge and tests)
   Introduce FWWebEx.TWebChannel: lazy-loads twebchannel.js (config -> platform -> CDN), serializes load/connect, exposes a stable EventTarget, typed errors and forceReconnect.

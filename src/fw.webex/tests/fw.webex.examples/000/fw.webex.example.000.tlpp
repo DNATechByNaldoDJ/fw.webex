@@ -73,9 +73,8 @@ static procedure FWWebExExample_000()
     local oFWDefSize as object
     local oWNDDefault as object
 
-    jExamples["Tools"]:=JSONObject():New()
-    jExamples["Tools"]["ArrayTools"]:=&("{||u_ArrayToolsSample()}")
-    jExamples["Tools"]["FlattenJSON"]:=&("{||u_FlattenJSONSample()}")
+    TLPPTools(@jExamples)
+    TLPPGames(@jExamples)
 
     jExamples["Forms"]:=JSONObject():New()
     jExamples["Tables"]:=JSONObject():New()
@@ -244,3 +243,44 @@ static function LoadMenu(oTDlg as object,jExamples as json) as object
     FWFreeArray(@aCategories)
 
 return(oTMenu)
+
+static procedure TLPPTools(jExamples)
+    jExamples["TLPPTools"]:=JSONObject():New()
+    jExamples["TLPPTools"]["ArrayTools"]:={||u_ArrayToolsSample()}
+    jExamples["TLPPTools"]["FlattenJSON"]:={||u_FlattenJSONSample()}
+return
+
+static procedure TLPPGames(jExamples as json)
+
+    local aTLPPGames:={;
+        {"GAME15.U_GAME15RUN","GAME15",{||GAME15.U_GAME15RUN()}};
+       ,{"SUDOKU.U_SUDOKURUN","SUDOKU",{||SUDOKU.U_SUDOKURUN()}};
+       ,{"SUDOKU.U_SUDOKURUNTESTS","SUDOKURUNTESTS",{||SUDOKU.U_SUDOKURUNTESTS()}};
+       ,{"SAPURECA.U_SAPURECARUN","SAPURECA",{||SAPURECA.U_SAPURECARUN()}};
+    }
+
+    local lTlppGame as logical
+
+    local nGame, nGames as numeric
+
+    nGames:=Len(aTLPPGames)
+    for nGame:=1 to nGames
+        lTlppGame:=FindFunction(aTLPPGames[nGame][1])
+        if (lTlppGame)
+            exit
+        endif
+    next nGame
+
+    if (lTlppGame)
+        jExamples["TLPPGames"]:=JSONObject():New()
+        for nGame:=1 to nGames
+            lTlppGame:=FindFunction(aTLPPGames[nGame][1])
+            if (lTlppGame)
+                jExamples["TLPPGames"][aTLPPGames[nGame][2]]:=aTLPPGames[nGame][3]
+            endif
+        next nGame
+    endif
+
+    FWFreeArray(@aTLPPGames)
+
+return
