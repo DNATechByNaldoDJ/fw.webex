@@ -97,20 +97,21 @@ method New(cPageTitle) class WebExPage
             /*
             * Content Security Policy (CSP)
             *
-            * Defines the security policy applied to resources loaded by the WebEx page.
+            * Defines the security policy applied to resources loaded or created
+            * by the WebEx page.
             *
             * Directives:
             *
             * default-src
-            *   Defines the default source policy for resource types that do not have
-            *   an explicit CSP directive.
+            *   Defines the default source policy for resource types that do not
+            *   have a more specific CSP directive.
             *
             *   'self'
             *     Allows resources from the same origin as the current document.
             *
             *   'unsafe-inline'
-            *     Allows inline JavaScript and CSS. Required by WebEx components that
-            *     generate or inject inline content dynamically.
+            *     Allows inline JavaScript and CSS. Required by WebEx components
+            *     that generate or inject inline content dynamically.
             *
             *   'unsafe-eval'
             *     Allows dynamic JavaScript evaluation (eval(), Function(), etc.).
@@ -140,26 +141,58 @@ method New(cPageTitle) class WebExPage
             *     This is required by libraries such as PDF.js, which may create
             *     its PDF processing worker using a blob: URL.
             *
-            * child-src 'self' blob:
-            *   Defines allowed sources for nested browsing contexts and workers
-            *   in browsers that use child-src as a fallback for worker creation.
+            * frame-src 'self' https: blob:
+            *   Defines the allowed sources for nested browsing contexts, such as
+            *   <frame> and <iframe> elements.
             *
-            *   This directive is kept for compatibility with environments/browsers
-            *   where worker-src support or fallback behavior may differ.
+            *   'self'
+            *     Allows frames loaded from the same origin.
             *
-            * NOTE:
+            *   https:
+            *     Allows frames loaded from HTTPS origins.
+            *
+            *   blob:
+            *     Allows frames whose content is provided through Blob URLs.
+            *     This is useful for dynamically generated or processed documents,
+            *     such as PDF content rendered or previewed by WebEx components.
+            *
+            *   NOTE:
+            *     frame-src does not control Web Workers. Worker creation is
+            *     explicitly controlled by the worker-src directive above.
+            *
+            * SECURITY NOTE:
             *   'unsafe-inline' and 'unsafe-eval' weaken CSP protection and should
             *   only be enabled when required by the application/framework.
             *
-            *   A CSP declared through a <meta http-equiv="Content-Security-Policy">
-            *   does not override a more restrictive Content-Security-Policy HTTP
-            *   response header. If both policies exist, both are enforced.
+            *   Allowing arbitrary HTTP/HTTPS origins in default-src also makes
+            *   this policy intentionally permissive. More restrictive directives
+            *   should be preferred whenever the required resource origins are
+            *   known in advance.
             *
-            * Required mainly to allow PDF.js Web Workers created through blob: URLs.
+            * CSP META NOTE:
+            *   A CSP declared through a
+            *   <meta http-equiv="Content-Security-Policy"> element does not
+            *   override a more restrictive Content-Security-Policy HTTP response
+            *   header. When multiple policies are present, they are enforced
+            *   together.
+            *
+            * CURRENT POLICY:
+            *
+            *   default-src 'self' 'unsafe-inline' 'unsafe-eval'
+            *               http: https: ws: data: file:;
+            *
+            *   worker-src  'self' blob:;
+            *
+            *   frame-src   'self' https: blob:;
+            *
             */
             WITH WEBEXOBJECT ::jObjectsContainer["Content-Security-Policy"] CLASS WebExMeta
                 .:SetAttr("http-equiv","Content-Security-Policy")
-                .:SetAttr("content","default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: ws: data: file:;worker-src 'self' blob:;child-src 'self' blob:;")
+                .:SetAttr("content";
+                       ,"default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: ws: data: file:;";
+                       +"worker-src 'self' blob:;";
+                       +"frame-src 'self' https: blob:;";
+                )
             END WEBEXOBJECT
             ***************************************************************************************************************************
             //Bootstrap CSS
