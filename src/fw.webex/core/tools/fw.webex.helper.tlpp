@@ -24,6 +24,8 @@ static CHR_CRLF:=(__cCHR13+__cCHR10) as character
 static CHR_HT:=CHR(9) as character
 static CHR_LF:=__cCHR10 as character
 
+static __cPrvtVarName:="000000000000000" as character
+
 static __jEmojis as json
 
 static __aAccentuation as array
@@ -50,6 +52,9 @@ class WebExHelper
     static method WebAccentuationToAscii(cString as character) as character
 
     static method JSONPrettify(cJSONstr as character,nPrettify as numeric) as character
+
+    static method EvaluateExpression(cEvalFunction as character,cPrvtVarName as character) as variant
+    static method MakeEvaluateExpression(cEvalFunction as character,aFormParam as array,/*@*/cPrvtVarName as character,cNamedPrvtcPrvtVarName as character) as character
 
 end class
 
@@ -926,3 +931,60 @@ static function FixJSONInShowHTMLJSON(cJSON) as character
     endif
 
 return(cJSON)
+
+static method EvaluateExpression(cEvalFunction,cPrvtVarName) class WebExHelper
+    local xRet as variant
+    paramtype 1 var cEvalFunction as character
+    paramtype 2 var cPrvtVarName as character
+    if (!Empty(cPrvtVarName).and.(Type(cPrvtVarName)=="A"))
+        xRet:=&(cEvalFunction)
+    endif
+return(xRet)
+
+static method MakeEvaluateExpression(cEvalFunction,aFormParam,cPrvtVarName,cNamedPrvt) class WebExHelper
+
+    local cClass as character
+
+    local nAT as numeric
+    local nParam as numeric
+    local nParams as numeric
+
+    paramtype 1 var cEvalFunction as character
+    paramtype 2 var aFormParam as array optional default {}
+    paramtype 3 var cPrvtVarName as character optional
+    paramtype 4 var cNamedPrvt as character optional
+
+    cPrvtVarName:="a"+(StrTran(cEvalFunction,".","_")+"_"+__Soma1(__cPrvtVarName))
+
+    if (!Empty(cEvalFunction))
+        if (!empty(cNamedPrvt))
+            _SetNamedPrvt(cPrvtVarName,aFormParam,cNamedPrvt)
+        else
+            _SetOwnerPrvt(cPrvtVarName,aFormParam)
+        endif
+        cEvalFunction:=StrTran(cEvalFunction," ","")
+        nAT:=AT("():",cEvalFunction)
+        if (nAT>0)
+            cClass:=SubStr(cEvalFunction,1,nAT+2)
+        else
+            cClass:=""
+        endif
+        cEvalFunction:=StrTran(cEvalFunction,cClass,"")
+        nParams:=Len(&cPrvtVarName)
+        if ((nAT:=RAT("(",cEvalFunction))>0)
+            cEvalFunction:=SubStr(cEvalFunction,1,nAT)
+        else
+            cEvalFunction+="("
+        endif
+        if (nParams>0)
+            for nParam:=1 to nParams
+                cEvalFunction+="@"+cPrvtVarName+"["+tlpp.ToStr(nParam)+"],"
+            next nParam
+            cEvalFunction:=SubStr(cEvalFunction,1,Len(cEvalFunction)-1)+")"
+        else
+            cEvalFunction+=")"
+        endif
+        cEvalFunction:=cClass+cEvalFunction
+    endif
+
+return(cEvalFunction)

@@ -1,0 +1,33 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+#IFNDEF _FW_WEB_EX_OBJECT_CONTEXT_TH
+
+    #DEFINE _FW_WEB_EX_OBJECT_CONTEXT_TH
+
+    #IFNDEF _PROTHEUS_CH
+        #IFNDEF _TOTVS_CH
+            #DEFINE _TOTVS_CH
+            #include "totvs.ch"
+        #ENDIF
+    #ENDIF
+
+    #xcommand WITH OBJECT [<obj>] => [<obj>:=] ObjectContext():ObjBegin([<obj>])
+    #xcommand WITH OBJECT [<obj>] CLASS <class> [TYPE <*type*>] => [<obj>:=] ObjectContext():ObjBegin(<class>():New([<(type)>]))
+    #xcommand WITH OBJECT [<obj>] CLASS <class> [<arg: ARG, ARGS> <Args,...>] => [<obj>:=] ObjectContext():ObjBegin(<class>():New([<Args>]))
+    #xcommand END OBJECT [<obj>][<free: FREE>] => ObjectContext():ObjEnd([<obj>],<.free.>)
+
+    #xcommand OBJECT CLEAN [<free: FREE>] => ObjectContext():ObjClean(<.free.>)
+
+    #xtranslate .self => (__oObjectContextObj__:=ObjectContext():ObjGet())
+    #xtranslate .:self => (__oObjectContextObj__:=ObjectContext():ObjGet())
+    #xtranslate .:self:<property_method> => (__oObjectContextObj__:=ObjectContext():ObjGet(),__oObjectContextObj__:<property_method>)
+
+#ENDIF

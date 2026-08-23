@@ -1,0 +1,72 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+static __aWithStack:=Array(0) as array
+static __aFreeStack:=Array(0) as array
+
+#include "totvs.ch"
+#include "parmtype.ch"
+
+class ObjectContext
+
+    static method ObjBegin(oObject as object) as object
+    static method ObjGet() as object
+    static method ObjEnd(oObj as object,lFree as logical) as object
+    static method ObjClean(lFree as logical) as variant
+
+end class
+
+method ObjBegin(oObject) class ObjectContext
+   paramtype 1 var oObject as object
+   aAdd(__aWithStack,oObject)
+   aAdd(__aFreeStack,oObject)
+return(oObject)
+
+method ObjGet() class ObjectContext
+    local nLen:=Len(__aWithStack) as numeric
+    local oObj as object
+    if (nLen>0)
+        oObj:=__aWithStack[nLen]
+    endif
+return(oObj)
+
+method ObjEnd(oObj,lFreeObj) class ObjectContext
+    local nLen:=Len(__aWithStack) as numeric
+    local oChild as object
+    local oParent as object
+    paramtype 1 var oObj as object optional
+    paramtype 2 var lFreeObj as logical optional default .F.
+    if ((nLen>0).and.(ValType(__aWithStack[nLen])=="O"))
+        oChild:=__aWithStack[nLen]
+        __aWithStack[nLen]:=nil
+        if ((lFreeObj).and.if((ValType(oObj)=="O").and.(oObj==oChild),.T.,.T.))
+            FreeObj(@oChild)
+        endif
+        aDel(__aWithStack,nLen)
+        aSize(__aWithStack,--nLen)
+        if (nLen>0)
+            oParent:=__aWithStack[nLen]
+        elseif (!lFreeObj)
+            oParent:=oChild
+        endif
+        oChild:=nil
+    endif
+return(oParent)
+
+static method ObjClean(lFreeObj) class ObjectContext
+    paramtype 1 var lFreeObj as logical optional default .F.
+    if (lFreeObj)
+        aEval(__aFreeStack,{|o|if(ValType(o)=="O",(o:Clean(),FreeObj(@o)),nil)})
+    endif
+    aSize(__aFreeStack,0)
+return

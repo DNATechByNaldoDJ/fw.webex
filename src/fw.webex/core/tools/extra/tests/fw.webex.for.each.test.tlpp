@@ -1,0 +1,267 @@
+#include "totvs.ch"
+#include "fw.webex.object.context.th"
+
+namespace FWWebEx
+using namespace FWWebEx
+
+procedure u_ForEachTst()
+
+    local cMsg as character
+    local cMsgItem as character
+    local cMsgItemDet:="" as character
+
+    local cCRLF:=CRLF as character
+    local cINIFile as character
+    local cForEachTst:="00" as character
+
+    local oTFINI as object
+    local oForEach as object
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+
+    WITH OBJECT ForEach():New({"a","b","c"},{|k,v,i|;
+         cMsgItem:=FormatMsgItem(.:self,"ARRAY",k,v,i);
+        ,cMsg+=cMsgItem+cCRLF;
+    },.T.)
+        .:self:Eval()
+    END OBJECT .:self FREE
+
+    ConOut(cMsg)
+    MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+    ConOut(Replicate("-",80))
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+
+    WITH OBJECT ForEach():New({"a":"a","b":"b","c":"c"},{|k,v,i|;
+         cMsgItem:=FormatMsgItem(.:self,"JSON",k,v,i);
+        ,cMsg+=cMsgItem+cCRLF;
+    })
+        .:self:Eval()
+    END OBJECT .:self FREE
+
+    ConOut(cMsg)
+    MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+    ConOut(Replicate("-",80))
+
+    WITH OBJECT THASHMAP():New()
+        .:self:Set("a","A")
+        .:self:Set("b","B")
+        .:self:Set("c","C")
+        .:self:Set("D","D")
+        cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+        cMsg+=Replicate("-",80)+cCRLF
+        WITH OBJECT ForEach():New(.:self,{|k,v,i|;
+             cMsgItem:=FormatMsgItem(.:self,"THASHMAP",k,v,i);
+            ,cMsg+=cMsgItem+cCRLF;
+        })
+            .:self:Eval()
+        END OBJECT .:self FREE
+    END OBJECT .:self FREE
+
+    ConOut(cMsg)
+    MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+    ConOut(Replicate("-",80))
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+
+    WITH OBJECT ForEach():New("ForEach",{|k,v,i|;
+         cMsgItem:=FormatMsgItem(.:self,"STRING",k,v,i);
+        ,cMsg+=cMsgItem+cCRLF;
+    })
+        .:self:Eval()
+    END OBJECT .:self FREE
+
+    ConOut(cMsg)
+    MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+    ConOut(Replicate("-",80))
+
+    if (FindClass("DNA.TECH.JSONARRAY"))
+        using namespace dna.tech
+        WITH OBJECT JSONARRAY():New()
+            .:self:Set("a","A")
+            .:self:Set("b","B")
+            .:self:Set("c","C")
+            .:self:Set("D","D")
+            cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+            cMsg+=Replicate("-",80)+cCRLF
+            WITH OBJECT ForEach():New(.:self,{|k,v,i|;
+                 cMsgItem:=FormatMsgItem(.:self,"JSONARRAY",k,v,i);
+                ,cMsg+=cMsgItem+cCRLF;
+            })
+                .:self:Eval()
+            END OBJECT .:self FREE
+        END OBJECT .:self FREE
+
+        ConOut(cMsg)
+        MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+        ConOut(Replicate("-",80))
+
+    endif
+
+    if (FindClass("DNA.TECH.TFINI"))
+
+        cINIFile:=MakeIniFileTst()
+        oTFINI:=DNA.TECH.TFINI():New(cINIFile,nil,/*"HASHMAP"*/)
+
+        cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+        cMsg+=Replicate("-",80)+cCRLF
+        oForEach:=ForEach():New(oTFINI:GetAllProperties("General"),{|k,v,i|;
+             cMsgItem:=FormatMsgItem(oForEach,"TFINI[General]",k,v,i);
+            ,cMsg+=cMsgItem+cCRLF;
+        })
+        oForEach:Eval()
+        FreeObj(@oForEach)
+
+        ConOut(cMsg)
+        MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+        ConOut(Replicate("-",80))
+
+        cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+        cMsg+=Replicate("-",80)+cCRLF
+        oForEach:=ForEach():New(oTFINI:GetAllProperties("General"),{|k,v,i|;
+             cMsgItem:=FormatMsgItem(oForEach,"TFINI[General]",k,oTFINI:GetPropertyValue("General",k,""),i);
+            ,cMsg+=cMsgItem+cCRLF;
+        })
+        oForEach:Eval()
+        FreeObj(@oForEach)
+
+        ConOut(cMsg)
+        MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+        ConOut(Replicate("-",80))
+
+        cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+        cMsg+=Replicate("-",80)+cCRLF
+        oTHash:=AToHM(oTFINI:GetAllProperties("General"))
+        oForEach:=ForEach():New(oTHash,{|k,v,i|;
+             cMsgItem:=FormatMsgItem(oForEach,"TFINI=>THASHMAP",k,v[1][2],i);
+            ,cMsg+=cMsgItem+cCRLF+cCRLF;
+        })
+        oForEach:Eval()
+        FreeObj(@oForEach)
+        FreeObj(@oTHash)
+
+        ConOut(cMsg)
+        MsgInfo(cMsg,"ForEach "+cForEachTst)
+
+        ConOut(Replicate("-",80))
+
+        cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+        cMsg+=Replicate("-",80)+cCRLF
+        oForEach:=ForEach():New(oTFINI,{|k,v,i|;
+             cMsgItem:=;
+                "TFINI :: Key: "+cValToChar(k);
+                +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex())+cCRLF;
+                +", Value: "+(ForEach():Evaluate(oTFINI:GetAllProperties(k),{|k,v,i|cMsgItemDet+=cCRLF+Space(4)+k+":"+v}),cMsgItemDet+cCRLF);
+                +", Index: "+tlpp.ToStr(i);
+            ;
+            ,cMsg+=cMsgItem+cCRLF;
+            ,cMsgItemDet:="";
+        })
+        oForEach:Eval()
+        FreeObj(@oForEach)
+
+        ConOut(cMsg)
+        EECView(cMsg,"ForEach "+cForEachTst)
+
+        ConOut(Replicate("-",80))
+
+        FreeObj(@oTFINI)
+
+    endif
+
+    ConOut(Replicate("-",80),"ForEach End","")
+
+return
+
+static function MakeIniFileTst() as character
+
+    local cINIFile as character
+    local cIniContent as character
+
+    beginContent var cIniContent
+[General]
+Application=FW.WebEx
+Version=1.0.0
+Environment=Development
+Debug=true
+Language=pt-BR
+
+[Database]
+Server=localhost
+Port=1433
+Database=FWWebEx
+User=sa
+Password=change_me
+Timeout=30
+Encrypted=false
+
+[Web]
+Host=127.0.0.1
+Port=8080
+Protocol=http
+BasePath=/fwwebex
+Compression=true
+
+[Features]
+ForEach=true
+Switch=true
+Labels=true
+PDF=true
+WebSocket=false
+
+[Paths]
+Temp=C:\Temp\FWWebEx
+Logs=C:\Logs\FWWebEx
+Resources=C:\FWWebEx\Resources
+Images=C:\FWWebEx\Images
+
+[Numbers]
+Integer=123
+Negative=-456
+Decimal=123.456
+Zero=0
+
+[EmptyValues]
+Empty=
+NullText=NULL
+NilText=NIL
+
+[SpecialCharacters]
+Text=FW.WebEx - AdvPL / TLPP
+Url=https://github.com/DNATechByNaldoDJ/fw.webex
+Expression=A=B+C
+Path=C:\Windows\System32
+
+[Section.One]
+Key01=Value01
+Key02=Value02
+Key03=Value03
+
+[Section.Two]
+Key01=AnotherValue01
+Key02=AnotherValue02
+Key03=AnotherValue03
+        endContent
+cIniContent:=WebExHelper():StrReplaceEx(cIniContent,{{CRLF,CHR(13),CHR(10)},"__CRLF__"},{"__CRLF__",CRLF})
+cINIFile:=GetTempPath()+"ForEachTstINI.ini"
+MemoWrite(cINIFile,cIniContent)
+
+return(cINIFile)
+
+static function FormatMsgItem(oForEach,cType,k,v,i) as character
+    local cMsgItem:=;
+        "<strong style='color:Green;'>"+cType+"</strong> :: Key: <strong style='color:Tomato;'>"+cValToChar(k)+"</strong>";
+        +", __enumIndex: <strong style='color:Tomato;'>"+tlpp.ToStr(oForEach:__enumIndex())+"</strong>";
+        +", Value: <strong style='color:Tomato;'>"+cValToChar(v)+"</strong>";
+        +", Index: <strong style='color:Tomato;'>"+tlpp.ToStr(i)+"</strong>" as character
+return(cMsgItem)

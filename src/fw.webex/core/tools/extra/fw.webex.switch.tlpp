@@ -1,0 +1,64 @@
+/*
+                _  _          _
+ ___ __      __(_)| |_   ___ | |__
+/ __|\ \ /\ / /| || __| / __|| '_ \
+\__ \ \ V  V / | || |_ | (__ | | | |
+|___/  \_/\_/  |_| \__| \___||_| |_|
+
+Switch - Emulation of switch/case logic for TL++
+
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "totvs.ch"
+#include "parmtype.ch"
+
+namespace FWWebEx
+
+class Switch from FWWebEx.ClassBase
+
+    private data xKey as variant
+    private data oHCases as object
+    private data bDefault as codeblock
+
+    public method New(xKey as variant) as object
+    public method AddCase(xMatch as variant,bAction as codeblock) as object
+    public method SetDefault(bDefault as codeblock) as object
+    public method Eval(xVariadic as variadic) as variant
+
+endclass
+
+method New(xKey) class Switch
+    _Super:New()
+   ::xKey:=xKey
+   ::oHCases:=THashMap():New()
+return self
+
+method AddCase(xMatch,bAction) class Switch
+    paramtype 2 var bAction as block
+    ::oHCases:Set(xMatch,bAction)
+return self
+
+method SetDefault(bDefault) class Switch
+    paramtype 1 var bDefault as block
+    ::bDefault:=bDefault
+return self
+
+function ___Switch____Eval(xVariadic as variadic) as variant
+    local aArgs as array
+    local bExec as codeblock
+    local cExec as character
+    local cPrvtVarName as character
+    local xRet as variant
+    if (!::oHCases:Get(::xKey,@bExec))
+        bExec:=::bDefault
+    endif
+    if (bExec!=nil)
+        aArgs:={bExec}
+        aEval(xVariadic:vArgs,{|x|aAdd(aArgs,x)})
+        cExec:=WebExHelper():MakeEvaluateExpression("Eval",@aArgs,@cPrvtVarName,ProcName())
+        aEval(aArgs,{|x as variant,y as numeric|if((y>1),xVariadic:vArgs[y-1]:=x,nil)})
+        xRet:=WebExHelper():EvaluateExpression(cExec,cPrvtVarName)
+    endif
+return(xRet)

@@ -1,0 +1,31 @@
+namespace FWWebEx
+using namespace FWWebEx
+
+procedure u_SwitchTst()
+
+    local cProcName:=ProcName() as character
+    local oSwitch as object
+
+    oSwitch:=Switch():New("B")
+    oSwitch:AddCase("A",{|cProcName| MsgInfo("&Eacute; A",cProcName) })
+    oSwitch:AddCase("B",{|cProcName| MsgInfo("&Eacute; B",cProcName) })
+    oSwitch:SetDefault({|cProcName| MsgInfo("Desconhecido",cProcName) })
+    oSwitch:Eval(cProcName)
+
+    FreeObj(@oSwitch)
+
+    oSwitch:=Switch():New("A")
+    oSwitch:AddCase("A",{|cProcName| MsgInfo("&Eacute; A",cProcName) })
+    oSwitch:AddCase("B",{|cProcName| MsgInfo("&Eacute; B",cProcName) })
+    oSwitch:SetDefault({|cProcName| MsgInfo("Desconhecido",cProcName) })
+    oSwitch:Eval(cProcName)
+
+    FreeObj(@oSwitch)
+
+    oSwitch:=Switch():New("A")
+    oSwitch:SetDefault({|cProcName| MsgInfo("Desconhecido",cProcName) })
+    oSwitch:Eval(cProcName)
+
+    FreeObj(@oSwitch)
+
+return
