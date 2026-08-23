@@ -14,6 +14,8 @@ Released to Public Domain.
 #include "totvs.ch"
 #include "parmtype.ch"
 
+namespace FWWebEx
+
 #IFNDEF _THASH_CH
 
     #DEFINE _THASH_CH
@@ -53,7 +55,7 @@ Released to Public Domain.
 
 #ENDIF
 
-class ForEach
+class ForEach from FWWebEx.ClassBase
 
     private data aKeys as array
 
@@ -74,7 +76,7 @@ class ForEach
     private data xValue as variant
     private data xTarget as variant
 
-    public method New(xTarget as variant,bCallback as codeblock,lDescend as logical)
+    public method New(xTarget as variant,bCallback as codeblock,lDescend as logical) as object
 
     public method Eval() as variant
 
@@ -96,12 +98,18 @@ class ForEach
     //the value that is being traversed
     public method __enumBase()
 
+    private method __arrayIsHashObject(aArray as array) as logical
+    private method __arrayIsHashObjectItem(aArray as array) as logical
+
+    static method Evaluate(xTarget as variant,bCallback as codeblock,lDescend as logical) as variant
+
 end class
 
 method New(xTarget,bCallback,lDescend) class ForEach
     paramtype 1 var xTarget as array,character,json,object
     paramtype 2 var bCallback as block
     paramtype 3 var lDescend as logical optional default .F.
+    _Super:New()
     ::bCallback:=bCallback
     ::nIndex:=0
     ::xTarget:=xTarget
@@ -121,8 +129,8 @@ method New(xTarget,bCallback,lDescend) class ForEach
             if (::c__ClassName$CLS_NAME_THASH)
                 if (::c__ClassName=="DNA.TECH.JSONARRAY")
                     ::aKeys:=::xTarget:GetNames()
-                elseif (::c__ClassName=="DNA.TECH.THASH|DNA.TECH.TFINI|DNA.TECH.THASH_TFINI")
-                    ::aKeys:=::xTarget:GetAllProperties()
+                elseif (::c__ClassName$"DNA.TECH.THASH|DNA.TECH.TFINI|DNA.TECH.THASH_TFINI")
+                    ::aKeys:=::xTarget:GetHashArray()
                 else
                     ::aKeys:=Array(0)
                 endif
@@ -147,8 +155,13 @@ method Eval() class ForEach
     do case
     case (::cType=="A")
         for i:=::nBeg to ::nEnd step ::nStep
-            ::xKey:=i
-            ::xValue:=::aKeys[i]
+            if ((ValType(::aKeys[i])=="A").and.(::__arrayIsHashObjectItem(::aKeys[i])))
+                ::xKey:=::aKeys[i][HASH_PROPERTY_KEY]
+                ::xValue:=::aKeys[i][HASH_PROPERTY_VALUE]
+            else
+                ::xKey:=i
+                ::xValue:=::aKeys[i]
+            endif
             ::nIndex:=i
             Eval(::bCallback,::xKey,::xValue,::nIndex)
         next i
@@ -170,8 +183,8 @@ method Eval() class ForEach
     case (::cType=="O")
         if (::c__ClassName=="THASHMAP")
             for i:=::nBeg to ::nEnd step ::nStep
-                ::xKey:=::aKeys[i][1]
-                ::xValue:=::aKeys[i][2]
+                ::xKey:=::aKeys[i][HASH_PROPERTY_KEY]
+                ::xValue:=::aKeys[i][HASH_PROPERTY_VALUE]
                 ::nIndex:=i
                 Eval(::bCallback,::xKey,::xValue,::nIndex)
             next i
@@ -183,8 +196,13 @@ method Eval() class ForEach
                     ::nIndex:=i
                     Eval(::bCallback,::xKey,::xValue,::nIndex)
                 next i
-            elseif (::c__ClassName=="DNA.TECH.THASH|DNA.TECH.TFINI|DNA.TECH.THASH_TFINI")
-                //TODO
+            elseif (::c__ClassName$"DNA.TECH.THASH|DNA.TECH.TFINI|DNA.TECH.THASH_TFINI")
+                for i:=::nBeg to ::nEnd step ::nStep
+                    ::xKey:=::aKeys[i][HASH_PROPERTY_KEY]
+                    ::xValue:=::aKeys[i][HASH_PROPERTY_VALUE]
+                    ::nIndex:=i
+                    Eval(::bCallback,::xKey,::xValue,::nIndex)
+                next i
             endif
         endif
     otherwise
@@ -217,100 +235,62 @@ return(::nIndex)
 method __enumBase() class ForEach
 return(::xTarget)
 
-****************************************************************************************************************
-procedure u_ForEachTst()
+method __arrayIsHashObject(aArray) class ForEach
+    local lIsHashObject as logical
+    paramtype 1 var aArray as array
+    begin sequence
+        lIsHashObject:=(Len(aArray)==HASH_PROPERTY_ELEMENTS)
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(ValType(aArray[HASH_PROPERTY_VALUE])$"ALO")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(ValType(aArray[HASH_PROPERTY_TYPE])=="C")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(aArray[HASH_PROPERTY_TYPE]=="O")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(ValType(aArray[HASH_PROPERTY_CLSNAME])=="C")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(aArray[HASH_PROPERTY_CLSNAME]$CLS_NAME_THASH)
+    end sequence
+return(lIsHashObject)
 
+method __arrayIsHashObjectItem(aArray) class ForEach
+    local lIsHashObject as logical
+    paramtype 1 var aArray as array
+    begin sequence
+        lIsHashObject:=(Len(aArray)==HASH_PROPERTY_ELEMENTS)
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(;
+                 (ValType(aArray[HASH_PROPERTY_TYPE])=="C"));
+            .and.(aArray[HASH_PROPERTY_TYPE]$ValType(aArray[HASH_PROPERTY_VALUE]);
+        )
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(ValType(aArray[HASH_PROPERTY_CLSNAME])=="C")
+        if (!lIsHashObject)
+            break
+        endif
+        lIsHashObject:=(aArray[HASH_PROPERTY_CLSNAME]=="")
+    end sequence
+return(lIsHashObject)
+
+static method Evaluate(xTarget,bCallback,lDescend) class ForEach
     local oForEach as object
-    local oTHashMap as object
-    local oJSONArray as object
-
-    ConOut("ForEach Begin",Replicate("-",80),"")
-
-    oForEach:=ForEach():New({"a","b","c"},{|k,v,i|;
-        ConOut(;
-            "Array :: Key: "+cValToChar(k);
-           +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
-           +", Valor: "+cValToChar(v);
-           +", Index i: "+tlpp.ToStr(i);
-        );
-    },.T.)
-
+    paramtype 1 var xTarget as array,character,json,object
+    paramtype 2 var bCallback as block
+    paramtype 3 var lDescend as logical optional default .F.
+    oForEach:=ForEach():New(xTarget,bCallback,lDescend)
     oForEach:Eval()
-    FreeObj(@oForEach)
-
-    ConOut(Replicate("-",80))
-
-    oForEach:=ForEach():New({"a":"a","b":"b","c":"c"},{|k,v,i|;
-        ConOut(;
-            "JSON :: Key: "+cValToChar(k);
-           +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
-           +", Valor: "+cValToChar(v);
-           +", Index i: "+tlpp.ToStr(i);
-        );
-    })
-
-    oForEach:Eval()
-    FreeObj(@oForEach)
-
-    ConOut(Replicate("-",80))
-
-    oTHashMap:=THASHMAP():New()
-    oTHashMap:Set("a","A")
-    oTHashMap:Set("b","B")
-    oTHashMap:Set("c","C")
-    oTHashMap:Set("D","D")
-    oForEach:=ForEach():New(oTHashMap,{|k,v,i|;
-        ConOut(;
-            "HASHMAP :: Key: "+cValToChar(k);
-           +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
-           +", Valor: "+cValToChar(v);
-           +", Index i: "+tlpp.ToStr(i);
-        );
-    })
-
-    oForEach:Eval()
-    FreeObj(@oForEach)
-    FreeObj(@oTHashMap)
-
-    ConOut(Replicate("-",80))
-
-    if (FindClass("DNA.TECH.JSONARRAY"))
-
-        oJSONArray:=DNA.TECH.JSONARRAY():New()
-        oJSONArray:Set("a","A")
-        oJSONArray:Set("b","B")
-        oJSONArray:Set("c","C")
-        oJSONArray:Set("D","D")
-        oForEach:=ForEach():New(oJSONArray,{|k,v,i|;
-            ConOut(;
-                "JSONARRAY :: Key: "+cValToChar(k);
-                +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
-                +", Valor: "+cValToChar(v);
-                +", Index i: "+tlpp.ToStr(i);
-            );
-        })
-
-        oForEach:Eval()
-
-        FreeObj(@oForEach)
-        FreeObj(@oJSONArray)
-
-    endif
-
-    ConOut(Replicate("-",80))
-
-    oForEach:=ForEach():New("ForEach",{|k,v,i|;
-        ConOut(;
-            "STRING :: Key: "+cValToChar(k);
-            +", __enumIndex: "+tlpp.ToStr(oForEach:__enumIndex());
-            +", Valor: "+cValToChar(v);
-            +", Index i: "+tlpp.ToStr(i);
-        );
-    })
-
-    oForEach:Eval()
-    FreeObj(@oForEach)
-
-    ConOut(Replicate("-",80),"ForEach End","")
-
 return

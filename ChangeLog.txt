@@ -2,8 +2,23 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add CSP meta and modularize examples)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add object context and foreach/switch helpers)"
  */
+
+2026-08-23 17:34 UTC naldodj (Add object context and foreach/switch helpers)
+  Add object context and foreach/switch helpers
+    This change introduces object-context utilities and related TL++ macros for scoped WITH OBJECT usage.
+    It also refactors the foreach and switch helper implementations under the FWWebEx namespace, adds support for hash-like object traversal, and exposes new evaluation helpers for block execution with variadic arguments.
+    The update includes dedicated tests for foreach and switch, integrates those examples into the FWWebEx example menu, and updates the example naming structure to group tools and games under a clearer FWWebEx menu layout.
+      + include/fw.webex.object.context.th
+      + src/fw.webex/core/tools/extra/fw.webex.switch.tlpp
+      + src/fw.webex/core/tools/extra/tests/fw.webex.for.each.test.tlpp
+      + src/fw.webex/core/tools/extra/tests/fw.webex.switch.test.tlpp
+      + src/fw.webex/core/tools/fw.webex.object.context.tlpp
+      - src/fw.webex/core/tools/extra/switch.tlpp
+      * src/fw.webex/core/tools/fw.webex.helper.tlpp
+      * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
+      * src/fw.webex/core/tools/extra/for.each.tlpp -> src/fw.webex/core/tools/extra/fw.webex.for.each.tlpp
 
 2026-08-21 20:17 UTC naldodj (Add CSP meta and modularize examples)
   Add a Content-Security-Policy <meta> in WebExPage.New that permits 'self', 'unsafe-inline', 'unsafe-eval', http(s), ws, data, file and worker-src/child-src with blob (needed e.g. for PDF.js workers).

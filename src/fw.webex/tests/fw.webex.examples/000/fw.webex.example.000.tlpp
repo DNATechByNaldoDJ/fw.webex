@@ -46,7 +46,7 @@ procedure u_FWWebExExample_000()
         Final(WebExHelper():Accentuation("Ambiente ["+cEnvServer+"] Inv#1lido.","aacute"),"Utilize o Ambiente: PROTHEUS_NGROK")
     endif
 
-    private cCadastro:="Exemplos FWWebEx" as character
+    private cCadastro:="FWWebEx :: Exemplos" as character
     FWExampleTools():Execute({||FWWebExExample_000()},cCadastro,.T.)
 
 return
@@ -56,7 +56,7 @@ static procedure FWWebExExample_000()
     local cRight as character
     local cExample:="" as character
 
-    local jExamples:=JSONObject():New() as json
+    local jFWWebExExamples:=JSONObject():New() as json
 
     local nTop as numeric
     local nLeft as numeric
@@ -73,22 +73,28 @@ static procedure FWWebExExample_000()
     local oFWDefSize as object
     local oWNDDefault as object
 
-    TLPPTools(@jExamples)
-    TLPPGames(@jExamples)
+    jFWWebExExamples["Games"]:=JSONObject():New()
+    TLPPGames(@jFWWebExExamples["Games"])
 
-    jExamples["Forms"]:=JSONObject():New()
-    jExamples["Tables"]:=JSONObject():New()
-    jExamples["DataTables"]:=JSONObject():New()
-    jExamples["UIComponents"]:=JSONObject():New()
-    jExamples["DashBoard"]:=JSONObject():New()
-    jExamples["Nav"]:=JSONObject():New()
-    jExamples["DumpDOM"]:=JSONObject():New()
-    jExamples["iFrame"]:=JSONObject():New()
-    jExamples["SBAdmin"]:=JSONObject():New()
-    jExamples["Markdown"]:=JSONObject():New()
-    jExamples["ASCIIArt"]:=JSONObject():New()
-    jExamples["Runtime"]:=JSONObject():New()
-    jExamples["Labels"]:=JSONObject():New()
+    jFWWebExExamples["Tools"]:=JSONObject():New()
+    TLPPTools(@jFWWebExExamples["Tools"])
+    TLPPForEach(@jFWWebExExamples["Tools"])
+    TLPPSwitch(@jFWWebExExamples["Tools"])
+
+    jFWWebExExamples["FWWebEx"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Forms"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Tables"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["DataTables"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["UIComponents"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["DashBoard"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Nav"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["DumpDOM"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["iFrame"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["SBAdmin"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Markdown"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["ASCIIArt"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Runtime"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Labels"]:=JSONObject():New()
 
     for nExample:=1 to nExamples
         cExample:="u_FWWebExExample_"+StrZero(nExample,3)
@@ -98,31 +104,31 @@ static procedure FWWebExExample_000()
         cRight:=Right(cExample,3)
         do case
         case (cRight$"003|005|017")
-            jExamples["Forms"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["Forms"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"001|002|006|007|008|009|018")
-            jExamples["Tables"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["Tables"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"023|028|029")
-            jExamples["DataTables"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["DataTables"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"004")
-            jExamples["UIComponents"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["UIComponents"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"010|011")
-            jExamples["DashBoard"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["DashBoard"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"012|013|014")
-            jExamples["Nav"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["Nav"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"015")
-            jExamples["DumpDOM"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["DumpDOM"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"016")
-            jExamples["iFrame"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["iFrame"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"019|020|021|022")
-            jExamples["SBAdmin"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["SBAdmin"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"024")
-            jExamples["Markdown"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["Markdown"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"025|026|030")
-            jExamples["ASCIIArt"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["ASCIIArt"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"027")
-            jExamples["Runtime"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["Runtime"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"031|032")
-            jExamples["Labels"][cExample]:=&("{||"+cExample+"()}")
+            jFWWebExExamples["FWWebEx"]["Labels"][cExample]:=&("{||"+cExample+"()}")
         endcase
     next nExample
 
@@ -163,7 +169,7 @@ static procedure FWWebExExample_000()
         oTBitMap:Align:=CONTROL_ALIGN_ALLCLIENT
         oTBitMap:SetCSS("{background-size: 100% 100%;}")
 
-        FWMsgRun(nil,{||oTMenu:=LoadMenu(@oTDlg,jExamples)},"Wait! Loading Menu",cCadastro)
+        FWMsgRun(nil,{||oTMenu:=LoadMenu(@oTDlg,jFWWebExExamples)},"Wait! Loading Menu",cCadastro)
 
         oTDlg:SetMenu(oTMenu)
         oTDlg:lCentered:=((Type("lRedefineBottom")=="L".and.(!lRedefineBottom)))
@@ -172,7 +178,7 @@ static procedure FWWebExExample_000()
 
     WebFileTools():ObliterateFWWebExTmpFiles(.T.)
 
-    FreeObj(@jExamples)
+    FreeObj(@jFWWebExExamples)
 
     FreeObj(@oFWDefSize)
 
@@ -185,14 +191,16 @@ static procedure FWWebExExample_000()
 
 return
 
-static function LoadMenu(oTDlg as object,jExamples as json) as object
+static function LoadMenu(oTDlg as object,jFWWebExExamples as json) as object
 
     local aNames as array
+    local aOwners as array
     local aCategories as array
 
     local bTMenuAction as codeblock
 
     local cName as character
+    local cOwner as character
     local cCategory as character
 
     local nName as numeric
@@ -201,37 +209,46 @@ static function LoadMenu(oTDlg as object,jExamples as json) as object
     local nCategory as numeric
     local nCategories as numeric
 
+    local nOwner as numeric
+    local nOwners as numeric
+
     local oTMenu as object
     local oTMenuItem as object
 
-    aCategories:=aClone(jExamples:GetNames())
-    nCategories:=Len(aCategories)
-
     MENU oTMenu IMAGE "" OF oTDlg
         MENU
-            MENUITEM oTMenuItem PROMPT "FWWebEx Config"
+            MENUITEM oTMenuItem PROMPT "FWWebEx :: Config"
             oTMenuItem:bAction:={||FWWebEx.Tools.FWExampleTools():GetRESTCredential()}
         ENDMENU
         MENU
-            MENUITEM oTMenuItem PROMPT cCadastro
-            MENU
-                for nCategory:=1 to nCategories
-                    cCategory:=aCategories[nCategory]
-                    MENUITEM oTMenuItem PROMPT cCategory
-                    MENU
-                        aNames:=aClone(jExamples[cCategory]:GetNames())
-                        nNames:=Len(aNames)
-                        for nName:=1 to nNames
-                            cName:=aNames[nName]
-                            bTMenuAction:=jExamples[cCategory][cName]
-                            MENUITEM oTMenuItem PROMPT cName
-                            oTMenuItem:bAction:=bTMenuAction
-                        next nName
-                        FWFreeArray(@aNames)
-                    ENDMENU
-                next nCategory
-            ENDMENU
-        MENU
+            aOwners:=aClone(jFWWebExExamples:GetNames())
+            nOwners:=Len(aOwners)
+            for nOwner:=1 to nOwners
+                cOwner:=aOwners[nOwner]
+                MENUITEM oTMenuItem PROMPT cOwner
+                MENU
+                    aCategories:=aClone(jFWWebExExamples[cOwner]:GetNames())
+                    nCategories:=Len(aCategories)
+                    for nCategory:=1 to nCategories
+                        cCategory:=aCategories[nCategory]
+                        MENUITEM oTMenuItem PROMPT cCategory
+                        MENU
+                            aNames:=aClone(jFWWebExExamples[cOwner][cCategory]:GetNames())
+                            nNames:=Len(aNames)
+                            for nName:=1 to nNames
+                                cName:=aNames[nName]
+                                bTMenuAction:=jFWWebExExamples[cOwner][cCategory][cName]
+                                MENUITEM oTMenuItem PROMPT cName
+                                oTMenuItem:bAction:=bTMenuAction
+                            next nName
+                            FWFreeArray(@aNames)
+                        ENDMENU
+                    next nCategory
+                    FWFreeArray(@aCategories)
+                ENDMENU
+            next nOwner
+            FWFreeArray(@aOwners)
+        ENDMENU
         MENU
             MENUITEM oTMenuItem PROMPT "Exit" ACTION if(ApMsgNoYes("Deseja sair?","FWWebEx"),oTDlg:End(),.F.)
         ENDMENU
@@ -239,18 +256,15 @@ static function LoadMenu(oTDlg as object,jExamples as json) as object
 
     oTMenu:align:=CONTROL_ALIGN_ALLCLIENT
 
-    FWFreeArray(@aNames)
-    FWFreeArray(@aCategories)
-
 return(oTMenu)
 
-static procedure TLPPTools(jExamples)
-    jExamples["TLPPTools"]:=JSONObject():New()
-    jExamples["TLPPTools"]["ArrayTools"]:={||u_ArrayToolsSample()}
-    jExamples["TLPPTools"]["FlattenJSON"]:={||u_FlattenJSONSample()}
+static procedure TLPPTools(jFWWebExExamples)
+    jFWWebExExamples["TLPPTools"]:=JSONObject():New()
+    jFWWebExExamples["TLPPTools"]["ArrayTools"]:={||u_ArrayToolsSample()}
+    jFWWebExExamples["TLPPTools"]["FlattenJSON"]:={||u_FlattenJSONSample()}
 return
 
-static procedure TLPPGames(jExamples as json)
+static procedure TLPPGames(jFWWebExExamples as json)
 
     local aTLPPGames:={;
         {"GAME15.U_GAME15RUN","GAME15",{||GAME15.U_GAME15RUN()}};
@@ -272,15 +286,29 @@ static procedure TLPPGames(jExamples as json)
     next nGame
 
     if (lTlppGame)
-        jExamples["TLPPGames"]:=JSONObject():New()
+        jFWWebExExamples["TLPPGames"]:=JSONObject():New()
         for nGame:=1 to nGames
             lTlppGame:=FindFunction(aTLPPGames[nGame][1])
             if (lTlppGame)
-                jExamples["TLPPGames"][aTLPPGames[nGame][2]]:=aTLPPGames[nGame][3]
+                jFWWebExExamples["TLPPGames"][aTLPPGames[nGame][2]]:=aTLPPGames[nGame][3]
             endif
         next nGame
     endif
 
     FWFreeArray(@aTLPPGames)
 
+return
+
+static procedure TLPPForEach(jFWWebExExamples)
+    if (FindFunction("FWWebEx.U_FOREACHTST"))
+        jFWWebExExamples["TLPPForEach"]:=JSONObject():New()
+        jFWWebExExamples["TLPPForEach"]["U_FOREACHTST"]:={||U_FOREACHTST()}
+    endif
+return
+
+static procedure TLPPSwitch(jFWWebExExamples)
+    if (FindFunction("FWWebEx.U_SWITCHTST"))
+        jFWWebExExamples["TLPPSwitch"]:=JSONObject():New()
+        jFWWebExExamples["TLPPSwitch"]["U_SWITCHTST"]:={||U_SWITCHTST()}
+    endif
 return
