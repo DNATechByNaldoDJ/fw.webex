@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add object context and foreach/switch helpers)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update page CSP for frames and workers)"
  */
+
+2026-08-23 18:51 UTC naldodj (Update page CSP for frames and workers)
+  Update page CSP for frames and workers
+    Clarifies the CSP documentation and replaces the legacy child-src directive with frame-src for iframe/frame content while keeping worker-src for blob-based workers.
+    This aligns the policy with browser behavior and documents the current default, worker, and frame source directives.
+      * src/fw.webex/core/component/fw.webex.page.tlpp
 
 2026-08-23 17:34 UTC naldodj (Add object context and foreach/switch helpers)
   Add object context and foreach/switch helpers
