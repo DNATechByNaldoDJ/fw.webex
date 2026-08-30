@@ -55,16 +55,44 @@ namespace FWWebEx
 
 #ENDIF
 
+/**
+ * @class ForEach
+ * @brief Provides a callback-based emulation of FOR EACH iteration for TL++.
+ *
+ * The class normalizes iteration over supported AdvPL/TL++ container types and
+ * invokes a callback for each enumerated item. The callback receives the current
+ * key, value and iteration index, regardless of the underlying target type.
+ *
+ * Supported targets:
+ * - Array
+ * - Character string
+ * - JSON object
+ * - THashMap
+ * - DNA.TECH.JSONARRAY
+ * - DNA.TECH.THASH
+ * - DNA.TECH.TFINI
+ * - DNA.TECH.THASH_TFINI
+ *
+ * Iteration can run in ascending or descending order. During traversal, the class
+ * exposes enumeration metadata through the __enum*() methods, including the
+ * current key, value, index, source target, boundary state and callback result.
+ * The current callback may also request traversal termination through
+ * __enumSetBreak(.T.); the loop is stopped immediately after that callback returns.
+ *
+ * @note Array entries that match the internal THash property representation are
+ *       interpreted as key/value pairs instead of plain array items.
+ */
 class ForEach from FWWebEx.ClassBase
 
     private data aKeys as array
 
-    private data bCallback as codeblock
+    private data bCallBack as codeblock
 
     private data cType as character
     private data c__ClassName as character
 
     private data lDescend as logical
+    private data lBreak as logical
 
     private data nBeg as numeric
     private data nEnd as numeric
@@ -75,42 +103,63 @@ class ForEach from FWWebEx.ClassBase
     private data xKey as variant
     private data xValue as variant
     private data xTarget as variant
+    private data xCallBackResult as variant
 
-    public method New(xTarget as variant,bCallback as codeblock,lDescend as logical) as object
+    public method New(xTarget as variant,bCallBack as codeblock,lDescend as logical) as object
 
-    public method Eval() as variant
+    public method Eval() as object
+    public method GetCallBackResult() as variant
 
-    //the hash key value of traversed hash item pair
+    /** Returns the key associated with the current enumerated item. */
     public method __enumKey() as variant
 
-    //the value of variable
+    /** Returns the value associated with the current enumerated item. */
     public method __enumValue() as variant
 
-    //is it the first enumerated item?
+    /** Indicates whether the current item is the first item in traversal order. */
     public method __enumIsFirst() as logical
 
-    //is it the last enumerated item?
+    /** Indicates whether the current item is the last item in traversal order. */
     public method __enumIsLast() as logical
 
-    //the loop counter for variable
+    /** Returns the current physical iteration index. */
     public method __enumIndex() as numeric
 
-    //the value that is being traversed
+    /** Returns the original target being traversed. */
     public method __enumBase()
+
+    /**
+     * Requests or clears termination of the current traversal after the callback
+     * currently being evaluated has completed.
+     */
+    public method __enumSetBreak(lBreak as logical) as logical
+
+    /** Returns the result produced by the callback */
+    public method __enumResult()
 
     private method __arrayIsHashObject(aArray as array) as logical
     private method __arrayIsHashObjectItem(aArray as array) as logical
 
-    static method Evaluate(xTarget as variant,bCallback as codeblock,lDescend as logical) as variant
+    static method Evaluate(xTarget as variant,bCallBack as codeblock,lDescend as logical) as variant
 
 end class
 
-method New(xTarget,bCallback,lDescend) class ForEach
+/**
+ * Creates a ForEach iterator.
+ *
+ * @param xTarget   Target to be traversed.
+ * @param bCallBack Code block evaluated for each item as
+ *                  Eval(bCallBack, xKey, xValue, nIndex).
+ * @param lDescend  When .T., traverses the target from the last item to the first.
+ * @return Self.
+ */
+method New(xTarget,bCallBack,lDescend) class ForEach
     paramtype 1 var xTarget as array,character,json,object
-    paramtype 2 var bCallback as block
+    paramtype 2 var bCallBack as block
     paramtype 3 var lDescend as logical optional default .F.
     _Super:New()
-    ::bCallback:=bCallback
+    ::bCallBack:=bCallBack
+    ::lBreak:=.F.
     ::nIndex:=0
     ::xTarget:=xTarget
     ::cType:=ValType(::xTarget)
@@ -148,9 +197,23 @@ method New(xTarget,bCallback,lDescend) class ForEach
 
 return(self)
 
+/**
+ * Traverses the configured target and evaluates the callback for each item.
+ *
+ * The result returned by the most recent callback execution is stored in
+ * ::xCallBackResult and exposed through __enumResult().
+ *
+ * A callback can request early termination by calling __enumSetBreak(.T.). The
+ * request is checked only after Eval(::bCallBack, ...) returns, ensuring that the
+ * current callback is allowed to finish and its result remains available through
+ * __enumResult(). Each call to Eval() resets the break state before traversal.
+ * @return Self.
+ */
 method Eval() class ForEach
 
     local i as numeric
+
+    ::lBreak:=.F.
 
     do case
     case (::cType=="A")
@@ -163,7 +226,10 @@ method Eval() class ForEach
                 ::xValue:=::aKeys[i]
             endif
             ::nIndex:=i
-            Eval(::bCallback,::xKey,::xValue,::nIndex)
+            ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+            if (::lBreak)
+                exit
+            endif
         next i
     case (::cType=="C")
         for i:=::nBeg to ::nEnd step ::nStep
@@ -171,14 +237,20 @@ method Eval() class ForEach
             ::aKeys[::xKey]:=SubStr(::xTarget,::xKey,1)
             ::xValue:=::aKeys[::xKey]
             ::nIndex:=i
-            Eval(::bCallback,::xKey,::xValue,::nIndex)
+            ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+            if (::lBreak)
+                exit
+            endif
         next i
     case (::cType=="J")
         for i:=::nBeg to ::nEnd step ::nStep
             ::xKey:=::aKeys[i]
             ::xValue:=::xTarget[::xKey]
             ::nIndex:=i
-            Eval(::bCallback,::xKey,::xValue,::nIndex)
+            ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+            if (::lBreak)
+                exit
+            endif
         next i
     case (::cType=="O")
         if (::c__ClassName=="THASHMAP")
@@ -186,7 +258,10 @@ method Eval() class ForEach
                 ::xKey:=::aKeys[i][HASH_PROPERTY_KEY]
                 ::xValue:=::aKeys[i][HASH_PROPERTY_VALUE]
                 ::nIndex:=i
-                Eval(::bCallback,::xKey,::xValue,::nIndex)
+                ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+                if (::lBreak)
+                    exit
+                endif
             next i
         elseif (::c__ClassName$CLS_NAME_THASH)
             if (::c__ClassName=="DNA.TECH.JSONARRAY")
@@ -194,14 +269,20 @@ method Eval() class ForEach
                     ::xKey:=::aKeys[i]
                     ::xValue:=::xTarget:Get(::xKey)
                     ::nIndex:=i
-                    Eval(::bCallback,::xKey,::xValue,::nIndex)
+                    ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+                    if (::lBreak)
+                        exit
+                    endif
                 next i
             elseif (::c__ClassName$"DNA.TECH.THASH|DNA.TECH.TFINI|DNA.TECH.THASH_TFINI")
                 for i:=::nBeg to ::nEnd step ::nStep
                     ::xKey:=::aKeys[i][HASH_PROPERTY_KEY]
                     ::xValue:=::aKeys[i][HASH_PROPERTY_VALUE]
                     ::nIndex:=i
-                    Eval(::bCallback,::xKey,::xValue,::nIndex)
+                    ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+                    if (::lBreak)
+                        exit
+                    endif
                 next i
             endif
         endif
@@ -209,32 +290,68 @@ method Eval() class ForEach
         // non-iterable
     endcase
 
-return
+return(::self)
 
-//the hash key value of traversed hash item pair
+method GetCallBackResult() class ForEach
+return(::xCallBackResult)
+
+/** Returns the current enumeration key. */
 method __enumKey() class ForEach
 return(::xKey)
 
-//the value of variable
+/** Returns the current enumeration value. */
 method __enumValue() class ForEach
 return(::xValue)
 
-//is it the first enumerated item?
+/** Returns .T. when positioned at the first item in traversal order. */
 method __enumIsFirst() class ForEach
 return(::nIndex==::nBeg)
 
-//is it the last enumerated item?
+/** Returns .T. when positioned at the last item in traversal order. */
 method __enumIsLast() class ForEach
 return(::nIndex==::nEnd)
 
-//the loop counter for variable
+/** Returns the current iteration index. */
 method __enumIndex() class ForEach
 return(::nIndex)
 
-//the value that is being traversed
+/** Returns the original traversal target. */
 method __enumBase() class ForEach
 return(::xTarget)
 
+/**
+ * Requests or clears early termination of the active traversal.
+ *
+ * The flag is consumed by Eval() after the current callback returns. Therefore,
+ * calling __enumSetBreak(.T.) from inside the callback does not abort callback
+ * execution; it prevents the next item from being evaluated. Passing .F. clears
+ * a previously requested break while the callback is still running.
+ *
+ * @param lBreak .T. to stop traversal after the current callback; .F. to clear
+ *               the pending break request. Defaults to .T. when omitted.
+ * @return The resulting break state.
+ *
+ * @example
+ * // Inside an enumeration callback:
+ * if (xValue==cExpectedValue)
+ *     __enumSetBreak(.T.)
+ * endif
+ */
+method __enumSetBreak(lBreak) class ForEach
+    paramtype 1 var lBreak as logical optional default .T.
+    ::lBreak:=lBreak
+return(::lBreak)
+
+/** Returns the result produced by the most recent callback evaluation. */
+method __enumResult() class ForEach
+return(::xCallBackResult)
+
+/**
+ * Checks whether an array represents a complete internal THash object descriptor.
+ *
+ * @param aArray Array to inspect.
+ * @return .T. when the array matches the expected THash object metadata layout.
+ */
 method __arrayIsHashObject(aArray) class ForEach
     local lIsHashObject as logical
     paramtype 1 var aArray as array
@@ -263,6 +380,12 @@ method __arrayIsHashObject(aArray) class ForEach
     end sequence
 return(lIsHashObject)
 
+/**
+ * Checks whether an array represents a single serialized THash key/value item.
+ *
+ * @param aArray Array to inspect.
+ * @return .T. when the array matches the expected key/value item layout.
+ */
 method __arrayIsHashObjectItem(aArray) class ForEach
     local lIsHashObject as logical
     paramtype 1 var aArray as array
@@ -286,11 +409,21 @@ method __arrayIsHashObjectItem(aArray) class ForEach
     end sequence
 return(lIsHashObject)
 
-static method Evaluate(xTarget,bCallback,lDescend) class ForEach
+/**
+ * Convenience entry point that creates, executes and releases a ForEach instance.
+ *
+ * @param xTarget   Target to be traversed.
+ * @param bCallBack Code block evaluated for each item.
+ * @param lDescend  When .T., traverses in descending order.
+ * @return xCallBackResult.
+ */
+static method Evaluate(xTarget,bCallBack,lDescend) class ForEach
     local oForEach as object
+    local xCallBackResult as variant
     paramtype 1 var xTarget as array,character,json,object
-    paramtype 2 var bCallback as block
+    paramtype 2 var bCallBack as block
     paramtype 3 var lDescend as logical optional default .F.
-    oForEach:=ForEach():New(xTarget,bCallback,lDescend)
-    oForEach:Eval()
-return
+    oForEach:=ForEach():New(xTarget,bCallBack,lDescend)
+    xCallBackResult:=oForEach:Eval():GetCallBackResult()
+    FreeObj(@oForEach)
+return(xCallBackResult)

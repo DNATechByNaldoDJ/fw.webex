@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Update page CSP for frames and workers)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add break-aware iteration support)"
  */
+
+2026-08-30 13:46 UTC naldodj (Add break-aware iteration support)
+  Add break-aware iteration support
+    Enhances the ForEach iterator with callback result tracking, explicit enumeration metadata, and early traversal termination support across arrays, strings, JSON, and hash-like targets.
+    The callback now receives the iterator instance, exposes __enumSetBreak() and __enumResult(), and returns the last callback result while preserving iteration state and target metadata.
+    * src/fw.webex/core/tools/extra/fw.webex.for.each.tlpp
 
 2026-08-23 18:51 UTC naldodj (Update page CSP for frames and workers)
   Update page CSP for frames and workers
