@@ -13,4 +13,6 @@ Get-ChildItem -Recurse ..\..\src\ -File | Where-Object {
 } | % { if($_.Extension.Length -gt 0) {$_.Name+';'} } > .\makepatch.lst
 
 $path = ".\makepatch.lst"
-(Get-Content $path -Raw).Replace("`r`n","") | Set-Content $path -Force
+$Content = (Get-Content $path -Raw)
+$Content.Replace(";","") | Set-Content ".\makepatch.txt" -Force
+$Content.Replace("`r`n","") | Set-Content $path -Force
