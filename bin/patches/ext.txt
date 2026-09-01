@@ -1,4 +1,5 @@
 *.PR*
+*.PPP
 *.TLPP
 *.APW
 *.APH
@@ -13,8 +14,9 @@
 *.JS
 *.RPTDESIGN
 *.JPG
-*.JPEG
+**.JPEG
 *.GIF
 *.WAV
 *.EXE
+*.ZIP
 *.ICO
