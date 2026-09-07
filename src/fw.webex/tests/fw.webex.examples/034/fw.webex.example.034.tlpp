@@ -1,0 +1,239 @@
+/*
+  FWWebEx example 034 - SVG labels and consolidated PDF through CpyF2Web
+
+  Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_034()
+    local bExecute as codeblock
+    local bJSToAdvPL as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cSVGFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_034(@cHTML,@cSVGFile)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        oTWebChannel:=WebApp():GetTWebChannel()
+        bJSToAdvPL:={|oChannel as object,cType as character,cContent as character|FWWebEx034Callback(oChannel,cType,cContent)}
+        FWExampleTools():HtmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel,bJSToAdvPL)
+        fErase(cHTMLFile)
+    endif
+    if (!Empty(cSVGFile).and.File(cSVGFile))
+        fErase(cSVGFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_034(cHTML as character,cSVGFile as character) as character
+
+    local cHTMLFile:=ProcName() as character
+    local cSVGWeb:="" as character
+    local cTemplateURL:="" as character
+    local cScript:="" as character
+    local cAppScript:="" as character
+    local cBarcodeJS:=GetApoRes("JsBarCode.all.min.js") as character
+    local cCanvasJS:=GetApoRes("html2canvas.min.js") as character
+    local cPDFJS:=GetApoRes("jspdf.umd.min.js") as character
+    local oFWWebExPage as object
+
+    if (Empty(cBarcodeJS).or.Empty(cCanvasJS).or.Empty(cPDFJS))
+        MsgStop("Recursos JsBarcode, html2canvas ou jsPDF nao encontrados no RPO.",ProcName())
+        return("")
+    endif
+
+    FWMakeDir(FWWEBEX_WEB_TMP_PATH,.F.)
+
+    cSVGFile:=FWWEBEX_WEB_TMP_PATH+"fwwebex-example-034-template.svg"
+
+    if (!MemoWrite(cSVGFile,FWWebEx034Template()))
+        return("")
+    endif
+
+    cSVGWeb:=CpyF2Web(cSVGFile,.F.,.F.,.F.,.F.)
+    cTemplateURL:=WebFileTools():CpyF2WebRelativeURL(cSVGWeb)
+
+    if (Empty(cTemplateURL))
+        return("")
+    endif
+
+    BeginContent var cAppScript
+(function(){
+    const templateURL='__TEMPLATE_URL__';
+    const labels=[
+        {product:'PA000001 · PRODUTO DEMONSTRATIVO',batch:'L240001',manufacture:'01/09/2026',expiration:'01/09/2028',weight:'20,000 KG',volume:'20 KG',species:'BOMBONA',gtin:'7891234567895'},
+        {product:'PA000002 · PRODUTO PARA LIMPEZA PROFUNDA',batch:'L240002',manufacture:'02/09/2026',expiration:'02/09/2028',weight:'5,000 KG',volume:'5 LITROS',species:'FRASCO PARA EXTREMA LIMPEZA',gtin:'12345678901231'},
+        {product:'',batch:'L240003',manufacture:'03/09/2026',expiration:'03/09/2028',weight:'1,000 KG',volume:'',species:'CAIXA',gtin:''}
+    ];
+    let running=false;
+    const status=text=>document.getElementById('fwwebex-example-034-status').textContent=text;
+    const paint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
+    function setText(root,id,value){
+        const element=root.querySelector('#'+id);
+        if(!element)return false;
+        value=String(value||'');
+        element.textContent=value;
+        const visible=value.trim()!=='';
+        element.style.display=visible?'':'none';
+        const label=root.querySelector('[data-label-for="'+id+'"]');
+        if(label)label.style.display=visible?'':'none';
+        return visible;
+    }
+    function fitText(element){
+        if(!element||element.style.display==='none')return;
+        const width=+element.dataset.fitWidth,height=+element.dataset.fitHeight;
+        const min=+element.dataset.minFontSize,max=+element.dataset.maxFontSize;
+        if(!width||!height||!min||!max)return;
+        let low=min,high=max,best=min;
+        for(let attempt=0;attempt<16;attempt++){
+            const size=(low+high)/2;
+            element.style.fontSize=size+'px';
+            const bounds=element.getBBox();
+            if(bounds.width<=width&&bounds.height<=height){best=size;low=size}else high=size;
+        }
+        element.style.fontSize=best.toFixed(2)+'px';
+    }
+    function createBarcode(root,item){
+        const element=root.querySelector('#barcode');
+        if(!element)return;
+        if(!item.gtin){element.replaceChildren();return;}
+        const geometry={};
+        ['x','y','width','height','preserveAspectRatio'].forEach(name=>geometry[name]=element.getAttribute(name));
+        JsBarcode(element,item.gtin,{format:item.gtin.length===13?'EAN13':'CODE128',displayValue:true,textAlign:'center',
+            font:'Arial',fontSize:13,textMargin:1,margin:0,width:2,height:52,background:'transparent',lineColor:'#000'});
+        const width=parseFloat(element.getAttribute('width')),height=parseFloat(element.getAttribute('height')),padding=2;
+        if(!Number.isFinite(width)||!Number.isFinite(height))throw new Error('Dimensoes invalidas do barcode.');
+        element.removeAttribute('width');element.removeAttribute('height');
+        element.setAttribute('viewBox',[-padding,-padding,width+padding*2,height+padding*2].join(' '));
+        Object.keys(geometry).forEach(name=>{if(geometry[name]!==null)element.setAttribute(name,geometry[name]);});
+    }
+    function prepare(root,item){
+        setText(root,'product',item.product);setText(root,'batch',item.batch);setText(root,'manufacture',item.manufacture);
+        setText(root,'expiration',item.expiration);setText(root,'weight',item.weight);
+        const volume=setText(root,'volume',item.volume),species=setText(root,'species',item.species);
+        const group=root.querySelector('#volume-species');if(group)group.style.display=(volume||species)?'':'none';
+        root.querySelectorAll('[data-fit-width]').forEach(fitText);createBarcode(root,item);
+    }
+    async function generate(){
+        if(running)return;
+        running=true;
+        const button=document.getElementById('fwwebex-example-034-generate');
+        button.disabled=true;
+        try{
+            status('Carregando template SVG por '+templateURL+'...');
+            const response=await fetch(templateURL,{credentials:'same-origin',cache:'no-store'});
+            if(!response.ok)throw new Error('Template SVG: HTTP '+response.status);
+            const template=await response.text();
+            if(!/<svg[\s>]/i.test(template))throw new Error('Template SVG invalido.');
+            const pdf=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:[130,115],compress:true,putOnlyUsedFonts:true});
+            const stage=document.getElementById('fwwebex-example-034-stage');
+            for(let index=0;index<labels.length;index++){
+                status('Gerando rotulo '+(index+1)+' de '+labels.length+'...');await paint();
+                stage.innerHTML=template;prepare(stage.querySelector('svg'),labels[index]);
+                if(document.fonts&&document.fonts.ready)await document.fonts.ready;await paint();
+                const canvas=await html2canvas(stage,{backgroundColor:'#fff',scale:3,useCORS:false,allowTaint:false,
+                    logging:false,width:stage.offsetWidth,height:stage.offsetHeight});
+                if(index>0)pdf.addPage([130,115],'landscape');
+                pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,130,115);
+                stage.replaceChildren();await paint();
+            }
+            const blob=pdf.output('blob');
+            if(!blob||!blob.size)throw new Error('PDF consolidado vazio.');
+            const url=URL.createObjectURL(blob),popup=window.open(url,'_blank');
+            if(!popup){const link=document.createElement('a');link.href=url;link.download='fwwebex-example-034-labels.pdf';link.click();}
+            setTimeout(()=>URL.revokeObjectURL(url),60000);
+            status('PDF concluido: '+labels.length+' rotulos.');
+            await FWWebEx.TWebChannel.send('FWWEBEX_EXAMPLE_034_DONE',String(labels.length));
+        }catch(error){
+            status('Falha: '+(error.message||String(error)));
+            await FWWebEx.TWebChannel.send('FWWEBEX_EXAMPLE_034_ERROR',error.message||String(error));
+        }finally{
+            running=false;button.disabled=false;
+        }
+    }
+    function init(){document.getElementById('fwwebex-example-034-generate').addEventListener('click',generate);}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+    EndContent
+    cAppScript:=StrTran(cAppScript,"__TEMPLATE_URL__",FWWebEx034JSEscape(cTemplateURL))
+    cScript:=cBarcodeJS+CRLF+cCanvasJS+CRLF+cPDFJS+CRLF+cAppScript
+
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: SVG Web Labels"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-3")
+                    WITH WEBEXOBJECT CLASS WebExH2
+                        .:SetContent("R&oacute;tulos SVG e PDF consolidado")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExParagraph
+                        .:SetContent("Template publicado por CpyF2Web, barcode vetorial, fontes adaptativas, renderiza&ccedil;&atilde;o sequencial e abertura por Blob.")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE div
+                        .:AddClass("alert alert-info")
+                        .:SetContent("O SVG n&atilde;o &eacute; incorporado em Base64: o navegador o carrega como <code>./arquivo.svg</code>.")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExButton ARGS "Gerar PDF demonstrativo","button"
+                        .:SetFixedID("fwwebex-example-034-generate")
+                        .:AddClass("btn-primary mb-3")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE div
+                        .:SetFixedID("fwwebex-example-034-status")
+                        .:AddClass("card card-body")
+                        .:SetContent("Pronto para gerar tr&ecirc;s r&oacute;tulos demonstrativos.")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE div
+                        .:SetFixedID("fwwebex-example-034-stage")
+                        .:SetAttr("style","position:absolute;left:-10000px;top:0;width:130mm;height:115mm;overflow:hidden;background:#fff")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExScript
+                        .:SetExternalAssets(.T.)
+                        .:SetContent(cScript)
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END FWWEBEX
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)
+
+static function FWWebEx034Callback(oChannel as object,cType as character,cContent as character) as logical
+    if (cType=="FWWEBEX_EXAMPLE_034_DONE")
+        ConOut("FWWebEx example 034: PDF concluido com "+cContent+" rotulos.")
+    elseif (cType=="FWWEBEX_EXAMPLE_034_ERROR")
+        ConOut("FWWebEx example 034: "+cContent)
+    else
+        FWWebEx.WebApp():JSToAdvPL(oChannel,cType,cContent)
+    endif
+return(.T.)
+
+static function FWWebEx034JSEscape(cValue as character) as character
+    cValue:=StrTran(cValue,"\","\\")
+    cValue:=StrTran(cValue,"'","\'")
+    cValue:=StrTran(cValue,Chr(13),"\r")
+    cValue:=StrTran(cValue,Chr(10),"\n")
+return(cValue)
+
+static function FWWebEx034Template() as character
+    local cSVG:="" as character
+    BeginContent var cSVG
+<svg xmlns="http://www.w3.org/2000/svg" width="130mm" height="115mm" viewBox="0 0 130 115" preserveAspectRatio="xMidYMid meet" data-hide-empty-fields="true">
+<rect x="1" y="1" width="128" height="113" rx="2" fill="#fff" stroke="#17232d" stroke-width=".7"/><rect x="5" y="5" width="120" height="18" rx="1.5" fill="#edf4f7" stroke="#40606f" stroke-width=".35"/>
+<text x="8" y="12" font-family="Arial" font-size="5.5" font-weight="700">RÓTULO DE PRODUTO</text><text id="product" x="8" y="19" font-family="Arial" font-size="3.8" data-fit-width="112" data-fit-height="5" data-min-font-size="2" data-max-font-size="5">PRODUTO</text>
+<svg id="barcode" x="6" y="29" width="48" height="42" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet"/>
+<g id="data-container" font-family="Arial" font-size="3.4"><rect x="58" y="29" width="66" height="42" fill="none" stroke="#b4c2c9" stroke-width=".25" stroke-dasharray="1 1"/><text x="61" y="37" font-weight="700">Lote:</text><text id="batch" x="121" y="37" text-anchor="end"/><text x="61" y="45" font-weight="700">Fabricação:</text><text id="manufacture" x="121" y="45" text-anchor="end"/><text x="61" y="53" font-weight="700">Validade:</text><text id="expiration" x="121" y="53" text-anchor="end"/><text x="61" y="61" font-weight="700">Peso:</text><text id="weight" x="121" y="61" text-anchor="end"/></g>
+<g id="volume-species"><rect x="6" y="77" width="118" height="27" rx="1.5" fill="#f8fafb" stroke="#b4c2c9" stroke-width=".3"/><text id="volume" x="65" y="90" text-anchor="middle" font-family="Arial" font-size="10" font-weight="900" font-style="italic" data-fit-width="112" data-fit-height="11" data-min-font-size="3" data-max-font-size="12"/><text id="species" x="65" y="99" text-anchor="middle" font-family="Arial" font-size="5" font-weight="900" data-fit-width="112" data-fit-height="6" data-min-font-size="2" data-max-font-size="7"/></g><text x="4" y="112" fill="#aeb7bc" font-family="Arial" font-size="1.7">FWWebEx · SVG label example 034</text></svg>
+    EndContent
+return(cSVG)
