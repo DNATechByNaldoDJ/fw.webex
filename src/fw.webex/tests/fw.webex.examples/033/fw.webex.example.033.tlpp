@@ -1,0 +1,172 @@
+/*
+  FWWebEx example 033 - CpyF2Web URL discovery probe
+
+  Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_033()
+    local bExecute as codeblock
+    local bJSToAdvPL as codeblock
+    local cHTML as character
+    local cHTMLFile as character
+    local cSVGFile as character
+    local cProcName:=ProcName() as character
+    local oTWebChannel as object
+    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_033(@cHTML,@cSVGFile)},"Aguarde",cProcName)}
+    FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
+    if (!Empty(cHTMLFile).and.File(cHTMLFile))
+        oTWebChannel:=WebApp():GetTWebChannel()
+        bJSToAdvPL:={|oChannel as object,cType as character,cContent as character|FWWebEx033Callback(oChannel,cType,cContent)}
+        FWExampleTools():HtmlFileShow(cHTML,cProcName,cHTMLFile,oTWebChannel,bJSToAdvPL)
+        fErase(cHTMLFile)
+    endif
+    if (!Empty(cSVGFile).and.File(cSVGFile))
+        fErase(cSVGFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static function FWWebExExample_033(cHTML as character,cSVGFile as character) as character
+
+    local cHTMLFile:=ProcName() as character
+    local cSVG:="" as character
+    local cSVGWeb:="" as character
+    local cSVGName:="" as character
+    local cScript:="" as character
+    local jPath as json
+    local oFWWebExPage as object
+
+    FWMakeDir(FWWEBEX_WEB_TMP_PATH,.F.)
+
+    cSVGFile:=FWWEBEX_WEB_TMP_PATH+"fwwebex-example-033-probe.svg"
+
+    BeginContent var cSVG
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="180" viewBox="0 0 600 180">
+  <rect width="600" height="180" rx="16" fill="#101820"/>
+  <circle cx="90" cy="90" r="52" fill="#21b8d5"/>
+  <text x="165" y="82" fill="#fff" font-family="Arial" font-size="28" font-weight="700">CpyF2Web funcionando</text>
+  <text x="165" y="120" fill="#9fdce7" font-family="Arial" font-size="18">Recurso relativo ao HTML FWWebEx</text>
+</svg>
+    EndContent
+    if (!MemoWrite(cSVGFile,cSVG))
+        return("")
+    endif
+
+    cSVGWeb:=CpyF2Web(cSVGFile,.F.,.F.,.F.,.F.)
+    if (Empty(cSVGWeb))
+        return("")
+    endif
+    jPath:=WebFileTools():SplitPath(cSVGFile)
+        cSVGName:=jPath["file"]+jPath["ext"]
+    FreeObj(@jPath)
+
+    BeginContent var cScript
+(function(){
+    const raw = '__CPY_SVG_PATH__';
+    const fileName = '__SVG_FILE_NAME__';
+    const esc = value => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    async function runProbe(){
+        const clean = new URL(document.baseURI);
+        clean.search = '';
+        clean.hash = '';
+        const candidates = [
+            ['Retorno bruto do CpyF2Web', raw],
+            ['Retorno resolvido pelo document.baseURI', new URL(raw, document.baseURI).href],
+            ['Arquivo relativo ao HTML', new URL('./' + fileName, clean).href]
+        ];
+        document.getElementById('fwwebex-example-033-environment').innerHTML =
+            '<b>location.href:</b> <span class="text-break">' + esc(location.href) + '</span><br>' +
+            '<b>document.baseURI:</b> <span class="text-break">' + esc(document.baseURI) + '</span><br>' +
+            '<b>CpyF2Web SVG:</b> <span class="text-break">' + esc(raw) + '</span>';
+        const results = [];
+        let preview = '';
+        for (const candidate of candidates) {
+            const result = {name:candidate[0],url:candidate[1],ok:false,status:0};
+            try {
+                const response = await fetch(candidate[1], {cache:'no-store'});
+                const content = await response.text();
+                result.status = response.status;
+                result.ok = response.ok && content.includes('<svg');
+                result.bytes = content.length;
+                if (result.ok && !preview) preview = content;
+            } catch (error) {
+                result.error = error.message || String(error);
+            }
+            results.push(result);
+        }
+        document.getElementById('fwwebex-example-033-results').innerHTML = results.map(result =>
+            '<div class="border-bottom py-2"><b class="' + (result.ok?'text-success':'text-danger') + '">' +
+            (result.ok?'OK':'FALHA') + '</b> · ' + esc(result.name) + '<br><small class="text-break">' +
+            esc(result.url) + '</small><br>HTTP ' + result.status + (result.bytes?' · '+result.bytes+' bytes':'') + '</div>'
+        ).join('');
+        if (preview) document.getElementById('fwwebex-example-033-preview').innerHTML = preview;
+        await FWWebEx.TWebChannel.send('FWWEBEX_EXAMPLE_033_RESULT', JSON.stringify(results));
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', runProbe, {once:true});
+    else runProbe();
+})();
+    EndContent
+    cScript:=StrTran(cScript,"__CPY_SVG_PATH__",FWWebEx033JSEscape(cSVGWeb))
+    cScript:=StrTran(cScript,"__SVG_FILE_NAME__",FWWebEx033JSEscape(cSVGName))
+
+    BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: CpyF2Web URL discovery"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                    .:AddClass("py-3")
+                    WITH WEBEXOBJECT CLASS WebExH2
+                        .:SetContent("CpyF2Web + TWebEngine")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExParagraph
+                        .:SetContent("Diagn&oacute;stico execut&aacute;vel da resolu&ccedil;&atilde;o de External Assets publicados no cache Web do Protheus.")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE div
+                        .:SetFixedID("fwwebex-example-033-environment")
+                        .:AddClass("alert alert-secondary")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE div
+                        .:SetFixedID("fwwebex-example-033-results")
+                        .:AddClass("card card-body mb-3")
+                        .:SetContent("Executando testes...")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE div
+                        .:SetFixedID("fwwebex-example-033-preview")
+                        .:AddClass("card card-body")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExScript
+                        .:SetExternalAssets(.T.)
+                        .:SetContent(cScript)
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END FWWEBEX
+
+    WebFileTools():HTMLFromControl(oFWWebExPage,oFWWebExPage:GetFWWebExTmpPath(),@cHTMLFile,@cHTML,.T.)
+
+    WEBEXOBJECT CLEAN
+
+return(cHTMLFile)
+
+static function FWWebEx033Callback(oChannel as object,cType as character,cContent as character) as logical
+    if (cType=="FWWEBEX_EXAMPLE_033_RESULT")
+        ConOut("FWWebEx example 033: "+cContent)
+    else
+        FWWebEx.WebApp():JSToAdvPL(oChannel,cType,cContent)
+    endif
+return(.T.)
+
+static function FWWebEx033JSEscape(cValue as character) as character
+    cValue:=StrTran(cValue,"\","\\")
+    cValue:=StrTran(cValue,"'","\'")
+    cValue:=StrTran(cValue,Chr(13),"\r")
+    cValue:=StrTran(cValue,Chr(10),"\n")
+return(cValue)

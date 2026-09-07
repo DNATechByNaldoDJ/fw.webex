@@ -2,8 +2,20 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Normalize and resolve published asset URLs)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add examples 033 and 034 (CpyF2Web, SVG/PDF))"
  */
+
+2026-09-07 15:38 UTC naldodj (Add examples 033 and 034 (CpyF2Web, SVG/PDF))
+  Add examples 033 and 034 (CpyF2Web, SVG/PDF)
+      Adds FWWebEx examples 033 and 034 (TLPP sources and README files).
+        Example 033 is a CpyF2Web URL discovery probe for External Assets;
+        Example 034 demonstrates SVG label generation and consolidated PDF creation using JsBarcode, html2canvas and jsPDF with templates published via CpyF2Web.
+      Also updates the examples index (fw.webex.example.000): increments nExamples 32→34 and maps examples 033/034 into the Labels menu.
+        + src/fw.webex/tests/fw.webex.examples/033/fw.webex.example.033.tlpp
+        + src/fw.webex/tests/fw.webex.examples/033/README.md
+        + src/fw.webex/tests/fw.webex.examples/034/fw.webex.example.034.tlpp
+        + src/fw.webex/tests/fw.webex.examples/034/README.md
+        * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
 
 2026-09-07 12:53 UTC naldodj (Normalize and resolve published asset URLs)
     Normalize and resolve published asset URLs

@@ -64,7 +64,7 @@ static procedure FWWebExExample_000()
     local nRight as numeric
 
     local nExample as numeric
-    local nExamples:=32 as numeric
+    local nExamples:=34 as numeric
 
     local oTDlg as object
     local oTMenu as object
@@ -127,7 +127,7 @@ static procedure FWWebExExample_000()
             jFWWebExExamples["FWWebEx"]["ASCIIArt"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"027")
             jFWWebExExamples["FWWebEx"]["Runtime"][cExample]:=&("{||"+cExample+"()}")
-        case (cRight$"031|032")
+        case (cRight$"031|032|033|034")
             jFWWebExExamples["FWWebEx"]["Labels"][cExample]:=&("{||"+cExample+"()}")
         endcase
     next nExample
