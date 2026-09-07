@@ -215,11 +215,13 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 bErrorBlock:=ErrorBlock({|oError|Break(oError)})
                 begin sequence
                     //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                    cHTMLFileNavigate:=CpyF2Web(cHTMLFile,.T.,.T.,.F.,.F.)
+                    /* HTMLFromControl grava cHTMLFile no filesystem do AppServer. */
+                    cHTMLFileNavigate:=CpyF2Web(cHTMLFile,.F.,.F.,.F.,.F.)
                 recover
                     begin sequence
                         //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                        cHTMLFileNavigate:=CpyF2Web(cHTMLFile,.F.,.T.,.F.,.F.)
+                        /* Compatibilidade para caminhos explicitamente locais. */
+                        cHTMLFileNavigate:=CpyF2Web(cHTMLFile,.T.,.F.,.F.,.F.)
                     end sequence
                 end sequence
                 ErrorBlock(bErrorBlock)
@@ -233,11 +235,11 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                     bErrorBlock:=ErrorBlock({|oError|Break(oError)})
                     begin sequence
                         //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                        cHTMLFileNavigate:=CpyF2Web(cHTMLFileNavigate,.T.,.T.,.F.,.F.)
+                        cHTMLFileNavigate:=CpyF2Web(cHTMLFileNavigate,.F.,.F.,.F.,.F.)
                     recover
                         begin sequence
                             //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                            cHTMLFileNavigate:=CpyF2Web(cHTMLFileNavigate,.F.,.T.,.F.,.F.)
+                            cHTMLFileNavigate:=CpyF2Web(cHTMLFileNavigate,.T.,.F.,.F.,.F.)
                         recover
                             cHTMLFileNavigate:=cHTMLFileServer
                         end sequence

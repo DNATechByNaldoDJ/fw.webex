@@ -765,16 +765,30 @@ method RenderHTML() class WebExPage
                             location.protocol === "file:"
                         );
                         var assets = __jAssets__;
+                        function resolveAssetURL(path) {
+                            path = String(path || "").trim();
+                            if (!path) return "";
+                            if (/^(?:data:|blob:|https?:|file:)/i.test(path)) {
+                                return path;
+                            }
+                            path = path.replace(/\\/g, "/").split(/[?#]/, 1)[0];
+                            path = path.substring(path.lastIndexOf("/") + 1);
+                            return new URL("./" + path, document.baseURI).href;
+                        }
                         Object.keys(assets).forEach(function(id){
                             var asset = assets[id];
                             var el;
+                            var assetURL = resolveAssetURL(
+                                useLocal ? asset.local : asset.remote
+                            );
+                            if (!assetURL) return;
                             if (asset.type === "style") {
                                 el = document.createElement("link");
                                 el.rel = "stylesheet";
-                                el.href = useLocal ? asset.local : asset.remote;
+                                el.href = assetURL;
                             } else if (asset.type === "script") {
                                 el = document.createElement("script");
-                                el.src = useLocal ? asset.local : asset.remote;
+                                el.src = assetURL;
                                 el.type = "text/javascript";
                             }
                             if (el) {

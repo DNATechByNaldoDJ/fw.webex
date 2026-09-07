@@ -903,6 +903,16 @@ method AddAssets(cID,cType,cLocal,cRemote) class WebExControl
     paramtype 3 var cLocal as character
     paramtype 4 var cRemote as character
 
+    /*
+     * External Assets sao publicados pelo CpyF2Web. Guardar apenas
+     * ./arquivo.ext impede que o document.baseURI do TWebEngine duplique o
+     * caminho /webapp/<sessao>/cache/<ambiente> durante a resolucao da URL.
+     */
+    cRemote:=WebFileTools():CpyF2WebRelativeURL(cRemote)
+    if ((!Empty(cLocal)).and.(Left(cLocal,2)!="./"))
+        cLocal:="./"+cLocal
+    endif
+
     __jAssets[cID]:=JSONObject():New()
     __jAssets[cID]["id"]:=cID
     __jAssets[cID]["type"]:=cType

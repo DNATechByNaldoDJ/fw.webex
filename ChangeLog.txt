@@ -2,8 +2,21 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add break-aware iteration support)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Normalize and resolve published asset URLs)"
  */
+
+2026-09-07 12:53 UTC naldodj (Normalize and resolve published asset URLs)
+    Normalize and resolve published asset URLs
+        Prevent TWebEngine/document.baseURI duplication and 404s by normalizing asset paths.
+        Added resolveAssetURL() in page renderer and updated AddAssets to force ./ local paths and call WebFileTools():CpyF2WebRelativeURL.
+        Implemented CpyF2WebRelativeURL in WebFileTools and adjusted HTMLAssetsToFile to prefer correct CpyF2Web flags, handle fallbacks, and return relative URLs.
+        Minor test updates (for.each messages and HTML show flow) and a trivial patch file tweak. Files: fw.webex.page.tlpp, fw.webex.control.tlpp, fw.webex.file.tools.tlpp, fw.webex.for.each.test.tlpp, fw.webex.example.tools.tlpp, bin/patches/makepatch.txt
+          * bin/patches/makepatch.txt
+          * src/fw.webex/core/component/fw.webex.page.tlpp
+          * src/fw.webex/core/control/fw.webex.control.tlpp
+          * src/fw.webex/core/tools/extra/tests/fw.webex.for.each.test.tlpp
+          * src/fw.webex/core/tools/fw.webex.file.tools.tlpp
+          * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.tools.tlpp
 
 2026-08-30 13:46 UTC naldodj (Add break-aware iteration support)
   Add break-aware iteration support
