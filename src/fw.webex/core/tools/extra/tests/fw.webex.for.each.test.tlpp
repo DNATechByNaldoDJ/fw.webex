@@ -14,6 +14,8 @@ procedure u_ForEachTst()
     local cINIFile as character
     local cForEachTst:="00" as character
 
+    local j as json
+
     local oTFINI as object
     local oForEach as object
 
@@ -28,22 +30,41 @@ procedure u_ForEachTst()
     END OBJECT .:self FREE
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach "+cForEachTst)
+    MsgInfo(cMsg,"ForEach ARRAY"+cForEachTst)
 
     ConOut(Replicate("-",80))
 
     cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
     cMsg+=Replicate("-",80)+cCRLF
 
-    WITH OBJECT ForEach():New({"a":"a","b":"b","c":"c"},{|k,v,i|;
+    /*
+        Antes: eu tentava ser ninja e passar o JSON direto no ForEach().
+        Resultado: o compilador surtou, pediu ferias e se recusou a trabalhar.
+        Agora: criei a variavel 'j' antes, so para o compilador parar de drama
+        e aceitar fazer o servico. Moral da historia: aas vezes e melhor
+        dar um cafe pro compilador antes de pedir coisas complicadas.
+        **************************************************************************
+        Estava assim, mas o compilador reclama por nao conseguir resolver o JSON
+        Isso ocorria de forma intermitente.
+        **************************************************************************
+        WITH OBJECT ForEach():New({"a":"a","b":"b","c":"c"},{|k,v,i|;
+                cMsgItem:=FormatMsgItem(.:self,"JSON",k,v,i);
+                ,cMsg+=cMsgItem+cCRLF;
+            })
+                .:self:Eval()
+            END OBJECT .:self FREE
+    */
+    j:={"a":"a","b":"b","c":"c"}
+    WITH OBJECT ForEach():New(j,{|k,v,i|;
          cMsgItem:=FormatMsgItem(.:self,"JSON",k,v,i);
         ,cMsg+=cMsgItem+cCRLF;
     })
         .:self:Eval()
     END OBJECT .:self FREE
+    FreeObj(@j)
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach "+cForEachTst)
+    MsgInfo(cMsg,"ForEach JSON"+cForEachTst)
 
     ConOut(Replicate("-",80))
 
@@ -63,7 +84,7 @@ procedure u_ForEachTst()
     END OBJECT .:self FREE
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach "+cForEachTst)
+    MsgInfo(cMsg,"ForEach THASHMAP"+cForEachTst)
 
     ConOut(Replicate("-",80))
 
@@ -78,7 +99,7 @@ procedure u_ForEachTst()
     END OBJECT .:self FREE
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach "+cForEachTst)
+    MsgInfo(cMsg,"ForEach STRING"+cForEachTst)
 
     ConOut(Replicate("-",80))
 
@@ -100,7 +121,7 @@ procedure u_ForEachTst()
         END OBJECT .:self FREE
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach "+cForEachTst)
+        MsgInfo(cMsg,"ForEach JSONARRAY"+cForEachTst)
 
         ConOut(Replicate("-",80))
 
@@ -121,7 +142,7 @@ procedure u_ForEachTst()
         FreeObj(@oForEach)
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach "+cForEachTst)
+        MsgInfo(cMsg,"ForEach TFINI[General]"+cForEachTst)
 
         ConOut(Replicate("-",80))
 
@@ -135,7 +156,7 @@ procedure u_ForEachTst()
         FreeObj(@oForEach)
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach "+cForEachTst)
+        MsgInfo(cMsg,"ForEach TFINI[General]"+cForEachTst)
 
         ConOut(Replicate("-",80))
 
@@ -151,7 +172,7 @@ procedure u_ForEachTst()
         FreeObj(@oTHash)
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach "+cForEachTst)
+        MsgInfo(cMsg,"ForEach TFINI=>THASHMAP"+cForEachTst)
 
         ConOut(Replicate("-",80))
 
@@ -171,7 +192,7 @@ procedure u_ForEachTst()
         FreeObj(@oForEach)
 
         ConOut(cMsg)
-        EECView(cMsg,"ForEach "+cForEachTst)
+        EECView(cMsg,"ForEach TFINI"+cForEachTst)
 
         ConOut(Replicate("-",80))
 

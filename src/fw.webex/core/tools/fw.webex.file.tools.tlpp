@@ -17,6 +17,7 @@ class WebFileTools
     static method HTMLFromControl(oFWWebExControl as object,cHTMLFilePath as character,cHTMLFileName as character,cHTMLContent as character,lEncodeUTF8 as logical) as logical
     static method HTMLDumpDOMFromControl(oFWWebExControl as object,cHTMLFilePath as character,cHTMLFileName as character,cHTMLContent as character,lEncodeUTF8 as logical) as logical
     static method HTMLAssetsToFile(cAssetID as character,cAssetType as character,cAssetContent as character,cAssetFilePath as character,/*<@>*/cExternalAssetsPath,/*<@>*/cLocalAssetsFilePath) as logical
+    static method CpyF2WebRelativeURL(cPublishedPath as character) as character
     static method ObliterateFWWebExTmpFiles(lNoMercy as logical) as logical
     static method CopyFile(cFileSource as character,cFileTarget as character) as logical
     static method SplitPath(cPathFile as character) as json
@@ -320,8 +321,7 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
     local bErrorBlock as codeblock
 
     local cHTMLAssetFileName as character
-    local cHTMLAssetFileNameServer as character
-
+    local jSplitPath as json
     local lHTMLAssetsToFile as logical
 
     paramtype 1 var cAssetID as character
@@ -330,6 +330,9 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
     paramtype 4 var cAssetPath as character
     paramtype 5 var /*<@>*/cExternalAssetsFilePath as character optional
     paramtype 6 var /*<@>*/cLocalAssetsFilePath as character optional
+
+    cExternalAssetsFilePath:=""
+    cLocalAssetsFilePath:=""
 
     begin sequence
 
@@ -365,39 +368,31 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
             break
         endif
 
+        /*
+         * cAssetPath pertence ao filesystem do AppServer. Por isso a tentativa
+         * principal usa lIsUserDiskDir=.F. O fluxo anterior tentava primeiro
+         * o disco do usuario e podia devolver um caminho nao utilizavel sem
+         * disparar excecao, impedindo o fallback correto.
+         */
         bErrorBlock:=ErrorBlock({|oError|Break(oError)})
         begin sequence
             //https://tdn.totvs.com/display/tec/CpyF2Web
             //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-            cExternalAssetsFilePath:=CpyF2Web(cHTMLAssetFileName,.T.,.T.,.F.,.F.)
+            cExternalAssetsFilePath:=CpyF2Web(cHTMLAssetFileName,.F.,.F.,.F.,.F.)
         recover
-            begin sequence
-                //https://tdn.totvs.com/display/tec/CpyF2Web
-                //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                cExternalAssetsFilePath:=CpyF2Web(cHTMLAssetFileName,.F.,.T.,.F.,.F.)
-            end sequence
+            cExternalAssetsFilePath:=""
         end sequence
         ErrorBlock(bErrorBlock)
-        if ((Empty(cExternalAssetsFilePath)).and.(lIsDir(cAssetPath)))
-            jSplitPath:=WebFileTools():SplitPath(cHTMLAssetFileName)
-                cHTMLAssetFileNameServer:=cAssetPath
-                cHTMLAssetFileNameServer+=jSplitPath["path"]
-                cHTMLAssetFileNameServer+=jSplitPath["ext"]
-            FreeObj(jSplitPath)
-            cExternalAssetsFilePath:=cHTMLAssetFileNameServer
+
+        /* Compatibilidade para um cAssetPath explicitamente localizado no disco do usuario. */
+        if (Empty(cExternalAssetsFilePath))
             bErrorBlock:=ErrorBlock({|oError|Break(oError)})
             begin sequence
                 //https://tdn.totvs.com/display/tec/CpyF2Web
                 //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                cExternalAssetsFilePath:=CpyF2Web(cExternalAssetsFilePath,.T.,.T.,.F.,.F.)
+                cExternalAssetsFilePath:=CpyF2Web(cHTMLAssetFileName,.T.,.F.,.F.,.F.)
             recover
-                begin sequence
-                    //https://tdn.totvs.com/display/tec/CpyF2Web
-                    //CpyF2Web(<cOrigem>,[lIsUserDiskDir],[lCompactCopy],[lChangeCase],[lUnZipFile])
-                    cExternalAssetsFilePath:=CpyF2Web(cExternalAssetsFilePath,.F.,.T.,.F.,.F.)
-                recover
-                    cExternalAssetsFilePath:=cHTMLAssetFileNameServer
-                end sequence
+                cExternalAssetsFilePath:=""
             end sequence
             ErrorBlock(bErrorBlock)
         endif
@@ -418,13 +413,52 @@ static method HTMLAssetsToFile(cAssetID,cAssetType,cAssetContent,cAssetPath,/*<@
             jSplitPath:=WebFileTools():SplitPath(cHTMLAssetFileName)
                 cLocalAssetsFilePath:=jSplitPath["file"]
                 cLocalAssetsFilePath+=jSplitPath["ext"]
-                cExternalAssetsFilePath:=cLocalAssetsFilePath
             FreeObj(@jSplitPath)
+            cLocalAssetsFilePath:="./"+cLocalAssetsFilePath
+            cExternalAssetsFilePath:=WebFileTools():CpyF2WebRelativeURL(cExternalAssetsFilePath)
+            lHTMLAssetsToFile:=(!Empty(cExternalAssetsFilePath))
         endif
 
     end sequence
 
 return(lHTMLAssetsToFile)
+
+/*/{Protheus.doc} CpyF2WebRelativeURL
+
+Converte o retorno de CpyF2Web em uma URL relativa ao documento HTML atual.
+TWebEngine acrescenta /webapp/<sessao>/cache/<ambiente> ao document.baseURI;
+resolver novamente o caminho completo retornado por CpyF2Web duplica esses
+segmentos e resulta em HTTP 404. Query string e fragmento sao descartados.
+
+@type Static Method
+/*/
+static method CpyF2WebRelativeURL(cPublishedPath) class WebFileTools
+
+    local cRelativeURL:="" as character
+    local nPos:=0 as numeric
+
+    paramtype 1 var cPublishedPath as character
+
+    cPublishedPath:=StrTran(AllTrim(cPublishedPath),"\","/")
+
+    nPos:=At("?",cPublishedPath)
+    if (nPos>0)
+        cPublishedPath:=Left(cPublishedPath,nPos-1)
+    endif
+
+    nPos:=At("#",cPublishedPath)
+    if (nPos>0)
+        cPublishedPath:=Left(cPublishedPath,nPos-1)
+    endif
+
+    nPos:=RAt("/",cPublishedPath)
+    if ((nPos>0).and.(nPos<Len(cPublishedPath)))
+        cRelativeURL:="./"+SubStr(cPublishedPath,nPos+1)
+    elseif (!Empty(cPublishedPath))
+        cRelativeURL:="./"+cPublishedPath
+    endif
+
+return(cRelativeURL)
 
 static method ObliterateFWWebExTmpFiles(lNoMercy) class WebFileTools
     local oFWWebExControl as object
