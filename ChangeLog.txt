@@ -2,8 +2,61 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add examples 033 and 034 (CpyF2Web, SVG/PDF))"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add async FW loader and table examples)"
  */
+
+2026-09-08 16:10 UTC naldodj (Add async FW loader and table examples)
+  Add async FW loader and table examples
+  Adds the FWWebEx async loader feature and shared JavaScript table runtime for online and offline SX5 examples.
+  This also registers examples 035/036, adds the SVG asset and documentation, and updates example execution and escaping patterns for safer async rendering.
+    + .github/instructions/tds-vscode-1-0-2.instructions.md
+    + src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.fwloader.tlpp
+    + src/fw.webex/contrib/fw.webex.features/tests/fwloader-async-tables.test.mjs
+    + src/fw.webex/contrib/fw.webex.features/tests/fwloader-preview.mjs
+    + src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.async.tables.tlpp
+    + src/fw.webex/tests/fw.webex.examples/035/fw.webex.example.035.tlpp
+    + src/fw.webex/tests/fw.webex.examples/036/fw.webex.example.036.tlpp
+    + src/fw.webex/tests/fw.webex.examples/036/README.md
+    + src/fw.webex/tests/fw.webex.examples/035/README.md
+    + src/resource/fwwebex_loader.svg
+    * src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp
+    * src/fw.webex/contrib/fw.webex.features/README.md
+    * src/fw.webex/tests/fw.webex.examples/000/fw.webex.template.bulk.action.table.tlpp
+    * src/fw.webex/tests/fw.webex.examples/001/fw.webex.example.001.tlpp
+    * src/fw.webex/tests/fw.webex.examples/002/fw.webex.example.002.tlpp
+    * src/fw.webex/tests/fw.webex.examples/003/fw.webex.example.003.tlpp
+    * src/fw.webex/tests/fw.webex.examples/004/fw.webex.example.004.tlpp
+    * src/fw.webex/tests/fw.webex.examples/005/fw.webex.example.005.tlpp
+    * src/fw.webex/tests/fw.webex.examples/006/fw.webex.example.006.tlpp
+    * src/fw.webex/tests/fw.webex.examples/007/fw.webex.example.007.tlpp
+    * src/fw.webex/tests/fw.webex.examples/008/fw.webex.example.008.tlpp
+    * src/fw.webex/tests/fw.webex.examples/009/fw.webex.example.009.tlpp
+    * src/fw.webex/tests/fw.webex.examples/010/fw.webex.example.010.tlpp
+    * src/fw.webex/tests/fw.webex.examples/011/fw.webex.example.011.tlpp
+    * src/fw.webex/tests/fw.webex.examples/012/fw.webex.example.012.tlpp
+    * src/fw.webex/tests/fw.webex.examples/013/fw.webex.example.013.tlpp
+    * src/fw.webex/tests/fw.webex.examples/014/fw.webex.example.014.tlpp
+    * src/fw.webex/tests/fw.webex.examples/015/fw.webex.example.015.tlpp
+    * src/fw.webex/tests/fw.webex.examples/016/fw.webex.example.016.tlpp
+    * src/fw.webex/tests/fw.webex.examples/017/fw.webex.example.017.tlpp
+    * src/fw.webex/tests/fw.webex.examples/018/fw.webex.example.018.tlpp
+    * src/fw.webex/tests/fw.webex.examples/019/fw.webex.example.019.tlpp
+    * src/fw.webex/tests/fw.webex.examples/020/fw.webex.example.020.tlpp
+    * src/fw.webex/tests/fw.webex.examples/021/fw.webex.example.021.tlpp
+    * src/fw.webex/tests/fw.webex.examples/022/fw.webex.example.022.tlpp
+    * src/fw.webex/tests/fw.webex.examples/023/fw.webex.example.023.tlpp
+    * src/fw.webex/tests/fw.webex.examples/024/fw.webex.example.024.tlpp
+    * src/fw.webex/tests/fw.webex.examples/025/fw.webex.example.025.tlpp
+    * src/fw.webex/tests/fw.webex.examples/026/fw.webex.example.026.tlpp
+    * src/fw.webex/tests/fw.webex.examples/027/fw.webex.example.027.tlpp
+    * src/fw.webex/tests/fw.webex.examples/028/fw.webex.example.028.tlpp
+    * src/fw.webex/tests/fw.webex.examples/029/fw.webex.example.029.tlpp
+    * src/fw.webex/tests/fw.webex.examples/030/fw.webex.example.030.tlpp
+    * src/fw.webex/tests/fw.webex.examples/031/fw.webex.example.031.tlpp
+    * src/fw.webex/tests/fw.webex.examples/032/fw.webex.example.032.tlpp
+    * src/fw.webex/tests/fw.webex.examples/033/fw.webex.example.033.tlpp
+    * src/fw.webex/tests/fw.webex.examples/034/fw.webex.example.034.tlpp
+    * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
 
 2026-09-07 15:38 UTC naldodj (Add examples 033 and 034 (CpyF2Web, SVG/PDF))
   Add examples 033 and 034 (CpyF2Web, SVG/PDF)

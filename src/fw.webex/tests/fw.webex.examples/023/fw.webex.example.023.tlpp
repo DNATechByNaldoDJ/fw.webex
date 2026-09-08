@@ -18,6 +18,7 @@ using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_023()
     local bExecute as codeblock
+    local bHTMLGet as codeblock
     local bCallBack as codeblock
     local bJSToAdvPL as codeblock
     local cHTML as character
@@ -25,7 +26,8 @@ procedure u_FWWebExExample_023()
     local cProcName:=ProcName() as character
     local cCallBackActRet as character
     local oTWebChannel as object
-    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_023(@cHTML)},"Aguarde",cProcName)}
+    bHTMLGet:={||cHTMLFile:=FWWebExExample_023(@cHTML)}
+    bExecute:={||FWMsgRun(nil,bHTMLGet,"Aguarde",cProcName)}
     FWExampleTools():Execute(bExecute,cProcName,.T.,.F.)
     if (!Empty(cHTMLFile).and.File(cHTMLFile))
         oTWebChannel:=WebApp():GetTWebChannel()

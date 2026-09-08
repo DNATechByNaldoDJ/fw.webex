@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 180" width="112" height="126" focusable="false" aria-hidden="true">
+  <style>
+    .fw-loader-orbit{animation:fw-loader-circuit 1.6s linear infinite}
+    @keyframes fw-loader-circuit{to{stroke-dashoffset:-100}}
+    @media(prefers-reduced-motion:reduce){.fw-loader-orbit{animation:none}}
+  </style>
+  <path d="M80 10 146 50V130L80 170 14 130V50Z" fill="#171b1b" stroke="#173f44" stroke-width="7" stroke-linejoin="round"/>
+  <path class="fw-loader-orbit" d="M80 10 146 50V130L80 170 14 130V50Z" fill="none" stroke="#1f7480" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" pathLength="100" stroke-dasharray="24 76"/>
+  <path transform="translate(17.375 8) scale(.75)" d="M36 64H67V74H47V86H64V96H47V116H36Z M72 64H83L89 98 97 75H106L114 98 120 64H131L120 116H109L101 94 93 116H82Z" fill="#f5f4f0"/>
+  <text x="80" y="124" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="700" letter-spacing="-.6"><tspan fill="#f5f4f0">Web</tspan><tspan fill="#1f7480">Ex</tspan></text>
+</svg>

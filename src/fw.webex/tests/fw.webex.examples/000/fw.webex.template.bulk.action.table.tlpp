@@ -44,48 +44,68 @@ method FromSQL(cTemplateBulkActionTableSQL) class WebExTemplateBulkActionTable
     local aCols:={} as array
     local aData:={} as array
     local aColumns as array
+    local aRow:={} as array
+    local aArea:=FWGetArea() as array
 
     local cLabel as character
     local cProperty as character
-    local cTmpAlias as character
+    local cTmpAlias:=GetNextAlias() as character
+    local cQuery:="%"+cTemplateBulkActionTableSQL+"%" as character
 
     local i as numeric
     local nColumns as numeric
+    local oError as object
 
-    cQuery:="%"+cTemplateBulkActionTableSQL+"%"
+    try
+        // Read metadata and values from the same cursor, as in examples 035/036.
+        // Keep DBAccess types, including R_E_C_N_O_ and R_E_C_D_E_L_.
+        beginSQL alias cTmpAlias
+            SELECT t.* FROM (
+                %exp:cQuery%
+            ) t
+        endSQL
 
-    cTmpAlias:=GetNextAlias()
-    beginSQL alias cTmpAlias
-        SELECT t.* FROM (
-            %exp:cQuery%
-        ) t
-         WHERE 1=0
-    endSQL
+        aColumns:=(cTmpAlias)->(dbStruct())
+        nColumns:=Len(aColumns)
+        for i:=1 to nColumns
+            cProperty:=aColumns[i][DBS_NAME]
+            cLabel:=AllTrim(GetSX3Cache(cProperty,"X3_TITULO"))
+            if (Empty(cLabel))
+                cLabel:=cProperty
+            endif
+            aAdd(aCols,{"property":cProperty,"label":cLabel})
+        next i
 
-    aColumns:=(cTmpAlias)->(dbStruct())
-    (cTmpAlias)->(dbCloseArea())
-    nColumns:=Len(aColumns)
+        while ((cTmpAlias)->(!eof()))
+            for i:=1 to nColumns
+                aAdd(aRow,(cTmpAlias)->(FieldGet(i)))
+            next i
+            aAdd(aData,aClone(aRow))
+            aSize(aRow,0)
+            (cTmpAlias)->(dbSkip())
+        end while
 
-    if ("POSTGRES"==Upper(AllTrim(TCGetDB())))
-        __TCSQLToArr(cQuery,@aData,nil,aColumns,aColumns)
-    else
-        TCSQLToArr(cTemplateBulkActionTableSQL,@aData,nil,aColumns,aColumns)
+    catch oError
+
+        if (Select(cTmpAlias)>0)
+            (cTmpAlias)->(dbCloseArea())
+        endif
+
+        FWRestArea(aArea)
+        Break(oError)
+
+    endtry
+
+    if (Select(cTmpAlias)>0)
+        (cTmpAlias)->(dbCloseArea())
     endif
 
-    for i:=1 to nColumns
-        cProperty:=aColumns[i][DBS_NAME]
-        cLabel:=GetSX3Cache(aColumns[i][DBS_NAME],"X3_TITULO")
-        if (Empty(cLabel))
-            cLabel:=cProperty
-        else
-            cLabe:=AllTrim(cLabel)
-        endif
-        aAdd(aCols,{"property":cProperty,"label":cLabel})
-    next i
+    FWRestArea(aArea)
 
     ::jTemplateBulkActionTableColumns:Set(aClone(aCols))
     ::jTemplateBulkActionTableItems:Set(aClone(aData))
 
+    FWFreeArray(@aRow)
     FWFreeArray(@aCols)
     FWFreeArray(@aData)
     FWFreeArray(@aColumns)
@@ -310,44 +330,3 @@ method RenderHTML() class WebExTemplateBulkActionTable
     cHtml:=_Super:RenderHTML()
 
 return(cHtml)
-
-static function __TCSqlToArr(cQuery,aResult,aBinds,aSetFields,aQryStru) as array
-
-    local aFieldPos:=Array(0) as array
-    local aDataArray:=aResult as array
-
-    local cTmpAlias:=GetNextAlias() as character
-
-    local nField as numeric
-    local nFields as numeric
-
-    beginSQL alias cTmpAlias
-        select t.* from (%exp:cQuery%) t
-    endSQL
-
-    nFields:=Len(aSetFields)
-    for nField:=1 to nFields
-        cField:=aSetFields[nField][DBS_NAME]
-        aAdd(aFieldPos,{nField,cField})
-        TCSetField(cTmpAlias,cField,aSetFields[nField][DBS_TYPE],aSetFields[nField][DBS_LEN],aSetFields[nField][DBS_DEC])
-    next nField
-
-    while ((cTmpAlias)->(!eof()))
-        (cTmpAlias)->(aAdd(aDataArray,RegToArray(cTmpAlias,aFieldPos)))
-        ((cTmpAlias)->(!dbSkip()))
-    end while
-
-    (cTmpAlias)->(dbCloseArea())
-
-    FWFreeArray(@aFieldPos)
-
-return(aDataArray)
-
-static function RegToArray(cAlias as character,aFieldPos as array) as array
-
-    local aValues:=Array(0) as array
-
-    aValues:=Array(Len(aFieldPos))
-    (cAlias)->(aEval(aFieldPos,{|aField,nAT|aValues[nAT]:=FieldGet(aField[1])}))
-
-return(aValues)

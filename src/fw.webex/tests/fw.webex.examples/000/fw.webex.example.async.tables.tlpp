@@ -1,0 +1,429 @@
+/* Shared by examples 035/036. Released to Public Domain. */
+#include "fw.webex.th"
+
+namespace FWWebEx.Tools
+using namespace FWWebEx
+
+class FWExampleAsyncTables
+    static method Show(lExternal as logical)
+    static method Page(cHTML as character) as character
+    static method Callback(oChannel as object,cType as character,cContent as character)
+    static method Script() as character
+    static method ReadTable(cTable as character) as json
+    static method ExportOffline()
+    static method OfflineHTML(cDataFile as character) as character
+endclass
+
+// Execute Show INSIDE FWExampleTools:Execute: SQL callbacks need its environment.
+static method Show(lExternal) class FWExampleAsyncTables
+    local bPrevious as codeblock
+    local cHTML as character
+    local cFile as character
+    local cTitle:="FWWebEx :: Tabelas assincronas" as character
+    local oError as object
+    local oChannel as object
+    if (lExternal)
+        FWExampleAsyncTables():ExportOffline()
+        return
+    endif
+    oChannel:=WebApp():GetTWebChannel()
+    if (!oChannel:lConnected)
+        MsgStop("Nao foi possivel conectar o TWebChannel.",cTitle)
+        return
+    endif
+    bPrevious:=oChannel:bJSToAdvPL
+    try
+        oChannel:bJSToAdvPL:={|oSender,cType,cContent|FWExampleAsyncTables():Callback(oSender,cType,cContent)}
+        cFile:=FWExampleAsyncTables():Page(@cHTML)
+        if (!Empty(cFile).and.File(cFile))
+            FWExampleTools():HtmlFileShow(cHTML,cTitle,cFile,oChannel,oChannel:bJSToAdvPL)
+        endif
+    catch oError
+        MsgStop("Falha ao abrir as tabelas assincronas: "+oError:Description,cTitle)
+    endtry
+    oChannel:bJSToAdvPL:=bPrevious
+    if (!Empty(cFile).and.File(cFile))
+        fErase(cFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+return
+
+static method Page(cHTML) class FWExampleAsyncTables
+    local cFile:="fwwebex-async-tables" as character
+    local cTable as character
+    local nTable as numeric
+    local aTables:={"32","35"} as array
+    local oPage as object
+    // No SQL, rows, or table structure is built here.
+    BEGIN FWWEBEX oPage CLASS WebExPage ARGS "FWWebEx :: Tabelas assincronas"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExH2
+                    .:SetContent("SX5 &middot; Carregamento via JavaScript")
+                END WEBEXOBJECT
+                WITH WEBEXOBJECT CLASS WebExParagraph
+                    .:SetContent("As tabelas sao consultadas depois da exibicao da pagina. A exclusao demonstrativa afeta apenas a visualizacao.")
+                END WEBEXOBJECT
+                for nTable:=1 to Len(aTables)
+                    cTable:=aTables[nTable]
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:SetAttr("data-fw-table",cTable)
+                        .:SetAttr("aria-busy","true")
+                        .:AddClass("container rounded shadow p-3 my-3")
+                        WITH WEBEXOBJECT CLASS WebExH3
+                            .:SetContent("Tabela "+cTable)
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExFWLoader
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExParagraph
+                            .:SetAttr("data-fw-status","")
+                            .:SetAttr("role","status")
+                            .:SetAttr("aria-live","polite")
+                            .:SetContent("Aguardando carregamento...")
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExDiv
+                            .:SetAttr("data-fw-result","")
+                            .:AddClass("table-responsive")
+                        END WEBEXOBJECT
+                        WITH WEBEXOBJECT CLASS WebExControl TYPE button
+                            .:SetAttr("type","button")
+                            .:SetAttr("data-fw-retry","")
+                            .:SetAttr("disabled","")
+                            .:AddClass("btn btn-outline-primary")
+                            .:SetContent("Recarregar / tentar novamente")
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                next nTable
+                WITH WEBEXOBJECT CLASS WebExScript
+                    .:SetContent(FWExampleAsyncTables():Script())
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END FWWEBEX
+    if (!WebFileTools():HTMLFromControl(oPage,oPage:GetFWWebExTmpPath(),@cFile,@cHTML,.T.))
+        cFile:=""
+    endif
+    WEBEXOBJECT CLEAN
+return(cFile)
+
+static method Callback(oChannel,cType,cContent) class FWExampleAsyncTables
+    local lValid as logical
+    local jRequest:=JSONObject():New() as json
+    local jResponse as json
+    local oError as object
+    if (cType!="FWWEBEX_ASYNC_TABLE")
+        FreeObj(@jRequest)
+        return
+    endif
+    try
+        lValid:=Empty(jRequest:FromJSON(cContent))
+        if (lValid)
+            lValid:=(jRequest:HasProperty("id").and.jRequest:HasProperty("table"))
+        endif
+        if (lValid)
+            lValid:=(ValType(jRequest["id"])=="C".and.ValType(jRequest["table"])=="C")
+        endif
+        if (lValid)
+            lValid:=(Len(jRequest["id"])>0.and.Len(jRequest["id"])<=100)
+        endif
+        if (lValid)
+            jResponse:=FWExampleAsyncTables():ReadTable(jRequest["table"])
+            jResponse["id"]:=jRequest["id"]
+            oChannel:AdvPLToJS("FWWEBEX_ASYNC_TABLE_RESULT",jResponse:ToJSON())
+            FreeObj(@jResponse)
+        endif
+    catch oError
+        ConOut("FWWebEx async callback: "+oError:Description)
+    endtry
+    FreeObj(@jRequest)
+return
+
+// Shared query: invoked on demand by 036, during snapshot export by 035.
+static method ReadTable(cTable) class FWExampleAsyncTables
+    local aRow:={} as array
+    local aArea:=FWGetArea() as array
+    local aStructure as array
+    local cAlias:="" as character
+    local cLabel as character
+    local nColumn as numeric
+    local nColumns as numeric
+    local jResponse:=JSONObject():New() as json
+    local oError as object
+    try
+        jResponse["table"]:=cTable
+        jResponse["ok"]:=.F.
+        if ((cTable!="32").and.(cTable!="35"))
+            jResponse["error"]:="Tabela nao permitida."
+        else
+            // Never accept SQL from JavaScript.
+            cAlias:=GetNextAlias()
+            beginSQL alias cAlias
+                SELECT * FROM %table:SX5%
+                 WHERE X5_TABELA = %exp:cTable%
+                   AND D_E_L_E_T_ <> '*'
+            endSQL
+            aStructure:=(cAlias)->(dbStruct())
+            jResponse["columns"]:={}
+            jResponse["rows"]:={}
+            nColumns:=Len(aStructure)
+            for nColumn:=1 to Len(aStructure)
+                cLabel:=AllTrim(GetSX3Cache(aStructure[nColumn][1],"X3_TITULO"))
+                if (Empty(cLabel))
+                    cLabel:=aStructure[nColumn][1]
+                endif
+                aAdd(jResponse["columns"],cLabel)
+            next nColumn
+            while ((cAlias)->(!eof()))
+                for nColumn:=1 to nColumns
+                    aAdd(aRow,cValToChar((cAlias)->(FieldGet(nColumn))))
+                next nColumn
+                aAdd(jResponse["rows"],aClone(aRow))
+                aSize(aRow,0)
+                (cAlias)->(dbSkip())
+            end while
+            jResponse["ok"]:=.T.
+        endif
+    catch oError
+        jResponse["ok"]:=.F.
+        jResponse["error"]:="Nao foi possivel consultar a SX5. Tente novamente."
+        ConOut("FWWebEx async tables: "+oError:Description)
+    endtry
+    if (!Empty(cAlias).and.Select(cAlias)>0)
+        (cAlias)->(dbCloseArea())
+    endif
+
+    FWRestArea(aArea)
+
+    FWFreeArray(@aRow)
+    FWFreeArray(aArea)
+    FWFreeArray(aStructure)
+
+return(jResponse)
+
+static method ExportOffline() class FWExampleAsyncTables
+    local cBase:="fwwebex-offline-"+Lower(UUIDRandomSeq()) as character
+    local cServerHTML:=FWWEBEX_WEB_TMP_PATH+cBase+".html" as character
+    local cServerData:=FWWEBEX_WEB_TMP_PATH+cBase+".data.js" as character
+    local cLocalHTML:=GetTempPath()+cBase+".html" as character
+    local cLocalData:=GetTempPath()+cBase+".data.js" as character
+    local cHTML as character
+    local cData as character
+    local jSnapshot:=JSONObject():New() as json
+    local lOK:=.F. as logical
+    local oError as object
+    try
+        // Build the shell first; no table structure is generated on the server.
+        cHTML:=FWExampleAsyncTables():OfflineHTML(cBase+".data.js")
+        // Explicit educational exception: export a local copy for offline use.
+        jSnapshot["32"]:=FWExampleAsyncTables():ReadTable("32")
+        jSnapshot["35"]:=FWExampleAsyncTables():ReadTable("35")
+        if ((!jSnapshot["32"]["ok"]).or.(!jSnapshot["35"]["ok"]))
+            MsgStop("Nao foi possivel exportar a SX5. Execute o exemplo novamente.","FWWebEx 035")
+        else
+            cData:="window.FWWebExOfflineTables="+jSnapshot:ToJSON()+";"
+            cData:=WebExHelper():StrReplaceEx(;
+                 cData;
+                ,{"<","\u003c"};
+                ,{Chr(226)+Chr(128)+Chr(168),"\u2028"};
+                ,{Chr(226)+Chr(128)+Chr(169),"\u2029"};
+            )
+
+            if (lIsDir(FWWEBEX_WEB_TMP_PATH).or.FWMakeDir(FWWEBEX_WEB_TMP_PATH,.F.))
+                if (MemoWrite(cServerData,EncodeUTF8(cData)).and.MemoWrite(cServerHTML,EncodeUTF8(cHTML)))
+                    // Use the existing server-to-client copy helper, not CpyF2Web.
+                    if (WebFileTools():CopyFile(cServerData,cLocalData))
+                        lOK:=WebFileTools():CopyFile(cServerHTML,cLocalHTML)
+                    endif
+                endif
+            endif
+            if (lOK.and.File(cLocalHTML).and.File(cLocalData))
+                ShellExecute("open",cLocalHTML,"","",1)
+            else
+                lOK:=.F.
+                MsgStop("Falha ao copiar HTML/dados para a pasta temporaria local.","FWWebEx 035")
+            endif
+        endif
+    catch oError
+        lOK:=.F.
+        MsgStop("Falha ao exportar exemplo offline: "+oError:Description,"FWWebEx 035")
+    endtry
+    if (File(cServerHTML))
+        fErase(cServerHTML)
+    endif
+    if (File(cServerData))
+        fErase(cServerData)
+    endif
+    if (!lOK)
+        if (File(cLocalHTML))
+            fErase(cLocalHTML)
+        endif
+        if (File(cLocalData))
+            fErase(cLocalData)
+        endif
+    endif
+    // Successful local files are intentionally retained for offline reopening.
+    FreeObj(@jSnapshot)
+return
+
+static method OfflineHTML(cDataFile) class FWExampleAsyncTables
+    local aTables:={"32","35"} as array
+    local cHTML as character
+    local cPanel as character
+    local cPanels:="" as character
+    local nTable as numeric
+    BeginContent var cPanel
+<section data-fw-table="__TABLE__" aria-busy="true">
+  <h2>Tabela __TABLE__</h2>
+  <div data-fw-loader aria-hidden="true">__SVG__</div>
+  <p data-fw-status role="status" aria-live="polite">Aguardando carregamento local...</p>
+  <div data-fw-result class="table-responsive"></div>
+  <button type="button" data-fw-retry disabled>Recarregar copia local</button>
+</section>
+    EndContent
+    cPanel:=StrTran(cPanel,"__SVG__",WebExFWLoader():SVG())
+    for nTable:=1 to Len(aTables)
+        cPanels+=StrTran(cPanel,"__TABLE__",aTables[nTable])
+    next nTable
+    BeginContent var cHTML
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FWWebEx 035 - Tabelas offline</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:24px;background:#171b1b;color:#f5f4f0;font:16px Arial,Helvetica,sans-serif}
+main{max-width:1200px;margin:auto}section{border:1px solid #1f7480;border-radius:12px;padding:24px;margin:24px 0}
+[data-fw-loader]{text-align:center;padding:24px}[hidden]{display:none!important}
+.table-responsive{overflow-x:auto}table{width:100%;border-collapse:collapse;margin:16px 0}
+td,th{padding:10px;text-align:left;border-bottom:1px solid #375154}caption{text-align:left;margin:10px 0}
+button{background:#1f7480;color:#f5f4f0;border:0;border-radius:5px;padding:10px;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}p{line-height:1.5}h1{font-size:26px}h2{font-size:20px}
+</style></head><body><main>
+<h1>FWWebEx 035 - Consulta offline</h1>
+<p>Copia da SX5 exportada em __EXPORTED__. Recarregar usa os mesmos dados locais.
+Para atualizar os dados, execute o exemplo novamente no Protheus.
+Excluir altera apenas a visualizacao.</p>
+__PANELS__
+</main>
+<script>window.FWWebExOfflineSource="__DATA_FILE__";</script>
+<script>__LOADER_RUNTIME__</script>
+<script>__TABLE_RUNTIME__</script>
+</body></html>
+    EndContent
+
+    cHTML:=WebExHelper():StrReplaceEx(;
+         cHTML;
+        ,{"__EXPORTED__",DToC(Date())+" "+Time()};
+        ,{"__PANELS__",cPanels};
+        ,{"__DATA_FILE__",cDataFile};
+        ,{"__LOADER_RUNTIME__",WebExFeatureFWLoader():Runtime()};
+        ,{"__TABLE_RUNTIME__",FWExampleAsyncTables():Script()};
+    )
+
+return(cHTML)
+
+static method Script() class FWExampleAsyncTables
+    local cScript as character
+    BeginContent var cScript
+(function(root){
+    'use strict';
+    let sequence=0;
+    let offlinePending=null;
+    function validate(data,table){
+        if(!data||data.table!==table)throw new Error('Resposta de tabela invalida.');
+        if(!data.ok)throw new Error(data.error||'Falha ao consultar tabela.');
+        if(!Array.isArray(data.columns)||!Array.isArray(data.rows)||
+            data.rows.some(row=>!Array.isArray(row)||row.length!==data.columns.length))
+            throw new Error('Dados de tabela invalidos.');
+        return data;
+    }
+    function offline(table,timeout){
+        if(!offlinePending){
+            const source=root.FWWebExOfflineSource;
+            if(typeof source!=='string'||!/^[a-z0-9-]+\.data\.js$/.test(source))
+                return Promise.reject(new Error('Arquivo local de dados invalido.'));
+            const loading=new Promise((resolve,reject)=>{
+                const script=document.createElement('script');let timer,settled=false;
+                const finish=error=>{
+                    if(settled)return;settled=true;clearTimeout(timer);
+                    script.onload=null;script.onerror=null;script.remove();
+                    if(error)reject(error);else resolve(root.FWWebExOfflineTables);
+                };
+                script.src='./'+source;
+                script.onload=()=>finish(root.FWWebExOfflineTables?null:new Error('Arquivo local sem dados.'));
+                script.onerror=()=>finish(new Error('Dados locais nao encontrados. Mantenha HTML e .data.js na mesma pasta.'));
+                timer=setTimeout(()=>finish(new Error('Tempo esgotado ao ler os dados locais.')),timeout);
+                document.head.appendChild(script);
+            });
+            offlinePending=loading.catch(error=>{offlinePending=null;throw error;});
+        }
+        return offlinePending.then(snapshot=>validate(snapshot[table],table));
+    }
+    function request(table,timeout=30000){
+        if(root.FWWebExOfflineSource!==undefined)return offline(table,timeout);
+        const bridge=root.FWWebEx.TWebChannel;
+        const id=Date.now().toString(36)+'-'+(++sequence);
+        return new Promise((resolve,reject)=>{
+            let settled=false,timer,unsubscribe=()=>{};
+            const finish=(error,data)=>{
+                if(settled)return;
+                settled=true;clearTimeout(timer);unsubscribe();
+                if(error)reject(error);else resolve(data);
+            };
+            unsubscribe=bridge.onAdvplToJs((type,content)=>{
+                if(type!=='FWWEBEX_ASYNC_TABLE_RESULT')return false;
+                let data;
+                try{data=typeof content==='string'?JSON.parse(content):content;}
+                catch(error){return true;}
+                if(!data||data.id!==id)return true;
+                try{finish(null,validate(data,table));}catch(error){finish(error);}
+                return true;
+            });
+            timer=setTimeout(()=>finish(new Error('Tempo esgotado. Verifique a sessao Protheus e tente novamente.')),timeout);
+            Promise.resolve().then(()=>{
+                if(!settled)return bridge.send('FWWEBEX_ASYNC_TABLE',JSON.stringify({id,table}));
+            }).catch(error=>finish(error));
+        });
+    }
+    function render(host,data){
+        const target=host.querySelector('[data-fw-result]');
+        const table=document.createElement('table');
+        table.className='table table-striped table-hover align-middle small';
+        const caption=table.createCaption();caption.textContent='Tabela '+data.table+' - '+data.rows.length+' registros';
+        const header=table.createTHead().insertRow();
+        const all=document.createElement('input');all.type='checkbox';all.setAttribute('aria-label','Selecionar todas as linhas');
+        let cell=document.createElement('th');cell.scope='col';cell.appendChild(all);header.appendChild(cell);
+        data.columns.concat(['Acao']).forEach(label=>{
+            const th=document.createElement('th');th.scope='col';th.textContent=String(label);header.appendChild(th);
+        });
+        const body=table.createTBody();
+        data.rows.forEach(values=>{
+            const row=body.insertRow(),check=document.createElement('input');
+            check.type='checkbox';check.setAttribute('aria-label','Selecionar linha');row.insertCell().appendChild(check);
+            values.forEach(value=>{row.insertCell().textContent=value==null?'':String(value);});
+            const button=document.createElement('button');button.type='button';button.className='btn btn-sm btn-outline-danger';
+            button.textContent='Excluir';button.addEventListener('click',()=>{
+                if(root.confirm('Remover esta linha apenas da visualizacao?')){
+                    row.remove();all.checked=false;caption.textContent='Tabela '+data.table+' - '+body.rows.length+' registros';
+                }
+            });
+            row.insertCell().appendChild(button);
+        });
+        all.addEventListener('change',()=>body.querySelectorAll('input[type="checkbox"]').forEach(check=>check.checked=all.checked));
+        if(!data.rows.length){
+            const empty=body.insertRow().insertCell();empty.colSpan=data.columns.length+2;empty.textContent='Nenhum registro encontrado.';
+            all.disabled=true;
+        }
+        target.replaceChildren(table);
+    }
+    function init(){
+        document.querySelectorAll('[data-fw-table]').forEach(host=>{
+            const load=()=>root.FWWebEx.Loader.run(host,()=>request(host.getAttribute('data-fw-table')),data=>render(host,data));
+            host.querySelector('[data-fw-retry]').addEventListener('click',load);
+            load();
+        });
+    }
+    root.FWWebEx.ExampleAsyncTables={request,render,init};
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})(window);
+    EndContent
+return(cScript)

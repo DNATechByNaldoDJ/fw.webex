@@ -12,13 +12,15 @@ using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_033()
     local bExecute as codeblock
+    local bHTMLGet as codeblock
     local bJSToAdvPL as codeblock
     local cHTML as character
     local cHTMLFile as character
     local cSVGFile as character
     local cProcName:=ProcName() as character
     local oTWebChannel as object
-    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_033(@cHTML,@cSVGFile)},"Aguarde",cProcName)}
+    bHTMLGet:={||cHTMLFile:=FWWebExExample_033(@cHTML,@cSVGFile)}
+    bExecute:={||FWMsgRun(nil,bHTMLGet,"Aguarde",cProcName)}
     FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
     if (!Empty(cHTMLFile).and.File(cHTMLFile))
         oTWebChannel:=WebApp():GetTWebChannel()
@@ -114,8 +116,12 @@ static function FWWebExExample_033(cHTML as character,cSVGFile as character) as 
     else runProbe();
 })();
     EndContent
-    cScript:=StrTran(cScript,"__CPY_SVG_PATH__",FWWebEx033JSEscape(cSVGWeb))
-    cScript:=StrTran(cScript,"__SVG_FILE_NAME__",FWWebEx033JSEscape(cSVGName))
+
+    cScript:=WebExHelper():StrReplaceEx(;
+         cScript;
+        ,{"__CPY_SVG_PATH__",FWWebEx033JSEscape(cSVGWeb)};
+        ,{"__SVG_FILE_NAME__",FWWebEx033JSEscape(cSVGName)};
+    )
 
     BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: CpyF2Web URL discovery"
         WITH WEBEXOBJECT CLASS WebExBody
@@ -165,8 +171,11 @@ static function FWWebEx033Callback(oChannel as object,cType as character,cConten
 return(.T.)
 
 static function FWWebEx033JSEscape(cValue as character) as character
-    cValue:=StrTran(cValue,"\","\\")
-    cValue:=StrTran(cValue,"'","\'")
-    cValue:=StrTran(cValue,Chr(13),"\r")
-    cValue:=StrTran(cValue,Chr(10),"\n")
+    cValue:=WebExHelper():StrReplaceEx(;
+         cValue;
+        ,{"\","\\"};
+        ,{"'","\'"};
+        ,{Chr(13),"\r"};
+        ,{Chr(10),"\n"};
+    )
 return(cValue)

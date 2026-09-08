@@ -12,13 +12,15 @@ using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_034()
     local bExecute as codeblock
+    local bHTMLGet as codeblock
     local bJSToAdvPL as codeblock
     local cHTML as character
     local cHTMLFile as character
     local cSVGFile as character
     local cProcName:=ProcName() as character
     local oTWebChannel as object
-    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_034(@cHTML,@cSVGFile)},"Aguarde",cProcName)}
+    bHTMLGet:={||cHTMLFile:=FWWebExExample_034(@cHTML,@cSVGFile)}
+    bExecute:={||FWMsgRun(nil,bHTMLGet,"Aguarde",cProcName)}
     FWExampleTools():Execute(bExecute,cProcName,.F.,.F.)
     if (!Empty(cHTMLFile).and.File(cHTMLFile))
         oTWebChannel:=WebApp():GetTWebChannel()
@@ -163,7 +165,9 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
     EndContent
+
     cAppScript:=StrTran(cAppScript,"__TEMPLATE_URL__",FWWebEx034JSEscape(cTemplateURL))
+
     cScript:=cBarcodeJS+CRLF+cCanvasJS+CRLF+cPDFJS+CRLF+cAppScript
 
     BEGIN FWWEBEX oFWWebExPage CLASS WebExPage ARGS "FWWebEx :: SVG Web Labels"
@@ -220,10 +224,12 @@ static function FWWebEx034Callback(oChannel as object,cType as character,cConten
 return(.T.)
 
 static function FWWebEx034JSEscape(cValue as character) as character
-    cValue:=StrTran(cValue,"\","\\")
-    cValue:=StrTran(cValue,"'","\'")
-    cValue:=StrTran(cValue,Chr(13),"\r")
-    cValue:=StrTran(cValue,Chr(10),"\n")
+    cValue:=WebExHelper():StrReplaceEx(;
+         cValue;
+        ,{"'","\'"};
+        ,{Chr(13),"\r"};
+        ,{Chr(10),"\n"};
+    )
 return(cValue)
 
 static function FWWebEx034Template() as character

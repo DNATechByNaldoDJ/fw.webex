@@ -1080,17 +1080,23 @@ return(cNormalized$"|1|T|TRUE|Y|YES|S|SIM|")
 
 static function __DTFEncodeAttr(cValue as character) as character
     DEFAULT cValue:=""
-    cValue:=StrTran(cValue,"&","&amp;")
-    cValue:=StrTran(cValue,Chr(34),"&quot;")
-    cValue:=StrTran(cValue,"<","&lt;")
-    cValue:=StrTran(cValue,">","&gt;")
+    cValue:=WebExHelper():StrReplaceEx(;
+         cValue;
+        ,{"&","&amp;"};
+        ,{Chr(34),"&quot;"};
+        ,{"<","&lt;"};
+        ,{">","&gt;"};
+    )
 return(cValue)
 
 static function __DTFEncodeJS(cValue as character) as character
     DEFAULT cValue:=""
-    cValue:=StrTran(cValue,Chr(92),Chr(92)+Chr(92))
-    cValue:=StrTran(cValue,Chr(39),Chr(92)+Chr(39))
-    cValue:=StrTran(cValue,CRLF,"\n")
-    cValue:=StrTran(cValue,Chr(13),"\n")
-    cValue:=StrTran(cValue,Chr(10),"\n")
+    cValue:=WebExHelper():StrReplaceEx(;
+         cValue;
+        ,{Chr(92),Chr(92)+Chr(92)};
+        ,{Chr(39),Chr(92)+Chr(39)};
+        ,{CRLF,"\n\r"};
+        ,{Chr(13),"\n"};
+        ,{Chr(10),"\r"};
+    )
 return(cValue)

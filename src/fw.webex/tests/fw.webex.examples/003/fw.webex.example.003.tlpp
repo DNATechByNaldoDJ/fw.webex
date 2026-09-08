@@ -32,11 +32,13 @@ using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_003()
     local bExecute as codeblock
+    local bHTMLGet as codeblock
     local cHTML as character
     local cHTMLFile as character
     local cProcName:=ProcName() as character
     local oTWebChannel as object
-    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_003(@cHTML)},"Aguarde",cProcName)}
+    bHTMLGet:={||cHTMLFile:=FWWebExExample_003(@cHTML)}
+    bExecute:={||FWMsgRun(nil,bHTMLGet,"Aguarde",cProcName)}
     FWExampleTools():Execute(bExecute,cProcName,.T.)
     if (!Empty(cHTMLFile).and.File(cHTMLFile))
         oTWebChannel:=WebApp():GetTWebChannel()
