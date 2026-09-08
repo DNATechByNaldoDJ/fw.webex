@@ -55,11 +55,13 @@ using namespace FWWebEx.Tools
 
 procedure u_FWWebExExample_002()
     local bExecute as codeblock
+    local bHTMLGet as codeblock
     local cHTML as character
     local cHTMLFile as character
     local cProcName:=ProcName() as character
     local oTWebChannel as object
-    bExecute:={||FWMsgRun(nil,{||cHTMLFile:=FWWebExExample_002(@cHTML)},"Aguarde",cProcName)}
+    bHTMLGet:={||cHTMLFile:=FWWebExExample_002(@cHTML)}
+    bExecute:={||FWMsgRun(nil,bHTMLGet,"Aguarde",cProcName)}
     FWExampleTools():Execute(bExecute,cProcName,.T.,.T.)
     if (!Empty(cHTMLFile).and.File(cHTMLFile))
         oTWebChannel:=WebApp():GetTWebChannel()
@@ -81,12 +83,12 @@ static function FWWebExExample_002(cHTML as character) as character
         WITH WEBEXOBJECT CLASS WebExBody
             WITH WEBEXOBJECT CLASS WebExMain
                 WITH WEBEXOBJECT CLASS WebExTemplateBulkActionTable ARGS cProcName+" (Tabela 32)"
-                    .:FromSQL("SELECT * FROM "+cSX5TableName+" WHERE X5_TABELA='32' AND D_E_L_E_T_<>'*'")
+                    .:FromSQL("SELECT TOP 10 * FROM "+cSX5TableName+" WHERE X5_TABELA='32' AND D_E_L_E_T_<>'*'")
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT CLASS WebExHR
                 END WEBEXOBJECT
                 WITH WEBEXOBJECT CLASS WebExTemplateBulkActionTable ARGS cProcName+" (Tabela 35)"
-                    .:FromSQL("SELECT * FROM "+cSX5TableName+" WHERE X5_TABELA='35' AND D_E_L_E_T_<>'*'")
+                    .:FromSQL("SELECT TOP 10 * FROM "+cSX5TableName+" WHERE X5_TABELA='35' AND D_E_L_E_T_<>'*'")
                 END WEBEXOBJECT
             END WEBEXOBJECT
         END WEBEXOBJECT

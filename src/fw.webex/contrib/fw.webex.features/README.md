@@ -1,5 +1,52 @@
 # Features genéricas do FWWebEx
 
+## Carregador SVG FW
+
+`WebExFWLoader` e `WebExFeatureFWLoader` implementam um carregador sem
+dependências externas, inspirado em `src/resource/fwwebex_logo.png`:
+FW branco menor, WebEx abaixo (Web branco e Ex turquesa), fundo escuro e um
+traço turquesa que percorre o hexágono.
+Respeita `prefers-reduced-motion` e não simula porcentagem de progresso.
+
+```tlpp
+// SVG padrão em BeginContent/EndContent; habilita a feature automaticamente.
+WITH WEBEXOBJECT CLASS WebExFWLoader
+END WEBEXOBJECT
+
+// Alternativa: compile src/resource/fwwebex_loader.svg como recurso no RPO.
+WITH WEBEXOBJECT CLASS WebExFWLoader ARGS GetApoRes("fwwebex_loader.svg")
+END WEBEXOBJECT
+```
+
+O SVG recebido é markup confiável da aplicação. Uma string vazia usa o padrão
+embutido. A cópia em recurso e o SVG embutido são conferidos por teste.
+
+`FWWebEx.Loader.run(host, task, render)` define `aria-busy`, exibe o filho
+`[data-fw-loader]`, atualiza `[data-fw-status]` com texto e desabilita
+`[data-fw-retry]`. Aguarda dois frames antes de executar `task`; aguarda também
+o retorno de `render(data)` antes de ocultar a animação. A promessa resolve
+`true` no sucesso ou `false` na falha, cuja mensagem aparece no status.
+Chamadas sobre o mesmo host durante uma execução compartilham a promessa.
+O status deve usar `role="status"` e `aria-live="polite"` no HTML consumidor.
+
+```javascript
+await FWWebEx.Loader.run(container,
+    () => fetch('/dados').then(response => {
+        if (!response.ok) throw new Error('Falha ao consultar dados');
+        return response.json();
+    }),
+    data => montarTabela(data)
+);
+```
+
+O consumidor define transporte, timeout e cancelamento; a feature cuida apenas
+da apresentação. O exemplo [035](../../tests/fw.webex.examples/035/README.md)
+exporta uma cópia local da SX5 e carrega os dados offline após a exibição.
+O [036](../../tests/fw.webex.examples/036/README.md) consulta SX5 via TWebChannel
+após a exibição. Ambos montam as tabelas em JavaScript.
+
+Teste: `node --test src/fw.webex/contrib/fw.webex.features/tests/fwloader-async-tables.test.mjs`.
+
 ## jsPDF
 
 `WebExFeatureJsPDF` disponibiliza jsPDF 4.2.1 sem conhecer rótulos,

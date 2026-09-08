@@ -1,0 +1,106 @@
+/* FWWebEx hexagon loader. Released to Public Domain. */
+#include "fw.webex.th"
+
+namespace FWWebEx
+
+class WebExFeatureFWLoader from WebExControl
+    protected data oFeature as object
+    public method Enable() as object
+    public method Load(oControl as object) as object
+    static method Runtime() as character
+endclass
+
+method Enable() class WebExFeatureFWLoader
+    local oFeature as object
+    _Super:New()
+    ::oFeature:=self
+    oFeature:=::oFeature
+    ::AddFeature(oFeature,{|oControl|oFeature:Load(oControl)},25)
+return(self)
+
+method Load(oControl) class WebExFeatureFWLoader
+    WITH WEBEXOBJECT oControl
+        WITH WEBEXOBJECT CLASS WebExScript
+            .:SetContent(WebExFeatureFWLoader():Runtime())
+        END WEBEXOBJECT NOADDCHILD
+    END WEBEXOBJECT NOADDCHILD
+return(self)
+
+static method Runtime() class WebExFeatureFWLoader
+    local cRuntime as character
+    BeginContent var cRuntime
+(function(root){
+    'use strict';
+    const fw=root.FWWebEx=root.FWWebEx||{};
+    if(fw.Loader)return;
+    const running=new WeakMap();
+    const paint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    function run(host,task,render){
+        if(running.has(host))return running.get(host);
+        const loader=host.querySelector('[data-fw-loader]');
+        const status=host.querySelector('[data-fw-status]');
+        const retry=host.querySelector('[data-fw-retry]');
+        host.setAttribute('aria-busy','true');
+        if(loader)loader.hidden=false;
+        if(status)status.textContent='Carregando dados...';
+        if(retry)retry.disabled=true;
+        const pending=(async()=>{
+            try{
+                await paint();
+                const data=await task();
+                await render(data);
+                if(status)status.textContent='Carregamento concluido.';
+                return true;
+            }catch(error){
+                if(status)status.textContent='Falha: '+(error.message||String(error));
+                return false;
+            }finally{
+                host.setAttribute('aria-busy','false');
+                if(loader)loader.hidden=true;
+                if(retry)retry.disabled=false;
+                running.delete(host);
+            }
+        })();
+        running.set(host,pending);
+        return pending;
+    }
+    fw.Loader={run,paint};
+})(window);
+    EndContent
+return(cRuntime)
+
+// SVG trusted by the application; never pass user-supplied markup here.
+class WebExFWLoader from WebExDiv
+    public method New(cSVG as character) as object
+    static method SVG() as character
+endclass
+
+method New(cSVG) class WebExFWLoader
+    paramtype 1 var cSVG as character optional default ""
+    _Super:New()
+    WebExFeatureFWLoader():Enable()
+    ::SetAttr("data-fw-loader","")
+    ::SetAttr("aria-hidden","true")
+    ::SetAttr("style","text-align:center;padding:24px")
+    if (Empty(cSVG))
+        cSVG:=WebExFWLoader():SVG()
+    endif
+    ::SetContent(cSVG)
+return(self)
+
+static method SVG() class WebExFWLoader
+    local cSVG as character
+    BeginContent var cSVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 180" width="112" height="126" focusable="false" aria-hidden="true">
+  <style>
+    .fw-loader-orbit{animation:fw-loader-circuit 1.6s linear infinite}
+    @keyframes fw-loader-circuit{to{stroke-dashoffset:-100}}
+    @media(prefers-reduced-motion:reduce){.fw-loader-orbit{animation:none}}
+  </style>
+  <path d="M80 10 146 50V130L80 170 14 130V50Z" fill="#171b1b" stroke="#173f44" stroke-width="7" stroke-linejoin="round"/>
+  <path class="fw-loader-orbit" d="M80 10 146 50V130L80 170 14 130V50Z" fill="none" stroke="#1f7480" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" pathLength="100" stroke-dasharray="24 76"/>
+  <path transform="translate(17.375 8) scale(.75)" d="M36 64H67V74H47V86H64V96H47V116H36Z M72 64H83L89 98 97 75H106L114 98 120 64H131L120 116H109L101 94 93 116H82Z" fill="#f5f4f0"/>
+  <text x="80" y="124" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="700" letter-spacing="-.6"><tspan fill="#f5f4f0">Web</tspan><tspan fill="#1f7480">Ex</tspan></text>
+</svg>
+    EndContent
+return(cSVG)
