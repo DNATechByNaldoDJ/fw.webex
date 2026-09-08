@@ -13,3 +13,4 @@ package-lock.json
 package.json
 *.ppo
 /tds-ls.*/
+/.github/instructions/tds-vscode-1-0-2.instructions.md

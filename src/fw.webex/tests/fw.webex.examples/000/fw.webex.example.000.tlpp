@@ -132,6 +132,9 @@ static procedure FWWebExExample_000()
         endcase
     next nExample
 
+    //https://github.com/naldodj/dna.tech-protheus-web-labels
+    ExternalTlpp(@jFWWebExExamples)
+
     oWNDDefault:=GetWNDDefault()
     if ((Empty(oWNDDefault)).and.(Type("oMainWnd")=="O"))
         oWNDDefault:=oMainWnd
@@ -310,5 +313,27 @@ static procedure TLPPSwitch(jFWWebExExamples)
     if (FindFunction("FWWebEx.U_SWITCHTST"))
         jFWWebExExamples["TLPPSwitch"]:=JSONObject():New()
         jFWWebExExamples["TLPPSwitch"]["U_SWITCHTST"]:={||U_SWITCHTST()}
+    endif
+return
+
+//https://github.com/naldodj/dna.tech-protheus-web-labels
+static procedure ExternalTlpp(jFWWebExExamples)
+    if (FindFunction("U_DNWPROBE"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("Labels"))
+            jFWWebExExamples["External"]["Labels"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["Labels"]["U_DNWPROBE"]:={||U_DNWPROBE()}
+    endif
+    if (FindFunction("U_DNWPROBE"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("Labels"))
+            jFWWebExExamples["External"]["Labels"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["Labels"]["U_DNWLABEL"]:={||U_DNWLABEL()}
     endif
 return
