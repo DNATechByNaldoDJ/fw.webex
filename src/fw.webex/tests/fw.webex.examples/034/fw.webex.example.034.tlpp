@@ -81,7 +81,7 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
     function setText(root,id,value){
         const element=root.querySelector('#'+id);
         if(!element)return false;
-        value=String(value||'');
+        value=String(value==null?'':value);
         element.textContent=value;
         const visible=value.trim()!=='';
         element.style.display=visible?'':'none';
@@ -89,46 +89,375 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
         if(label)label.style.display=visible?'':'none';
         return visible;
     }
-    function fitText(element){
-        if(!element||element.style.display==='none')return;
-        const width=+element.dataset.fitWidth,height=+element.dataset.fitHeight;
-        const min=+element.dataset.minFontSize,max=+element.dataset.maxFontSize;
-        if(!width||!height||!min||!max)return;
-        let low=min,high=max,best=min;
-        for(let attempt=0;attempt<16;attempt++){
-            const size=(low+high)/2;
-            element.style.fontSize=size+'px';
-            const bounds=element.getBBox();
-            if(bounds.width<=width&&bounds.height<=height){best=size;low=size}else high=size;
+    /* Layout SVG independente do hospedeiro; as consultas ficam restritas a root.
+     * rasterFontFactor preserva o fator historico do sistema de origem (4/3).
+     * Nao e a conversao CSS px->pt. Templates sem data-font-unit usam unidades SVG.
+     */
+    function createSVGLabelLayout(root, templateName, rasterFontFactor = 4 / 3) {
+        if (!root || String(root.tagName).toLowerCase() !== 'svg') {
+            throw new Error('Template SVG [' + templateName + ']: elemento raiz <svg> nao encontrado.');
         }
-        element.style.fontSize=best.toFixed(2)+'px';
+        if (!Number.isFinite(rasterFontFactor) || rasterFontFactor <= 0) {
+            throw new Error('Template SVG [' + templateName + ']: fator historico de fonte deve ser positivo e finito.');
+        }
+        const document = root.ownerDocument;
+        const getComputedStyle = document.defaultView.getComputedStyle.bind(document.defaultView);
+        const findById = id => root.querySelector('[id="' + id + '"]');
+        function svgConfigNumber(element, name, optionalValue) {
+            const raw = element.getAttribute(name);
+            if (raw === null && optionalValue !== undefined) {
+                return optionalValue;
+            }
+            if (raw === null || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw.trim())) {
+                throw new Error('#' + (element.id || element.tagName) + ': ' + name +
+                    '=' + JSON.stringify(raw) + '. Informe um numero sem unidade, com ponto decimal (ex.: 7.25); nao use px, pt ou virgula.');
+            }
+            const value = Number(raw);
+            if (!Number.isFinite(value)) {
+                throw new Error('#' + element.id + ': ' + name + '=' + JSON.stringify(raw) + ' deve ser finito.');
+            }
+            return value;
+        }
+
+        function svgLocalUnitsPerMM(element) {
+            const physicalHeight = parseFloat(root.getAttribute('height'));
+            const viewHeight = root.viewBox.baseVal.height;
+            const rootMatrix = root.getScreenCTM();
+            const matrix = rootMatrix && element.getScreenCTM();
+            const relative = matrix && rootMatrix.inverse().multiply(matrix);
+            const scaleY = relative && Math.hypot(relative.c, relative.d);
+            if (!/mm\s*$/.test(root.getAttribute('height') || '') ||
+                !(physicalHeight > 0) || !(viewHeight > 0) || !(scaleY > 0)) {
+                throw new Error('#' + element.id + ': fontes pt/raster e gap em mm exigem height="...mm", viewBox valido e transform sem escala zero.');
+            }
+            return viewHeight / physicalHeight / scaleY;
+        }
+
+        function svgFitConfig(element) {
+            const width = svgConfigNumber(element, 'data-fit-width');
+            const height = svgConfigNumber(element, 'data-fit-height');
+            let minimum = svgConfigNumber(element, 'data-min-font-size');
+            let maximum = svgConfigNumber(element, 'data-max-font-size');
+            let unit = element.getAttribute('data-font-unit') || 'svg';
+            const scaleX = svgConfigNumber(element, 'data-font-scale-x', 1);
+            if (!(width > 0 && height > 0 && minimum > 0 && maximum >= minimum && scaleX > 0)) {
+                throw new Error('#' + element.id + ': data-fit-width=' + width +
+                    ', data-fit-height=' + height + ', data-min-font-size=' + minimum +
+                    ', data-max-font-size=' + maximum + ', data-font-scale-x=' + scaleX +
+                    '. Largura, altura, minimo e escala devem ser maiores que zero; o maximo deve ser maior ou igual ao minimo.');
+            }
+            if (['svg', 'pt', 'raster'].indexOf(unit) < 0) {
+                throw new Error('#' + element.id + ': data-font-unit="' + unit + '" invalido. Use svg, pt ou raster.');
+            }
+            // A especie isolada pode usar a faixa do volume, como no fluxo raster.
+            const group = element.parentElement;
+            const volume = findById('volume');
+            if (element.id === 'species' && group &&
+                group.getAttribute('data-species-use-volume-font') === 'true' &&
+                volume && volume.parentElement === group && !volume.textContent.trim()) {
+                const volumeConfig = svgFitConfig(volume);
+                return {width, height, minimum: volumeConfig.minimum, maximum: volumeConfig.maximum, scaleX};
+            }
+            const factor = unit === 'svg' ? 1 :
+                (unit === 'raster' ? rasterFontFactor : 1) * 25.4 / 72 * svgLocalUnitsPerMM(element);
+            return {width, height, minimum: minimum * factor, maximum: maximum * factor, scaleX};
+        }
+
+        function svgApplyFont(element, size, config) {
+            element.style.fontSize = size.toFixed(4) + 'px';
+            if (element.hasAttribute('data-font-scale-x')) {
+                element.removeAttribute('textLength');
+                element.removeAttribute('lengthAdjust');
+                const length = element.getComputedTextLength();
+                if (length > 0 && config.scaleX !== 1) {
+                    element.setAttribute('textLength', (length * config.scaleX).toFixed(6));
+                    element.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+                }
+            }
+            element.setAttribute('data-applied-font-size', size.toFixed(4));
+            if (size < config.minimum - 0.0001) {
+                element.setAttribute('data-fit-below-min', 'true');
+            } else {
+                element.removeAttribute('data-fit-below-min');
+            }
+        }
+
+        function fitSVGText(element) {
+            const config = svgFitConfig(element);
+            if (element.style.display === 'none' || !element.textContent.trim()) {
+                return;
+            }
+            let low = config.minimum;
+            let high = config.maximum;
+            let best = low;
+            svgApplyFont(element, high, config);
+            let bounds = element.getBBox();
+            if (bounds.width <= config.width && bounds.height <= config.height) {
+                best = high;
+            } else {
+                for (let attempt = 0; attempt < 20; attempt++) {
+                    const candidate = (low + high) / 2;
+                    svgApplyFont(element, candidate, config);
+                    bounds = element.getBBox();
+                    if (bounds.width <= config.width && bounds.height <= config.height) {
+                        best = candidate;
+                        low = candidate;
+                    } else {
+                        high = candidate;
+                    }
+                }
+            }
+            // Arredondar para baixo evita ultrapassar a caixa no ultimo decimal.
+            best = Math.floor(best * 10000) / 10000;
+            for (let attempt = 0; attempt < 12; attempt++) {
+                svgApplyFont(element, best, config);
+                bounds = element.getBBox();
+                if (bounds.width <= config.width + 0.0001 && bounds.height <= config.height + 0.0001) {
+                    return;
+                }
+                best *= Math.min(config.width / bounds.width, config.height / bounds.height) * 0.98;
+            }
+            throw new Error('#' + element.id + ': texto nao cabe em data-fit-width=' + config.width +
+                ' e data-fit-height=' + config.height + '. Amplie a caixa ou reduza o conteudo.');
+        }
+
+        function svgGroupGuide(group) {
+            return Array.prototype.find.call(group.children, function(child) {
+                return String(child.tagName).toLowerCase() === 'rect';
+            });
+        }
+
+        function svgVolumeLayoutConfig(group) {
+            const gapMM = svgConfigNumber(group, 'data-volume-gap');
+            const align = group.getAttribute('data-volume-align') || 'center';
+            const guide = svgGroupGuide(group);
+            if (!guide || !(Number(guide.getAttribute('width')) > 0) || !(Number(guide.getAttribute('height')) > 0)) {
+                throw new Error('#volume-species: inclua um rect filho direto com width e height maiores que zero para limitar o bloco.');
+            }
+            if (['start', 'center', 'end'].indexOf(align) < 0) {
+                throw new Error('#volume-species: data-volume-align="' + align + '" invalido. Use start, center ou end.');
+            }
+            const gap = gapMM * svgLocalUnitsPerMM(group);
+            if (gap >= Number(guide.getAttribute('height'))) {
+                throw new Error('#volume-species: data-volume-gap=' + gapMM + ' mm ocupa toda a altura da caixa. Reduza o gap ou aumente height do rect.');
+            }
+            return {gap, align, guide};
+        }
+
+        /* Mede a tinta dos glifos para manter o vao visual mesmo quando a fonte muda.
+         * getBBox continua limitando a caixa inteira, inclusive ascendentes/descendentes.
+         * A medicao ampliada evita arredondamento das fontes pequenas pelo Chromium. */
+        function svgInkBounds(element) {
+            const box = element.getBBox();
+            const css = getComputedStyle(element);
+            const context = document.createElement('canvas').getContext('2d');
+            if (context && ['auto', 'alphabetic'].indexOf(css.dominantBaseline) >= 0) {
+                context.font = css.fontStyle + ' ' + css.fontWeight + ' 1024px ' + css.fontFamily;
+                const metrics = context.measureText(element.textContent);
+                if (Number.isFinite(metrics.actualBoundingBoxAscent) && Number.isFinite(metrics.actualBoundingBoxDescent)) {
+                    const factor = parseFloat(css.fontSize) / 1024;
+                    const top = Number(element.getAttribute('y')) - metrics.actualBoundingBoxAscent * factor;
+                    return {y: top, height: (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) * factor};
+                }
+            }
+            return {y: box.y, height: box.height};
+        }
+
+        function layoutSVGVolumeSpecies() {
+            const group = findById('volume-species');
+            if (!group || !group.hasAttribute('data-volume-gap')) {
+                return; // Templates antigos preservam suas coordenadas.
+            }
+            const config = svgVolumeLayoutConfig(group);
+            const guide = config.guide.getBBox();
+            const elements = ['volume', 'species'].map(function(id) {
+                return findById(id);
+            }).filter(function(element) {
+                return element && element.style.display !== 'none' && element.textContent.trim();
+            });
+            if (!elements.length) {
+                return;
+            }
+            elements.forEach(function(element) {
+                if (element.parentElement !== group || element.hasAttribute('transform') ||
+                    !element.hasAttribute('x') || !element.hasAttribute('y') ||
+                    !Number.isFinite(Number(element.getAttribute('x'))) ||
+                    !Number.isFinite(Number(element.getAttribute('y')))) {
+                    throw new Error('#' + element.id + ': para usar data-volume-gap, mantenha o text diretamente em #volume-species, com x/y numericos e transform somente no grupo. Recebido x=' + JSON.stringify(element.getAttribute('x')) + ', y=' + JSON.stringify(element.getAttribute('y')));
+                }
+                if (!element.hasAttribute('data-runtime-original-x')) {
+                    element.setAttribute('data-runtime-original-x', element.getAttribute('x'));
+                }
+                element.setAttribute('x', element.getAttribute('data-runtime-original-x'));
+            });
+            for (let attempt = 0; attempt < 16; attempt++) {
+                let cursor = 0;
+                elements.forEach(function(element, index) {
+                    const ink = svgInkBounds(element);
+                    element.setAttribute('y', String(Number(element.getAttribute('y')) + cursor - ink.y));
+                    cursor += ink.height + (index < elements.length - 1 ? config.gap : 0);
+                });
+                const boxes = elements.map(function(element) { return element.getBBox(); });
+                const top = Math.min.apply(null, boxes.map(function(box) { return box.y; }));
+                const bottom = Math.max.apply(null, boxes.map(function(box) { return box.y + box.height; }));
+                const height = bottom - top;
+                const width = Math.max.apply(null, boxes.map(function(box) { return box.width; }));
+                if (height <= guide.height + 0.0001 && width <= guide.width + 0.0001) {
+                    const factor = config.align === 'start' ? 0 : (config.align === 'end' ? 1 : 0.5);
+                    const delta = guide.y + (guide.height - height) * factor - top;
+                    elements.forEach(function(element, index) {
+                        const box = boxes[index];
+                        element.setAttribute('y', (Number(element.getAttribute('y')) + delta).toFixed(6));
+                        const dx = Math.max(guide.x - box.x, Math.min(0, guide.x + guide.width - box.x - box.width));
+                        element.setAttribute('x', (Number(element.getAttribute('x')) + dx).toFixed(6));
+                    });
+                    group.setAttribute('data-applied-volume-gap', elements.length > 1 ? group.getAttribute('data-volume-gap') : '0');
+                    return;
+                }
+                // Encolhe o par sem reduzir o gap solicitado pelo cliente.
+                const reservedGap = elements.length > 1 ? config.gap : 0;
+                const scale = Math.min((guide.height - reservedGap) / (height - reservedGap), guide.width / width) * 0.98;
+                elements.forEach(function(element) {
+                    svgApplyFont(element, parseFloat(element.style.fontSize) * scale, svgFitConfig(element));
+                });
+            }
+            throw new Error('#volume-species: Volume/Especie nao cabem no rect com data-volume-gap=' +
+                group.getAttribute('data-volume-gap') + '. Amplie a caixa ou reduza o gap.');
+        }
+
+        function validateSVGFields() {
+            const errors = [];
+            ['volume', 'species', 'volume-species', 'product', 'batch', 'manufacture', 'expiration', 'weight', 'barcode'].forEach(function(id) {
+                const count = root.querySelectorAll('[id="' + id + '"]').length;
+                if (count > 1) {
+                    errors.push('#' + id + ': ID duplicado (' + count + ' ocorrencias). Mantenha apenas um elemento com esse ID no template.');
+                }
+            });
+            root.querySelectorAll('[data-fit-width], [data-fit-height], [data-min-font-size], [data-max-font-size]').forEach(function(element) {
+                try { svgFitConfig(element); } catch (error) { errors.push(error.message); }
+            });
+            const group = findById('volume-species');
+            if (group && group.hasAttribute('data-volume-gap')) {
+                try { svgVolumeLayoutConfig(group); } catch (error) { errors.push(error.message); }
+            }
+            if (errors.length) {
+                throw new Error('Template SVG [' + templateName + ']: ' + errors.length +
+                    ' configuracao(oes) invalida(s).\n- ' + errors.join('\n- '));
+            }
+        }
+
+
+
+        function clipSVGGroupToGuide(groupId) {
+            const svgNamespace = 'http://www.w3.org/2000/svg';
+            const group = findById(groupId);
+            if (!group || !group.ownerSVGElement) {
+                return;
+            }
+
+            let guide = null;
+            Array.prototype.some.call(group.children, function(child) {
+                if (String(child.tagName).toLowerCase() === 'rect') {
+                    guide = child;
+                    return true;
+                }
+                return false;
+            });
+            if (!guide) {
+                return;
+            }
+
+            const root = group.ownerSVGElement;
+            let defs = root.querySelector('defs');
+            if (!defs) {
+                defs = document.createElementNS(svgNamespace, 'defs');
+                root.insertBefore(defs, root.firstChild);
+            }
+
+            const clipId = group.getAttribute('data-runtime-clip-id') ||
+                ('web-label-clip-' + groupId + '-' + Math.random().toString(36).slice(2));
+            group.setAttribute('data-runtime-clip-id', clipId);
+            let clipPath = findById(clipId);
+            if (!clipPath) {
+                clipPath = document.createElementNS(svgNamespace, 'clipPath');
+                clipPath.setAttribute('id', clipId);
+                clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
+                defs.appendChild(clipPath);
+            }
+
+            while (clipPath.firstChild) {
+                clipPath.removeChild(clipPath.firstChild);
+            }
+
+            const clipRect = document.createElementNS(svgNamespace, 'rect');
+            ['x', 'y', 'width', 'height', 'rx', 'ry'].forEach(function(name) {
+                const value = guide.getAttribute(name);
+                if (value !== null) {
+                    clipRect.setAttribute(name, value);
+                }
+            });
+            clipPath.appendChild(clipRect);
+            group.setAttribute('clip-path', 'url(#' + clipId + ')');
+            group.setAttribute('data-runtime-clip', 'true');
+        }
+
+        return {
+            async fit() {
+                try {
+                    validateSVGFields();
+                    if (document.fonts && document.fonts.load) {
+                        await Promise.all(Array.prototype.map.call(root.querySelectorAll('text'), function(element) {
+                            const css = getComputedStyle(element);
+                            return document.fonts.load(css.fontStyle + ' ' + css.fontWeight + ' 16px ' + css.fontFamily, element.textContent);
+                        }));
+                        await document.fonts.ready;
+                    }
+                    root.querySelectorAll('[data-fit-width]').forEach(fitSVGText);
+                    layoutSVGVolumeSpecies();
+                    clipSVGGroupToGuide('volume-species');
+                    clipSVGGroupToGuide('data-container');
+                } catch (error) {
+                    const message = error && error.message ? error.message : String(error);
+                    const prefix = 'Template SVG [' + templateName + ']';
+                    throw new Error(message.indexOf(prefix) === 0 ? message : prefix + ': ' + message);
+                }
+            }
+        };
     }
     function createBarcode(root,item){
         const element=root.querySelector('#barcode');
-        if(!element)return;
+        if(!element){
+            if(item.gtin)throw new Error('#barcode: GTIN='+JSON.stringify(item.gtin)+' informado, mas o elemento nao existe. Inclua um <svg id="barcode"> no template.');
+            return;
+        }
         if(!item.gtin){element.replaceChildren();return;}
         const geometry={};
         ['x','y','width','height','preserveAspectRatio'].forEach(name=>geometry[name]=element.getAttribute(name));
         JsBarcode(element,item.gtin,{format:item.gtin.length===13?'EAN13':'CODE128',displayValue:true,textAlign:'center',
             font:'Arial',fontSize:13,textMargin:1,margin:0,width:2,height:52,background:'transparent',lineColor:'#000'});
         const width=parseFloat(element.getAttribute('width')),height=parseFloat(element.getAttribute('height')),padding=2;
-        if(!Number.isFinite(width)||!Number.isFinite(height))throw new Error('Dimensoes invalidas do barcode.');
+        if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0){
+            throw new Error('#barcode: width='+JSON.stringify(element.getAttribute('width'))+', height='+JSON.stringify(element.getAttribute('height'))+'. As dimensoes geradas pelo JsBarcode devem ser positivas e finitas. Verifique o GTIN e a configuracao do codigo de barras.');
+        }
         element.removeAttribute('width');element.removeAttribute('height');
         element.setAttribute('viewBox',[-padding,-padding,width+padding*2,height+padding*2].join(' '));
         Object.keys(geometry).forEach(name=>{if(geometry[name]!==null)element.setAttribute(name,geometry[name]);});
     }
-    function prepare(root,item){
+    async function prepare(root,item){
+        if(!root)throw new Error('Template SVG ['+templateURL+']: elemento raiz svg nao encontrado. Inclua uma raiz <svg> valida.');
         setText(root,'product',item.product);setText(root,'batch',item.batch);setText(root,'manufacture',item.manufacture);
         setText(root,'expiration',item.expiration);setText(root,'weight',item.weight);
         const volume=setText(root,'volume',item.volume),species=setText(root,'species',item.species);
         const group=root.querySelector('#volume-species');if(group)group.style.display=(volume||species)?'':'none';
-        root.querySelectorAll('[data-fit-width]').forEach(fitText);createBarcode(root,item);
+        await createSVGLabelLayout(root,templateURL).fit();
+        createBarcode(root,item);
     }
     async function generate(){
         if(running)return;
         running=true;
         const button=document.getElementById('fwwebex-example-034-generate');
         button.disabled=true;
+        let activeIndex=-1;
         try{
             status('Carregando template SVG por '+templateURL+'...');
             const response=await fetch(templateURL,{credentials:'same-origin',cache:'no-store'});
@@ -138,8 +467,9 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
             const pdf=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:[130,115],compress:true,putOnlyUsedFonts:true});
             const stage=document.getElementById('fwwebex-example-034-stage');
             for(let index=0;index<labels.length;index++){
+                activeIndex=index;
                 status('Gerando rotulo '+(index+1)+' de '+labels.length+'...');await paint();
-                stage.innerHTML=template;prepare(stage.querySelector('svg'),labels[index]);
+                stage.innerHTML=template;await prepare(stage.querySelector('svg'),labels[index]);
                 if(document.fonts&&document.fonts.ready)await document.fonts.ready;await paint();
                 const canvas=await html2canvas(stage,{backgroundColor:'#fff',scale:3,useCORS:false,allowTaint:false,
                     logging:false,width:stage.offsetWidth,height:stage.offsetHeight});
@@ -155,8 +485,10 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
             status('PDF concluido: '+labels.length+' rotulos.');
             await FWWebEx.TWebChannel.send('FWWEBEX_EXAMPLE_034_DONE',String(labels.length));
         }catch(error){
-            status('Falha: '+(error.message||String(error)));
-            await FWWebEx.TWebChannel.send('FWWEBEX_EXAMPLE_034_ERROR',error.message||String(error));
+            const context=activeIndex>=0?' Rotulo ['+(activeIndex+1)+'/'+labels.length+'], Produto=['+(labels[activeIndex].product||'(vazio)')+'].':'';
+            const message='Falha ao gerar PDF consolidado de rotulos.'+context+' Template=['+templateURL+']: '+(error.message||String(error));
+            status(message);
+            await FWWebEx.TWebChannel.send('FWWEBEX_EXAMPLE_034_ERROR',message);
         }finally{
             running=false;button.disabled=false;
         }
@@ -192,6 +524,7 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
                     WITH WEBEXOBJECT CLASS WebExControl TYPE div
                         .:SetFixedID("fwwebex-example-034-status")
                         .:AddClass("card card-body")
+                        .:SetAttr("style","white-space:pre-wrap")
                         .:SetContent("Pronto para gerar tr&ecirc;s r&oacute;tulos demonstrativos.")
                     END WEBEXOBJECT
                     WITH WEBEXOBJECT CLASS WebExControl TYPE div
@@ -226,9 +559,9 @@ return(.T.)
 static function FWWebEx034JSEscape(cValue as character) as character
     cValue:=WebExHelper():StrReplaceEx(;
          cValue;
-        ,{"'","\'"};
-        ,{Chr(13),"\r"};
-        ,{Chr(10),"\n"};
+        ,{"'",BACK_SLASH+"'"};
+        ,{Chr(13),BACK_SLASH+"r"};
+        ,{Chr(10),BACK_SLASH+"n"};
     )
 return(cValue)
 
@@ -239,7 +572,8 @@ static function FWWebEx034Template() as character
 <rect x="1" y="1" width="128" height="113" rx="2" fill="#fff" stroke="#17232d" stroke-width=".7"/><rect x="5" y="5" width="120" height="18" rx="1.5" fill="#edf4f7" stroke="#40606f" stroke-width=".35"/>
 <text x="8" y="12" font-family="Arial" font-size="5.5" font-weight="700">RÓTULO DE PRODUTO</text><text id="product" x="8" y="19" font-family="Arial" font-size="3.8" data-fit-width="112" data-fit-height="5" data-min-font-size="2" data-max-font-size="5">PRODUTO</text>
 <svg id="barcode" x="6" y="29" width="48" height="42" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet"/>
-<g id="data-container" font-family="Arial" font-size="3.4"><rect x="58" y="29" width="66" height="42" fill="none" stroke="#b4c2c9" stroke-width=".25" stroke-dasharray="1 1"/><text x="61" y="37" font-weight="700">Lote:</text><text id="batch" x="121" y="37" text-anchor="end"/><text x="61" y="45" font-weight="700">Fabricação:</text><text id="manufacture" x="121" y="45" text-anchor="end"/><text x="61" y="53" font-weight="700">Validade:</text><text id="expiration" x="121" y="53" text-anchor="end"/><text x="61" y="61" font-weight="700">Peso:</text><text id="weight" x="121" y="61" text-anchor="end"/></g>
-<g id="volume-species"><rect x="6" y="77" width="118" height="27" rx="1.5" fill="#f8fafb" stroke="#b4c2c9" stroke-width=".3"/><text id="volume" x="65" y="90" text-anchor="middle" font-family="Arial" font-size="10" font-weight="900" font-style="italic" data-fit-width="112" data-fit-height="11" data-min-font-size="3" data-max-font-size="12"/><text id="species" x="65" y="99" text-anchor="middle" font-family="Arial" font-size="5" font-weight="900" data-fit-width="112" data-fit-height="6" data-min-font-size="2" data-max-font-size="7"/></g><text x="4" y="112" fill="#aeb7bc" font-family="Arial" font-size="1.7">FWWebEx · SVG label example 034</text></svg>
+<g id="data-container" font-family="Arial" font-size="3.4"><rect x="58" y="29" width="66" height="42" fill="none" stroke="#b4c2c9" stroke-width=".25" stroke-dasharray="1 1"/><text x="61" y="37" font-weight="700" data-label-for="batch">Lote:</text><text id="batch" x="121" y="37" text-anchor="end" data-fit-width="32" data-fit-height="5" data-min-font-size="1.5" data-max-font-size="3.4"/><text x="61" y="45" font-weight="700" data-label-for="manufacture">Fabricação:</text><text id="manufacture" x="121" y="45" text-anchor="end" data-fit-width="32" data-fit-height="5" data-min-font-size="1.5" data-max-font-size="3.4"/><text x="61" y="53" font-weight="700" data-label-for="expiration">Validade:</text><text id="expiration" x="121" y="53" text-anchor="end" data-fit-width="32" data-fit-height="5" data-min-font-size="1.5" data-max-font-size="3.4"/><text x="61" y="61" font-weight="700" data-label-for="weight">Peso:</text><text id="weight" x="121" y="61" text-anchor="end" data-fit-width="32" data-fit-height="5" data-min-font-size="1.5" data-max-font-size="3.4"/></g>
+<!-- Perfil demonstrativo 1: limites da tabela raster; gap em mm. -->
+<g id="volume-species" data-volume-gap="0.57" data-volume-align="center" data-species-use-volume-font="true"><rect x="6" y="77" width="118" height="27" rx="1.5" fill="#f8fafb" stroke="#b4c2c9" stroke-width=".3"/><text id="volume" x="65" y="90" text-anchor="middle" font-family="Arial" font-size="10" font-weight="900" font-style="italic" data-fit-width="112" data-fit-height="16.227778" data-min-font-size="14" data-max-font-size="23" data-font-unit="raster" data-font-scale-x="0.945"/><text id="species" x="65" y="99" text-anchor="middle" font-family="Arial" font-size="5" font-weight="900" data-fit-width="112" data-fit-height="10.583333" data-min-font-size="5" data-max-font-size="15" data-font-unit="raster" data-font-scale-x="0.945"/></g><text x="4" y="112" fill="#aeb7bc" font-family="Arial" font-size="1.7">FWWebEx · SVG label example 034</text></svg>
     EndContent
 return(cSVG)

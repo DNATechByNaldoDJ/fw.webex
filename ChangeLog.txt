@@ -2,8 +2,16 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Remove VSCode instructions and add ExternalTlpp)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve SVG label fitting and validation)"
  */
+
+2026-09-11 22:49 UTC naldodj (Improve SVG label fitting and validation)
+  Improve SVG label fitting and validation
+    This commit adds robust SVG label layout validation and automatic text fitting for example 034, including font loading, raster/unit conversions, volume/species gap handling, barcode checks, and clearer template diagnostics.
+    It also updates the example README to document the SVG profile and fixes JavaScript escaping for backslashes and control characters in the example helpers.
+      * src/fw.webex/tests/fw.webex.examples/033/fw.webex.example.033.tlpp
+      * src/fw.webex/tests/fw.webex.examples/034/fw.webex.example.034.tlpp
+      * src/fw.webex/tests/fw.webex.examples/034/README.md
 
 2026-09-08 18:09 UTC naldodj (Remove VSCode instructions and add ExternalTlpp)
   Delete .github/instructions/tds-vscode-1-0-2.instructions.md and add it to .gitignore.
