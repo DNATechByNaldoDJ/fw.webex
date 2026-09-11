@@ -173,9 +173,10 @@ return(.T.)
 static function FWWebEx033JSEscape(cValue as character) as character
     cValue:=WebExHelper():StrReplaceEx(;
          cValue;
-        ,{"\","\\"};
-        ,{"'","\'"};
-        ,{Chr(13),"\r"};
-        ,{Chr(10),"\n"};
+        ,{BACK_SLASH,"__BACK_SLASH__"};
+        ,{"__BACK_SLASH__",BACK_SLASH+BACK_SLASH};
+        ,{"'",BACK_SLASH+"'"};
+        ,{Chr(13),BACK_SLASH+"r"};
+        ,{Chr(10),BACK_SLASH+"n"};
     )
 return(cValue)

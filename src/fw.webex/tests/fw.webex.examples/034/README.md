@@ -36,7 +36,8 @@ TLPP + FWWebEx
           ├─ fetch("./template.svg")
           ├─ clona o template para cada registro
           ├─ preenche os elementos identificados
-          ├─ ajusta as fontes com getBBox()
+          ├─ aguarda as fontes e valida as configurações do SVG
+          ├─ ajusta as fontes com getBBox() e mantém o vão visual entre volume/espécie
           ├─ gera o barcode com JsBarcode
           ├─ captura uma página por vez com html2canvas
           ├─ adiciona cada página ao jsPDF
@@ -73,24 +74,127 @@ O template embutido no exemplo usa `130 mm × 115 mm` e contém estes IDs:
 | `species` | espécie da embalagem |
 | `barcode` | SVG interno preenchido pelo JsBarcode |
 
-Campos textuais ausentes são ignorados. Volume e espécie são avaliados
+Campos textuais ausentes são ignorados. Legendas com `data-label-for` são
+ocultadas quando o valor associado está vazio. Volume e espécie são avaliados
 independentemente; o grupo `volume-species` é ocultado somente quando os dois
 estão vazios.
 
 ## Ajuste automático de fonte
 
-Textos variáveis declaram limites no próprio SVG:
+Textos variáveis declaram limites no próprio SVG. O exemplo utiliza o perfil
+demonstrativo 1, com as mesmas faixas da tabela de impressão raster:
+
+| Campo | Mínimo raster | Máximo raster | Altura disponível no SVG | Escala horizontal |
+|---|---:|---:|---:|---:|
+| `volume` | 14 | 23 | 16.227778 | 0.945 |
+| `species` | 5 | 15 | 10.583333 | 0.945 |
+
+Exemplo de configuração da espécie:
 
 ```xml
 <text id="species"
+      x="65" y="99" text-anchor="middle"
+      font-family="Arial" font-weight="900"
       data-fit-width="112"
-      data-fit-height="6"
-      data-min-font-size="2"
-      data-max-font-size="7" />
+      data-fit-height="10.583333"
+      data-min-font-size="5"
+      data-max-font-size="15"
+      data-font-unit="raster"
+      data-font-scale-x="0.945" />
 ```
 
-A função `fitText()` usa busca binária e `getBBox()` para encontrar o maior
-tamanho que respeite simultaneamente a largura e a altura disponíveis.
+`createSVGLabelLayout(root, templateName).fit()` valida o template, aguarda as
+fontes e usa busca binária com `getBBox()` para encontrar o maior tamanho que
+respeite a largura e a altura disponíveis. Os elementos são consultados apenas
+na raiz recebida: vários SVGs na mesma página podem usar os mesmos IDs.
+
+| Atributo | Como ajustar |
+|---|---|
+| `data-fit-width`, `data-fit-height` | Largura e altura máximas, nas coordenadas locais do elemento. |
+| `data-min-font-size`, `data-max-font-size` | Faixa positiva; o máximo deve ser maior ou igual ao mínimo. |
+| `data-font-unit="svg"` | Tamanhos nas coordenadas locais do SVG; padrão quando omitido. |
+| `data-font-unit="pt"` | Tamanhos em pontos CSS. |
+| `data-font-unit="raster"` | Valores da tabela histórica; aplica a conversão de `4/3` para pontos CSS. |
+| `data-font-scale-x` | Multiplicador horizontal positivo; padrão `1`. Usa `textLength` e `spacingAndGlyphs`. |
+
+Todos os atributos numéricos `data-*` usam **números sem unidade, com ponto
+decimal**. Escreva `7.25`; não use `7.25px`, `7.25pt` ou `7,25`. A unidade
+fica somente em `data-font-unit`. Com `height="115mm"` e
+`viewBox="0 0 130 115"`, uma unidade da raiz corresponde a 1 mm. A conversão
+raster é `valor × 4/3 × 25.4/72` em milímetros; os grupos transformados têm sua
+escala considerada. O tamanho nominal `font-size` é substituído durante o ajuste.
+
+Quando nem a fonte mínima cabe, o motor pode reduzi-la abaixo do mínimo para
+evitar que o conteúdo saia da caixa. O elemento recebe
+`data-fit-below-min="true"`; `data-applied-font-size` registra a fonte final em
+coordenadas locais. Esses atributos são resultados de execução e não precisam
+ser gravados no modelo.
+
+## Espaçamento entre volume e espécie
+
+O grupo do exemplo define:
+
+```xml
+<g id="volume-species"
+   data-volume-gap="0.57"
+   data-volume-align="center"
+   data-species-use-volume-font="true">
+  <rect x="6" y="77" width="118" height="27" />
+  <!-- text #volume e text #species como filhos diretos, com x/y numéricos -->
+</g>
+```
+
+- `data-volume-gap` é a distância em **milímetros entre a tinta das letras**,
+  e não a diferença entre os atributos `y`. O valor `0.57` permanece estável
+  quando as fontes diminuem; use `0` para eliminar esse vão.
+- `data-volume-align` aceita `start`, `center` e `end`, para posicionar o bloco
+  no topo, centro ou base da caixa definida pelo primeiro `rect` filho direto.
+- `data-species-use-volume-font="true"` usa a faixa de fonte do volume quando
+  apenas a espécie tem conteúdo. A espécie continua respeitando sua caixa.
+- Os textos devem ter `x` e `y` numéricos. Para girar ou redimensionar o bloco,
+  aplique `transform` ao grupo, mantendo os textos como filhos diretos sem
+  transformação individual.
+
+O motor mede a tinta dos glifos, reposiciona os textos e, se necessário, reduz
+o par para caber no `rect`, preservando o vão solicitado. Se os dois campos
+estiverem vazios, oculta todo o grupo. Se só um estiver preenchido, alinha esse
+texto na caixa sem reservar espaço para o outro. Templates antigos que omitem
+`data-volume-gap` preservam as coordenadas originais dos textos.
+
+## Mensagens que ajudam a corrigir o modelo
+
+As falhas informam rótulo atual/total, produto, arquivo/URL do template, ID do
+elemento, atributo/valor inválido e orientação de correção. A validação reúne
+problemas de vários elementos antes de interromper a geração; a área de status
+preserva as quebras de linha.
+
+Por exemplo, se o volume tiver `data-max-font-size="7.25px"`, a mensagem aponta
+`#volume`, o atributo e o valor recebido, e solicita um número sem unidade.
+Depois de remover `px`, verifique também que o máximo é maior ou igual ao
+mínimo — para o perfil demonstrativo 1, use mínimo `14` e máximo `23` com
+`data-font-unit="raster"`. IDs repetidos dentro do mesmo SVG e configuração de
+gap incompatível com a caixa também são diagnosticados.
+
+## Manutenção e comparação com a impressão raster
+
+1. Edite o SVG em `FWWebEx034Template()`, preservando a arte e os IDs dos campos.
+2. Mantenha `width` e `height` em milímetros e `viewBox` coerente com a arte.
+   O exemplo também fixa `130 × 115 mm` na área de captura e no jsPDF: ajuste
+   os três pontos em conjunto se mudar o tamanho da página.
+3. Para repetir outro perfil raster, copie seus mínimos/máximos nos textos e
+   mantenha `data-font-unit="raster"`. Esse atributo converte a unidade; ele
+   não consulta tabelas Protheus nem escolhe um perfil automaticamente.
+4. Ajuste a largura/altura das caixas, a escala horizontal, o gap e a família
+   de fonte. Mantenha a mesma fonte instalada no ambiente que renderiza os
+   dois tipos de impressão quando a comparação exigir a mesma aparência.
+5. Teste volume e espécie curtos, ambos longos, somente espécie, somente volume
+   e ambos vazios. Compare o PDF em tamanho real com a saída raster.
+6. Compile o exemplo e confirme as dimensões e o espaço entre os campos na
+   impressora, sem a opção de ajustar a página à área imprimível.
+
+As faixas, a conversão e o comportamento de ajuste são compatíveis com o fluxo
+raster; diferenças nas fontes disponíveis e na rasterização podem alterar
+pequenos detalhes dos glifos. O exemplo preserva sua arte e a família Arial.
 
 ## Código de barras
 
@@ -98,6 +202,10 @@ O formato é selecionado conforme o conteúdo:
 
 - 13 dígitos: `EAN13`;
 - demais valores: `CODE128`.
+
+GTIN vazio limpa o barcode. Se houver GTIN e o elemento `#barcode` estiver
+ausente, a geração informa como corrigir o template. Dimensões inválidas ou
+não positivas retornadas pelo JsBarcode também geram diagnóstico.
 
 Depois da execução do JsBarcode, o exemplo restaura os atributos externos do
 elemento:
