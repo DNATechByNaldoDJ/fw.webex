@@ -23,6 +23,8 @@ Criar uma feature genérica capaz de oferecer:
 - integração com `FWWebEx.TWebChannel`;
 - fallback quando realtime não estiver disponível;
 - API TLPP para publicação de eventos;
+- APIs REST internas e externas;
+- captura de eventos do Protheus por Pontos de Entrada/adapters;
 - evolução para colaboração federada entre empresas parceiras, clientes e fornecedores que utilizem Protheus.
 
 O diferencial não é criar um clone de WhatsApp/Teams. É oferecer **comunicação colaborativa nativamente integrada ao contexto e aos eventos do Protheus**.
@@ -77,6 +79,27 @@ Chat Service TLPP
       └─ ERP Reference Provider
 ```
 
+### 2.5. Event-driven e transport-agnostic
+
+O domínio não deve depender diretamente de TWebChannel, REST, HTTPS B2B ou de um Ponto de Entrada específico.
+
+```text
+Protheus Hook / REST / Browser / Worker
+              │
+              ▼
+       Canonical Event/API
+              │
+              ▼
+       Collaboration Domain
+              │
+      ┌───────┼────────┐
+      ▼       ▼        ▼
+   Chat    Internal   B2B
+            REST     Federation
+```
+
+Assim, um evento como `PURCHASE_ORDER.CONFIRMED` pode nascer de um Ponto de Entrada, de uma API ou de processo batch sem duplicar regra de negócio.
+
 ---
 
 ## 3. Dependências FWWebEx
@@ -115,6 +138,10 @@ src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.chat/
 ├── fw.webex.feature.chat.security.tlpp
 ├── fw.webex.feature.chat.events.tlpp
 ├── fw.webex.feature.chat.references.tlpp
+├── fw.webex.feature.chat.rest.internal.tlpp
+├── fw.webex.feature.chat.rest.external.tlpp
+├── fw.webex.feature.chat.protheus.events.tlpp
+├── fw.webex.feature.chat.protheus.hooks.tlpp
 ├── fw.webex.feature.chat.federation.tlpp
 ├── fw.webex.feature.chat.b2b.tlpp
 ├── assets/
@@ -790,6 +817,350 @@ Criar diagnóstico para responder:
 
 ---
 
+## 27A. APIs REST do Protheus
+
+A solução deve prever explicitamente duas superfícies REST distintas, ainda que ambas reutilizem o mesmo domínio interno.
+
+### 27A.1. REST interna
+
+Destinada a aplicações, rotinas, jobs, serviços e componentes dentro da infraestrutura do cliente.
+
+Uso esperado:
+
+- consumo através do serviço HTTP/REST disponibilizado pelo AppServer, inclusive porta multiprotocolo quando aplicável à arquitetura do ambiente;
+- integração entre features FWWebEx;
+- publicação de eventos por customizações Protheus;
+- consulta de conversas/contextos por aplicações internas;
+- automações e workers;
+- integração de processos internos sem exposição à Internet.
+
+Fluxo conceitual:
+
+```text
+Aplicação interna / Job / Feature FWWebEx
+                 │
+                 ▼
+        REST INTERNAL API
+                 │
+                 ▼
+     Collaboration/Chat Service
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+      DB       Events    Outbox
+```
+
+Namespace conceitual:
+
+```text
+/api/fwwebex/v1/chat/...
+/api/fwwebex/v1/events/...
+/api/fwwebex/v1/context/...
+```
+
+A URL definitiva e os mecanismos de autenticação devem respeitar os recursos suportados pela release Protheus alvo.
+
+A API interna não deve significar "sem segurança". Deve possuir autenticação, autorização, validação, rate limit apropriado e auditoria.
+
+### 27A.2. REST externa B2B
+
+Destinada exclusivamente à comunicação entre organizações parceiras.
+
+```text
+Protheus Empresa A
+      │
+      │ HTTPS
+      ▼
+B2B REST API Empresa B
+      │
+      ▼
+Federation Gateway
+      │
+      ▼
+Inbox / Validation / Domain
+```
+
+Namespace conceitual:
+
+```text
+/api/fwwebex/b2b/v1/capabilities
+/api/fwwebex/b2b/v1/events
+/api/fwwebex/b2b/v1/messages
+/api/fwwebex/b2b/v1/ack
+/api/fwwebex/b2b/v1/partnerships
+```
+
+A API externa deve possuir políticas mais restritivas que a interna:
+
+- TLS obrigatório;
+- autenticação machine-to-machine;
+- identificação da organização;
+- assinatura ou mecanismo equivalente de autenticidade;
+- scopes;
+- anti-replay;
+- idempotency key/event ID;
+- limites de payload;
+- rate limiting;
+- nenhuma exposição direta de tabelas/aliases internos;
+- nenhuma execução arbitrária de funções AdvPL/TLPP;
+- contratos versionados;
+- mensagens de erro sanitizadas.
+
+### 27A.3. Um domínio, vários transports
+
+Evitar implementar regra duplicada em cada API.
+
+```text
+TWebChannel ─────┐
+Internal REST ───┼──> Application Service / Domain
+B2B REST ────────┤
+Protheus Hooks ──┤
+Workers ─────────┘
+```
+
+Exemplo: enviar uma mensagem deve convergir para o mesmo `ChatService.SendMessage()`; publicar alteração de pedido deve convergir para o mesmo `BusinessEventService.Publish()`.
+
+### 27A.4. OpenAPI e contratos
+
+As APIs REST devem possuir contrato versionado e, quando viável, documentação OpenAPI gerável/versionada no repositório.
+
+Objetivos:
+
+- permitir testes automatizados;
+- facilitar integração de terceiros;
+- detectar breaking changes;
+- documentar schemas B2B;
+- gerar exemplos de request/response;
+- separar contrato público de implementação TLPP.
+
+Nunca expor nomes físicos de tabelas como contrato público.
+
+---
+
+## 27B. Protheus Event Adapter / Pontos de Entrada
+
+A integração com processos do ERP deve aproveitar mecanismos oficiais de extensibilidade do Protheus, principalmente Pontos de Entrada, quando disponíveis e adequados.
+
+Objetivo: capturar **eventos de negócio confirmados** no momento correto do fluxo, sem alterar o fonte padrão e sem acoplar diretamente a rotina padrão ao Chat.
+
+### 27B.1. Arquitetura
+
+```text
+Rotina padrão Protheus
+        │
+        ▼
+Ponto de Entrada oficial
+        │
+        ▼
+FWWebExProtheusEventAdapter
+        │
+        ▼
+Canonical Business Event
+        │
+        ▼
+BusinessEventService.Publish()
+        │
+   ┌────┼───────────────┐
+   ▼    ▼               ▼
+ Chat  Internal Bus   B2B Outbox
+```
+
+O Ponto de Entrada deve ser um adapter fino. Ele não deve possuir lógica de transporte B2B, chamadas HTTP longas, UI ou regra complexa de Chat.
+
+### 27B.2. Eventos canônicos
+
+Mapear eventos específicos do Protheus para nomes independentes da rotina/fonte:
+
+```text
+PURCHASE_REQUEST.CREATED
+PURCHASE_REQUEST.UPDATED
+QUOTATION.CREATED
+QUOTATION.UPDATED
+QUOTATION.CONFIRMED
+QUOTATION.CANCELLED
+PURCHASE_ORDER.CREATED
+PURCHASE_ORDER.UPDATED
+PURCHASE_ORDER.CONFIRMED
+PURCHASE_ORDER.CANCELLED
+SALES_ORDER.CREATED
+SALES_ORDER.UPDATED
+SALES_ORDER.CONFIRMED
+SALES_ORDER.CANCELLED
+DELIVERY.STATUS_CHANGED
+INVOICE.ISSUED
+INVOICE.CANCELLED
+```
+
+O protocolo externo nunca deve depender do nome do Ponto de Entrada. O Ponto de Entrada é apenas uma fonte de eventos.
+
+### 27B.3. Catálogo de Pontos de Entrada
+
+Criar no projeto um catálogo versionado por domínio/release contendo, para cada integração:
+
+```text
+DOMAIN
+ROUTINE
+ENTRY_POINT
+WHEN/FIRES_AT
+BEFORE_OR_AFTER_COMMIT
+AVAILABLE_CONTEXT
+RETURN_CONTRACT
+SUPPORTED_RELEASES
+CAN_BLOCK_TRANSACTION
+NOTES
+CANONICAL_EVENT
+```
+
+Exemplo conceitual:
+
+```text
+Compras / Pedido
+  Rotina........: <mapear na documentação oficial>
+  Ponto Entrada.: <mapear>
+  Momento.......: confirmação da inclusão/alteração
+  Evento........: PURCHASE_ORDER.CONFIRMED / UPDATED
+```
+
+**Não assumir nomes de Pontos de Entrada por memória.** Cada hook deverá ser confirmado na documentação/release Protheus e validado em ambiente de teste antes de entrar no catálogo suportado.
+
+### 27B.4. Before x After
+
+É essencial distinguir hooks executados antes e depois da efetivação da transação.
+
+Para notificação/federação, preferir evento que represente estado confirmado.
+
+```text
+BEFORE COMMIT
+   │
+   ├─ validação pode falhar
+   └─ NÃO enviar B2B imediatamente
+
+AFTER COMMIT / estado confirmado
+   │
+   └─ registrar evento/outbox
+```
+
+Se o único Ponto de Entrada disponível ocorrer antes do commit, o adapter não deve enviar HTTP para o parceiro. Deve registrar intenção/correlation e validar posteriormente o estado confirmado antes de publicar o evento externo.
+
+### 27B.5. Não bloquear a transação comercial com rede externa
+
+Regra crítica:
+
+> Nenhuma confirmação de Pedido, Cotação, NF ou outro documento deve depender da disponibilidade online do parceiro B2B.
+
+Evitar:
+
+```text
+Ponto de Entrada -> HTTP externo síncrono -> timeout -> usuário não grava pedido
+```
+
+Preferir:
+
+```text
+Ponto de Entrada
+      │
+      ▼
+registrar evento/outbox local
+      │
+      ▼
+retornar rapidamente ao Protheus
+      │
+      ▼
+worker assíncrono envia ao parceiro
+```
+
+### 27B.6. Payload mínimo e snapshot
+
+O hook deve capturar apenas as chaves necessárias para reconstruir o evento com segurança.
+
+Exemplo:
+
+```json
+{
+  "event": "PURCHASE_ORDER.UPDATED",
+  "company": "01",
+  "branch": "01",
+  "documentKey": "104587",
+  "source": {
+    "routine": "PROTHEUS",
+    "hook": "..."
+  }
+}
+```
+
+Um enricher/service pode então carregar os dados autorizados e construir o payload B2B. Isso reduz custo dentro do Ponto de Entrada e evita enviar work areas/estado transitório para outras camadas.
+
+Para eventos que exigem preservar exatamente o estado daquele instante, avaliar snapshot transacional mínimo na Outbox.
+
+### 27B.7. Registro genérico de adapters
+
+Evitar uma classe monolítica com `If cRotina == ...`.
+
+Modelo conceitual:
+
+```advpl
+FWWebExEvents():RegisterAdapter("PURCHASE_ORDER", oPurchaseOrderAdapter)
+FWWebExEvents():RegisterAdapter("QUOTATION",      oQuotationAdapter)
+FWWebExEvents():RegisterAdapter("SALES_ORDER",    oSalesOrderAdapter)
+```
+
+Contrato:
+
+```text
+CanHandle(source, event)
+BuildContext()
+ValidateState()
+BuildCanonicalEvent()
+Publish()
+```
+
+### 27B.8. Eventos originados por REST também passam pelo mesmo domínio
+
+Se uma API B2B provocar uma ação autorizada no ERP, a alteração correspondente pode disparar o Ponto de Entrada padrão. Devemos evitar loop de eventos.
+
+Usar:
+
+```text
+correlationId
+causationId
+origin = LOCAL | INTERNAL_API | B2B | SYSTEM
+```
+
+Exemplo:
+
+```text
+B2B recebe DELIVERY.RESCHEDULED
+       │
+       ▼
+atualiza processo local autorizado
+       │
+       ▼
+Ponto de Entrada dispara
+       │
+       ▼
+Event Adapter detecta causationId/origin
+       │
+       └─ não devolve o mesmo evento ao emissor
+```
+
+### 27B.9. Configuração por evento/parceiro
+
+Nem todo evento local deve virar evento externo.
+
+Configuração futura:
+
+```text
+Event                           Internal Chat   Partner A   Partner B
+PURCHASE_ORDER.CREATED              YES           YES         NO
+PURCHASE_ORDER.UPDATED              YES           YES         YES
+INVOICE.ISSUED                      YES           YES         YES
+PRODUCT.COST_CHANGED                NO            NO          NO
+```
+
+A política deve ser server-side e auditável.
+
+---
+
 ## 28. Testes
 
 ### Internos
@@ -801,7 +1172,14 @@ Criar diagnóstico para responder:
 - paginação;
 - ordering;
 - polling/realtime;
-- multi-AppServer.
+- multi-AppServer;
+- REST interna;
+- autenticação/autorização REST;
+- contrato OpenAPI/schema;
+- adapters de Pontos de Entrada;
+- before/after transaction;
+- eventos duplicados;
+- prevenção de loops por correlation/causation.
 
 ### Federação
 
@@ -817,7 +1195,9 @@ Criar diagnóstico para responder:
 - timeout;
 - indisponibilidade do peer;
 - mapeamento PO comprador ↔ SO fornecedor;
-- isolamento entre organizações.
+- isolamento entre organizações;
+- REST externa sem vazamento de detalhes internos;
+- evento local capturado por hook -> Outbox -> peer -> Inbox.
 
 ---
 
@@ -839,6 +1219,25 @@ Sala vinculada a entidade Protheus.
 
 Rotina TLPP publica evento para uma sala/contexto.
 
+### POC 4 — REST interna
+
+Publicar e consultar eventos/chat via REST interna do AppServer reutilizando o mesmo domínio do TWebChannel.
+
+### POC 5 — Ponto de Entrada -> evento canônico
+
+Mapear um processo real de homologação, preferencialmente pedido ou cotação:
+
+```text
+confirma inclusão/alteração
+       -> Ponto de Entrada
+       -> Event Adapter
+       -> Canonical Event
+       -> persistência/outbox
+       -> Chat interno
+```
+
+Aceite: nenhuma chamada de rede externa dentro da transação do ERP.
+
 ### POC B2B-0 — duas instalações controladas
 
 Dois ambientes Protheus independentes trocam envelope autenticado sem compartilhar banco nem sessão.
@@ -850,6 +1249,27 @@ Ambiente comprador envia referência de pedido; ambiente fornecedor responde sta
 ### POC B2B-2 — cotação
 
 Solicitação de cotação -> resposta estruturada -> conversa -> revisão de proposta.
+
+### POC B2B-3 — REST externa + Hook
+
+Fluxo completo:
+
+```text
+Protheus A
+pedido confirmado
+      │
+Ponto de Entrada
+      │
+Canonical Event
+      │
+Outbox
+      │ HTTPS REST B2B
+      ▼
+Protheus B
+Inbox
+      │
+Chat/ERP Context
+```
 
 ---
 
@@ -883,6 +1303,23 @@ Solicitação de cotação -> resposta estruturada -> conversa -> revisão de pr
 | CHAT-023 | P2 | Attachments |
 | CHAT-024 | P2 | Bots/automation |
 | CHAT-025 | P2 | External notifications/provider |
+| API-000 | P0 | Definir Application Service comum a TWebChannel/REST/Hooks |
+| API-001 | P1 | REST interna via AppServer/multiprotocolo |
+| API-002 | P1 | Versionamento de endpoints e schemas |
+| API-003 | P1 | OpenAPI/contratos e testes |
+| API-004 | P1 | Autenticação/autorização REST interna |
+| API-005 | P1 | REST externa B2B |
+| API-006 | P1 | Security hardening da REST externa |
+| ERP-000 | P0 | Definir Canonical Business Event |
+| ERP-001 | P1 | Criar Protheus Event Adapter registry |
+| ERP-002 | P1 | Catálogo versionado de Pontos de Entrada por release |
+| ERP-003 | P1 | Mapear inclusão/alteração/confirmação de Pedido |
+| ERP-004 | P1 | Mapear Cotação |
+| ERP-005 | P1 | Mapear Pedido de Venda |
+| ERP-006 | P1 | Mapear Faturamento/NF |
+| ERP-007 | P1 | Validar before/after commit e consistência transacional |
+| ERP-008 | P1 | Correlation/Causation/Origin e prevenção de loop |
+| ERP-009 | P1 | Política de roteamento por evento/parceiro |
 | B2B-000 | P1 | Definir `fw.webex.chat.b2b/1` |
 | B2B-001 | P1 | Organization Identity |
 | B2B-002 | P1 | Partnership handshake/scopes |
@@ -907,6 +1344,9 @@ Solicitação de cotação -> resposta estruturada -> conversa -> revisão de pr
 - UI não conhece SQL/tabelas;
 - Repository não conhece DOM;
 - transport não aplica regra comercial;
+- REST controller não contém regra de domínio;
+- Ponto de Entrada não contém transporte B2B;
+- adapter de Protheus apenas traduz contexto para evento canônico;
 - protocolo B2B não conhece tela Protheus;
 - Chat interno não depende de federação;
 - federação não depende de TWebChannel remoto;
@@ -932,24 +1372,43 @@ A arquitetura será considerada bem-sucedida quando:
 10. dois Protheus independentes puderem colaborar sem compartilhar banco, sessão ou login;
 11. uma organização puder revogar outra imediatamente;
 12. eventos B2B forem auditáveis, idempotentes e autenticados;
-13. pedido/cotação/status puderem combinar conversa humana e evento estruturado.
+13. pedido/cotação/status puderem combinar conversa humana e evento estruturado;
+14. TWebChannel, REST interna, REST externa e hooks reutilizarem o mesmo domínio;
+15. eventos relevantes do Protheus puderem ser capturados por adapters de Pontos de Entrada oficialmente mapeados;
+16. nenhuma indisponibilidade de parceiro B2B bloquear a gravação de pedido/cotação/NF no ERP;
+17. eventos externos não dependerem do nome físico de rotina, tabela ou Ponto de Entrada;
+18. correlation/causation impeçam loops entre evento recebido e evento republicado.
 
 ---
 
 ## 33. Próximo passo
 
-A prioridade imediata continua sendo o núcleo interno:
+A prioridade imediata continua sendo o núcleo interno, mas agora com o contrato de domínio preparado para múltiplas entradas:
 
 ```text
 CHAT-000 -> protocolo
 CHAT-001 -> skeleton
+API-000  -> Application Service comum
+ERP-000  -> Canonical Business Event
 CHAT-005 -> POC entre duas sessões
 ```
 
-Em paralelo, documentar `B2B-000` sem implementá-lo ainda, para evitar decisões no Chat interno que inviabilizem federação futura.
+Em paralelo:
 
-A primeira pergunta técnica continua sendo:
+```text
+1. documentar B2B-000;
+2. desenhar API-001/REST interna;
+3. iniciar ERP-002, catálogo de Pontos de Entrada suportados;
+4. escolher um processo de homologação para ERP-003/ERP-004;
+5. validar que o hook apenas registra/publica localmente e nunca depende de chamada B2B síncrona.
+```
+
+A primeira pergunta técnica do chat continua sendo:
 
 > Qual é o mecanismo suportado e confiável para propagar um evento de chat de uma sessão Protheus para outra em topologia WebApp/AppServer/Broker?
 
-Depois de estabilizar o núcleo, a primeira POC federada deve usar **dois ambientes Protheus controlados**, HTTPS autenticado e Outbox/Inbox, antes de qualquer piloto com cliente/fornecedor real.
+E a primeira pergunta técnica da integração ERP passa a ser:
+
+> Quais Pontos de Entrada oficiais, em cada release alvo, representam com segurança a confirmação de inclusão/alteração de Pedido, Cotação e demais documentos, e em que momento eles executam em relação ao commit da transação?
+
+Depois de estabilizar o núcleo, a primeira POC federada deve usar **dois ambientes Protheus controlados**, HTTPS autenticado, REST B2B e Outbox/Inbox, antes de qualquer piloto com cliente/fornecedor real.
