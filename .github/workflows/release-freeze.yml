@@ -1,30 +1,29 @@
-name: Release Freeze Automation
+name: Publish Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to freeze, without prefix (example: 1.0.3)"
+        description: "Version to publish from main (example: 1.0.3)"
         required: true
-        type: string
-      base_branch:
-        description: "Branch used as the release source"
-        required: false
-        default: "main"
         type: string
 
 permissions:
   contents: write
-  pull-requests: write
+
+concurrency:
+  group: fwwebex-release
+  cancel-in-progress: false
 
 jobs:
-  freeze-and-next:
+  publish-release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.base_branch }}
+          ref: main
           fetch-depth: 0
 
       - name: Configure git identity
@@ -32,10 +31,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Run freeze automation
+      - name: Publish tag and release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           RELEASE_VERSION: ${{ inputs.version }}
-          RELEASE_BASE_BRANCH: ${{ inputs.base_branch }}
         run: ./scripts/release_freeze.sh
