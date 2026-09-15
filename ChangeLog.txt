@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Improve SVG label fitting and validation)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add Set method to Switch class)"
  */
+
+2026-09-15 08:35 UTC naldodj (Add Set method to Switch class)
+  Add Set method to Switch class
+    Declare and implement a public Set(xKey) method in src/fw.webex/core/tools/extra/fw.webex.switch.tlpp.
+    The method assigns ::xKey and returns self, enabling fluent updates to the Switch key.
+      * src/fw.webex/core/tools/extra/fw.webex.switch.tlpp
 
 2026-09-11 22:49 UTC naldodj (Improve SVG label fitting and validation)
   Improve SVG label fitting and validation
