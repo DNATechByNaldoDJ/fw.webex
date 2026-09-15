@@ -1,31 +1,34 @@
 namespace FWWebEx
 using namespace FWWebEx
 
+#include "fw.webex.object.context.th"
+
 procedure u_SwitchTst()
 
     local cProcName:=ProcName() as character
+
+    local jSwitch as json
+
     local oSwitch as object
 
-    oSwitch:=Switch():New("B")
-    oSwitch:AddCase("A",{|cProcName| MsgInfo("&Eacute; A",cProcName) })
-    oSwitch:AddCase("B",{|cProcName| MsgInfo("&Eacute; B",cProcName) })
-    oSwitch:SetDefault({|cProcName| MsgInfo("Desconhecido",cProcName) })
-    oSwitch:Eval(cProcName)
+    jSwitch:={;
+         "A":{|cOption as character,i as numeric,cProcName as character|MsgInfo("&Eacute; "+cOption+"["+tlpp.ToStr(i)+"]",cProcName)};
+        ,"B":{|cOption as character,i as numeric,cProcName as character|MsgInfo("&Eacute; "+cOption+"["+tlpp.ToStr(i)+"]",cProcName)};
+    }
+    oSwitch:=Switch():New("")
+    oSwitch:SetDefault({|cProcName as character|MsgInfo("Desconhecido",cProcName)})
 
-    FreeObj(@oSwitch)
+    ForEach():Evaluate(jSwitch,{|k as character,b as codeblock|;
+         oSwitch:AddCase(k,b);
+    },.T.)
 
-    oSwitch:=Switch():New("A")
-    oSwitch:AddCase("A",{|cProcName| MsgInfo("&Eacute; A",cProcName) })
-    oSwitch:AddCase("B",{|cProcName| MsgInfo("&Eacute; B",cProcName) })
-    oSwitch:SetDefault({|cProcName| MsgInfo("Desconhecido",cProcName) })
-    oSwitch:Eval(cProcName)
+    ForEach():Evaluate(jSwitch,{|k as character,b as codeblock,i as numeric|;
+          oSwitch:Set(k):Eval(k,i,cProcName);
+    },.T.)
 
-    FreeObj(@oSwitch)
+    oSwitch:Set():Eval(cProcName)
 
-    oSwitch:=Switch():New("A")
-    oSwitch:SetDefault({|cProcName| MsgInfo("Desconhecido",cProcName) })
-    oSwitch:Eval(cProcName)
-
+    FreeObj(@jSwitch)
     FreeObj(@oSwitch)
 
 return
