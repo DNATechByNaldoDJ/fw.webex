@@ -67,7 +67,7 @@ Legenda:
 
 | ID | Prioridade | Módulo | Item | Origem | Exemplo obrigatório | Status | Sprint |
 |---|---|---|---|---|---|---|---|
-| NX-000 | P0 | governança/release | Efetivar congelamento operacional da v0 (tag + branches + proteção) | `V0_FREEZE.md` | Não | TODO | S1 |
+| NX-000 | P0 | governança/release | Substituir o fluxo de congelamento por main única permanente, branches temporárias e releases por tags; preservar o registro histórico da v0 | `CONTRIBUTING.md`, `V0_FREEZE.md` | Não | DONE | S1 |
 | NX-001 | P0 | core/table | Implementar carregamento real via AJAX | `src/fw.webex/core/component/fw.webex.table.tlpp` | Sim | TODO | S2 |
 | NX-002 | P0 | contrib/datatable | Finalizar fluxo do datatable form e estabilizar uso | `src/fw.webex/contrib/fw.webex.datatable/fw.webex.datatable.form.tlpp` | Sim | DONE | S1 |
 | NX-003 | P1 | features/markdown | Revisar TODOs de plugins markdown | `src/fw.webex/contrib/fw.webex.features/features/fw.webex.feature.markdown.tlpp` | Sim | TODO | S3 |

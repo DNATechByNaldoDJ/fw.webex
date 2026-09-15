@@ -430,6 +430,10 @@ Toda ajuda é bem-vinda! A ideia aqui é **evoluir juntos** como comunidade Prot
 
 Contribuições são bem-vindas! Siga estas diretrizes para garantir a consistência do código:
 
+Consulte o [guia de contribuição e publicação de versões](CONTRIBUTING.md):
+`main` é a única branch permanente, cada tarefa usa uma branch temporária
+integrada por PR, e as versões são publicadas por tags.
+
 🧾 Estilo de Codificação
 
 - Indentação: use 4 espaços por nível de indentação.

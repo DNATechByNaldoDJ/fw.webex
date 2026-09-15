@@ -1,5 +1,12 @@
 # V0_FREEZE.md — Registro Oficial de Congelamento da Linha v0
 
+> **Registro histórico:** este documento preserva a decisão de congelamento
+> da linha v0. A política de branches descrita abaixo foi substituída pelo
+> [guia de contribuição e publicação de versões](CONTRIBUTING.md): `main` é
+> a única branch permanente, os trabalhos usam branches temporárias e as
+> versões são publicadas por tags. As menções a `release/v0` e `next` retratam
+> a organização da época e não orientam novos trabalhos.
+
 ## Motivo do Congelamento
 
 A linha **v0** foi congelada para separar formalmente:

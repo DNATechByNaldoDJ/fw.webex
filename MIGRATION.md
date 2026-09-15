@@ -2,7 +2,9 @@
 
 ## 1) Propósito
 
-> Execução operacional do congelamento: ver `V0_FREEZE.md`.
+> O congelamento da v0 está preservado como registro histórico em
+> [V0_FREEZE.md](V0_FREEZE.md). A política atual usa `main` como única branch
+> permanente e releases por tags; consulte [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Este documento descreve a migração da linha **v0 (congelada)** para a **nova geração** do fw.webex.
 
