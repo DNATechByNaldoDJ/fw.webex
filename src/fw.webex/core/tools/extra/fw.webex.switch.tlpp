@@ -23,6 +23,7 @@ class Switch from FWWebEx.ClassBase
     private data bDefault as codeblock
 
     public method New(xKey as variant) as object
+    public method Set(xKey as variant) as object
     public method AddCase(xMatch as variant,bAction as codeblock) as object
     public method SetDefault(bDefault as codeblock) as object
     public method Eval(xVariadic as variadic) as variant
@@ -33,6 +34,10 @@ method New(xKey) class Switch
     _Super:New()
    ::xKey:=xKey
    ::oHCases:=THashMap():New()
+return self
+
+method Set(xKey) class Switch
+    ::xKey:=xKey
 return self
 
 method AddCase(xMatch,bAction) class Switch
