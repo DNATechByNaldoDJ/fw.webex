@@ -5,6 +5,16 @@
    (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add Set method to Switch class)"
  */
 
+2026-09-25 11:53 UTC naldodj (Add numeric ranges to ForEach and update tool tests)
+  Add numeric ranges to ForEach and update tool tests
+    Extend ForEach with numeric targets and configurable start, end and step parameters, preserving callback results and early termination.
+    Add ForNext to evaluate numeric ranges with default arguments and automatic adjustment of bounds and step for descending traversal.
+    Add ascending, descending, custom-step and default-argument ForNext test scenarios, and standardize ForEach result dialog titles.
+    Route direct ForEach and Switch test execution through FWExampleTools with an initialized access context.
+      * src/fw.webex/core/tools/extra/fw.webex.for.each.tlpp
+      * src/fw.webex/core/tools/extra/tests/fw.webex.for.each.test.tlpp
+      * src/fw.webex/core/tools/extra/tests/fw.webex.switch.test.tlpp
+
 2026-09-15 08:35 UTC naldodj (Add Set method to Switch class)
   Add Set method to Switch class
     Declare and implement a public Set(xKey) method in src/fw.webex/core/tools/extra/fw.webex.switch.tlpp.

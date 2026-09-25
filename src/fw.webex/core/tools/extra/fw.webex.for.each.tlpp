@@ -105,7 +105,7 @@ class ForEach from FWWebEx.ClassBase
     private data xTarget as variant
     private data xCallBackResult as variant
 
-    public method New(xTarget as variant,bCallBack as codeblock,lDescend as logical) as object
+    public method New(xTarget as variant,bCallBack as codeblock,lDescend as logical,nBeg as numeric,nEnd as numeric,nStep as numeric) as object
 
     public method Eval() as object
     public method GetCallBackResult() as variant
@@ -140,6 +140,7 @@ class ForEach from FWWebEx.ClassBase
     private method __arrayIsHashObject(aArray as array) as logical
     private method __arrayIsHashObjectItem(aArray as array) as logical
 
+    static method ForNext(nBeg as numeric,nEnd as numeric,nStep as numeric,bCallBack as codeblock) as variant
     static method Evaluate(xTarget as variant,bCallBack as codeblock,lDescend as logical) as variant
 
 end class
@@ -153,10 +154,13 @@ end class
  * @param lDescend  When .T., traverses the target from the last item to the first.
  * @return Self.
  */
-method New(xTarget,bCallBack,lDescend) class ForEach
-    paramtype 1 var xTarget as array,character,json,object
+method New(xTarget,bCallBack,lDescend,nBeg,nEnd,nStep) class ForEach
+    paramtype 1 var xTarget as array,character,json,numeric,object
     paramtype 2 var bCallBack as block
     paramtype 3 var lDescend as logical optional default .F.
+    paramtype 4 var nBeg as numeric optional
+    paramtype 5 var nEnd as numeric optional default nBeg
+    paramtype 6 var nStep as numeric optional default if(lDescend,(-1),1)
     _Super:New()
     ::bCallBack:=bCallBack
     ::lBreak:=.F.
@@ -191,9 +195,15 @@ method New(xTarget,bCallBack,lDescend) class ForEach
         ::aKeys:=Array(0)
     endif
 
-    ::nBeg:=if(lDescend,Len(::aKeys),1)
-    ::nEnd:=if(lDescend,1,Len(::aKeys))
-    ::nStep:=if(lDescend,(-1),1)
+    if (::cType=="N")
+        ::nBeg:=if(nBeg==nil,if(lDescend,xTarget,1),nBeg)
+        ::nEnd:=if(nEnd==nil,if(lDescend,1,xTarget),nEnd)
+    else
+        ::nBeg:=if(lDescend,Len(::aKeys),1)
+        ::nEnd:=if(lDescend,1,Len(::aKeys))
+    endif
+
+    ::nStep:=nStep
 
 return(self)
 
@@ -286,6 +296,16 @@ method Eval() class ForEach
                 next i
             endif
         endif
+    case (::cType=="N")
+        for i:=::nBeg to ::nEnd step ::nStep
+            ::xKey:=i
+            ::xValue:=i
+            ::nIndex:=i
+            ::xCallBackResult:=Eval(::bCallBack,::xKey,::xValue,::nIndex,::self)
+            if (::lBreak)
+                exit
+            endif
+        next i
     otherwise
         // non-iterable
     endcase
@@ -417,13 +437,36 @@ return(lIsHashObject)
  * @param lDescend  When .T., traverses in descending order.
  * @return xCallBackResult.
  */
-static method Evaluate(xTarget,bCallBack,lDescend) class ForEach
+static method Evaluate(xTarget,bCallBack,lDescend,nBeg,nEnd,nStep) class ForEach
     local oForEach as object
     local xCallBackResult as variant
-    paramtype 1 var xTarget as array,character,json,object
+    paramtype 1 var xTarget as array,character,json,numeric,object
     paramtype 2 var bCallBack as block
     paramtype 3 var lDescend as logical optional default .F.
-    oForEach:=ForEach():New(xTarget,bCallBack,lDescend)
+    paramtype 4 var nBeg as numeric optional
+    paramtype 5 var nEnd as numeric optional
+    paramtype 6 var nStep as numeric optional default if(lDescend,(-1),1)
+    oForEach:=ForEach():New(xTarget,bCallBack,lDescend,nBeg,nEnd,nStep)
     xCallBackResult:=oForEach:Eval():GetCallBackResult()
     FreeObj(@oForEach)
 return(xCallBackResult)
+
+static method ForNext(nBeg,nEnd,nStep,bCallBack) class ForEach
+    local lDescend as logical
+    local nTmp as numeric
+    paramtype 1 var nBeg as numeric optional default 1
+    paramtype 2 var nEnd as numeric optional default 1
+    paramtype 3 var nStep as numeric optional default 1
+    paramtype 4 var bCallBack as block
+    lDescend:=((nStep<0).or.(nEnd<nBeg))
+    if (lDescend)
+        if (nBeg<nEnd)
+            nTmp:=nBeg
+            nBeg:=nEnd
+            nEnd:=nTmp
+        endif
+        if (nStep>0)
+            nStep*=(-1)
+        endif
+    endif
+return(ForEach():Evaluate(nEnd,bCallBack,lDescend,nBeg,nEnd,nStep))

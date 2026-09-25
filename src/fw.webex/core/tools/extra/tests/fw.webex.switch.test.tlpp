@@ -1,9 +1,19 @@
-namespace FWWebEx
-using namespace FWWebEx
-
 #include "fw.webex.object.context.th"
 
+namespace FWWebEx
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
 procedure u_SwitchTst()
+    if (Empty(ProcName(1)))
+        private cAcesso:=""//Prevent Error on EEcView=>EnchoiceBar
+        FWExampleTools():Execute({||SwitchTst()},ProcName(),.F.)
+    else
+        SwitchTst()
+    endif
+return
+
+static procedure SwitchTst()
 
     local cProcName:=ProcName() as character
 

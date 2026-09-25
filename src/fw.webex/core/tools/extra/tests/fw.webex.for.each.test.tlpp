@@ -3,8 +3,18 @@
 
 namespace FWWebEx
 using namespace FWWebEx
+using namespace FWWebEx.Tools
 
 procedure u_ForEachTst()
+    if (Empty(ProcName(1)))
+        private cAcesso:=""
+        FWExampleTools():Execute({||ForEachTst()},ProcName(),.F.)
+    else
+        ForEachTst()
+    endif
+return
+
+static function ForEachTst()
 
     local cMsg as character
     local cMsgItem as character
@@ -30,7 +40,7 @@ procedure u_ForEachTst()
     END OBJECT .:self FREE
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach ARRAY"+cForEachTst)
+    MsgInfo(cMsg,"ForEach ARRAY"+" ["+cForEachTst+"]")
 
     ConOut(Replicate("-",80))
 
@@ -64,7 +74,7 @@ procedure u_ForEachTst()
     FreeObj(@j)
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach JSON"+cForEachTst)
+    MsgInfo(cMsg,"ForEach JSON"+" ["+cForEachTst+"]")
 
     ConOut(Replicate("-",80))
 
@@ -84,7 +94,7 @@ procedure u_ForEachTst()
     END OBJECT .:self FREE
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach THASHMAP"+cForEachTst)
+    MsgInfo(cMsg,"ForEach THASHMAP"+" ["+cForEachTst+"]")
 
     ConOut(Replicate("-",80))
 
@@ -99,7 +109,7 @@ procedure u_ForEachTst()
     END OBJECT .:self FREE
 
     ConOut(cMsg)
-    MsgInfo(cMsg,"ForEach STRING"+cForEachTst)
+    MsgInfo(cMsg,"ForEach STRING"+" ["+cForEachTst+"]")
 
     ConOut(Replicate("-",80))
 
@@ -121,7 +131,7 @@ procedure u_ForEachTst()
         END OBJECT .:self FREE
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach JSONARRAY"+cForEachTst)
+        MsgInfo(cMsg,"ForEach JSONARRAY"+" ["+cForEachTst+"]")
 
         ConOut(Replicate("-",80))
 
@@ -142,7 +152,7 @@ procedure u_ForEachTst()
         FreeObj(@oForEach)
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach TFINI[General]"+cForEachTst)
+        MsgInfo(cMsg,"ForEach TFINI[General]"+" ["+cForEachTst+"]")
 
         ConOut(Replicate("-",80))
 
@@ -156,7 +166,7 @@ procedure u_ForEachTst()
         FreeObj(@oForEach)
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach TFINI[General]"+cForEachTst)
+        MsgInfo(cMsg,"ForEach TFINI[General]"+" ["+cForEachTst+"]")
 
         ConOut(Replicate("-",80))
 
@@ -172,7 +182,7 @@ procedure u_ForEachTst()
         FreeObj(@oTHash)
 
         ConOut(cMsg)
-        MsgInfo(cMsg,"ForEach TFINI=>THASHMAP"+cForEachTst)
+        MsgInfo(cMsg,"ForEach TFINI=>THASHMAP"+" ["+cForEachTst+"]")
 
         ConOut(Replicate("-",80))
 
@@ -192,13 +202,39 @@ procedure u_ForEachTst()
         FreeObj(@oForEach)
 
         ConOut(cMsg)
-        EECView(cMsg,"ForEach TFINI"+cForEachTst)
+        EECView(cMsg,"ForEach TFINI"+" ["+cForEachTst+"]")
 
         ConOut(Replicate("-",80))
 
         FreeObj(@oTFINI)
 
     endif
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+    ForEach():ForNext(1,10,1,{|k,v,i,oSelf|cMsg+=cCRLF+FormatMsgItem(oSelf,"ForEach:ForNext",k,v,i)})
+    MsgInfo(cMsg,"ForEach:ForNext"+" ["+cForEachTst+"]")
+
+    ConOut(Replicate("-",80))
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+    ForEach():ForNext(10,1,-1,{|k,v,i,oSelf|cMsg+=cCRLF+FormatMsgItem(oSelf,"ForEach:ForNext",k,v,i)})
+    MsgInfo(cMsg,"ForEach:ForNext"+" ["+cForEachTst+"]")
+
+    ConOut(Replicate("-",80))
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+    ForEach():ForNext(1,20,-2,{|k,v,i,oSelf|cMsg+=cCRLF+FormatMsgItem(oSelf,"ForEach:ForNext",k,v,i)})
+    MsgInfo(cMsg,"ForEach:ForNext"+" ["+cForEachTst+"]")
+
+    ConOut(Replicate("-",80))
+
+    cMsg:="ForEach "+(cForEachTst:=__Soma1(cForEachTst))+cCRLF
+    cMsg+=Replicate("-",80)+cCRLF
+    ForEach():ForNext(5,nil,nil,{|k,v,i,oSelf|cMsg+=cCRLF+FormatMsgItem(oSelf,"ForEach:ForNext",k,v,i)})
+    MsgInfo(cMsg,"ForEach:ForNext"+" ["+cForEachTst+"]")
 
     ConOut(Replicate("-",80),"ForEach End","")
 
