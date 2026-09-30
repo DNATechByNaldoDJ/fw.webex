@@ -522,4 +522,20 @@ improvement.
 
 ---
 
+## 💼 Suporte Corporativo & Consultoria Especializada
+
+O **fw.webex** é mantido como uma ferramenta open-source para a comunidade. Se a sua empresa utiliza esta biblioteca ou opera em grande escala com **ERP TOTVS Protheus** e precisa de apoio especializado, a **DNA Tech** oferece serviços corporativos dedicados:
+
+* **Sustentação N3 & Arquitetura:** Resolução de incidentes complexos em customizações legadas e suporte arquitetural de alto nível.
+* **Tuning de Banco e Rotinas:** Otimização de consultas, redução de *locks* e melhoria de performance em rotinas críticas (SQL Server, Oracle, PostgreSQL).
+* **Integrações REST & Modernização:** Construção de APIs seguras, automações e modernização de bases legadas para TL++.
+* **Modelos de Contratação:** Pacotes mensais de horas dedicadas (retainer com SLA) ou projetos de escopo fechado.
+
+Precisa de apoio técnico sênior para o seu time ou para o ecossistema Protheus da sua operação?
+
+📫 **Entre em contato para demandas B2B / PJ:**  
+[Conectar no LinkedIn](https://www.linkedin.com/in/naldodj/) • [Enviar E-mail](mailto:marinaldo.jesus@gmail.com) • [Visitar BlackTDN](https://blacktdn.com.br)
+
+---
+
 <img width="1024" height="1024" alt="dna_tech_logo_black_panter" src="https://github.com/user-attachments/assets/9b39a407-31ca-4a86-a1df-f76790e2036a" />
