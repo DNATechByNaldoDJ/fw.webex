@@ -1,0 +1,426 @@
+/* Example 037: CEP -> jsToAdvpl -> Protheus -> a new WebEx DataTable.
+   Based on examples 003 and 006. Released to Public Domain. */
+#include "fw.webex.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+procedure u_FWWebExExample_037()
+    // Both dialogs run inside Execute so the Protheus environment stays active.
+    FWExampleTools():Execute({||FWWebExExample037Show()},ProcName(),.F.)
+return
+
+static procedure FWWebExExample037Show()
+
+    local cHTML as character
+    local cFile:="" as character
+    local cReturnedJSON:="" as character
+    local cRequestId:=UUIDRandomSeq() as character
+    local cTitle:="FWWebEx :: CEP - retorno ao Protheus" as character
+
+    local oError as object
+    local oChannel as object
+
+    try
+        oChannel:=WebApp():GetTWebChannel()
+        if (!oChannel:lConnected)
+            ApMsgStop("Nao foi possivel conectar o TWebChannel.",cTitle)
+        else
+            cFile:=FWWebExExample037Page(@cHTML,cRequestId,"")
+            if (!Empty(cFile).and.File(cFile))
+                FWWebExExample037Query(cFile,cTitle,oChannel,cRequestId,@cReturnedJSON)
+            endif
+            if (!Empty(cFile).and.File(cFile))
+                fErase(cFile)
+            endif
+            cFile:=""
+            // A cancelled query returns no JSON and does not open the second dialog.
+            if (!Empty(cReturnedJSON))
+                cFile:=FWWebExExample037Page(@cHTML,cRequestId,cReturnedJSON)
+                if (!Empty(cFile).and.File(cFile))
+                    FWExampleTools():HtmlFileShow(cHTML,"FWWebEx :: CEP recebido pelo Protheus",cFile,oChannel)
+                endif
+            endif
+        endif
+    catch oError
+        ApMsgStop("Falha no exemplo de retorno do CEP: "+oError:Description,cTitle)
+        FreeObj(@oError)
+    endtry
+
+    if (!Empty(cFile).and.File(cFile))
+        fErase(cFile)
+    endif
+
+    // The channel belongs to WebApp and must remain available to other examples.
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+
+return
+
+// Own the first dialog locally so the receive callback can end it explicitly.
+// The result dialog uses the same TWebChannel through HtmlFileShow/TWebEngine.
+static procedure FWWebExExample037Query(cFile as character,cTitle as character,oChannel as object,cRequestId as character,cReturnedJSON as character)
+
+    local aButtons:={} as array
+    local aButtonsObj:={} as array
+
+    local bPrevious:=oChannel:bJSToAdvPL as codeblock
+
+    local cNavigate as character
+
+    local nTop as numeric
+    local nLeft as numeric
+    local nBottom as numeric
+    local nRight as numeric
+
+    local oDlg as object
+    local oSize as object
+    local oError as object
+    local oEngine as object
+
+    try
+        // HTMLFromControl writes on the AppServer, hence lIsUserDiskDir = .F.
+        cNavigate:=CpyF2Web(cFile,.F.,.F.,.F.,.F.)
+        if (Empty(cNavigate))
+            MsgStop("Nao foi possivel publicar a pagina de consulta.",cTitle)
+        else
+            oSize:=FWDefSize():New(.F.,.F.)
+            oSize:lLateral:=.F.
+            oSize:AddObject("TWebEngine",100,100,.T.,.T.)
+            oSize:Process()
+            nTop:=0
+            nLeft:=0
+            nBottom:=530
+            nRight:=1330
+            if (oSize:aWindSize[3]>0)
+                nTop:=oSize:aWindSize[1]
+                nLeft:=oSize:aWindSize[2]
+                nBottom:=oSize:aWindSize[3]
+                nRight:=oSize:aWindSize[4]
+            endif
+            DEFINE MSDIALOG oDlg TITLE cTitle FROM nTop,nLeft TO nBottom,nRight OF GetWndDefault() STATUS PIXEL
+                if (oSize:aWindSize[3]>0)
+                    nTop:=oSize:GetDimension("TWebEngine","LININI")
+                    nLeft:=oSize:GetDimension("TWebEngine","COLINI")
+                    nBottom:=oSize:GetDimension("TWebEngine","LINEND")
+                    nRight:=oSize:GetDimension("TWebEngine","COLEND")
+                endif
+                oEngine:=TWebEngine():New(oDlg,nTop,nLeft,nRight,nBottom,/*cURL*/,oChannel:nPort)
+                oEngine:Align:=CONTROL_ALIGN_ALLCLIENT
+                oDlg:lEscClose:=.F.
+                oChannel:bJSToAdvPL:={|oSender,cType,cContent|FWWebExExample037Receive(oSender,cType,cContent,cRequestId,@cReturnedJSON,oDlg,bPrevious)}
+                aButtons:={{"&Sair",{||oDlg:End()},"Sair","Sair"}}
+                oEngine:Navigate(cNavigate)
+            ACTIVATE MSDIALOG oDlg CENTERED ON INIT (aButtonsObj:=ButtonBar():BuildTopButtonBar(oDlg,aButtons,nTop,nRight,nil,nil,3,65,15,.F.))
+        endif
+    catch oError
+        cReturnedJSON:=""
+        ApMsgStop("Falha ao abrir a consulta de CEP: "+oError:Description,cTitle)
+    endtry
+    // Restore even after cancellation or an error; do not retain the closed dialog.
+    oChannel:bJSToAdvPL:=bPrevious
+    ButtonBar():CleanButtonBar(@aButtonsObj)
+    FWFreeArray(@aButtons)
+    FreeObj(@oEngine)
+    FreeObj(@oDlg)
+    FreeObj(@oSize)
+    if (!Empty(cNavigate).and.File(cNavigate))
+        fErase(cNavigate)
+    endif
+return
+
+static procedure FWWebExExample037Receive(oSender as object,cType as character,cContent as character,cRequestId as character,cReturnedJSON as character,oDlg as object,bPrevious as codeblock)
+
+    local cCEP as character
+
+    local lValid:=.F. as logical
+
+    local jPayload as json
+
+    local nDigit as numeric
+
+    local oError as object
+
+    if (cType!="FWWEBEX_CEP_RESULT")
+        if (ValType(bPrevious)=="B")
+            Eval(bPrevious,oSender,cType,cContent)
+        endif
+        return
+    endif
+
+    if (!Empty(cReturnedJSON))
+        return
+    endif
+
+    jPayload:=JSONObject():New()
+
+    try
+        lValid:=Empty(jPayload:FromJSON(cContent))
+        if (lValid)
+            lValid:=(jPayload:HasProperty("id").and.jPayload:HasProperty("origem").and.jPayload:HasProperty("dados"))
+        endif
+        if (lValid)
+            lValid:=(ValType(jPayload["id"])=="C".and.ValType(jPayload["origem"])=="C".and.ValType(jPayload["dados"])=="J")
+        endif
+        if (lValid)
+            // An old browser document must not satisfy a new execution.
+            if (jPayload["id"]!=cRequestId)
+                FreeObj(@jPayload)
+                return
+            endif
+            lValid:=((jPayload["origem"]=="ViaCEP".or.jPayload["origem"]=="BrasilAPI").and.jPayload["dados"]:HasProperty("cep"))
+        endif
+        if (lValid)
+            lValid:=(ValType(jPayload["dados"]["cep"])=="C".and.!jPayload["dados"]:HasProperty("erro"))
+        endif
+        if (lValid)
+            cCEP:=StrTran(jPayload["dados"]["cep"],"-","")
+            lValid:=(Len(cCEP)==8)
+            for nDigit:=1 to Len(cCEP)
+                if (!(SubStr(cCEP,nDigit,1)$"0123456789"))
+                    lValid:=.F.
+                    exit
+                endif
+            next nDigit
+        endif
+        if (lValid)
+            // Keep the received data in Protheus before ending the first TWebEngine.
+            cReturnedJSON:=jPayload:ToJSON()
+        endif
+    catch oError
+        FreeObj(@oError)
+        lValid:=.F.
+    endtry
+    FreeObj(@jPayload)
+    if (lValid)
+        oDlg:End()
+    else
+        ApMsgStop("O resultado recebido nao contem um CEP valido. Consulte novamente.","FWWebEx :: CEP")
+    endif
+
+return
+
+static function FWWebExExample037Page(cHTML as character,cRequestId as character,cReturnedJSON as character) as character
+
+    local cFile:="fwwebex-037-"+cRequestId as character
+
+    local lResult:=!Empty(cReturnedJSON) as logical
+
+    local oPage as object
+
+    BEGIN FWWEBEX oPage CLASS WebExPage ARGS "Exemplo 037 - CEP e retorno ao Protheus"
+        WITH WEBEXOBJECT CLASS WebExBody
+            WITH WEBEXOBJECT CLASS WebExMain
+                WITH WEBEXOBJECT CLASS WebExH2
+                    .:SetContent(if(lResult,"CEP recebido pelo Protheus","Consulta CEP"))
+                END WEBEXOBJECT
+                if (!lResult)
+                    WITH WEBEXOBJECT CLASS WebExParagraph
+                        .:SetContent("Consulte um CEP para abrir os dados em uma nova janela.")
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExForm ARGS "Buscar CEP"
+                        .:SetFixedID("consultaCEP")
+                        .:AddField("CEP","cep","text","Digite o CEP")
+                        .:AddButton(WebExButton():New("Consultar e retornar"))
+                    END WEBEXOBJECT
+                endif
+                WITH WEBEXOBJECT CLASS WebExDiv
+                    .:SetFixedID("resultadoCEP")
+                    .:SetAttr("role","status")
+                    .:SetAttr("aria-live","polite")
+                    .:AddClass("alert alert-info mt-3")
+                    .:SetContent(if(lResult,"Dados recebidos. Preparando a tabela...","Informe um CEP com oito digitos."))
+                END WEBEXOBJECT
+                if (lResult)
+                    WITH WEBEXOBJECT CLASS WebExDiv
+                        .:SetFixedID("tableResult")
+                        .:AddClass("table-responsive")
+                    END WEBEXOBJECT
+                    // A JSON data island, escaped against premature </script> closure.
+                    WITH WEBEXOBJECT CLASS WebExControl TYPE script
+                        .:SetFixedID("cepRecebido")
+                        .:SetAttr("type","application/json")
+                        .:SetExternalAssets(.F.)
+                        .:SetContent(StrTran(cReturnedJSON,"<","\u003c"))
+                    END WEBEXOBJECT
+                    WITH WEBEXOBJECT CLASS WebExScript
+                        .:SetExternalAssets(.F.)
+                        .:SetContent(FWWebExExample037ResultScript())
+                    END WEBEXOBJECT
+                else
+                    WITH WEBEXOBJECT CLASS WebExScript
+                        .:SetExternalAssets(.F.)
+                        .:SetContent(FWWebExExample037LookupScript(cRequestId))
+                    END WEBEXOBJECT
+                endif
+            END WEBEXOBJECT
+        END WEBEXOBJECT
+    END FWWEBEX
+    if (lResult)
+        WebExFeatureDataTable():Enable()
+        cFile+="-resultado"
+    else
+        cFile+="-consulta"
+    endif
+    if (!WebFileTools():HTMLFromControl(oPage,oPage:GetFWWebExTmpPath(),@cFile,@cHTML,.T.))
+        cFile:=""
+    endif
+    WEBEXOBJECT CLEAN
+return(cFile)
+
+static function FWWebExExample037LookupScript(cRequestId as character) as character
+    local cLookupScript as character
+    beginContent var cLookupScript
+        (() => {
+            const requestId = '__REQUEST_ID__';
+            let busy = false;
+            let closed = false;
+            let activeController = null;
+
+            window.addEventListener('pagehide', () => {
+                closed = true;
+                if (activeController) activeController.abort();
+            });
+
+            async function consultar(url, cep) {
+                const controller = new AbortController();
+                activeController = controller;
+                const timer = setTimeout(() => controller.abort(), 15000);
+                try {
+                    const response = await fetch(url, { signal: controller.signal });
+                    if (!response.ok) throw new Error('Falha na consulta.');
+                    const dados = await response.json();
+                    if (!dados || typeof dados !== 'object' || Array.isArray(dados) || dados.erro ||
+                        typeof dados.cep !== 'string' || dados.cep.replace(/\D/g, '') !== cep) {
+                        throw new Error('CEP nao encontrado.');
+                    }
+                    return dados;
+                } finally {
+                    clearTimeout(timer);
+                    if (activeController === controller) activeController = null;
+                }
+            }
+
+            function init() {
+                const form = document.getElementById('consultaCEP');
+                const status = document.getElementById('resultadoCEP');
+                const button = form.querySelector('button[type="submit"]');
+                const showStatus = (message, kind) => {
+                    status.className = 'alert alert-' + kind + ' mt-3';
+                    status.textContent = message;
+                };
+
+                form.addEventListener('submit', async event => {
+                    event.preventDefault();
+                    if (busy || closed) return;
+                    const cep = form.querySelector('input[name="cep"]').value.trim().replace(/\D/g, '');
+                    if (cep.length !== 8) {
+                        showStatus('CEP invalido. Informe oito digitos.', 'danger');
+                        return;
+                    }
+                    busy = true;
+                    button.disabled = true;
+                    form.setAttribute('aria-busy', 'true');
+                    try {
+                        showStatus('Conectando ao Protheus...', 'info');
+                        const channel = await FWWebEx.TWebChannel.connect({ timeout: 10000 });
+                        if (closed) return;
+                        showStatus('Consultando CEP...', 'info');
+                        let dados;
+                        let origem = 'ViaCEP';
+                        try {
+                            dados = await consultar(`https://viacep.com.br/ws/${cep}/json/`, cep);
+                        } catch (error) {
+                            if (closed) return;
+                            origem = 'BrasilAPI';
+                            dados = await consultar(`https://brasilapi.com.br/api/cep/v1/${cep}`, cep);
+                        }
+                        if (closed) return;
+                        showStatus('Enviando dados ao Protheus...', 'info');
+                        // The Protheus callback stores this JSON and ends this dialog.
+                        channel.jsToAdvpl('FWWEBEX_CEP_RESULT', JSON.stringify({ id: requestId, origem, dados }));
+                    } catch (error) {
+                        if (!closed) showStatus('Nao foi possivel consultar ou devolver o CEP. Tente novamente.', 'danger');
+                    } finally {
+                        busy = false;
+                        button.disabled = false;
+                        form.setAttribute('aria-busy', 'false');
+                    }
+                });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init, { once: true });
+            } else {
+                init();
+            }
+        })();
+    endContent
+return(StrTran(cLookupScript,"__REQUEST_ID__",cRequestId))
+
+static function FWWebExExample037ResultScript() as character
+    local cResultScript as character
+    beginContent var cResultScript
+        (() => {
+            function init() {
+                const payload = JSON.parse(document.getElementById('cepRecebido').textContent);
+                const host = document.getElementById('tableResult');
+                const status = document.getElementById('resultadoCEP');
+                const table = document.createElement('table');
+                table.id = 'cepRetornado';
+                table.className = 'table table-striped table-hover display compact nowrap';
+                const header = table.createTHead().insertRow();
+                ['Campo', 'Valor'].forEach(label => {
+                    const cell = document.createElement('th');
+                    cell.scope = 'col';
+                    cell.textContent = label;
+                    header.appendChild(cell);
+                });
+                const body = table.createTBody();
+                const addRow = (key, value) => {
+                    const row = body.insertRow();
+                    row.insertCell().textContent = key;
+                    row.insertCell().textContent = value == null || value === '' ? '-' :
+                        (typeof value === 'object' ? JSON.stringify(value) : String(value));
+                };
+                Object.entries(payload.dados).forEach(([key, value]) => addRow(key, value));
+                addRow('origem', payload.origem);
+                host.replaceChildren(table);
+                status.className = 'alert alert-success mt-3';
+                status.textContent = 'Dados recebidos pelo Protheus via ' + payload.origem + '.';
+
+                // Keep the plain table usable if CDN assets are unavailable.
+                if (typeof window.DataTable === 'function') {
+                    try {
+                        new window.DataTable(table, {
+                            dom: 'Blfrtip',
+                            pageLength: 4,
+                            lengthMenu: [4, 8, 16, -1],
+                            order: [],
+                            responsive: false,
+                            buttons: ['copy', 'csv', 'excel', 'print', 'pdf'],
+                            language: {
+                                search: 'Pesquisar:',
+                                lengthMenu: 'Mostrar _MENU_ campos',
+                                lengthLabels: { '-1': 'Todos' },
+                                info: 'Mostrando _START_ a _END_ de _TOTAL_ campos',
+                                infoEmpty: 'Nenhum campo',
+                                infoFiltered: '(filtrado de _MAX_ campos)',
+                                zeroRecords: 'Nenhum campo encontrado',
+                                emptyTable: 'Nenhum dado recebido',
+                                paginate: { first: 'Primeiro', last: 'Ultimo', next: 'Proximo', previous: 'Anterior' },
+                                buttons: { copy: 'Copiar', print: 'Imprimir' }
+                            }
+                        });
+                    } catch (error) {
+                        status.textContent += ' Exibindo tabela simples.';
+                    }
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init, { once: true });
+            } else {
+                init();
+            }
+        })();
+    endContent
+
+return(cResultScript)

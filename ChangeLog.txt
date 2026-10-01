@@ -2,8 +2,14 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add Set method to Switch class)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add new example page 037)"
  */
+
+2026-10-01 22:01 UTC naldodj (Add new example page 037)
+  + src/fw.webex/tests/fw.webex.examples/037/fw.webex.example.037.tlpp
+  + src/fw.webex/tests/fw.webex.examples/037/README.md
+  + src/fw.webex/tests/fw.webex.examples/037/tests/cep-return.test.mjs
+  * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
 
 2026-09-25 11:53 UTC naldodj (Add numeric ranges to ForEach and update tool tests)
   Add numeric ranges to ForEach and update tool tests
