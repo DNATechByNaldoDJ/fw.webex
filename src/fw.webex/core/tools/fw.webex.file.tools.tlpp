@@ -95,12 +95,12 @@ static method HTMLFromControl(oFWWebExControl,cHTMLFilePath,cHTMLFileName,cHTMLC
             cHTMLFileName+=UUIDRandomSeq()
             if ((Empty(jSplitPath["ext"]).or.(!(jSplitPath["ext"]==".html"))))
                 cHTMLFileName+=".html"
+            else
+                cHTMLFileName+=jSplitPath["ext"]
             endif
         FreeObj(@jSplitPath)
-
         cHTMLFileName:=Lower(cHTMLFileName)
         lHTMLFromControl:=MemoWrite(cHTMLFileName,cHTMLContent)
-
     endif
 
 return(lHTMLFromControl)
