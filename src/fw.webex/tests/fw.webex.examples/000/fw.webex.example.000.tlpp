@@ -344,21 +344,21 @@ return
 //https://github.com/naldodj/hb.bridge
 static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
     if (FindFunction("HBBridge.Examples.U_HBBridgeHTTPTable"))
-        if (!jFWWebExExamples:HasProperty("ExternalHBBridge"))
-            jFWWebExExamples["ExternalHBBridge"]:=JSONObject():New()
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
         endif
-        if (!jFWWebExExamples["ExternalHBBridge"]:HasProperty("HBBridge"))
-            jFWWebExExamples["ExternalHBBridge"]["HBBridge"]:=JSONObject():New()
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridge"))
+            jFWWebExExamples["External"]["HBBridge"]:=JSONObject():New()
         endif
-        jFWWebExExamples["ExternalHBBridge"]["HBBridge"]["HBBridgeHTTPTable"]:={||HBBridge.Examples.U_HBBridgeHTTPTable()}
+        jFWWebExExamples["External"]["HBBridge"]["HBBridgeHTTPTable"]:={||HBBridge.Examples.U_HBBridgeHTTPTable()}
     endif
     if (FindFunction("HBBridge.Examples.U_HBBridgeHTTPTableSX5"))
-        if (!jFWWebExExamples:HasProperty("ExternalHBBridge"))
-            jFWWebExExamples["ExternalHBBridge"]:=JSONObject():New()
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
         endif
-        if (!jFWWebExExamples["ExternalHBBridge"]:HasProperty("HBBridge"))
-            jFWWebExExamples["ExternalHBBridge"]["HBBridge"]:=JSONObject():New()
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridge"))
+            jFWWebExExamples["External"]["HBBridge"]:=JSONObject():New()
         endif
-        jFWWebExExamples["ExternalHBBridge"]["HBBridge"]["HBBridgeHTTPTableSX5"]:={||HBBridge.Examples.U_HBBridgeHTTPTableSX5()}
+        jFWWebExExamples["External"]["HBBridge"]["HBBridgeHTTPTableSX5"]:={||HBBridge.Examples.U_HBBridgeHTTPTableSX5()}
     endif
 return
