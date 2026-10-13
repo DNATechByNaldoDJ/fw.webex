@@ -135,6 +135,9 @@ static procedure FWWebExExample_000()
     //https://github.com/naldodj/dna.tech-protheus-web-labels
     ExternalTlpp(@jFWWebExExamples)
 
+    //https://github.com/naldodj/hb.bridge
+    ExternalHBBridgeTlpp(@jFWWebExExamples)
+
     oWNDDefault:=GetWNDDefault()
     if ((Empty(oWNDDefault)).and.(Type("oMainWnd")=="O"))
         oWNDDefault:=oMainWnd
@@ -302,7 +305,7 @@ static procedure TLPPGames(jFWWebExExamples as json)
 
 return
 
-static procedure TLPPForEach(jFWWebExExamples)
+static procedure TLPPForEach(jFWWebExExamples as json)
     if (FindFunction("FWWebEx.U_FOREACHTST"))
         jFWWebExExamples["TLPPForEach"]:=JSONObject():New()
         jFWWebExExamples["TLPPForEach"]["U_FOREACHTST"]:={||U_FOREACHTST()}
@@ -317,7 +320,7 @@ static procedure TLPPSwitch(jFWWebExExamples)
 return
 
 //https://github.com/naldodj/dna.tech-protheus-web-labels
-static procedure ExternalTlpp(jFWWebExExamples)
+static procedure ExternalTlpp(jFWWebExExamples as json)
     if (FindFunction("U_DNWPROBE"))
         if (!jFWWebExExamples:HasProperty("External"))
             jFWWebExExamples["External"]:=JSONObject():New()
@@ -335,5 +338,27 @@ static procedure ExternalTlpp(jFWWebExExamples)
             jFWWebExExamples["External"]["Labels"]:=JSONObject():New()
         endif
         jFWWebExExamples["External"]["Labels"]["U_DNWLABEL"]:={||U_DNWLABEL()}
+    endif
+return
+
+//https://github.com/naldodj/hb.bridge
+static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
+    if (FindFunction("HBBridge.Examples.U_HBBridgeHTTPTable"))
+        if (!jFWWebExExamples:HasProperty("ExternalHBBridge"))
+            jFWWebExExamples["ExternalHBBridge"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["ExternalHBBridge"]:HasProperty("HBBridge"))
+            jFWWebExExamples["ExternalHBBridge"]["HBBridge"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["ExternalHBBridge"]["HBBridge"]["HBBridgeHTTPTable"]:={||HBBridge.Examples.U_HBBridgeHTTPTable()}
+    endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeHTTPTableSX5"))
+        if (!jFWWebExExamples:HasProperty("ExternalHBBridge"))
+            jFWWebExExamples["ExternalHBBridge"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["ExternalHBBridge"]:HasProperty("HBBridge"))
+            jFWWebExExamples["ExternalHBBridge"]["HBBridge"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["ExternalHBBridge"]["HBBridge"]["HBBridgeHTTPTableSX5"]:={||HBBridge.Examples.U_HBBridgeHTTPTableSX5()}
     endif
 return
