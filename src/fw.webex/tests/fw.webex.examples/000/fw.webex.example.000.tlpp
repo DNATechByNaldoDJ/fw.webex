@@ -361,4 +361,22 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         endif
         jFWWebExExamples["External"]["HBBridge"]["HBBridgeHTTPTableSX5"]:={||HBBridge.Examples.U_HBBridgeHTTPTableSX5()}
     endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeBrowseDataTestSX5"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeBrowseData"))
+            jFWWebExExamples["External"]["HBBridgeBrowseData"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["HBBridgeBrowseData"]["HBBridgeHTTPTableSX5"]:={||HBBridge.Examples.U_HBBridgeBrowseDataTestSX5()}
+    endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeBrowseDataTestSRA"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeBrowseData"))
+            jFWWebExExamples["External"]["HBBridgeBrowseData"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["HBBridgeBrowseData"]["HBBridgeHTTPTableSRA"]:={||HBBridge.Examples.U_HBBridgeBrowseDataTestSRA()}
+    endif
 return
