@@ -379,4 +379,13 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         endif
         jFWWebExExamples["External"]["HBBridgeBrowseData"]["HBBridgeBrowseDataTestSRA"]:={||HBBridge.Examples.U_HBBridgeBrowseDataTestSRA()}
     endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeBenchmark"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeBenchmark"))
+            jFWWebExExamples["External"]["HBBridgeBenchmark"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["HBBridgeBenchmark"]["HBBridgeBenchmark"]:={||HBBridge.Examples.U_HBBridgeBenchmark()}
+    endif
 return
