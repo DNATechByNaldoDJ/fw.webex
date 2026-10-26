@@ -38,12 +38,12 @@ procedure u_FWWebExExample_000()
 
     aGetSrvInfo:=GetSrvInfo()
     if ((Len(aGetSrvInfo)>=1).and.(aGetSrvInfo[1]=="DNA-TECH-01"))
-        lContinue:=(cEnvServer=="PROTHEUS_NGROK")
+        lContinue:=(cEnvServer=="PROTHEUS_FWWEBEX")
     endif
     FWFreeArray(@aGetSrvInfo)
 
     if (!lContinue)
-        Final(WebExHelper():Accentuation("Ambiente ["+cEnvServer+"] Inv#1lido.","aacute"),"Utilize o Ambiente: PROTHEUS_NGROK")
+        Final(WebExHelper():Accentuation("Ambiente ["+cEnvServer+"] Inv#1lido.","aacute"),"Utilize o Ambiente: PROTHEUS_FWWEBEX")
     endif
 
     private cCadastro:="FWWebEx :: Exemplos" as character
@@ -57,6 +57,8 @@ static procedure FWWebExExample_000()
     local cExample:="" as character
 
     local jFWWebExExamples:=JSONObject():New() as json
+
+    local lRedefineBottom:=((Type("__lRedefineBottom")=="L".and.(__lRedefineBottom))) as logical
 
     local nTop as numeric
     local nLeft as numeric
@@ -154,13 +156,13 @@ static procedure FWWebExExample_000()
     nBottom:=oFWDefSize:aWindSize[3]
     nRight:=oFWDefSize:aWindSize[4]
 
-    if ((Type("lRedefineBottom")=="L".and.(lRedefineBottom)))
+    if (lRedefineBottom)
         nBottom-=50
     endif
 
     DEFINE MSDIALOG oTDlg TITLE cCadastro FROM nTop,nLeft TO nBottom,nRight PIXEL OF oWNDDefault
 
-        if ((Type("lRedefineBottom")=="L".and.(lRedefineBottom)))
+        if (lRedefineBottom)
             oTDlg:nTop+=7
             oTDlg:nLeft+=5
             oTDlg:nRight+=0
@@ -178,7 +180,7 @@ static procedure FWWebExExample_000()
         FWMsgRun(nil,{||oTMenu:=LoadMenu(@oTDlg,jFWWebExExamples)},"Wait! Loading Menu",cCadastro)
 
         oTDlg:SetMenu(oTMenu)
-        oTDlg:lCentered:=((Type("lRedefineBottom")=="L".and.(!lRedefineBottom)))
+        oTDlg:lCentered:=(lRedefineBottom)
 
     ACTIVATE DIALOG oTDlg
 
@@ -343,6 +345,15 @@ return
 
 //https://github.com/naldodj/hb.bridge
 static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
+    if (FindFunction("HBBridge.Examples.U_HBBridgeBenchmark"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeBenchmark"))
+            jFWWebExExamples["External"]["HBBridgeBenchmark"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["HBBridgeBenchmark"]["HBBridgeBenchmark"]:={||HBBridge.Examples.U_HBBridgeBenchmark()}
+    endif
     if (FindFunction("HBBridge.Examples.U_HBBridgeHTTPTable"))
         if (!jFWWebExExamples:HasProperty("External"))
             jFWWebExExamples["External"]:=JSONObject():New()
@@ -388,13 +399,31 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         endif
         jFWWebExExamples["External"]["HBBridgeBrowseData"]["HBBridgeBrowseDataTestSRAWithCast"]:={||HBBridge.Examples.U_HBBridgeBrowseDataTestSRAWithCast()}
     endif
-    if (FindFunction("HBBridge.Examples.U_HBBridgeBenchmark"))
+    if (FindFunction("HBBridge.Examples.U_HBBridgeNativeBrowse"))
         if (!jFWWebExExamples:HasProperty("External"))
             jFWWebExExamples["External"]:=JSONObject():New()
         endif
-        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeBenchmark"))
-            jFWWebExExamples["External"]["HBBridgeBenchmark"]:=JSONObject():New()
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeNativeBrowse"))
+            jFWWebExExamples["External"]["HBBridgeNativeBrowse"]:=JSONObject():New()
         endif
-        jFWWebExExamples["External"]["HBBridgeBenchmark"]["HBBridgeBenchmark"]:={||HBBridge.Examples.U_HBBridgeBenchmark()}
+        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseMock"]:={||HBBridge.Examples.U_HBBridgeNativeBrowse()}
+    endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeNativeBrowseSX5"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeNativeBrowse"))
+            jFWWebExExamples["External"]["HBBridgeNativeBrowse"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSX5TCP"]:={||HBBridge.Examples.U_HBBridgeNativeBrowseSX5(nil,"TCP")}
+    endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeNativeBrowseSX5"))
+        if (!jFWWebExExamples:HasProperty("External"))
+            jFWWebExExamples["External"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["External"]:HasProperty("HBBridgeNativeBrowse"))
+            jFWWebExExamples["External"]["HBBridgeNativeBrowse"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSX5HTTP"]:={||HBBridge.Examples.U_HBBridgeNativeBrowseSX5(nil,"HTTP")}
     endif
 return

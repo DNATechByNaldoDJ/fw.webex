@@ -79,7 +79,7 @@ static method Execute(bExecute,cTitle,lPrepareEnvironment,lChangeCompanyAndBranc
     paramtype 3 var lPrepareEnvironment as logical optional default .F.
     paramtype 4 var lChangeCompanyAndBranch as logical optional default .F.
 
-    private lRedefineBottom as logical
+    private __lRedefineBottom as logical
 
     bInit:={||;
          if(lChangeCompanyAndBranch,FWExampleTools():ChangeCompanyAndBranch(@cEmp,@cFil,.T.,ProcName()),nil);
@@ -105,7 +105,7 @@ static method Execute(bExecute,cTitle,lPrepareEnvironment,lChangeCompanyAndBranc
         endif
             if (WebApp():WebAgentIsConnected())
                 private oMainWnd as object
-                lRedefineBottom:=.T.
+                __lRedefineBottom:=.T.
                 DEFINE WINDOW oMainWnd FROM 00,00 TO 1024,768 TITLE cTitle
                     @ 000,000 MSPANEL oMainPanel OF oMainWnd
                     oMainPanel:Align:=CONTROL_ALIGN_ALLCLIENT
@@ -123,7 +123,7 @@ static method Execute(bExecute,cTitle,lPrepareEnvironment,lChangeCompanyAndBranc
             RPCClearEnv()
         endif
     else
-        lRedefineBottom:=(FWIsInCallStack("u_FWWebExExample_000"))
+        __lRedefineBottom:=(FWIsInCallStack("u_FWWebExExample_000"))
         cEmp:=cEmpAnt
         cFil:=cFilAnt
         if (WebApp():WebAgentIsConnected())
@@ -279,11 +279,11 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
             nRight:=oFWDefSize:aWindSize[4]
         endif
 
-        if (Type("lRedefineBottom")!="L")
-            private lRedefineBottom:=.T. as logical
+        if (Type("__lRedefineBottom")!="L")
+            private __lRedefineBottom:=.T. as logical
         endif
 
-        if (lRedefineBottom)
+        if (__lRedefineBottom)
             nBottom-=15
         endif
 
@@ -297,7 +297,7 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
                 nTop-=5
                 nBottom+=1
                 nRight-=5
-                if (lRedefineBottom)
+                if (__lRedefineBottom)
                     nBottom-=25
                 endif
             endif
@@ -310,7 +310,7 @@ static method HtmlFileShow(cHTML,cTitle,cHTMLFile,oTWebChannel,bJSToAdvPL,bCallB
 
             oTWebEngine:Navigate(cHTMLFileNavigate)
 
-            oDlg:lCentered:=(!lRedefineBottom)
+            oDlg:lCentered:=(!__lRedefineBottom)
 
             bDialogInit:={||aButtonsObj:=FWWebEx.Tools.ButtonBar():BuildTopButtonBar(oDlg,aButtons,nTop,nRight,nil,nil,3/*nButtonCol*/,65/*nButtonSize*/,15/*nButtonHeight*/,.F./*lAddOkCancelButtons*/)}
 
