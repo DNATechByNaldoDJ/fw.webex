@@ -207,6 +207,8 @@ static function LoadMenu(oTDlg as object,jFWWebExExamples as json) as object
 
     local bTMenuAction as codeblock
 
+    local cEmp:=cEmpAnt as character
+    local cFil:=cFilAnt as character
     local cName as character
     local cOwner as character
     local cCategory as character
@@ -226,7 +228,12 @@ static function LoadMenu(oTDlg as object,jFWWebExExamples as json) as object
     MENU oTMenu IMAGE "" OF oTDlg
         MENU
             MENUITEM oTMenuItem PROMPT "FWWebEx :: Config"
-            oTMenuItem:bAction:={||FWWebEx.Tools.FWExampleTools():GetRESTCredential()}
+                MENU
+                    MENUITEM oTMenuItem PROMPT "Parameters"
+                    oTMenuItem:bAction:={||FWWebEx.Tools.FWExampleTools():GetRESTCredential()}
+                    MENUITEM oTMenuItem PROMPT "Change Company"
+                    oTMenuItem:bAction:={||FWExampleTools():ChangeCompanyAndBranch(@cEmp,@cFil,.T.,ProcName())}
+                ENDMENU
         ENDMENU
         MENU
             aOwners:=aClone(jFWWebExExamples:GetNames())
