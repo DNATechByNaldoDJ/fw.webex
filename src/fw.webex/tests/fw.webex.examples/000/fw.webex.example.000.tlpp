@@ -415,7 +415,7 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         if (!jFWWebExExamples["External"]:HasProperty("HBBridgeNativeBrowse"))
             jFWWebExExamples["External"]["HBBridgeNativeBrowse"]:=JSONObject():New()
         endif
-        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowse_Mock"]:={||HBBridge.Examples.U_HBBridgeNativeBrowse()}
+        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSynthetic"]:={||HBBridge.Examples.U_HBBridgeNativeBrowse()}
     endif
     if (FindFunction("HBBridge.Examples.U_HBBridgeNativeBrowseSX5"))
         if (!jFWWebExExamples:HasProperty("External"))
