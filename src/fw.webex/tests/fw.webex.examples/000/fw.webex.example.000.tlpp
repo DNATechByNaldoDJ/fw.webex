@@ -424,7 +424,7 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         if (!jFWWebExExamples["External"]:HasProperty("HBBridgeNativeBrowse"))
             jFWWebExExamples["External"]["HBBridgeNativeBrowse"]:=JSONObject():New()
         endif
-        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSX5_TCP"]:={||HBBridge.Examples.U_HBBridgeNativeBrowseSX5(nil,"TCP")}
+        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSX5_TCP"]:={||if(!Empty(xFilial("SX5")),FWExampleTools():ChangeCompanyAndBranch(@cEmp,@cFil,.T.,ProcName()),nil),HBBridge.Examples.U_HBBridgeNativeBrowseSX5(nil,"TCP")}
     endif
     if (FindFunction("HBBridge.Examples.U_HBBridgeNativeBrowseSX5"))
         if (!jFWWebExExamples:HasProperty("External"))
@@ -433,7 +433,7 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         if (!jFWWebExExamples["External"]:HasProperty("HBBridgeNativeBrowse"))
             jFWWebExExamples["External"]["HBBridgeNativeBrowse"]:=JSONObject():New()
         endif
-        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSX5_HTTP"]:={||HBBridge.Examples.U_HBBridgeNativeBrowseSX5(nil,"HTTP")}
+        jFWWebExExamples["External"]["HBBridgeNativeBrowse"]["HBBridgeNativeBrowseSX5_HTTP"]:={||if(!Empty(xFilial("SX5")),FWExampleTools():ChangeCompanyAndBranch(@cEmp,@cFil,.T.,ProcName()),nil),HBBridge.Examples.U_HBBridgeNativeBrowseSX5(nil,"HTTP")}
     endif
     if (FindFunction("HBBridge.Examples.U_HBBridgeNativeBrowseSRA"))
         if (!jFWWebExExamples:HasProperty("External"))
