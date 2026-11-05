@@ -518,18 +518,36 @@ static procedure ExternalHBBridgeTlpp(jFWWebExExamples as json)
         if (!jFWWebExExamples:HasProperty("HBBridge"))
             jFWWebExExamples["HBBridge"]:=JSONObject():New()
         endif
-        if (!jFWWebExExamples["HBBridge"]:HasProperty("HBBridgeTurnoverView"))
-            jFWWebExExamples["HBBridge"]["HBBridgeTurnoverView"]:=JSONObject():New()
+        if (!jFWWebExExamples["HBBridge"]:HasProperty("HBBridgeTurnover"))
+            jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]:=JSONObject():New()
         endif
-        jFWWebExExamples["HBBridge"]["HBBridgeTurnoverView"]["HBBridgeTurnoverViewTCP"]:={||HBBridge.Examples.U_HBBridgeTurnoverViewTCP()}
+        jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]["HBBridgeTurnoverViewTCP"]:={||HBBridge.Examples.U_HBBridgeTurnoverViewTCP()}
     endif
     if (FindFunction("HBBridge.Examples.U_HBBridgeTurnoverViewHTTP"))
         if (!jFWWebExExamples:HasProperty("HBBridge"))
             jFWWebExExamples["HBBridge"]:=JSONObject():New()
         endif
-        if (!jFWWebExExamples["HBBridge"]:HasProperty("HBBridgeTurnoverView"))
-            jFWWebExExamples["HBBridge"]["HBBridgeTurnoverView"]:=JSONObject():New()
+        if (!jFWWebExExamples["HBBridge"]:HasProperty("HBBridgeTurnover"))
+            jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]:=JSONObject():New()
         endif
-        jFWWebExExamples["HBBridge"]["HBBridgeTurnoverView"]["HBBridgeTurnoverViewHTTP"]:={||HBBridge.Examples.U_HBBridgeTurnoverViewHTTP()}
+        jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]["HBBridgeTurnoverViewHTTP"]:={||HBBridge.Examples.U_HBBridgeTurnoverViewHTTP()}
+    endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeTurnoverRealTCP"))
+        if (!jFWWebExExamples:HasProperty("HBBridge"))
+            jFWWebExExamples["HBBridge"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["HBBridge"]:HasProperty("HBBridgeTurnover"))
+            jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]["HBBridgeTurnoverRealTCP"]:={||HBBridge.Examples.U_HBBridgeTurnoverRealTCP()}
+    endif
+    if (FindFunction("HBBridge.Examples.U_HBBridgeTurnoverRealHTTP"))
+        if (!jFWWebExExamples:HasProperty("HBBridge"))
+            jFWWebExExamples["HBBridge"]:=JSONObject():New()
+        endif
+        if (!jFWWebExExamples["HBBridge"]:HasProperty("HBBridgeTurnover"))
+            jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]:=JSONObject():New()
+        endif
+        jFWWebExExamples["HBBridge"]["HBBridgeTurnover"]["HBBridgeTurnoverRealHTTP"]:={||HBBridge.Examples.U_HBBridgeTurnoverRealHTTP()}
     endif
 return
