@@ -15,7 +15,7 @@ namespace FWWebEx
 
 class WebExBackURLButton from WebExDiv
 
-    protected data oBackURL
+    public data oBackURL
 
     public method New() as object
 

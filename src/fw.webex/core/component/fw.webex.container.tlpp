@@ -15,7 +15,7 @@ namespace FWWebEx
 
 class WebExContainer from WebExDiv
 
-    protected data lContainerFluid as logical
+    public data lContainerFluid as logical
 
     public method New(lContainerFluid as logical) as object
 

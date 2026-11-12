@@ -15,14 +15,14 @@ namespace FWWebEx
 
 class WebExButton from WebExControl
 
-    protected data cButtonLabel as character
-    protected data cButtonType as character
+    public data cButtonLabel as character
+    public data cButtonType as character
 
-    protected data lHasIcon as logical
-    protected data lIconBefore as logical
+    public data lHasIcon as logical
+    public data lIconBefore as logical
 
-    protected data oButton as object
-    protected data oButtonIcon as object
+    public data oButton as object
+    public data oButtonIcon as object
 
     public method New(cButtonLabel as character,cButtonType as character) as object
 

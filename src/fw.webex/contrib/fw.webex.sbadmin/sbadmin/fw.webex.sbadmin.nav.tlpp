@@ -15,27 +15,27 @@ namespace FWWebEx
 
 class SBAdminNav from WebExNav
 
-    protected data cBrandName as character
-    protected data cBrandLink as character
-    protected data cSBAdminNavHRef as character
+    public data cBrandName as character
+    public data cBrandLink as character
+    public data cSBAdminNavHRef as character
 
-    protected data jSBAdminNavRightMenu as json
+    public data jSBAdminNavRightMenu as json
 
-    protected data lNavRightMenu as logical
+    public data lNavRightMenu as logical
 
-    protected data oSBAdminNav as object
-    protected data oSBAdminNavBrand as object
-    protected data oSBAdminNavToggle as object
-    protected data oSBAdminNavIconToggle as object
+    public data oSBAdminNav as object
+    public data oSBAdminNavBrand as object
+    public data oSBAdminNavToggle as object
+    public data oSBAdminNavIconToggle as object
 
-    protected data oSBAdminNavFormSearch as object
-    protected data oSBAdminNavFormSearchInput as object
-    protected data oSBAdminNavFormSearchButton as object
-    protected data oSBAdminNavFormSearchIconButton as object
-    protected data oSBAdminNavFormSearchInputGroup as object
+    public data oSBAdminNavFormSearch as object
+    public data oSBAdminNavFormSearchInput as object
+    public data oSBAdminNavFormSearchButton as object
+    public data oSBAdminNavFormSearchIconButton as object
+    public data oSBAdminNavFormSearchInputGroup as object
 
-    protected data oSBAdminNavRightMenu as object
-    protected data oSBAdminNavRightMenuItem as object
+    public data oSBAdminNavRightMenu as object
+    public data oSBAdminNavRightMenuItem as object
 
     public method New(cBrandName as character,cBrandLInk as character,lNavRightMenu) as object
 

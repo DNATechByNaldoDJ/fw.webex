@@ -15,17 +15,17 @@ namespace FWWebEx
 
 class SBAdminCardWithLink from WebExDiv
 
-    protected data cCardBody as character
-    protected data cCardFooterLink as character
-    protected data cCardFooterText as character
+    public data cCardBody as character
+    public data cCardFooterLink as character
+    public data cCardFooterText as character
 
-    protected data oCard as object
-    protected data oCardBody as object
-    protected data oCardFooter as object
-    protected data oCardContainer as object
-    protected data oCardFooterLink as object
-    protected data oCardFooterIcon as object
-    protected data oCardFooterContainerIcon as object
+    public data oCard as object
+    public data oCardBody as object
+    public data oCardFooter as object
+    public data oCardContainer as object
+    public data oCardFooterLink as object
+    public data oCardFooterIcon as object
+    public data oCardFooterContainerIcon as object
 
     public method New(cCardBody as character,cCardFooterLink as character,cCardFooterText as character) as object
 

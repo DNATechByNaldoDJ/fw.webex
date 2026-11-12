@@ -16,8 +16,8 @@ namespace FWWebEx
 
 class SBAdminCardContainer from WebExDiv
 
-    protected data nXLSize as numeric
-    protected data nMDSize as numeric
+    public data nXLSize as numeric
+    public data nMDSize as numeric
 
     public method New(nXLSize as numeric,nMDSize as numeric) as object
 

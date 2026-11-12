@@ -16,15 +16,15 @@ namespace FWWebEx
 
 class SBAdminLayoutSideNavNav from WebExDiv
 
-    protected data jSBAdminNavMenu as json
+    public data jSBAdminNavMenu as json
 
-    protected data oNav as object
-    protected data oNavDiv as object
-    protected data oNavFooter as object
-    protected data oMenuContainer as object
+    public data oNav as object
+    public data oNavDiv as object
+    public data oNavFooter as object
+    public data oMenuContainer as object
 
-    protected data oSideNavFooter as object
-    protected data oSideNavFooterDiv as object
+    public data oSideNavFooter as object
+    public data oSideNavFooterDiv as object
 
     public method New() as object
 

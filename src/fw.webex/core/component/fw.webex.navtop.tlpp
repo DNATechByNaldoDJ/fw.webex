@@ -27,25 +27,25 @@ namespace FWWebEx
 
 class WebExNavTop from WebExNav
 
-    protected data cNavTopBrand as character
+    public data cNavTopBrand as character
 
-    protected data jNavTopLinks as json
-    protected data jNavTopDropDowns as json
+    public data jNavTopLinks as json
+    public data jNavTopDropDowns as json
 
-    protected data oNavTopLink as object
-    protected data oNavTopLinkIcon as object
+    public data oNavTopLink as object
+    public data oNavTopLinkIcon as object
 
-    protected data oNavTopDropdownItem as object
-    protected data oNavTopDropdownMenu as object
-    protected data oNavTopDropdownLink as object
-    protected data oNavTopDropdownToggle as object
-    protected data oNavTopDropdownWrapper as object
+    public data oNavTopDropdownItem as object
+    public data oNavTopDropdownMenu as object
+    public data oNavTopDropdownLink as object
+    public data oNavTopDropdownToggle as object
+    public data oNavTopDropdownWrapper as object
 
-    protected data oNavTopBrand as object
-    protected data oNavTopContainer as object
+    public data oNavTopBrand as object
+    public data oNavTopContainer as object
 
-    protected data oNavTopSidebarToggle as object
-    protected data oNavTopSidebarToggleIcon as object
+    public data oNavTopSidebarToggle as object
+    public data oNavTopSidebarToggleIcon as object
 
     public method New(cNavTopBrand as character) as object
     public method AddLink(cNavTopLabel as character,cNavTopHRef as character,oNavTopLinkIcon as object) as object

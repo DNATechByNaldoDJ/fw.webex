@@ -26,10 +26,10 @@ return(ParamBoxLoad():New(@cLoad,@lCanSave,@lUserSave))
 
 class ParamBoxLoad from FWWebEx.ClassBase
 
-    private data cLoad as character
+    public data cLoad as character
 
-    private data lCanSave as logical
-    private data lUserSave as logical
+    public data lCanSave as logical
+    public data lUserSave as logical
 
     public method New(/*@*/cLoad,lCanSave,lUserSave) as object
     public method ClassName() as character

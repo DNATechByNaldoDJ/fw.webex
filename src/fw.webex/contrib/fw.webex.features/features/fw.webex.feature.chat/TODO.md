@@ -1,9 +1,9 @@
 # TODO.md — `fw.webex.feature.chat`
 
-> **Status:** proposta / arquitetura inicial  
-> **Componente:** `fw.webex.feature.chat`  
-> **Projeto:** `fw.webex`  
-> **Data:** 2026-09-14  
+> **Status:** proposta / arquitetura inicial
+> **Componente:** `fw.webex.feature.chat`
+> **Projeto:** `fw.webex`
+> **Data:** 2026-09-14
 > **Objetivo:** implementar comunicação colaborativa segura, reutilizável e orientada a eventos do ERP sobre FWWebEx, incluindo colaboração interna e, futuramente, federação B2B entre organizações Protheus independentes.
 
 ---
@@ -116,7 +116,7 @@ Seguir lifecycle atual:
 
 ```advpl
 class WebExFeatureChat from WebExControl
-    protected data oFeature as object
+    public data oFeature as object
     public method Enable(nPriority as numeric) as object
     public method Load(oControl as object,nPriority as numeric) as object
 end class

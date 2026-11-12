@@ -54,17 +54,17 @@ return(self)
 
 class FWMarkDown from FWWebEx.ClassBase
 
-    protected data aFootNotes as array
+    public data aFootNotes as array
 
-    protected data cCRLF as character
-    protected data cOutput as character
-    protected data cBuffer as character
+    public data cCRLF as character
+    public data cOutput as character
+    public data cBuffer as character
 
-    protected data lHasHeader as logical
-    protected data lHasEmojis as logical
-    protected data lEncodeUTF8 as logical
-    protected data lBufferEnabled as logical
-    protected data lEscapeHTMLAttribute as logical
+    public data lHasHeader as logical
+    public data lHasEmojis as logical
+    public data lEncodeUTF8 as logical
+    public data lBufferEnabled as logical
+    public data lEscapeHTMLAttribute as logical
 
     // ------------------------------------------------------
     public method New() as object

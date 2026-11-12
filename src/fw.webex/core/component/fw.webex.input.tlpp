@@ -15,10 +15,10 @@ namespace FWWebEx
 
 class WebExInput from WebExControl
 
-    protected data cInputName as character
-    protected data cInputType as character
-    protected data cInputPlaceHolder as character
-    protected data cInputTitle as character
+    public data cInputName as character
+    public data cInputType as character
+    public data cInputPlaceHolder as character
+    public data cInputTitle as character
 
     public method New(cInputName as character,cInputType as character,cInputPlaceHolder as character,cInputTitle as character) as object
 

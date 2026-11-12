@@ -75,7 +75,7 @@ test("generator panel CSS is owned by the singleton Labels feature", () => {
 
     assert.doesNotMatch(
         panelSource,
-        /protected data oPanelStyle|WebExStyle\(\):New\(\)|beginContent var cStyle/,
+        /public data oPanelStyle|WebExStyle\(\):New\(\)|beginContent var cStyle/,
         "each panel instance must not create another stylesheet"
     );
     assert.doesNotMatch(

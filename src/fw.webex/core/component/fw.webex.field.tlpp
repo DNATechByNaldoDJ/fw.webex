@@ -15,14 +15,14 @@ namespace FWWebEx
 
 class WebExField from WebExDiv
 
-    protected data cFieldLabel as character
-    protected data cFieldName as character
-    protected data cFieldType as character
-    protected data cFieldPlaceHolder as character
-    protected data cFieldTitle as character
+    public data cFieldLabel as character
+    public data cFieldName as character
+    public data cFieldType as character
+    public data cFieldPlaceHolder as character
+    public data cFieldTitle as character
 
-    protected data oFieldInput as object
-    protected data oFieldLabel as object
+    public data oFieldInput as object
+    public data oFieldLabel as object
 
     public method New(cFieldLabel as character,cFieldName as character,cFieldType as character,cFieldPlaceHolder as character,cFieldTitle as character) as object
 

@@ -15,9 +15,9 @@ namespace FWWebEx
 
 class WebExFieldSet from WebExControl
 
-    protected data cFieldSetLegend as character
+    public data cFieldSetLegend as character
 
-    protected data oFieldSetLegend as object
+    public data oFieldSetLegend as object
 
     public method New(cFieldSetLegend as character) as object
 

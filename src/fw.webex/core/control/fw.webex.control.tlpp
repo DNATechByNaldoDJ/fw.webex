@@ -45,26 +45,26 @@ namespace FWWebEx
 
 class WebExControl from FWWebEx.ClassBase
 
-    protected data cID as character
-    protected data cHTML as character
-    protected data cType as character
-    protected data cFixedID as character
+    public data cID as character
+    public data cHTML as character
+    public data cType as character
+    public data cFixedID as character
 
-    protected data cFWWebExTmpPath as character
+    public data cFWWebExTmpPath as character
 
-    protected data cLocalAssetsFilePath as character
-    protected data cExternalAssetsFilePath as character
+    public data cLocalAssetsFilePath as character
+    public data cExternalAssetsFilePath as character
 
-    protected data jAttrs as json
-    protected data jChildren as json
-    protected data jContents as json
-    protected data jObjectsContainer as json
+    public data jAttrs as json
+    public data jChildren as json
+    public data jContents as json
+    public data jObjectsContainer as json
 
-    protected data lVisible as logical
-    protected data lExternalAssets as logical
-    protected data lRenderChildren as logical
+    public data lVisible as logical
+    public data lExternalAssets as logical
+    public data lRenderChildren as logical
 
-    protected data nPriority as numeric
+    public data nPriority as numeric
 
     public method New(cType as character) as object
 

@@ -16,11 +16,11 @@ namespace FWWebEx
 
 class WebExLabelGeneratorPanel from WebExDiv
 
-    protected data oPanelScript as object
-    protected data cLayoutJSON as character
-    protected data cRecordsJSON as character
-    protected data cFileName as character
-    protected data cOptionsJSON as character
+    public data oPanelScript as object
+    public data cLayoutJSON as character
+    public data cRecordsJSON as character
+    public data cFileName as character
+    public data cOptionsJSON as character
 
     public method New() as object
     public method SetLayout(xLayout as variant) as object

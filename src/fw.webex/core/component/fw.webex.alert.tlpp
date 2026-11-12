@@ -15,8 +15,8 @@ namespace FWWebEx
 
 class WebExAlert from WebExDiv
 
-    protected data cAlertText as character
-    protected data cAlertType as character
+    public data cAlertText as character
+    public data cAlertType as character
 
     public method New(cAlertText as character,cAlertType as character) as object
 

@@ -15,18 +15,18 @@ namespace FWWebEx
 
 class WebExFieldGroup from WebExDiv
 
-    protected data cFieldGroupLabel as character
-    protected data cFieldGroupName as character
-    protected data cFieldGroupType as character
-    protected data cFieldGroupPlaceHolder as character
-    protected data cFieldGroupTitle as character
+    public data cFieldGroupLabel as character
+    public data cFieldGroupName as character
+    public data cFieldGroupType as character
+    public data cFieldGroupPlaceHolder as character
+    public data cFieldGroupTitle as character
 
-    protected data nFieldGroupColSize
+    public data nFieldGroupColSize
 
-    protected data oFieldGroupWebExCol as object
-    protected data oFieldGroupWebExLabel as object
-    protected data oFieldGroupWebExControl as object
-    protected data oFieldGroupWebExInputGroup as object
+    public data oFieldGroupWebExCol as object
+    public data oFieldGroupWebExLabel as object
+    public data oFieldGroupWebExControl as object
+    public data oFieldGroupWebExInputGroup as object
 
     public method New(cFieldGroupLabel as character,cFieldGroupName as character,cFieldGroupType as character,cFieldGroupPlaceHolder as character,cFieldGroupTitle as character,nFieldGroupColSize as numeric) as object
 

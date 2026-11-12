@@ -18,9 +18,9 @@ namespace FWWebEx
 
 class Switch from FWWebEx.ClassBase
 
-    private data xKey as variant
-    private data oHCases as object
-    private data bDefault as codeblock
+    public data xKey as variant
+    public data oHCases as object
+    public data bDefault as codeblock
 
     public method New(xKey as variant) as object
     public method Set(xKey as variant) as object

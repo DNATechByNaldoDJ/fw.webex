@@ -17,16 +17,16 @@ namespace FWWebEx
 
 class WebExFeatures from FWWebEx.ClassBase
 
-    protected data bLoadFeature as codeblock
+    public data bLoadFeature as codeblock
 
-    protected data cFeatureID as character
+    public data cFeatureID as character
 
-    protected data lLoaded as logical
-    protected data lEnabled as logical
+    public data lLoaded as logical
+    public data lEnabled as logical
 
-    protected data nPriority as numeric
+    public data nPriority as numeric
 
-    protected data oFeature as object
+    public data oFeature as object
 
     public method New(oFeature as object,bLoadFeature as codeblock,nPriority as numeric) as object
 

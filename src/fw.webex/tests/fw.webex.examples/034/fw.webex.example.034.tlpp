@@ -41,7 +41,7 @@ static function FWWebExExample_034(cHTML as character,cSVGFile as character) as 
     local cTemplateURL:="" as character
     local cScript:="" as character
     local cAppScript:="" as character
-    local cBarcodeJS:=GetApoRes("JsBarCode.all.min.js") as character
+    local cBarcodeJS:=GetApoRes("jsbarcode.all.min.js") as character
     local cCanvasJS:=GetApoRes("html2canvas.min.js") as character
     local cPDFJS:=GetApoRes("jspdf.umd.min.js") as character
     local oFWWebExPage as object

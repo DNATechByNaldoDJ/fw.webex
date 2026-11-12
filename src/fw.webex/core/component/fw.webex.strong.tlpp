@@ -15,7 +15,7 @@ namespace FWWebEx
 
 class WebExStrong from WebExControl
 
-    protected data cStrongTextContent as character
+    public data cStrongTextContent as character
 
     public method New(cStrongTextContent as character) as object
 

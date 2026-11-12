@@ -15,22 +15,22 @@ namespace FWWebEx
 
 class SBAdminFooter from WebExControl
 
-    protected data cCopyrightText as character
+    public data cCopyrightText as character
 
-    protected data cPrivacyPolicyHRef as character
-    protected data cPrivacyPolicyText as character
+    public data cPrivacyPolicyHRef as character
+    public data cPrivacyPolicyText as character
 
-    protected data cTermsAndConditionsHRef as character
-    protected data cTermsAndConditionsText as character
+    public data cTermsAndConditionsHRef as character
+    public data cTermsAndConditionsText as character
 
-    protected data oFooter as object
-    protected data oContainer as object
-    protected data oContentWrapper as object
-    protected data oLinksContainer as object
+    public data oFooter as object
+    public data oContainer as object
+    public data oContentWrapper as object
+    public data oLinksContainer as object
 
-    protected data oCopyrightText as object
-    protected data oPrivacyPolicyLink as object
-    protected data oTermsAndConditionsLink as object
+    public data oCopyrightText as object
+    public data oPrivacyPolicyLink as object
+    public data oTermsAndConditionsLink as object
 
     public method New(cCopyrightText as character,cPrivacyPolicyHRef as character,cPrivacyPolicyText as character,cTermsAndConditionsHRef as character,cTermsAndConditionsText as character) as object
 

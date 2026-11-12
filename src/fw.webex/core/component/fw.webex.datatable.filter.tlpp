@@ -15,14 +15,14 @@ namespace FWWebEx
 
 class WebExDataTableFilter from WebExDiv
 
-    protected data cTargetTableID as character
-    protected data jTargetTableFields as json
+    public data cTargetTableID as character
+    public data jTargetTableFields as json
 
-    protected data oContainer as object
-    protected data oContainerGroup as object
-    protected data oContainerGroupField as object
-    protected data oContainerGroupValue as object
-    protected data oContainerGroupButton as object
+    public data oContainer as object
+    public data oContainerGroup as object
+    public data oContainerGroupField as object
+    public data oContainerGroupValue as object
+    public data oContainerGroupButton as object
 
     public method New(cTargetTableID as character,jTargetTableFields as json) as object
 

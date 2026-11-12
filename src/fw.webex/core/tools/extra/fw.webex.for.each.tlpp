@@ -84,26 +84,26 @@ namespace FWWebEx
  */
 class ForEach from FWWebEx.ClassBase
 
-    private data aKeys as array
+    public data aKeys as array
 
-    private data bCallBack as codeblock
+    public data bCallBack as codeblock
 
-    private data cType as character
-    private data c__ClassName as character
+    public data cType as character
+    public data c__ClassName as character
 
-    private data lDescend as logical
-    private data lBreak as logical
+    public data lDescend as logical
+    public data lBreak as logical
 
-    private data nBeg as numeric
-    private data nEnd as numeric
-    private data nStep as numeric
+    public data nBeg as numeric
+    public data nEnd as numeric
+    public data nStep as numeric
 
-    private data nIndex as numeric
+    public data nIndex as numeric
 
-    private data xKey as variant
-    private data xValue as variant
-    private data xTarget as variant
-    private data xCallBackResult as variant
+    public data xKey as variant
+    public data xValue as variant
+    public data xTarget as variant
+    public data xCallBackResult as variant
 
     public method New(xTarget as variant,bCallBack as codeblock,lDescend as logical,nBeg as numeric,nEnd as numeric,nStep as numeric) as object
 

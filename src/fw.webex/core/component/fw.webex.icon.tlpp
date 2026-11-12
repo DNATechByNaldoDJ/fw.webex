@@ -15,11 +15,11 @@ namespace FWWebEx
 
 class WebExIcon from WebExControl
 
-    protected data cIconName as character
-    protected data cIconType as character
-    protected data cIconSize as character
+    public data cIconName as character
+    public data cIconType as character
+    public data cIconSize as character
 
-    protected data lIconBefore as logical
+    public data lIconBefore as logical
 
     public method New(cIconName as character,cIconType as character,lIconBefore as logical) as object
 

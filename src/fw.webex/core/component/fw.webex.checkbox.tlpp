@@ -15,13 +15,13 @@ namespace FWWebEx
 
 class WebExCheckBox from WebExDiv
 
-    protected data cCheckBoxLabel as character
-    protected data cCheckBoxName as character
-    protected data cCheckBoxTitle as character
-    protected data cCheckBoxValue as character
+    public data cCheckBoxLabel as character
+    public data cCheckBoxName as character
+    public data cCheckBoxTitle as character
+    public data cCheckBoxValue as character
 
-    protected data oCheckBoxWebExInput as object
-    protected data oCheckBoxWebExLabel as object
+    public data oCheckBoxWebExInput as object
+    public data oCheckBoxWebExLabel as object
 
     public method New(cCheckBoxLabel as character,cCheckBoxName as character,cCheckBoxTitle as character,cCheckBoxValue) as object
 

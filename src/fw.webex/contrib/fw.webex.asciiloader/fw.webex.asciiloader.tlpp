@@ -30,19 +30,19 @@ namespace FWWebEx
 
 class WebExAsciiLoader from WebExPre
 
-    protected data cText as character
-    protected data cScriptFrame as character
-    protected data lAutoStart as logical
-    protected data nInterval as numeric
-    protected data nMaxFrameTime as numeric
-    protected data nFrameTimeFactor as numeric
+    public data cText as character
+    public data cScriptFrame as character
+    public data lAutoStart as logical
+    public data nInterval as numeric
+    public data nMaxFrameTime as numeric
+    public data nFrameTimeFactor as numeric
 
-    protected data xScriptFrames as variant
+    public data xScriptFrames as variant
 
-    protected data oASCIILoader as object
-    protected data oASCIILoaderScript as object
+    public data oASCIILoader as object
+    public data oASCIILoaderScript as object
 
-    protected data vMaxLines as variant
+    public data vMaxLines as variant
 
     public method New(xScriptFrames as variant,nInterval as numeric,cText as character,lAutoStart as logical) as object
     public method SetFrames(aFrames as array) as object

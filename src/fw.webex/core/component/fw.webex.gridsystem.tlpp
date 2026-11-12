@@ -18,7 +18,7 @@ namespace FWWebEx
 ***********************************************************************************************************/
 class WebExRow from WebExDiv
 
-    protected data nGutterSize as numeric
+    public data nGutterSize as numeric
 
     public method New(nGutterSize as numeric) as object
 
@@ -50,7 +50,7 @@ return(self)
 ***********************************************************************************************************/
 class WebExCol from WebExDiv
 
-    protected data nColSize as numeric
+    public data nColSize as numeric
 
     public method New(nColSize as numeric) as object
 

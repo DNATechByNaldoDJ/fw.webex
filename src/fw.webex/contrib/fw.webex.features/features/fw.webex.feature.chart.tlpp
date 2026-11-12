@@ -14,7 +14,7 @@ Released to Public Domain.
 namespace FWWebEx
 
 class WebExFeatureChart from WebExControl
-    protected data oFeature as object
+    public data oFeature as object
     public method Enable() as object
     public method Load(oControl as object) as object
 end class

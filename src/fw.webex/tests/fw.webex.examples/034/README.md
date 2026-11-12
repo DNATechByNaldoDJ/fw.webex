@@ -253,7 +253,7 @@ próprio FWWebEx. O template SVG é publicado separadamente.
 
 Devem existir no RPO recursos com os seguintes nomes:
 
-- `JsBarCode.all.min.js`;
+- `jsbarcode.all.min.js`;
 - `html2canvas.min.js`;
 - `jspdf.umd.min.js`.
 

@@ -88,7 +88,7 @@ test("designer supports multi-instance-safe root-scoped controls", () => {
         source,
         /oGeneratorScript:SetFixedID\("script-fwwebex-labels-runtime"\)/
     );
-    assert.match(source, /protected data oFacadeScript as object/);
+    assert.match(source, /public data oFacadeScript as object/);
 });
 
 test("designer exposes compact page, editor and background settings", () => {

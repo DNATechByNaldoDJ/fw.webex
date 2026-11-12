@@ -15,27 +15,27 @@ namespace FWWebEx
 
 class WebExTable from WebExControl
 
-    protected data cTableTitle as character
+    public data cTableTitle as character
 
-    protected data jTableHeader as json
-    protected data jTableDetail as json
+    public data jTableHeader as json
+    public data jTableDetail as json
 
-    protected data lTableExpandable as logical
-    protected data lTableTitleBefore as logical
+    public data lTableExpandable as logical
+    public data lTableTitleBefore as logical
 
-    protected data oTableTHead as object
-    protected data oTableTBody as object
+    public data oTableTHead as object
+    public data oTableTBody as object
 
-    protected data oTableTHeadTH as object
-    protected data oTableTHeadTR as object
+    public data oTableTHeadTH as object
+    public data oTableTHeadTR as object
 
-    protected data oTableTBodyRowTD as object
-    protected data oTableTBodyRowTR as object
-    protected data oTableTBodyRowTDButton as object
+    public data oTableTBodyRowTD as object
+    public data oTableTBodyRowTR as object
+    public data oTableTBodyRowTDButton as object
 
-    protected data oTableCaption as object
+    public data oTableCaption as object
 
-    protected data oTableScript as object
+    public data oTableScript as object
 
     public method New(cTableTitle) as object
     public method AddColumnHeader(cTableColummLabel as character,cTableColummFieldName as character) as object

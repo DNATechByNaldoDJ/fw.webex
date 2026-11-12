@@ -15,37 +15,37 @@ namespace FWWebEx
 
 class WebExDataTableFilterPanelEx from WebExDiv
 
-    protected data cTitle as character
-    protected data cTargetTableID as character
-    protected data jTargetTableFields as json
+    public data cTitle as character
+    public data cTargetTableID as character
+    public data jTargetTableFields as json
 
-    protected data jInternalFilter as character
-    protected data jInternalFieldsTypes as json
+    public data jInternalFilter as character
+    public data jInternalFieldsTypes as json
 
-    protected data oPanel as object
+    public data oPanel as object
 
-    protected data oPanelContainer as object
-    protected data oPanelContent as object
+    public data oPanelContainer as object
+    public data oPanelContent as object
 
-    protected data oPanelHeader as object
-    protected data oPanelHeaderIcon as object
-    protected data oPanelHeaderTitle as object
-    protected data oPanelHeaderButtonClose as object
+    public data oPanelHeader as object
+    public data oPanelHeaderIcon as object
+    public data oPanelHeaderTitle as object
+    public data oPanelHeaderButtonClose as object
 
-    protected data oPanelBody as object
-    protected data oPanelBodyContainer as object
-    protected data oPanelBodyControls as object
+    public data oPanelBody as object
+    public data oPanelBodyContainer as object
+    public data oPanelBodyControls as object
 
-    protected data oPanelBodyButtonAddCondition as object
+    public data oPanelBodyButtonAddCondition as object
 
-    protected data oPanelBodyButtonAddGroup as object
-    protected data oPanelBodyPreview as object
-    protected data oPanelBodyPreviewLabel as object
-    protected data oPanelBodyPreviewTextArea as object
+    public data oPanelBodyButtonAddGroup as object
+    public data oPanelBodyPreview as object
+    public data oPanelBodyPreviewLabel as object
+    public data oPanelBodyPreviewTextArea as object
 
-    protected data oPanelFooter as object
-    protected data oPanelFooterButtonClose as object
-    protected data oPanelFooterButtonApply as object
+    public data oPanelFooter as object
+    public data oPanelFooterButtonClose as object
+    public data oPanelFooterButtonApply as object
 
     public method New(cTitle as character,cTargetTableID as character,jTargetTableFields as json,jInternalFilter as json,jInternalFieldsTypes as json) as object
 

@@ -15,12 +15,12 @@ namespace FWWebEx
 
 class WebExDataTableSearch from WebExInputGroup
 
-    protected data cTargetTableID as character
+    public data cTargetTableID as character
 
-    protected data jTargetTableFields as json
+    public data jTargetTableFields as json
 
-    protected data oSearch as object
-    protected data oSearchContainer as object
+    public data oSearch as object
+    public data oSearchContainer as object
 
     public method New(cTargetTableID as character,jTargetTableFields as json) as object
 

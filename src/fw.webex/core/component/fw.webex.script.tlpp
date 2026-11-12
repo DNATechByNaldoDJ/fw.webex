@@ -15,9 +15,9 @@ namespace FWWebEx
 
 class WebExScript from WebExControl
 
-    protected data cScriptSRC as character
-    protected data lScriptUseAddChild as logical
-    protected data lScriptInPage as logical
+    public data cScriptSRC as character
+    public data lScriptUseAddChild as logical
+    public data lScriptInPage as logical
 
     public method New(lScriptInPage as logical,lScriptUseAddChild as logical) as object
     public method SetContent(cScriptSRC as character,lScriptAddScript as logical) as object

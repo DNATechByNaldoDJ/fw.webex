@@ -15,7 +15,7 @@ namespace FWWebEx
 
 class SBAdminCardBody from WebExDiv
 
-    protected data oCardBody as object
+    public data oCardBody as object
 
     public method New() as object
 

@@ -15,19 +15,19 @@ namespace FWWebEx
 
 class WebExNavSide from WebExNav
 
-    protected data cNavSideBrand as character
+    public data cNavSideBrand as character
 
-    protected data oNavSideItem as object
-    protected data oNavSideLink as object
-    protected data oNavSideSpan as object
+    public data oNavSideItem as object
+    public data oNavSideLink as object
+    public data oNavSideSpan as object
 
-    protected data oNavSideList as object
-    protected data oNavSideBrand as object
-    protected data oNavSideWrapper as object
+    public data oNavSideList as object
+    public data oNavSideBrand as object
+    public data oNavSideWrapper as object
 
-    protected data oNavSideDivider as object
-    protected data oNavSideHeader as object
-    protected data oNavSideIcon as object
+    public data oNavSideDivider as object
+    public data oNavSideHeader as object
+    public data oNavSideIcon as object
 
     public method New(cNavSideBrand as character) as object
 

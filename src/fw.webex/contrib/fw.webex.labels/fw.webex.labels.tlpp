@@ -15,18 +15,18 @@ namespace FWWebEx
 #include "fw.webex.th"
 
 class WebExFeatureLabels from WebExControl
-    protected data oFeature as object
+    public data oFeature as object
     public method Enable() as object
     public method Load(oControl as object) as object
 endclass
 
 class WebExLabelDesigner from WebExDiv
-    protected data oDesignerScript as object
-    protected data nLabelWidth as numeric
-    protected data nLabelHeight as numeric
-    protected data cInitialLayout as character
-    protected data cInitialRecords as character
-    protected data cDesignerOptions as character
+    public data oDesignerScript as object
+    public data nLabelWidth as numeric
+    public data nLabelHeight as numeric
+    public data cInitialLayout as character
+    public data cInitialRecords as character
+    public data cDesignerOptions as character
     public method New(nLabelWidth as numeric,nLabelHeight as numeric) as object
     public method SetLayout(xLayout as variant) as object
     public method SetRecords(xRecords as variant) as object
@@ -35,7 +35,7 @@ class WebExLabelDesigner from WebExDiv
 endclass
 
 class WebExLabelPDFGenerator from WebExDiv
-    protected data oFacadeScript as object
+    public data oFacadeScript as object
     public method New() as object
     public method RenderHTML() as character
 endclass

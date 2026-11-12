@@ -15,23 +15,23 @@ namespace FWWebEx
 
 class WebExDataTableForm from WebExForm
 
-    protected data aReadOnlyFields as array
+    public data aReadOnlyFields as array
 
-    protected data cDataTableID as character
-    protected data cMode as character
-    protected data cModalID as character
-    protected data cUpdateFunction as character
+    public data cDataTableID as character
+    public data cMode as character
+    public data cModalID as character
+    public data cUpdateFunction as character
 
-    protected data jDataTableFields as json
-    protected data jFieldControls as json
-    protected data jFieldInputs as json
-    protected data jFormConfig as json
+    public data jDataTableFields as json
+    public data jFieldControls as json
+    public data jFieldInputs as json
+    public data jFormConfig as json
 
-    protected data lFormScriptsAdded as logical
-    protected data lLookupScriptsAdded as logical
-    protected data lValidateRequired as logical
+    public data lFormScriptsAdded as logical
+    public data lLookupScriptsAdded as logical
+    public data lValidateRequired as logical
 
-    protected data nColsPerRow as numeric
+    public data nColsPerRow as numeric
 
     public method New(cFormTitle as character,jDataTableFields as json,cMode as character,aReadOnlyFields as array,lFormButtonsFirst as logical) as object
 

@@ -15,15 +15,15 @@ namespace FWWebEx
 
 class WebExCardKPI from WebExDiv
 
-    protected data cCardKPITitle as character
-    protected data cCardKPIValue as character
-    protected data cCardKPITheme as character
+    public data cCardKPITitle as character
+    public data cCardKPIValue as character
+    public data cCardKPITheme as character
 
-    protected data oCardKPIIcon as object
-    protected data oCardKPIBody as object
-    protected data oCardKPITitle as object
-    protected data oCardKPIText as object
-    protected data oCardKPIStrong as object
+    public data oCardKPIIcon as object
+    public data oCardKPIBody as object
+    public data oCardKPITitle as object
+    public data oCardKPIText as object
+    public data oCardKPIStrong as object
 
     public method New(cCardKPITitle as character,cCardKPIValue as character,cCardKPITheme as character,oCardKPIIcon as object) as object
 

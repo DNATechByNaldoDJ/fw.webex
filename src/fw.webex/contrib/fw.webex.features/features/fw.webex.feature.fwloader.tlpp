@@ -4,7 +4,7 @@
 namespace FWWebEx
 
 class WebExFeatureFWLoader from WebExControl
-    protected data oFeature as object
+    public data oFeature as object
     public method Enable() as object
     public method Load(oControl as object) as object
     static method Runtime() as character

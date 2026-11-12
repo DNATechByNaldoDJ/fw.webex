@@ -15,13 +15,13 @@ namespace FWWebEx
 
 class WebExCard from WebExDiv
 
-    protected data cCardTextTitle as character
-    protected data cCardTextBody as character
+    public data cCardTextTitle as character
+    public data cCardTextBody as character
 
-    protected data oCard as object
-    protected data oCardBody as object
-    protected data oCardTextTitle as object
-    protected data oCardTextBody as object
+    public data oCard as object
+    public data oCardBody as object
+    public data oCardTextTitle as object
+    public data oCardTextBody as object
 
     public method New(cCardTextTitle as character,cCardTextBody as character) as object
 

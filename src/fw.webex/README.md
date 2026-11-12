@@ -10,9 +10,9 @@ Aqui está o código principal da classe `WebExDataTableFilterPanel` (extraído 
 class WebExDataTableFilterPanel from WebExControl
 
     // Propriedades protegidas
-    protected data cTitle as character
-    protected data cTargetTableID as character
-    protected data jTargetTableFields as json
+    public data cTitle as character
+    public data cTargetTableID as character
+    public data jTargetTableFields as json
 
     // Construtor
     public method New(cTitle as character, cTargetTableID as character, jTargetTableFields as json) as object

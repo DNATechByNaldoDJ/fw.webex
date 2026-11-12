@@ -15,13 +15,13 @@ namespace FWWebEx
 
 class SBAdminCardHeader from WebExDiv
 
-    protected data cCardHeader as character
-    protected data cCardHeaderIcon as character
-    protected data cCardHeaderIconType as character
+    public data cCardHeader as character
+    public data cCardHeaderIcon as character
+    public data cCardHeaderIconType as character
 
-    protected data oCard as object
-    protected data oCardHeader as object
-    protected data oCardHeaderIcon as object
+    public data oCard as object
+    public data oCardHeader as object
+    public data oCardHeaderIcon as object
 
     public method New(cCardHeader as character,cCardHeaderIcon as character,cCardHeaderIconType as character) as object
 

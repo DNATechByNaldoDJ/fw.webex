@@ -15,8 +15,8 @@ namespace FWWebEx
 
 class WebExLabel from WebExControl
 
-    protected data cLabelFor as character
-    protected data cLabelText as character
+    public data cLabelFor as character
+    public data cLabelText as character
 
     public method New(cLabelFor as character,cLabelText as character) as object
 

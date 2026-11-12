@@ -17,10 +17,10 @@ namespace FWWebEx
 
 class WebExTemplateBulkActionTable from WebExDiv
 
-    protected data cTemplateBulkActionTableTitle
+    public data cTemplateBulkActionTableTitle
 
-    protected data jTemplateBulkActionTableColumns as json
-    protected data jTemplateBulkActionTableItems as json
+    public data jTemplateBulkActionTableColumns as json
+    public data jTemplateBulkActionTableItems as json
 
     public method New(cTemplateBulkActionTableTitle as character) as object
 

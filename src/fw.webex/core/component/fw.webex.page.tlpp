@@ -28,17 +28,17 @@ namespace FWWebEx
 
 class WebExPage from WebExHtml
 
-    protected data cTheme as character
-    protected data cPageTitle as character
+    public data cTheme as character
+    public data cPageTitle as character
 
-    protected data jPageStyle as json
+    public data jPageStyle as json
 
-    protected data lAddFooter as logical
-    protected data lDarkTheme as logical
+    public data lAddFooter as logical
+    public data lDarkTheme as logical
 
-    protected data oPage as object
-    protected data oPageBody as object
-    protected data oPageHeader as object
+    public data oPage as object
+    public data oPageBody as object
+    public data oPageHeader as object
 
     public method New(cPageTitle as character) as object
 

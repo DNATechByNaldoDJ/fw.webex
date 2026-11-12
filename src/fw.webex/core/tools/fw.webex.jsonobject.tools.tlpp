@@ -23,8 +23,8 @@ static __cJSFunctionToken__:=JSONObjectTools():GetJSFunctionToken() as character
 
 class JSONObjectTools from FWWebEx.ClassBase
 
-    protected data jObject as json
-    protected method New(jObject as json) as object
+    public data jObject as json
+    public method New(jObject as json) as object
 
     static method CloneJSON(jObject as json) as json
     static method MergeJSON(jTarget as json,jSource as json) as json

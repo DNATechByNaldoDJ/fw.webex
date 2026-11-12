@@ -15,7 +15,7 @@ namespace FWWebEx
 
 class WebExLegend from WebExControl
 
-   protected data cLegendContent
+   public data cLegendContent
 
    public method New(cLegendContent as character) as object
 

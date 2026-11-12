@@ -14,13 +14,13 @@ Released to Public Domain.
 namespace FWWebEx
 
 class WebExFeatureJsPDF from WebExControl
-    protected data oFeature as object
+    public data oFeature as object
     public method Enable(nPriority as numeric) as object
     public method Load(oControl as object,nPriority as numeric) as object
 end class
 
 class WebExFeatureJsPDFHTML from WebExControl
-    protected data oFeature as object
+    public data oFeature as object
     public method Enable(nPriority as numeric) as object
     public method Load(oControl as object,nPriority as numeric) as object
 end class
