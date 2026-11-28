@@ -1,0 +1,175 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseLegend - Equivalente Web para FWLegend com Modal Bootstrap 5
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExBrowseLegend from ClassBase
+
+    public data aLegends as array
+    public data cTitle   as character
+
+    private method __ColorToBadgeClass(cColor as character) as character
+
+    public method New(cTitle as character) as object
+    public method Add(xCondition as variant,cColor as character,cTitle as character) as object
+    public method GetLegends() as array
+    public method Count() as numeric
+    public method GetModalID(cBrowseID as character) as character
+    public method BuildModal(cBrowseID as character) as object
+    public method Clean() as object
+
+endclass
+
+method New(cTitle) class WebExBrowseLegend
+    paramtype 1 var cTitle as character optional default "Legenda"
+    _Super:New()
+    ::cTitle   := cTitle
+    ::aLegends := Array(0)
+return(self)
+
+method __ColorToBadgeClass(cColor) class WebExBrowseLegend
+    local cKey as character
+    paramtype 1 var cColor as character optional default ""
+    cKey := Upper(AllTrim(cColor))
+    do case
+        case (cKey $ "GREEN|VERDE")
+            return("bg-success")
+        case (cKey $ "RED|VERMELHO")
+            return("bg-danger")
+        case (cKey $ "YELLOW|AMARELO|ORANGE|LARANJA")
+            return("bg-warning")
+        case (cKey $ "BLUE|AZUL")
+            return("bg-primary")
+        case (cKey $ "BLACK|PRETO")
+            return("bg-dark")
+        case (cKey $ "WHITE|BRANCO")
+            return("bg-light border")
+    end case
+return("bg-secondary")
+
+method Add(xCondition,cColor,cTitle) class WebExBrowseLegend
+    paramtype 1 var xCondition as block,character
+    paramtype 2 var cColor     as character optional default "GRAY"
+    paramtype 3 var cTitle     as character optional default ""
+    aAdd(::aLegends,{xCondition,Upper(AllTrim(cColor)),cTitle})
+return(self)
+
+method GetLegends() class WebExBrowseLegend
+return(::aLegends)
+
+method Count() class WebExBrowseLegend
+return(Len(::aLegends))
+
+method GetModalID(cBrowseID) class WebExBrowseLegend
+    paramtype 1 var cBrowseID as character
+return(cBrowseID + "_legend_modal")
+
+method BuildModal(cBrowseID) class WebExBrowseLegend
+    local aItem as array
+    local cBadgeClass as character
+    local cModalID as character
+    local nI as numeric
+    local oBadge as object
+    local oBody as object
+    local oCloseBtn as object
+    local oCloseFooter as object
+    local oContent as object
+    local oDialog as object
+    local oFooter as object
+    local oHeader as object
+    local oLabel as object
+    local oList as object
+    local oModal as object
+    local oRow as object
+    local oTitle as object
+
+    paramtype 1 var cBrowseID as character
+
+    cModalID := ::GetModalID(cBrowseID)
+
+    oModal := WebExDiv():New()
+    oModal:SetFixedID(cModalID)
+    oModal:AddClass("modal fade")
+    oModal:SetAttr("tabindex","-1")
+    oModal:SetAttr("aria-hidden","true")
+
+    oDialog := WebExDiv():New()
+    oDialog:AddClass("modal-dialog modal-dialog-centered")
+
+    oContent := WebExDiv():New()
+    oContent:AddClass("modal-content")
+
+    oHeader := WebExDiv():New()
+    oHeader:AddClass("modal-header py-2")
+
+    oTitle := WebExH5():New()
+    oTitle:AddClass("modal-title")
+    oTitle:SetContent(::cTitle)
+    oHeader:AddChild(oTitle)
+
+    oCloseBtn := WebExControl():New("button")
+    oCloseBtn:SetAttr("type","button")
+    oCloseBtn:SetAttr("data-bs-dismiss","modal")
+    oCloseBtn:SetAttr("aria-label","Fechar")
+    oCloseBtn:AddClass("btn-close")
+    oHeader:AddChild(oCloseBtn)
+
+    oBody := WebExDiv():New()
+    oBody:AddClass("modal-body")
+
+    oList := WebExDiv():New()
+    oList:AddClass("d-flex flex-column gap-2")
+
+    for nI := 1 to Len(::aLegends)
+        aItem := ::aLegends[nI]
+        cBadgeClass := ::__ColorToBadgeClass(aItem[2])
+
+        oRow := WebExDiv():New()
+        oRow:AddClass("d-flex align-items-center gap-2")
+
+        oBadge := WebExSpan():New()
+        oBadge:AddClass("d-inline-block rounded-circle " + cBadgeClass)
+        oBadge:SetAttr("style","width:14px;height:14px;flex:0 0 14px;")
+        oRow:AddChild(oBadge)
+
+        oLabel := WebExSpan():New()
+        oLabel:SetContent(if(!Empty(aItem[3]),aItem[3],aItem[2]))
+        oRow:AddChild(oLabel)
+
+        oList:AddChild(oRow)
+    next nI
+
+    oBody:AddChild(oList)
+
+    oFooter := WebExDiv():New()
+    oFooter:AddClass("modal-footer py-2")
+
+    oCloseFooter := WebExControl():New("button")
+    oCloseFooter:SetAttr("type","button")
+    oCloseFooter:SetAttr("data-bs-dismiss","modal")
+    oCloseFooter:AddClass("btn btn-sm btn-secondary")
+    oCloseFooter:SetContent("Fechar")
+    oFooter:AddChild(oCloseFooter)
+
+    oContent:AddChild(oHeader)
+    oContent:AddChild(oBody)
+    oContent:AddChild(oFooter)
+    oDialog:AddChild(oContent)
+    oModal:AddChild(oDialog)
+
+return(oModal)
+
+method Clean() class WebExBrowseLegend
+    FWFreeArray(@::aLegends)
+return(self)

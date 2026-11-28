@@ -1,0 +1,388 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseColumn - Equivalente Web para FWBrwColumn
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExBrowseColumn from ClassBase
+
+    public data bData        as codeblock
+    public data bDoubleClick as codeblock
+    public data bHeaderClick as codeblock
+    public data bValid       as codeblock
+
+    public data cField       as character
+    public data cTitle       as character
+    public data cType        as character
+    public data cOrderField  as character
+
+    public data lEdit        as logical
+    public data lImage       as logical
+    public data lOrderable   as logical
+    public data lSearchable  as logical
+    public data lVisible     as logical
+
+    public data nAlign       as numeric
+    public data nDecimal     as numeric
+    public data nSize        as numeric
+
+    public data xPicture     as variant
+
+    public method New(cTitle as character,xData as variant,cType as character,xPicture as variant,nAlign as numeric,nSize as numeric,nDecimal as numeric) as object
+
+    public method SetTitle(cTitle as character) as object
+    public method GetTitle() as character
+
+    public method SetData(xData as variant) as object
+    public method GetData() as codeblock
+
+    public method SetField(cField as character) as object
+    public method GetField() as character
+
+    public method SetOrderField(cOrderField as character) as object
+    public method GetOrderField() as character
+
+    public method SetType(cType as character) as object
+    public method GetType() as character
+
+    public method SetSize(nSize as numeric) as object
+    public method GetSize() as numeric
+
+    public method SetDecimal(nDecimal as numeric) as object
+    public method GetDecimal() as numeric
+
+    public method SetPicture(xPicture as variant) as object
+    public method GetPicture() as variant
+
+    public method SetAlign(nAlign as numeric) as object
+    public method GetAlign() as numeric
+    public method GetAlignClass() as character
+
+    public method SetVisible(lVisible as logical) as object
+    public method IsVisible() as logical
+
+    public method SetOrderable(lOrderable as logical) as object
+    public method IsOrderable() as logical
+
+    public method SetSearchable(lSearchable as logical) as object
+    public method IsSearchable() as logical
+
+    public method SetEdit(lEdit as logical) as object
+    public method GetEdit() as logical
+
+    public method SetImage(lImage as logical) as object
+    public method IsImage() as logical
+
+    public method SetValid(bValid as codeblock) as object
+    public method GetValid() as codeblock
+
+    public method SetDoubleClick(bLDblClick as codeblock) as object
+    public method GetDoubleClick() as codeblock
+
+    public method SetHeaderClick(bHeaderClick as codeblock) as object
+    public method GetHeaderClick() as codeblock
+
+    public method EvalRaw(oBrowse as object,xRowData as variant,nRowIndex as numeric) as variant
+    public method FormatValue(xRawValue as variant) as variant
+    public method ToDataTableColumn(cFallbackField as character) as json
+
+    public method Clean() as object
+
+endclass
+
+method New(cTitle,xData,cType,xPicture,nAlign,nSize,nDecimal) class WebExBrowseColumn
+
+    paramtype 1 var cTitle   as character optional default ""
+    paramtype 2 var xData    as block,character,numeric optional
+    paramtype 3 var cType    as character optional default "C"
+    paramtype 4 var xPicture as character,block optional default ""
+    paramtype 5 var nAlign   as numeric optional default FWWEBEX_BROWSE_ALIGN_AUTO
+    paramtype 6 var nSize    as numeric optional default 15
+    paramtype 7 var nDecimal as numeric optional default 0
+
+    _Super:New()
+
+    ::cTitle       := cTitle
+    ::cType        := Upper(AllTrim(cType))
+    ::xPicture     := xPicture
+    ::nAlign       := nAlign
+    ::nSize        := nSize
+    ::nDecimal     := nDecimal
+    ::cField       := ""
+    ::cOrderField  := ""
+
+    ::lEdit        := .F.
+    ::lImage       := .F.
+    ::lOrderable   := .T.
+    ::lSearchable  := .T.
+    ::lVisible     := .T.
+
+    if (ValType(xData) != "U")
+        ::SetData(xData)
+    endif
+
+return(self)
+
+method SetTitle(cTitle) class WebExBrowseColumn
+    paramtype 1 var cTitle as character
+    ::cTitle := cTitle
+return(self)
+
+method GetTitle() class WebExBrowseColumn
+return(::cTitle)
+
+method SetData(xData) class WebExBrowseColumn
+    local cFieldName as character
+    local nColPos as numeric
+    paramtype 1 var xData as block,character,numeric
+    do case
+        case (ValType(xData) == "B")
+            ::bData := xData
+        case (ValType(xData) == "C")
+            cFieldName := AllTrim(xData)
+            if (Empty(::cField))
+                ::cField := cFieldName
+            endif
+            if (Empty(::cOrderField))
+                ::cOrderField := cFieldName
+            endif
+            ::bData := {|oBrw,xRow,nPos| if((ValType(xRow)=="J").and.xRow:HasProperty(cFieldName),xRow[cFieldName],if(!Empty(Alias()).and.(FieldPos(cFieldName)>0),FieldGet(FieldPos(cFieldName)),"")) }
+        case (ValType(xData) == "N")
+            nColPos := xData
+            ::bData := {|oBrw,xRow,nPos| if((ValType(xRow)=="A").and.(nColPos>=1).and.(nColPos<=Len(xRow)),xRow[nColPos],"") }
+    end case
+return(self)
+
+method GetData() class WebExBrowseColumn
+return(::bData)
+
+method SetField(cField) class WebExBrowseColumn
+    paramtype 1 var cField as character
+    ::cField := AllTrim(cField)
+    if (Empty(::cOrderField))
+        ::cOrderField := ::cField
+    endif
+return(self)
+
+method GetField() class WebExBrowseColumn
+return(::cField)
+
+method SetOrderField(cOrderField) class WebExBrowseColumn
+    paramtype 1 var cOrderField as character
+    ::cOrderField := AllTrim(cOrderField)
+return(self)
+
+method GetOrderField() class WebExBrowseColumn
+return(::cOrderField)
+
+method SetType(cType) class WebExBrowseColumn
+    paramtype 1 var cType as character
+    ::cType := Upper(AllTrim(cType))
+return(self)
+
+method GetType() class WebExBrowseColumn
+return(::cType)
+
+method SetSize(nSize) class WebExBrowseColumn
+    paramtype 1 var nSize as numeric
+    ::nSize := nSize
+return(self)
+
+method GetSize() class WebExBrowseColumn
+return(::nSize)
+
+method SetDecimal(nDecimal) class WebExBrowseColumn
+    paramtype 1 var nDecimal as numeric
+    ::nDecimal := nDecimal
+return(self)
+
+method GetDecimal() class WebExBrowseColumn
+return(::nDecimal)
+
+method SetPicture(xPicture) class WebExBrowseColumn
+    paramtype 1 var xPicture as character,block
+    ::xPicture := xPicture
+return(self)
+
+method GetPicture() class WebExBrowseColumn
+return(::xPicture)
+
+method SetAlign(nAlign) class WebExBrowseColumn
+    paramtype 1 var nAlign as numeric
+    ::nAlign := nAlign
+return(self)
+
+method GetAlign() class WebExBrowseColumn
+return(::nAlign)
+
+method GetAlignClass() class WebExBrowseColumn
+    local cClass as character
+    do case
+        case (::nAlign == FWWEBEX_BROWSE_ALIGN_LEFT)
+            cClass := "text-start"
+        case (::nAlign == FWWEBEX_BROWSE_ALIGN_RIGHT)
+            cClass := "text-end"
+        case (::nAlign == FWWEBEX_BROWSE_ALIGN_CENTER)
+            cClass := "text-center"
+        otherwise
+            if (::cType == "N")
+                cClass := "text-end"
+            elseif (::cType $ "D|L")
+                cClass := "text-center"
+            else
+                cClass := "text-start"
+            endif
+    end case
+return(cClass)
+
+method SetVisible(lVisible) class WebExBrowseColumn
+    paramtype 1 var lVisible as logical
+    ::lVisible := lVisible
+return(self)
+
+method IsVisible() class WebExBrowseColumn
+return(::lVisible)
+
+method SetOrderable(lOrderable) class WebExBrowseColumn
+    paramtype 1 var lOrderable as logical
+    ::lOrderable := lOrderable
+return(self)
+
+method IsOrderable() class WebExBrowseColumn
+return(::lOrderable)
+
+method SetSearchable(lSearchable) class WebExBrowseColumn
+    paramtype 1 var lSearchable as logical
+    ::lSearchable := lSearchable
+return(self)
+
+method IsSearchable() class WebExBrowseColumn
+return(::lSearchable)
+
+method SetEdit(lEdit) class WebExBrowseColumn
+    paramtype 1 var lEdit as logical
+    ::lEdit := lEdit
+return(self)
+
+method GetEdit() class WebExBrowseColumn
+return(::lEdit)
+
+method SetImage(lImage) class WebExBrowseColumn
+    paramtype 1 var lImage as logical
+    ::lImage := lImage
+return(self)
+
+method IsImage() class WebExBrowseColumn
+return(::lImage)
+
+method SetValid(bValid) class WebExBrowseColumn
+    paramtype 1 var bValid as block
+    ::bValid := bValid
+return(self)
+
+method GetValid() class WebExBrowseColumn
+return(::bValid)
+
+method SetDoubleClick(bLDblClick) class WebExBrowseColumn
+    paramtype 1 var bLDblClick as block
+    ::bDoubleClick := bLDblClick
+return(self)
+
+method GetDoubleClick() class WebExBrowseColumn
+return(::bDoubleClick)
+
+method SetHeaderClick(bHeaderClick) class WebExBrowseColumn
+    paramtype 1 var bHeaderClick as block
+    ::bHeaderClick := bHeaderClick
+return(self)
+
+method GetHeaderClick() class WebExBrowseColumn
+return(::bHeaderClick)
+
+method EvalRaw(oBrowse,xRowData,nRowIndex) class WebExBrowseColumn
+    local xValue as variant
+    local oError as object
+    if (ValType(::bData) == "B")
+        try
+            xValue := Eval(::bData,oBrowse,xRowData,nRowIndex)
+        catch oError
+            xValue := ""
+            ConOut("FWWebEx.WebExBrowseColumn:EvalRaw -> " + oError:Description)
+            FreeObj(@oError)
+        endtry
+    else
+        xValue := ""
+    endif
+return(xValue)
+
+method FormatValue(xRawValue) class WebExBrowseColumn
+    local cPicture as character
+    local cType as character
+    local xFormatted as variant
+
+    cType := ValType(xRawValue)
+    if (cType == "U")
+        return("")
+    endif
+
+    if (ValType(::xPicture) == "B")
+        cPicture := cValToChar(Eval(::xPicture,xRawValue))
+    elseif (ValType(::xPicture) == "C")
+        cPicture := AllTrim(::xPicture)
+    else
+        cPicture := ""
+    endif
+
+    if (!Empty(cPicture))
+        xFormatted := AllTrim(Transform(xRawValue,cPicture))
+    else
+        do case
+            case (cType == "C")
+                xFormatted := RTrim(xRawValue)
+            case (cType == "D")
+                xFormatted := if(Empty(xRawValue),"",DToC(xRawValue))
+            case (cType == "L")
+                xFormatted := if(xRawValue,"Sim","Nao")
+            case (cType == "N")
+                xFormatted := AllTrim(Str(xRawValue,Max(::nSize,12),::nDecimal))
+            otherwise
+                xFormatted := cValToChar(xRawValue)
+        end case
+    endif
+return(xFormatted)
+
+method ToDataTableColumn(cFallbackField) class WebExBrowseColumn
+    local cFieldKey as character
+    local jCol := JSONObject():New() as json
+
+    paramtype 1 var cFallbackField as character optional default "col"
+
+    cFieldKey := if(!Empty(::cField),::cField,cFallbackField)
+    ::cField  := cFieldKey
+
+    jCol["data"]       := cFieldKey
+    jCol["title"]      := ::cTitle
+    jCol["visible"]    := ::lVisible
+    jCol["orderable"]  := ::lOrderable
+    jCol["searchable"] := ::lSearchable
+    jCol["className"]  := ::GetAlignClass()
+
+return(jCol)
+
+method Clean() class WebExBrowseColumn
+    ::bData        := NIL
+    ::bDoubleClick := NIL
+    ::bHeaderClick := NIL
+    ::bValid       := NIL
+    ::xPicture     := NIL
+return(self)

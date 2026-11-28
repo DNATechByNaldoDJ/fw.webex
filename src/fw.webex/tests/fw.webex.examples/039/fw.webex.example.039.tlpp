@@ -1,0 +1,195 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Exemplo 039: WebExFormBrowse (Fase 2 - Layer, Filter, Seek, Legend Modal & Details)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.browse.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+user function FWWebExExample_039()
+    local bExecute as codeblock
+    local cTitle := "FWWebEx :: Example 039 - WebExFormBrowse (Fase 2)" as character
+    bExecute := {|| FWWebExFormBrowseExample039() }
+    FWExampleTools():Execute(bExecute,cTitle,.F.,.F.)
+return
+
+static procedure FWWebExFormBrowseExample039()
+
+    local aClientes as array
+    local bPrevious as codeblock
+    local cFile := "fwwebex-example-039" as character
+    local cHTML := "" as character
+    local cTitle := "FWWebEx :: Example 039 - WebExFormBrowse" as character
+    local oBrowse as object
+    local oChannel as object
+    local oError as object
+    local oPage as object
+
+    // {Codigo, Loja, Nome, Saldo, UltMov, Status, Cidade, UF}
+    aClientes := {;
+        {"000001","01","DNATech Engenharia Protheus Ltda",  18450.75, Date() - 5,  "A", "Serra",       "ES"};
+        ,{"000002","01","Industria Metalurgica Capixaba SA", 92310.00, Date() - 12, "A", "Vitoria",     "ES"};
+        ,{"000003","02","Distribuidora Vitoria Express",      3200.50, Date() - 30, "B", "Vila Velha",  "ES"};
+        ,{"000004","01","Comercial Serra Logistica Ltda",    41900.10, Date() - 2,  "A", "Serra",       "ES"};
+        ,{"000005","01","Tech Solutions ERP Brasil",          1250.00, Date() - 45, "P", "Sao Paulo",   "SP"};
+        ,{"000006","01","Alimentos Espirito Santo Ltda",     65400.00, Date() - 1,  "A", "Cariacica",   "ES"};
+        ,{"000007","02","Transportadora Litoral Sul",         8900.25, Date() - 18, "B", "Guarapari",   "ES"};
+        ,{"000008","01","Construtora Atlantica SA",         125000.00, Date() - 7,  "A", "Vitoria",     "ES"};
+        ,{"000009","01","Servicos Digitais Vix ME",           4780.90, Date() - 3,  "P", "Vitoria",     "ES"};
+        ,{"000010","01","Agroindustrial Rio Doce Ltda",      53210.40, Date() - 9,  "A", "Linhares",    "ES"};
+        ,{"000011","01","Quimica Industrial Sudeste",        29800.00, Date() - 21, "A", "Campinas",    "SP"};
+        ,{"000012","02","Varejo Central Atacadista",         15600.60, Date() - 14, "B", "Belo Horizonte","MG"};
+    }
+
+    oChannel := WebApp():GetTWebChannel(.T.)
+    if (!oChannel:lConnected)
+        MsgStop("Nao foi possivel conectar o TWebChannel.",cTitle)
+        FWFreeArray(@aClientes)
+        return
+    endif
+
+    bPrevious := WebExBrowseDispatcher():BindChannel(oChannel)
+
+    try
+        BEGIN FWWEBEX oPage CLASS WebExPage ARGS cTitle
+            WITH WEBEXOBJECT CLASS WebExBody
+                WITH WEBEXOBJECT CLASS WebExMain
+                    WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                        .:AddClass("px-2 py-2")
+                        WITH WEBEXOBJECT oBrowse CLASS WebExFormBrowse ARGS "Carteira de Clientes (WebExFormBrowse)"
+
+                            .:SetDataArray()
+                            .:SetArray(aClientes)
+                            .:SetPageLength(5)
+                            .:SetServerSide(.T.)
+                            .:SetOptionsPosition("RIGHT")
+                            .:SetOptionsTitle("Acoes")
+
+                            // Legendas + Modal automatico
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "A" },"GREEN", "Ativo")
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "P" },"YELLOW","Pendente")
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "B" },"RED",   "Bloqueado")
+
+                            // Colunas
+                            .:AddColumn({"Codigo",   {|oBrw,aRow| aRow[1] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER, 8, 0})
+                            .:AddColumn({"Loja",     {|oBrw,aRow| aRow[2] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER, 4, 0})
+                            .:AddColumn({"Cliente",  {|oBrw,aRow| aRow[3] },"C","",              FWWEBEX_BROWSE_ALIGN_LEFT,  35, 0})
+                            .:AddColumn({"Saldo",    {|oBrw,aRow| aRow[4] },"N","@E 999,999.99", FWWEBEX_BROWSE_ALIGN_RIGHT, 14, 2})
+                            .:AddColumn({"Cidade",   {|oBrw,aRow| aRow[7] },"C","",              FWWEBEX_BROWSE_ALIGN_LEFT,  18, 0})
+
+                            // Pesquisa direcionada (WebExBrowseSeek)
+                            .:AddSeekOrder("Por Cliente","col_3",1)
+                            .:AddSeekOrder("Por Codigo", "col_1",2)
+                            .:AddSeekOrder("Por Cidade", "col_5",3)
+
+                            // Filtros pre-definidos + painel dinamico (WebExBrowseFilter)
+                            .:AddFilter("Somente Ativos",   {|oBrw,aRow| aRow[6] == "A" }, .F.)
+                            .:AddFilter("Bloqueados",       {|oBrw,aRow| aRow[6] == "B" }, .F.)
+                            .:AddFilter("Saldo > R$ 30.000",{|oBrw,aRow| aRow[4] > 30000 },.F.)
+                            .:AddFilter("Somente ES",       {|oBrw,aRow| aRow[8] == "ES" },.F.)
+
+                            // Painel de Detalhes inferior sincronizado ao clique da linha
+                            .:SetDetails({|oBrw,nKey,aRow| RenderClienteDetails(nKey,aRow) },"Detalhes do Cliente")
+
+                            // Hooks BeforeExec / AfterExec
+                            .:SetBeforeExec({|oBrw,cActionID| .T. })
+                            .:SetAfterExec({|oBrw,cActionID,jRes| ConOut("FWWebExFormBrowse action: " + cActionID) })
+
+                            // Botoes no painel de opcoes
+                            .:AddButton("Alternar Status",{|oBrw,nKey,aRow| ToggleClienteStatus(aRow) },"","btn btn-sm btn-primary")
+                            .:AddButton("Aprovar Pendente",{|oBrw,nKey,aRow| AprovarCliente(aRow) },"","btn btn-sm btn-success")
+
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END FWWEBEX
+
+        if (WebFileTools():HTMLFromControl(oPage,oPage:GetFWWebExTmpPath(),@cFile,@cHTML,.T.))
+            if (!Empty(cFile) .and. File(cFile))
+                FWExampleTools():HtmlFileShow(cHTML,cTitle,cFile,oChannel,oChannel:bJSToAdvPL)
+            endif
+        endif
+
+    catch oError
+        MsgStop("Falha ao abrir WebExFormBrowse: " + oError:Description,cTitle)
+        FreeObj(@oError)
+    endtry
+
+    oChannel:bJSToAdvPL := bPrevious
+
+    if (ValType(oBrowse) == "O")
+        oBrowse:Clean()
+        FreeObj(@oBrowse)
+    endif
+
+    WEBEXOBJECT CLEAN
+
+    if (!Empty(cFile) .and. File(cFile))
+        fErase(cFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+    FWFreeArray(@aClientes)
+
+return
+
+static function RenderClienteDetails(nKey as numeric,aRow as array) as character
+    local cHtml as character
+    local cStatus as character
+
+    if (ValType(aRow) != "A")
+        return("Selecione um registro para visualizar os detalhes.")
+    endif
+
+    do case
+        case (aRow[6] == "A")
+            cStatus := '<span class="badge bg-success">Ativo</span>'
+        case (aRow[6] == "P")
+            cStatus := '<span class="badge bg-warning text-dark">Pendente</span>'
+        otherwise
+            cStatus := '<span class="badge bg-danger">Bloqueado</span>'
+    end case
+
+    cHtml := '<div class="row g-2 small">'
+    cHtml += '<div class="col-md-4"><strong>Cliente:</strong> ' + aRow[1] + "/" + aRow[2] + " - " + aRow[3] + '</div>'
+    cHtml += '<div class="col-md-3"><strong>Localidade:</strong> ' + aRow[7] + "/" + aRow[8] + '</div>'
+    cHtml += '<div class="col-md-3"><strong>Saldo:</strong> R$ ' + AllTrim(Transform(aRow[4],"@E 999,999.99")) + '</div>'
+    cHtml += '<div class="col-md-2"><strong>Status:</strong> ' + cStatus + '</div>'
+    cHtml += '</div>'
+
+return(cHtml)
+
+static function ToggleClienteStatus(aRow as array) as variant
+    local jRet := JSONObject():New() as json
+    if (ValType(aRow) != "A")
+        FreeObj(@jRet)
+        return("Selecione um cliente antes de alternar o status.")
+    endif
+    aRow[6] := if(aRow[6] == "A","B","A")
+    jRet["refresh"] := .T.
+    jRet["message"] := "Status alterado para " + if(aRow[6] == "A","Ativo","Bloqueado") + "."
+return(jRet)
+
+static function AprovarCliente(aRow as array) as variant
+    local jRet := JSONObject():New() as json
+    if (ValType(aRow) != "A")
+        FreeObj(@jRet)
+        return("Selecione um cliente pendente para aprovar.")
+    endif
+    if (aRow[6] != "P")
+        FreeObj(@jRet)
+        return("Somente clientes com status Pendente podem ser aprovados.")
+    endif
+    aRow[6] := "A"
+    jRet["refresh"] := .T.
+    jRet["message"] := "Cliente " + aRow[3] + " aprovado com sucesso."
+return(jRet)

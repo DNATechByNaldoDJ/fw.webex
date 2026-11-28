@@ -1,0 +1,53 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+FWWebEx.Browse - Fases 1, 2 e 3 (Core Grid, FormBrowse, MBrowse, MarkBrowse & Relation)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+#IFNDEF _FW_WEB_EX_BROWSE_TH
+
+    #DEFINE _FW_WEB_EX_BROWSE_TH
+
+    #IFNDEF _FW_WEB_EX_TH
+        #include "fw.webex.th"
+    #ENDIF
+
+    // Alinhamento compativel com FWBrwColumn (0=Auto, 1=Esquerda, 2=Direita, 3=Centro)
+    #IFNDEF FWWEBEX_BROWSE_ALIGN_AUTO
+        #define FWWEBEX_BROWSE_ALIGN_AUTO   0
+        #define FWWEBEX_BROWSE_ALIGN_LEFT   1
+        #define FWWEBEX_BROWSE_ALIGN_RIGHT  2
+        #define FWWEBEX_BROWSE_ALIGN_CENTER 3
+    #ENDIF
+
+    // Tipos de eventos trafegados via TWebChannel (JS <-> AdvPL/TL++)
+    #IFNDEF FWWEBEX_BROWSE_EVT_PAGE
+        #define FWWEBEX_BROWSE_EVT_PAGE            "FWWEBEX_BROWSE_PAGE"
+        #define FWWEBEX_BROWSE_EVT_PAGE_RESULT     "FWWEBEX_BROWSE_PAGE_RESULT"
+        #define FWWEBEX_BROWSE_EVT_SELECT          "FWWEBEX_BROWSE_SELECT"
+        #define FWWEBEX_BROWSE_EVT_SELECT_RESULT   "FWWEBEX_BROWSE_SELECT_RESULT"
+        #define FWWEBEX_BROWSE_EVT_DBLCLICK        "FWWEBEX_BROWSE_DBLCLICK"
+        #define FWWEBEX_BROWSE_EVT_DBLCLICK_RESULT "FWWEBEX_BROWSE_DBLCLICK_RESULT"
+        #define FWWEBEX_BROWSE_EVT_ACTION          "FWWEBEX_BROWSE_ACTION"
+        #define FWWEBEX_BROWSE_EVT_ACTION_RESULT   "FWWEBEX_BROWSE_ACTION_RESULT"
+        #define FWWEBEX_BROWSE_EVT_FILTER          "FWWEBEX_BROWSE_FILTER"
+        #define FWWEBEX_BROWSE_EVT_FILTER_RESULT   "FWWEBEX_BROWSE_FILTER_RESULT"
+        #define FWWEBEX_BROWSE_EVT_SEEK            "FWWEBEX_BROWSE_SEEK"
+        #define FWWEBEX_BROWSE_EVT_SEEK_RESULT     "FWWEBEX_BROWSE_SEEK_RESULT"
+        #define FWWEBEX_BROWSE_EVT_MARK            "FWWEBEX_BROWSE_MARK"
+        #define FWWEBEX_BROWSE_EVT_MARK_RESULT     "FWWEBEX_BROWSE_MARK_RESULT"
+    #ENDIF
+
+    // Tipos de provedores suportados
+    #IFNDEF FWWEBEX_BROWSE_DATA_ARRAY
+        #define FWWEBEX_BROWSE_DATA_ARRAY "ARRAY"
+        #define FWWEBEX_BROWSE_DATA_QUERY "QUERY"
+        #define FWWEBEX_BROWSE_DATA_TABLE "TABLE"
+    #ENDIF
+
+#ENDIF

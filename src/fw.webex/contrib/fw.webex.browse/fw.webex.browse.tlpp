@@ -1,0 +1,1696 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowse - Equivalente Web para FWBrowse sobre WebExControl + WebExDataTable + TWebChannel
+Fases 1 e 2: Core Grid, Columns, Providers, Legends, Filter, Seek, Details & Events.
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExBrowse from WebExControl
+
+    public data aButtons       as array
+    public data aColumns       as array
+    public data aChildRelations as array
+    public data aLegends       as array
+    public data aRowActions    as array
+
+    public data bChange        as codeblock
+    public data bDoubleClick   as codeblock
+
+    public data cAlias         as character
+    public data cDescription   as character
+    public data cFeedbackMode  as character
+    public data cFilterDefault as character
+    public data cQuery         as character
+
+    public data lServerSide    as logical
+
+    public data nOrder         as numeric
+    public data nPageLength    as numeric
+
+    public data oDataTable     as object
+    public data oFilter        as object
+    public data oLegend        as object
+    public data oProvider      as object
+    public data oSeek          as object
+
+    protected method __EnsureProvider(cType as character) as object
+    protected method __BuildDataTableConfig() as json
+    protected method __BuildToolbar() as object
+    protected method __BuildFeedbackSlot() as object
+    protected method __RuntimeScript() as character
+    protected method __InitScript() as character
+    protected method __ConfigureDataTable() as object
+    protected method __SerializeRowActions() as character
+    protected method __SelectionStyle() as object
+    protected method __RenderControlHTML() as character
+
+    public method New(cDescription as character) as object
+
+    // API compativel com FWBrowse
+    public method SetDescription(cDescription as character) as object
+    public method GetDescription() as character
+
+    public method SetDataArray() as object
+    public method SetArray(aData as array) as object
+
+    public method SetDataTable() as object
+    public method SetAlias(cAlias as character) as object
+    public method SetOrder(nOrder as numeric) as object
+    public method SetFilterDefault(cFilterDefault as character) as object
+
+    public method SetDataQuery() as object
+    public method SetQuery(cQuery as character,cKeyField as character) as object
+
+    public method SetColumns(aColumns as array) as object
+    public method AddColumn(xColumn as variant) as object
+    public method AddLegend(xCondition as variant,cColor as character,cTitle as character) as object
+    public method AddButton(cTitle as character,bAction as codeblock,cIcon as character,cClass as character) as character
+    public method AddRowAction(cTitle as character,bAction as codeblock,cIcon as character,cClass as character) as character
+
+    public method SetChange(bChange as codeblock) as object
+    public method SetDoubleClick(bLDblClick as codeblock) as object
+    public method SetServerSide(lEnable as logical) as object
+    public method SetPageLength(nPageLength as numeric) as object
+    public method SetFeedbackMode(cMode as character) as object
+    public method GetFeedbackMode() as character
+
+    public method At() as variant
+    public method GetRowData() as variant
+    public method GetProvider() as object
+    public method GetDataTable() as object
+    public method GetFilter() as object
+    public method GetSeek() as object
+    public method GetLegend() as object
+    public method AddChildRelation(oDetail as object,bSync as codeblock) as object
+    public method ClearChildRelations() as object
+
+    // Handlers invocados pelo WebExBrowseDispatcher
+    public method HandlePageRequest(jRequest as json) as json
+    public method HandleSelectRequest(jRequest as json) as json
+    public method HandleDblClickRequest(jRequest as json) as json
+    public method HandleActionRequest(jRequest as json) as json
+    public method HandleFilterRequest(jRequest as json) as json
+    public method HandleSeekRequest(jRequest as json) as json
+    public method HandleMarkRequest(jRequest as json) as json
+
+    public method RenderHTML() as character
+    public method Clean() as object
+
+endclass
+
+method New(cDescription) class WebExBrowse
+
+    paramtype 1 var cDescription as character optional default ""
+
+    ::aButtons       := Array(0)
+    ::aColumns       := Array(0)
+    ::aChildRelations := Array(0)
+    ::aLegends       := Array(0)
+    ::aRowActions    := Array(0)
+
+    ::cAlias         := ""
+    ::cDescription   := cDescription
+    ::cFeedbackMode  := "FOOTER"
+    ::cFilterDefault := ""
+    ::cQuery         := ""
+
+    ::lServerSide    := .T.
+    ::nOrder         := 1
+    ::nPageLength    := 10
+
+    _Super:New("div")
+    ::AddClass("fwwebex-browse container-fluid px-0")
+
+    WebExFeatureDataTable():Enable()
+
+    ::oDataTable := WebExDataTable():New(cDescription,::lServerSide)
+    ::oLegend    := WebExBrowseLegend():New("Legenda")
+
+return(self)
+
+method __EnsureProvider(cType) class WebExBrowse
+    paramtype 1 var cType as character
+    if ((ValType(::oProvider) == "O") .and. (::oProvider:GetType() == cType))
+        return(::oProvider)
+    endif
+    if (ValType(::oProvider) == "O")
+        ::oProvider:Clean()
+        FreeObj(@::oProvider)
+    endif
+    do case
+        case (cType == FWWEBEX_BROWSE_DATA_ARRAY)
+            ::oProvider := WebExBrowseArrayProvider():New()
+        case (cType == FWWEBEX_BROWSE_DATA_TABLE)
+            ::oProvider := WebExBrowseTableProvider():New(::cAlias,::nOrder,::cFilterDefault)
+        case (cType == FWWEBEX_BROWSE_DATA_QUERY)
+            ::oProvider := WebExBrowseQueryProvider():New(::cQuery)
+    end case
+return(::oProvider)
+
+method SetDescription(cDescription) class WebExBrowse
+    paramtype 1 var cDescription as character
+    ::cDescription := cDescription
+    if (ValType(::oDataTable) == "O")
+        ::oDataTable:SetTableTitle(cDescription)
+    endif
+return(self)
+
+method GetDescription() class WebExBrowse
+return(::cDescription)
+
+method SetDataArray() class WebExBrowse
+    ::__EnsureProvider(FWWEBEX_BROWSE_DATA_ARRAY)
+return(self)
+
+method SetArray(aData) class WebExBrowse
+    paramtype 1 var aData as array
+    ::__EnsureProvider(FWWEBEX_BROWSE_DATA_ARRAY)
+    ::oProvider:SetArray(aData)
+return(self)
+
+method SetDataTable() class WebExBrowse
+    ::__EnsureProvider(FWWEBEX_BROWSE_DATA_TABLE)
+return(self)
+
+method SetAlias(cAlias) class WebExBrowse
+    paramtype 1 var cAlias as character
+    ::cAlias := Upper(AllTrim(cAlias))
+    if ((ValType(::oProvider) == "O") .and. (::oProvider:GetType() == FWWEBEX_BROWSE_DATA_TABLE))
+        ::oProvider:SetAlias(::cAlias)
+    elseif (ValType(::oProvider) != "O")
+        ::__EnsureProvider(FWWEBEX_BROWSE_DATA_TABLE)
+        ::oProvider:SetAlias(::cAlias)
+    endif
+return(self)
+
+method SetOrder(nOrder) class WebExBrowse
+    paramtype 1 var nOrder as numeric
+    ::nOrder := nOrder
+    if ((ValType(::oProvider) == "O") .and. (::oProvider:GetType() == FWWEBEX_BROWSE_DATA_TABLE))
+        ::oProvider:SetOrder(nOrder)
+    endif
+return(self)
+
+method SetFilterDefault(cFilterDefault) class WebExBrowse
+    paramtype 1 var cFilterDefault as character
+    ::cFilterDefault := cFilterDefault
+    if ((ValType(::oProvider) == "O") .and. (::oProvider:GetType() == FWWEBEX_BROWSE_DATA_TABLE))
+        ::oProvider:SetFilterDefault(cFilterDefault)
+    endif
+return(self)
+
+method SetDataQuery() class WebExBrowse
+    ::__EnsureProvider(FWWEBEX_BROWSE_DATA_QUERY)
+return(self)
+
+method SetQuery(cQuery,cKeyField) class WebExBrowse
+    paramtype 1 var cQuery    as character
+    paramtype 2 var cKeyField as character optional default ""
+    ::cQuery := cQuery
+    ::__EnsureProvider(FWWEBEX_BROWSE_DATA_QUERY)
+    ::oProvider:SetQuery(cQuery)
+    if (!Empty(cKeyField))
+        ::oProvider:SetKeyField(cKeyField)
+    endif
+return(self)
+
+method SetColumns(aColumns) class WebExBrowse
+    local nI as numeric
+    paramtype 1 var aColumns as array
+    for nI := 1 to Len(aColumns)
+        ::AddColumn(aColumns[nI])
+    next nI
+return(self)
+
+method AddColumn(xColumn) class WebExBrowse
+    local nLen as numeric
+    local oCol as object
+
+    paramtype 1 var xColumn as object,array
+
+    if (ValType(xColumn) == "O")
+        oCol := xColumn
+    else
+        nLen := Len(xColumn)
+        oCol := WebExBrowseColumn():New(;
+            if(nLen >= 1 .and. ValType(xColumn[1]) == "C",xColumn[1],"");
+            ,if(nLen >= 2,xColumn[2],NIL);
+            ,if(nLen >= 3 .and. ValType(xColumn[3]) == "C",xColumn[3],"C");
+            ,if(nLen >= 4,xColumn[4],"");
+            ,if(nLen >= 5 .and. ValType(xColumn[5]) == "N",xColumn[5],FWWEBEX_BROWSE_ALIGN_AUTO);
+            ,if(nLen >= 6 .and. ValType(xColumn[6]) == "N",xColumn[6],15);
+            ,if(nLen >= 7 .and. ValType(xColumn[7]) == "N",xColumn[7],0);
+        )
+        if (nLen >= 8 .and. ValType(xColumn[8]) == "L")
+            oCol:SetEdit(xColumn[8])
+        endif
+        if (nLen >= 9 .and. ValType(xColumn[9]) == "B")
+            oCol:SetValid(xColumn[9])
+        endif
+        if (nLen >= 10 .and. ValType(xColumn[10]) == "L")
+            oCol:SetImage(xColumn[10])
+        endif
+        if (nLen >= 11 .and. ValType(xColumn[11]) == "B")
+            oCol:SetDoubleClick(xColumn[11])
+        endif
+        if (nLen >= 13 .and. ValType(xColumn[13]) == "B")
+            oCol:SetHeaderClick(xColumn[13])
+        endif
+    endif
+
+    if (Empty(oCol:GetField()))
+        oCol:SetField("col_" + AllTrim(cValToChar(Len(::aColumns) + 1)))
+    endif
+
+    aAdd(::aColumns,oCol)
+return(oCol)
+
+method AddLegend(xCondition,cColor,cTitle) class WebExBrowse
+    paramtype 1 var xCondition as block,character
+    paramtype 2 var cColor     as character optional default "SECONDARY"
+    paramtype 3 var cTitle     as character optional default ""
+    aAdd(::aLegends,{xCondition,Upper(AllTrim(cColor)),cTitle})
+    if (ValType(::oLegend) == "O")
+        ::oLegend:Add(xCondition,cColor,cTitle)
+    endif
+return(self)
+
+method AddButton(cTitle,bAction,cIcon,cClass) class WebExBrowse
+    local cBtnID as character
+    paramtype 1 var cTitle  as character
+    paramtype 2 var bAction as block
+    paramtype 3 var cIcon   as character optional default ""
+    paramtype 4 var cClass  as character optional default "btn btn-sm btn-outline-primary"
+    cBtnID := "act_" + tlpp.ToStr(Len(::aButtons) + 1)
+    aAdd(::aButtons,{cBtnID,cTitle,bAction,cIcon,cClass})
+return(cBtnID)
+
+method AddRowAction(cTitle,bAction,cIcon,cClass) class WebExBrowse
+    local cBtnID as character
+    paramtype 1 var cTitle  as character
+    paramtype 2 var bAction as block
+    paramtype 3 var cIcon   as character optional default ""
+    paramtype 4 var cClass  as character optional default "btn btn-sm btn-outline-primary"
+    cBtnID := "rowact_" + AllTrim(cValToChar(Len(::aRowActions) + 1))
+    aAdd(::aRowActions,{cBtnID,cTitle,bAction,cIcon,cClass})
+return(cBtnID)
+
+method SetChange(bChange) class WebExBrowse
+    paramtype 1 var bChange as block
+    ::bChange := bChange
+return(self)
+
+method SetDoubleClick(bLDblClick) class WebExBrowse
+    paramtype 1 var bLDblClick as block
+    ::bDoubleClick := bLDblClick
+return(self)
+
+method SetServerSide(lEnable) class WebExBrowse
+    paramtype 1 var lEnable as logical
+    ::lServerSide := lEnable
+    if (ValType(::oDataTable) == "O")
+        ::oDataTable:EnableServerSide(lEnable)
+    endif
+return(self)
+
+method SetPageLength(nPageLength) class WebExBrowse
+    paramtype 1 var nPageLength as numeric
+    ::nPageLength := Max(1,nPageLength)
+return(self)
+
+method SetFeedbackMode(cMode) class WebExBrowse
+    local cNorm as character
+    paramtype 1 var cMode as character
+    cNorm := Upper(AllTrim(cMode))
+    if (cNorm == "MODAL")
+        cNorm := "POPUP"
+    endif
+    if (cNorm $ "HEADER|FOOTER|POPUP|TOAST|NONE")
+        ::cFeedbackMode := cNorm
+    endif
+return(self)
+
+method GetFeedbackMode() class WebExBrowse
+return(::cFeedbackMode)
+
+method At() class WebExBrowse
+    if (ValType(::oProvider) == "O")
+        return(::oProvider:GetCurrentKey())
+    endif
+return(0)
+
+method GetRowData() class WebExBrowse
+    if (ValType(::oProvider) == "O")
+        return(::oProvider:GetCurrentRow())
+    endif
+return(NIL)
+
+method GetProvider() class WebExBrowse
+return(::oProvider)
+
+method GetDataTable() class WebExBrowse
+return(::oDataTable)
+
+method GetFilter() class WebExBrowse
+return(::oFilter)
+
+method GetSeek() class WebExBrowse
+return(::oSeek)
+
+method GetLegend() class WebExBrowse
+return(::oLegend)
+
+method AddChildRelation(oDetail,bSync) class WebExBrowse
+    paramtype 1 var oDetail as object
+    paramtype 2 var bSync   as block
+    aAdd(::aChildRelations,{oDetail,bSync})
+return(self)
+
+method ClearChildRelations() class WebExBrowse
+    FWFreeArray(@::aChildRelations)
+    ::aChildRelations := Array(0)
+return(self)
+
+method HandlePageRequest(jRequest) class WebExBrowse
+    local jOrder as json
+    local jResult as json
+    local nColOffset as numeric
+
+    paramtype 1 var jRequest as json
+
+    if (ValType(::oProvider) != "O")
+        jResult := JSONObject():New()
+        jResult["ok"]              := .F.
+        jResult["recordsTotal"]    := 0
+        jResult["recordsFiltered"] := 0
+        jResult["data"]            := Array(0)
+        jResult["error"]           := "Nenhum provedor de dados configurado (SetArray / SetAlias / SetQuery)."
+        return(jResult)
+    endif
+
+    nColOffset := if(!Empty(::aLegends),1,0)
+    if (jRequest:HasProperty("order") .and. ValType(jRequest["order"]) == "J")
+        jOrder := jRequest["order"]
+        if (jOrder:HasProperty("column") .and. ValType(jOrder["column"]) == "N")
+            jOrder["column"] := (jOrder["column"] - nColOffset) + 1
+        endif
+    endif
+
+    jResult := ::oProvider:GetPage(self,jRequest,::aColumns,::aLegends)
+    jResult["draw"] := if(jRequest:HasProperty("draw") .and. ValType(jRequest["draw"]) == "N",jRequest["draw"],1)
+
+return(jResult)
+
+method HandleSelectRequest(jRequest) class WebExBrowse
+    local bSyncRel as codeblock
+    local jResult := JSONObject():New() as json
+    local nRel as numeric
+    local oDetailRel as object
+    local lFound := .F. as logical
+    local oError as object
+    local xDetail as variant
+    local xKey as variant
+
+    paramtype 1 var jRequest as json
+
+    if (ValType(::oProvider) == "O" .and. jRequest:HasProperty("key"))
+        xKey   := jRequest["key"]
+        lFound := ::oProvider:SeekKey(xKey)
+    endif
+
+    jResult["ok"]  := lFound
+    jResult["key"] := xKey
+
+    if (lFound .and. ValType(::bChange) == "B")
+        try
+            xDetail := Eval(::bChange,self,xKey,::oProvider:GetCurrentRow())
+            if (ValType(xDetail) == "C")
+                jResult["details"] := xDetail
+            endif
+        catch oError
+            jResult["ok"]    := .F.
+            jResult["error"] := "Erro no evento bChange: " + oError:Description
+            FreeObj(@oError)
+        endtry
+    endif
+
+    if (lFound .and. !Empty(::aChildRelations))
+        jResult["reloadTargets"] := Array(0)
+        for nRel := 1 to Len(::aChildRelations)
+            oDetailRel := ::aChildRelations[nRel][1]
+            bSyncRel   := ::aChildRelations[nRel][2]
+            if (ValType(oDetailRel) == "O" .and. ValType(bSyncRel) == "B")
+                try
+                    Eval(bSyncRel,self,oDetailRel,xKey,::oProvider:GetCurrentRow())
+                    aAdd(jResult["reloadTargets"],oDetailRel:GetFixedID())
+                catch oError
+                    ConOut("FWWebEx.WebExBrowse:HandleSelectRequest (relation) -> " + oError:Description)
+                    FreeObj(@oError)
+                endtry
+            endif
+        next nRel
+    endif
+
+return(jResult)
+
+method HandleDblClickRequest(jRequest) class WebExBrowse
+    local bTarget as codeblock
+    local jResult := JSONObject():New() as json
+    local lFound := .F. as logical
+    local nColIdx := 0 as numeric
+    local nColOffset as numeric
+    local oError as object
+    local xKey as variant
+    local xRet as variant
+
+    paramtype 1 var jRequest as json
+
+    if (ValType(::oProvider) == "O" .and. jRequest:HasProperty("key"))
+        xKey   := jRequest["key"]
+        lFound := ::oProvider:SeekKey(xKey)
+    endif
+
+    jResult["ok"]      := lFound
+    jResult["key"]     := xKey
+    jResult["refresh"] := .F.
+
+    if (!lFound)
+        jResult["error"] := "Registro nao localizado para duplo clique."
+        return(jResult)
+    endif
+
+    nColOffset := if(!Empty(::aLegends),1,0)
+    if (jRequest:HasProperty("colIndex") .and. ValType(jRequest["colIndex"]) == "N")
+        nColIdx := (jRequest["colIndex"] - nColOffset) + 1
+    endif
+
+    if ((nColIdx >= 1) .and. (nColIdx <= Len(::aColumns)) .and. (ValType(::aColumns[nColIdx]:GetDoubleClick()) == "B"))
+        bTarget := ::aColumns[nColIdx]:GetDoubleClick()
+    elseif (ValType(::bDoubleClick) == "B")
+        bTarget := ::bDoubleClick
+    endif
+
+    if (ValType(bTarget) == "B")
+        try
+            xRet := Eval(bTarget,self,xKey,::oProvider:GetCurrentRow(),nColIdx)
+            if (ValType(xRet) == "L")
+                jResult["refresh"] := xRet
+            elseif (ValType(xRet) == "C")
+                jResult["message"] := xRet
+            elseif (ValType(xRet) == "J")
+                if (xRet:HasProperty("refresh"))
+                    jResult["refresh"] := xRet["refresh"]
+                endif
+                if (xRet:HasProperty("message"))
+                    jResult["message"] := xRet["message"]
+                endif
+                if (xRet:HasProperty("openModal"))
+                    jResult["openModal"] := xRet["openModal"]
+                endif
+                if (xRet:HasProperty("modalTitle"))
+                    jResult["modalTitle"] := xRet["modalTitle"]
+                endif
+                if (xRet:HasProperty("feedbackType"))
+                    jResult["feedbackType"] := xRet["feedbackType"]
+                endif
+                if (xRet:HasProperty("reloadTargets"))
+                    jResult["reloadTargets"] := xRet["reloadTargets"]
+                endif
+                FreeObj(@xRet)
+            endif
+        catch oError
+            jResult["ok"]    := .F.
+            jResult["error"] := "Erro no duplo clique: " + oError:Description
+            FreeObj(@oError)
+        endtry
+    endif
+
+return(jResult)
+
+method HandleActionRequest(jRequest) class WebExBrowse
+    local bAction as codeblock
+    local cActionID := "" as character
+    local jResult := JSONObject():New() as json
+    local nPos as numeric
+    local oError as object
+    local xKey as variant
+    local xRet as variant
+
+    paramtype 1 var jRequest as json
+
+    if (jRequest:HasProperty("actionId") .and. ValType(jRequest["actionId"]) == "C")
+        cActionID := jRequest["actionId"]
+    endif
+
+    nPos := aScan(::aButtons,{|aBtn| aBtn[1] == cActionID })
+    if (nPos > 0)
+        bAction := ::aButtons[nPos][3]
+    else
+        nPos := aScan(::aRowActions,{|aBtn| aBtn[1] == cActionID })
+        if (nPos > 0)
+            bAction := ::aRowActions[nPos][3]
+        else
+            jResult["ok"]    := .F.
+            jResult["error"] := "Acao nao encontrada: " + cActionID
+            return(jResult)
+        endif
+    endif
+
+    if (ValType(::oProvider) == "O" .and. jRequest:HasProperty("key") .and. ValType(jRequest["key"]) != "U")
+        xKey := jRequest["key"]
+        ::oProvider:SeekKey(xKey)
+    endif
+    jResult["ok"]      := .T.
+    jResult["refresh"] := .F.
+
+    try
+        xRet := Eval(bAction,self,xKey,if(ValType(::oProvider)=="O",::oProvider:GetCurrentRow(),NIL))
+        if (ValType(xRet) == "L")
+            jResult["refresh"] := xRet
+        elseif (ValType(xRet) == "C")
+            jResult["message"] := xRet
+        elseif (ValType(xRet) == "J")
+            if (xRet:HasProperty("refresh"))
+                jResult["refresh"] := xRet["refresh"]
+            endif
+            if (xRet:HasProperty("message"))
+                jResult["message"] := xRet["message"]
+            endif
+            if (xRet:HasProperty("openModal"))
+                jResult["openModal"] := xRet["openModal"]
+            endif
+            if (xRet:HasProperty("modalTitle"))
+                jResult["modalTitle"] := xRet["modalTitle"]
+            endif
+            if (xRet:HasProperty("feedbackType"))
+                jResult["feedbackType"] := xRet["feedbackType"]
+            endif
+            if (xRet:HasProperty("reloadTargets"))
+                jResult["reloadTargets"] := xRet["reloadTargets"]
+            endif
+            FreeObj(@xRet)
+        endif
+    catch oError
+        jResult["ok"]    := .F.
+        jResult["error"] := "Erro ao executar acao: " + oError:Description
+        FreeObj(@oError)
+    endtry
+
+return(jResult)
+
+method HandleFilterRequest(jRequest) class WebExBrowse
+    local jResult := JSONObject():New() as json
+    local lClear := .F. as logical
+
+    paramtype 1 var jRequest as json
+
+    if (ValType(::oFilter) != "O")
+        jResult["ok"]      := .F.
+        jResult["error"]   := "Filtro nao habilitado neste browse."
+        jResult["active"]  := .F.
+        jResult["summary"] := ""
+        return(jResult)
+    endif
+
+    if (jRequest:HasProperty("clear") .and. ValType(jRequest["clear"]) == "L")
+        lClear := jRequest["clear"]
+    endif
+
+    if (lClear)
+        ::oFilter:ClearFilters()
+    else
+        if (jRequest:HasProperty("activeIds") .and. ValType(jRequest["activeIds"]) == "A")
+            ::oFilter:SetActiveFilters(jRequest["activeIds"])
+        endif
+        if (jRequest:HasProperty("dynamic") .and. ValType(jRequest["dynamic"]) == "J")
+            ::oFilter:SetDynamicFilter(jRequest["dynamic"])
+        else
+            ::oFilter:SetDynamicFilter(NIL)
+        endif
+    endif
+
+    jResult["ok"]      := .T.
+    jResult["active"]  := ::oFilter:HasActiveFilter()
+    jResult["summary"] := ::oFilter:GetActiveSummary()
+
+return(jResult)
+
+method HandleSeekRequest(jRequest) class WebExBrowse
+    local cField := "" as character
+    local cTerm := "" as character
+    local jResult := JSONObject():New() as json
+    local lClear := .F. as logical
+    local nOrder := 0 as numeric
+
+    paramtype 1 var jRequest as json
+
+    if (ValType(::oSeek) != "O")
+        jResult["ok"]    := .F.
+        jResult["error"] := "Pesquisa nao habilitada neste browse."
+        return(jResult)
+    endif
+
+    if (jRequest:HasProperty("clear") .and. ValType(jRequest["clear"]) == "L")
+        lClear := jRequest["clear"]
+    endif
+
+    if (lClear)
+        ::oSeek:ClearSeek()
+    else
+        if (jRequest:HasProperty("field") .and. ValType(jRequest["field"]) == "C")
+            cField := jRequest["field"]
+        endif
+        if (jRequest:HasProperty("term") .and. ValType(jRequest["term"]) == "C")
+            cTerm := jRequest["term"]
+        endif
+        if (jRequest:HasProperty("order") .and. ValType(jRequest["order"]) == "N")
+            nOrder := jRequest["order"]
+        endif
+        ::oSeek:SetSeek(cField,cTerm,nOrder)
+        if ((nOrder > 0) .and. (ValType(::oProvider) == "O") .and. (::oProvider:GetType() == FWWEBEX_BROWSE_DATA_TABLE))
+            ::oProvider:SetOrder(nOrder)
+        endif
+    endif
+
+    jResult["ok"]     := .T.
+    jResult["active"] := ::oSeek:HasSeek()
+
+return(jResult)
+
+method HandleMarkRequest(jRequest) class WebExBrowse
+    local jResult := JSONObject():New() as json
+    paramtype 1 var jRequest as json
+    jResult["ok"]    := .F.
+    jResult["error"] := "Marcacao nao suportada nesta instancia. Utilize WebExMarkBrowse."
+return(jResult)
+
+method __BuildDataTableConfig() class WebExBrowse
+    local aFields := Array(0) as array
+    local jCol as json
+    local jFields := JSONObject():New() as json
+    local nCol as numeric
+    local nCols as numeric
+    local oCol as object
+
+    if (!Empty(::aLegends))
+        jCol := JSONObject():New()
+        jCol["data"]       := "__legend"
+        jCol["title"]      := ""
+        jCol["orderable"]  := .F.
+        jCol["searchable"] := .F.
+        jCol["width"]      := "36px"
+        jCol["className"]  := "text-center"
+        jCol["bRender"]    := {|| "function(data){ return window.FWWebEx.Browse.renderLegend(data); }" }
+        aAdd(aFields,jCol)
+    endif
+
+    nCols := Len(::aColumns)
+    for nCol := 1 to nCols
+        oCol := ::aColumns[nCol]
+        aAdd(aFields,oCol:ToDataTableColumn("col_" + AllTrim(cValToChar(nCol))))
+    next nCol
+
+    if (!Empty(::aRowActions))
+        jCol := JSONObject():New()
+        jCol["data"]       := "__key"
+        jCol["title"]      := "Acoes"
+        jCol["orderable"]  := .F.
+        jCol["searchable"] := .F.
+        jCol["className"]  := "text-center text-nowrap"
+        jCol["bRender"]    := {|| "function(data,type,row){ return window.FWWebEx.Browse.renderRowActions('" + ::GetFixedID() + "', row.__key); }" }
+        aAdd(aFields,jCol)
+    endif
+
+    jFields["fields"] := aFields
+return(jFields)
+
+method __BuildFeedbackSlot() class WebExBrowse
+    local cBrowseID := ::GetFixedID() as character
+    local oBox as object
+    oBox := WebExDiv():New()
+    oBox:SetAttr("data-fwwebex-browse-feedback",cBrowseID)
+    oBox:SetAttr("role","alert")
+    oBox:AddClass("alert alert-info py-2 px-3 small my-2 d-none")
+return(oBox)
+
+method __BuildToolbar() class WebExBrowse
+    local aBtn as array
+    local cBrowseID := ::GetFixedID() as character
+    local nI as numeric
+    local oBtn as object
+    local oBtnGroup as object
+    local oTitle as object
+    local oToolbar as object
+
+    oToolbar := WebExDiv():New()
+    oToolbar:AddClass("d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom")
+
+    if (!Empty(::cDescription))
+        oTitle := WebExH4():New()
+        oTitle:AddClass("mb-0")
+        oTitle:SetContent(::cDescription)
+        oToolbar:AddChild(oTitle)
+    else
+        oToolbar:DelClass("justify-content-between")
+        oToolbar:AddClass("justify-content-end")
+    endif
+
+    oBtnGroup := WebExDiv():New()
+    oBtnGroup:AddClass("d-flex flex-wrap gap-2")
+
+    for nI := 1 to Len(::aButtons)
+        aBtn := ::aButtons[nI]
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-fwwebex-browse-action",aBtn[1])
+        oBtn:SetAttr("data-fwwebex-browse-id",cBrowseID)
+        oBtn:AddClass(aBtn[5])
+        if (!Empty(aBtn[4]))
+            oBtn:SetContent('<i class="' + aBtn[4] + ' me-1"></i>' + aBtn[2])
+        else
+            oBtn:SetContent(aBtn[2])
+        endif
+        oBtnGroup:AddChild(oBtn)
+    next nI
+
+    if (ValType(::oLegend) == "O" .and. ::oLegend:Count() > 0)
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-bs-toggle","modal")
+        oBtn:SetAttr("data-bs-target","#" + ::oLegend:GetModalID(cBrowseID))
+        oBtn:AddClass("btn btn-sm btn-outline-info")
+        oBtn:SetContent("Legenda")
+        oBtnGroup:AddChild(oBtn)
+    endif
+
+    oBtn := WebExControl():New("button")
+    oBtn:SetAttr("type","button")
+    oBtn:SetAttr("data-fwwebex-browse-refresh",cBrowseID)
+    oBtn:AddClass("btn btn-sm btn-outline-secondary")
+    oBtn:SetContent("Atualizar")
+    oBtnGroup:AddChild(oBtn)
+
+    oToolbar:AddChild(oBtnGroup)
+
+return(oToolbar)
+
+method __RuntimeScript() class WebExBrowse
+    local cScript as character
+    beginContent var cScript
+/* FWWebEx.Browse.Runtime.Start */
+(function (root) {
+    'use strict';
+
+    root.FWWebEx = root.FWWebEx || {};
+    if (root.FWWebEx.Browse && root.FWWebEx.Browse.__initialized) {
+        return;
+    }
+
+    let requestSeq = 0;
+    const instances = new Map();
+
+    const LEGEND_COLORS = {
+        GREEN: 'bg-success',
+        VERDE: 'bg-success',
+        RED: 'bg-danger',
+        VERMELHO: 'bg-danger',
+        YELLOW: 'bg-warning',
+        AMARELO: 'bg-warning',
+        BLUE: 'bg-primary',
+        AZUL: 'bg-primary',
+        ORANGE: 'bg-warning',
+        LARANJA: 'bg-warning',
+        BLACK: 'bg-dark',
+        PRETO: 'bg-dark',
+        WHITE: 'bg-light border',
+        BRANCO: 'bg-light border',
+        GRAY: 'bg-secondary',
+        CINZA: 'bg-secondary'
+    };
+
+    function escapeHtml(text) {
+        return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function getRowActions(browseId) {
+        const doc = root.document;
+        const hostEl = doc && doc.getElementById ? doc.getElementById(browseId) : null;
+        if (!hostEl || !hostEl.getAttribute) {
+            return [];
+        }
+        const raw = hostEl.getAttribute('data-fwwebex-row-actions');
+        if (!raw) {
+            return [];
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed.items) ? parsed.items : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function renderRowActions(browseId, key) {
+        const items = getRowActions(browseId);
+        if (!items.length) {
+            return '';
+        }
+        const safeId = escapeHtml(browseId);
+        const safeKey = escapeHtml(key);
+        return items.map(function (item) {
+            const cls = escapeHtml(item.cls || 'btn btn-sm btn-outline-primary');
+            const actId = escapeHtml(item.id || '');
+            const label = escapeHtml(item.label || '');
+            return '<button type="button" class="' + cls + ' me-1" data-fwwebex-browse-row-action="' + actId + '" data-fwwebex-browse-id="' + safeId + '" data-key="' + safeKey + '">' + label + '</button>';
+        }).join('');
+    }
+
+    function renderMark(browseId, key, checked) {
+        const safeId = escapeHtml(browseId);
+        const safeKey = escapeHtml(key);
+        return '<input type="checkbox" class="form-check-input" data-fwwebex-browse-mark="' + safeId + '" data-key="' + safeKey + '"' + (checked ? ' checked' : '') + '/>';
+    }
+
+    function showFeedback(browseId, message, type) {
+        if (!message) {
+            return false;
+        }
+        const doc = root.document;
+        const bsType = (type === 'warning' || type === 'danger' || type === 'success' || type === 'info') ? type : 'info';
+        const hostEl = doc && doc.getElementById ? doc.getElementById(browseId) : null;
+        const mode = (hostEl && hostEl.getAttribute ? (hostEl.getAttribute('data-fwwebex-browse-feedback-mode') || 'FOOTER') : 'FOOTER').toUpperCase();
+
+        if (mode === 'NONE') {
+            return false;
+        }
+        if (mode === 'POPUP' && typeof root.FWWebExAlert === 'function') {
+            const titleMap = { warning: 'Aviso', danger: 'Erro', success: 'Sucesso', info: 'Informacao' };
+            root.FWWebExAlert(message, titleMap[bsType] || 'Aviso', bsType, { dismissible: true });
+            return true;
+        }
+        if (mode === 'TOAST' && doc && doc.createElement && doc.body) {
+            let wrap = doc.getElementById('fwwebex-browse-toast-wrap');
+            if (!wrap) {
+                wrap = doc.createElement('div');
+                wrap.id = 'fwwebex-browse-toast-wrap';
+                wrap.className = 'position-fixed bottom-0 end-0 p-3';
+                wrap.style.zIndex = '1080';
+                doc.body.appendChild(wrap);
+            }
+            const item = doc.createElement('div');
+            item.className = 'alert alert-' + bsType + ' shadow-sm py-2 px-3 small mb-2';
+            item.setAttribute('role', 'alert');
+            item.textContent = message;
+            wrap.appendChild(item);
+            setTimeout(function () { if (item.parentNode) item.parentNode.removeChild(item); }, 4500);
+            return true;
+        }
+        const slot = doc && doc.querySelector ? doc.querySelector('[data-fwwebex-browse-feedback="' + browseId + '"]') : null;
+        if (slot) {
+            slot.className = 'alert alert-' + bsType + ' py-2 px-3 small my-2';
+            slot.textContent = message;
+            return true;
+        }
+        return false;
+    }
+
+    function toggleMark(browseId, payload, onStatus, table) {
+        return sendEvent('FWWEBEX_BROWSE_MARK', 'FWWEBEX_BROWSE_MARK_RESULT', Object.assign({ browseId: browseId }, payload))
+            .then(function (res) {
+                if (typeof onStatus === 'function' && res) {
+                    if (res.message) {
+                        onStatus(res.message);
+                    } else if (typeof res.markedCount === 'number') {
+                        onStatus(res.markedCount + ' registro(s) marcado(s).');
+                    }
+                }
+                if (res && res.message) {
+                    showFeedback(browseId, res.message, res.feedbackType || (res.rejectedCount > 0 ? 'warning' : 'info'));
+                }
+                if (res && res.refresh && table && table.ajax && typeof table.ajax.reload === 'function') {
+                    table.ajax.reload(null, false);
+                }
+                return res;
+            })
+            .catch(function (err) {
+                if (typeof onStatus === 'function') {
+                    onStatus(err.message);
+                }
+                throw err;
+            });
+    }
+
+    function openModal(modalId, modalTitle) {
+        if (!modalId || !root.document || !root.document.getElementById) {
+            return false;
+        }
+        const modalEl = root.document.getElementById(modalId);
+        if (!modalEl) {
+            return false;
+        }
+        if (typeof modalTitle === 'string' && modalTitle.length > 0 && root.document.querySelector) {
+            const titleEl = root.document.querySelector('[data-fwwebex-modal-title="' + modalId + '"]');
+            if (titleEl) {
+                titleEl.textContent = modalTitle;
+            }
+        }
+        if (root.bootstrap && root.bootstrap.Modal && typeof root.bootstrap.Modal.getOrCreateInstance === 'function') {
+            root.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            return true;
+        }
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        return true;
+    }
+
+    function reloadTargets(targetIds) {
+        if (!Array.isArray(targetIds)) {
+            return 0;
+        }
+        let reloaded = 0;
+        targetIds.forEach(function (targetId) {
+            const inst = instances.get(targetId);
+            if (inst && inst.table && inst.table.ajax && typeof inst.table.ajax.reload === 'function') {
+                inst.table.ajax.reload();
+                reloaded += 1;
+            }
+        });
+        return reloaded;
+    }
+
+    function renderLegend(legend) {
+        if (!legend || typeof legend !== 'object') {
+            return '';
+        }
+        const colorKey = String(legend.color || '').toUpperCase();
+        const badgeClass = LEGEND_COLORS[colorKey] || 'bg-secondary';
+        const title = escapeHtml(legend.title || '');
+        return '<span class="d-inline-block rounded-circle ' + badgeClass + '" title="' + title + '" style="width:12px;height:12px;"></span>';
+    }
+
+    function getBridge() {
+        const bridge = root.FWWebEx && root.FWWebEx.TWebChannel;
+        if (!bridge || typeof bridge.send !== 'function' || typeof bridge.onAdvplToJs !== 'function') {
+            throw new Error('FWWebEx.TWebChannel nao esta disponivel.');
+        }
+        return bridge;
+    }
+
+    function sendEvent(sendType, replyType, payload, timeoutMs) {
+        const timeout = typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : 30000;
+        const bridge = getBridge();
+        const id = Date.now().toString(36) + '-' + (++requestSeq);
+        const body = Object.assign({}, payload, { id: id });
+
+        return new Promise(function (resolve, reject) {
+            let settled = false;
+            let timer = null;
+            let unsubscribe = function () {};
+
+            const finish = function (err, data) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(timer);
+                unsubscribe();
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            };
+
+            unsubscribe = bridge.onAdvplToJs(function (type, content) {
+                if (type !== replyType) {
+                    return false;
+                }
+                let parsed;
+                try {
+                    parsed = typeof content === 'string' ? JSON.parse(content) : content;
+                } catch (e) {
+                    return true;
+                }
+                if (!parsed || parsed.id !== id) {
+                    return false;
+                }
+                if (parsed.ok === false) {
+                    finish(new Error(parsed.error || 'Falha retornada pelo Protheus.'));
+                } else {
+                    finish(null, parsed);
+                }
+                return true;
+            });
+
+            timer = setTimeout(function () {
+                finish(new Error('Tempo esgotado aguardando resposta do Protheus (' + sendType + ').'));
+            }, timeout);
+
+            Promise.resolve().then(function () {
+                if (!settled) {
+                    return bridge.send(sendType, JSON.stringify(body));
+                }
+            }).catch(function (err) {
+                finish(err);
+            });
+        });
+    }
+
+    function createAjaxAdapter(browseId, onStatus) {
+        return function (dtParams, callback) {
+            const firstOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0
+                ? dtParams.order[0]
+                : null;
+            const req = {
+                browseId: browseId,
+                draw: dtParams.draw || 1,
+                start: dtParams.start || 0,
+                length: dtParams.length || 10,
+                search: dtParams.search && typeof dtParams.search.value === 'string' ? dtParams.search.value : '',
+                order: firstOrder ? { column: firstOrder.column, dir: firstOrder.dir } : null
+            };
+            sendEvent('FWWEBEX_BROWSE_PAGE', 'FWWEBEX_BROWSE_PAGE_RESULT', req)
+                .then(function (res) {
+                    if (typeof onStatus === 'function') {
+                        onStatus('');
+                    }
+                    callback({
+                        draw: res.draw || req.draw,
+                        recordsTotal: res.recordsTotal || 0,
+                        recordsFiltered: res.recordsFiltered || 0,
+                        data: Array.isArray(res.data) ? res.data : []
+                    });
+                })
+                .catch(function (err) {
+                    if (typeof onStatus === 'function') {
+                        onStatus(err && err.message ? err.message : 'Erro ao carregar dados.');
+                    }
+                    callback({
+                        draw: req.draw,
+                        recordsTotal: 0,
+                        recordsFiltered: 0,
+                        data: []
+                    });
+                });
+        };
+    }
+
+    function applyFilterState(browseId, payload, table, badgeEl, onStatus) {
+        return sendEvent('FWWEBEX_BROWSE_FILTER', 'FWWEBEX_BROWSE_FILTER_RESULT', Object.assign({ browseId: browseId }, payload))
+            .then(function (res) {
+                if (badgeEl) {
+                    if (res && res.active) {
+                        badgeEl.textContent = 'Filtros ativos: ' + (res.summary || '');
+                        badgeEl.classList.remove('d-none');
+                    } else {
+                        badgeEl.textContent = '';
+                        badgeEl.classList.add('d-none');
+                    }
+                }
+                if (table && table.ajax && typeof table.ajax.reload === 'function') {
+                    table.ajax.reload();
+                }
+                return res;
+            })
+            .catch(function (err) {
+                if (typeof onStatus === 'function') {
+                    onStatus(err.message);
+                }
+                throw err;
+            });
+    }
+
+    function applySeekState(browseId, payload, table, onStatus) {
+        return sendEvent('FWWEBEX_BROWSE_SEEK', 'FWWEBEX_BROWSE_SEEK_RESULT', Object.assign({ browseId: browseId }, payload))
+            .then(function (res) {
+                if (table && table.ajax && typeof table.ajax.reload === 'function') {
+                    table.ajax.reload();
+                }
+                return res;
+            })
+            .catch(function (err) {
+                if (typeof onStatus === 'function') {
+                    onStatus(err.message);
+                }
+                throw err;
+            });
+    }
+
+    function bindEvents(browseId, table, tableEl, statusEl) {
+        const state = { browseId: browseId, table: table, selectedKey: null };
+        instances.set(browseId, state);
+
+        const doc = root.document;
+        const detailsEl = doc && doc.querySelector ? doc.querySelector('[data-fwwebex-browse-details="' + browseId + '"]') : null;
+        const badgeEl = doc && doc.querySelector ? doc.querySelector('[data-fwwebex-browse-filter-badge="' + browseId + '"]') : null;
+
+        const setStatus = function (msg) {
+            if (statusEl) {
+                statusEl.textContent = msg || '';
+            }
+        };
+
+        const tbody = tableEl && tableEl.querySelector ? tableEl.querySelector('tbody') : null;
+        if (tbody) {
+            tbody.addEventListener('change', function (ev) {
+                const chk = ev.target && ev.target.closest ? ev.target.closest('[data-fwwebex-browse-mark="' + browseId + '"]') : null;
+                if (!chk) {
+                    return;
+                }
+                const keyAttr = chk.getAttribute('data-key');
+                const key = /^\d+$/.test(keyAttr) ? Number(keyAttr) : keyAttr;
+                toggleMark(browseId, { all: false, key: key, checked: !!chk.checked }, setStatus);
+            });
+
+            tbody.addEventListener('click', function (ev) {
+                if (ev.target && ev.target.closest && ev.target.closest('[data-fwwebex-browse-mark]')) {
+                    return;
+                }
+                const rowBtn = ev.target && ev.target.closest ? ev.target.closest('[data-fwwebex-browse-row-action][data-fwwebex-browse-id="' + browseId + '"]') : null;
+                if (rowBtn) {
+                    ev.stopPropagation();
+                    const actionId = rowBtn.getAttribute('data-fwwebex-browse-row-action');
+                    const keyAttr = rowBtn.getAttribute('data-key');
+                    const key = /^\d+$/.test(keyAttr) ? Number(keyAttr) : keyAttr;
+                    sendEvent('FWWEBEX_BROWSE_ACTION', 'FWWEBEX_BROWSE_ACTION_RESULT', {
+                        browseId: browseId,
+                        actionId: actionId,
+                        key: key
+                    }).then(function (res) {
+                        if (res && res.message) {
+                            setStatus(res.message);
+                            showFeedback(browseId, res.message, res.feedbackType || "info");
+                        }
+                        if (res && res.refresh) {
+                            table.ajax.reload(null, false);
+                        }
+                        if (res && Array.isArray(res.reloadTargets)) {
+                            reloadTargets(res.reloadTargets);
+                        }
+                        if (res && res.openModal) {
+                            openModal(res.openModal, res.modalTitle);
+                        }
+                    }).catch(function (err) {
+                        setStatus(err.message);
+                    });
+                    return;
+                }
+                const tr = ev.target && ev.target.closest ? ev.target.closest('tr') : null;
+                if (!tr) {
+                    return;
+                }
+                const rowData = table.row(tr).data();
+                if (!rowData) {
+                    return;
+                }
+                tbody.querySelectorAll('tr.fwwebex-row-selected, tr.table-active').forEach(function (el) {
+                    el.classList.remove('fwwebex-row-selected');
+                    el.classList.remove('table-active');
+                    el.removeAttribute('aria-selected');
+                });
+                tr.classList.add('fwwebex-row-selected');
+                tr.setAttribute('aria-selected', 'true');
+                state.selectedKey = rowData.__key;
+
+                sendEvent('FWWEBEX_BROWSE_SELECT', 'FWWEBEX_BROWSE_SELECT_RESULT', {
+                    browseId: browseId,
+                    key: state.selectedKey
+                }).then(function (res) {
+                    if (res && typeof res.details === 'string') {
+                        setStatus(res.details);
+                    }
+                    if (detailsEl && res && typeof res.detailsHtml === 'string') {
+                        detailsEl.innerHTML = res.detailsHtml;
+                    }
+                    if (res && Array.isArray(res.reloadTargets)) {
+                        reloadTargets(res.reloadTargets);
+                    }
+                }).catch(function (err) {
+                    setStatus(err.message);
+                });
+            });
+
+            tbody.addEventListener('dblclick', function (ev) {
+                const td = ev.target && ev.target.closest ? ev.target.closest('td') : null;
+                const tr = td && td.closest ? td.closest('tr') : null;
+                if (!tr) {
+                    return;
+                }
+                const rowData = table.row(tr).data();
+                if (!rowData) {
+                    return;
+                }
+                const colIndex = td ? td.cellIndex : 0;
+                sendEvent('FWWEBEX_BROWSE_DBLCLICK', 'FWWEBEX_BROWSE_DBLCLICK_RESULT', {
+                    browseId: browseId,
+                    key: rowData.__key,
+                    colIndex: colIndex
+                }).then(function (res) {
+                    if (res && res.message) {
+                        setStatus(res.message);
+                        showFeedback(browseId, res.message, res.feedbackType || "info");
+                    }
+                    if (res && res.refresh) {
+                        table.ajax.reload(null, false);
+                    }
+                    if (res && Array.isArray(res.reloadTargets)) {
+                        reloadTargets(res.reloadTargets);
+                    }
+                    if (res && res.openModal) {
+                        openModal(res.openModal, res.modalTitle);
+                    }
+                }).catch(function (err) {
+                    setStatus(err.message);
+                });
+            });
+        }
+
+        if (doc && typeof doc.querySelectorAll === 'function') {
+            // Botoes de acao (toolbar ou painel lateral de opcoes)
+            doc.querySelectorAll('[data-fwwebex-browse-action][data-fwwebex-browse-id="' + browseId + '"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const actionId = btn.getAttribute('data-fwwebex-browse-action');
+                    sendEvent('FWWEBEX_BROWSE_ACTION', 'FWWEBEX_BROWSE_ACTION_RESULT', {
+                        browseId: browseId,
+                        actionId: actionId,
+                        key: state.selectedKey
+                    }).then(function (res) {
+                        if (res && res.message) {
+                            setStatus(res.message);
+                            showFeedback(browseId, res.message, res.feedbackType || "info");
+                        }
+                        if (res && res.refresh) {
+                            table.ajax.reload(null, false);
+                        }
+                        if (res && Array.isArray(res.reloadTargets)) {
+                            reloadTargets(res.reloadTargets);
+                        }
+                        if (res && res.openModal) {
+                            openModal(res.openModal, res.modalTitle);
+                        }
+                    }).catch(function (err) {
+                        setStatus(err.message);
+                    });
+                });
+            });
+
+            // Checkbox Marcar / Desmarcar pagina (WebExMarkBrowse - injetado via DOM sem aspas em JSON)
+            const hostElForMark = doc.getElementById ? doc.getElementById(browseId) : null;
+            let markAllEl = doc.querySelector ? doc.querySelector('[data-fwwebex-browse-mark-all="' + browseId + '"]') : null;
+            if (!markAllEl && hostElForMark && hostElForMark.getAttribute && hostElForMark.getAttribute('data-fwwebex-browse-mark-enabled') === 'true' && tableEl && tableEl.querySelector && doc.createElement) {
+                const thMark = tableEl.querySelector('thead th.fwwebex-mark-col') || tableEl.querySelector('thead th');
+                if (thMark) {
+                    markAllEl = doc.createElement('input');
+                    markAllEl.type = 'checkbox';
+                    markAllEl.className = 'form-check-input';
+                    markAllEl.setAttribute('data-fwwebex-browse-mark-all', browseId);
+                    markAllEl.setAttribute('title', 'Marcar / Desmarcar pagina');
+                    thMark.textContent = '';
+                    thMark.appendChild(markAllEl);
+                }
+            }
+            if (markAllEl) {
+                markAllEl.addEventListener('change', function () {
+                    const checked = !!markAllEl.checked;
+                    const keys = [];
+                    if (tbody) {
+                        tbody.querySelectorAll('[data-fwwebex-browse-mark="' + browseId + '"]').forEach(function (chk) {
+                            chk.checked = checked;
+                            const keyAttr = chk.getAttribute('data-key');
+                            keys.push(/^\d+$/.test(keyAttr) ? Number(keyAttr) : keyAttr);
+                        });
+                    }
+                    toggleMark(browseId, { all: true, keys: keys, checked: checked }, setStatus, table);
+                });
+            }
+
+            // Botoes Marcar Todos / Desmarcar Todos / Inverter Selecao (WebExMarkBrowse)
+            doc.querySelectorAll('[data-fwwebex-browse-mark-cmd][data-fwwebex-browse-id="' + browseId + '"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const mode = btn.getAttribute('data-fwwebex-browse-mark-cmd');
+                    toggleMark(browseId, { mode: mode }, setStatus, table);
+                });
+            });
+
+            // Timer de auto-refresh (WebExMBrowse:SetTimer)
+            const hostEl = doc.getElementById ? doc.getElementById(browseId) : null;
+            const timerMs = hostEl && hostEl.getAttribute ? Number(hostEl.getAttribute('data-fwwebex-browse-timer') || 0) : 0;
+            if (timerMs >= 1000 && typeof root.setInterval === 'function') {
+                state.timerId = root.setInterval(function () {
+                    if (table && table.ajax && typeof table.ajax.reload === 'function') {
+                        table.ajax.reload(null, false);
+                    }
+                }, timerMs);
+            }
+
+            // Botao Atualizar
+            doc.querySelectorAll('[data-fwwebex-browse-refresh="' + browseId + '"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    table.ajax.reload(null, false);
+                });
+            });
+
+            // Filtro: Aplicar e Limpar
+            const applyFilterBtn = doc.querySelector('[data-fwwebex-browse-filter-apply="' + browseId + '"]');
+            const clearFilterBtn = doc.querySelector('[data-fwwebex-browse-filter-clear="' + browseId + '"]');
+            if (applyFilterBtn) {
+                applyFilterBtn.addEventListener('click', function () {
+                    const activeIds = [];
+                    doc.querySelectorAll('[data-fwwebex-browse-filter-check="' + browseId + '"]').forEach(function (chk) {
+                        if (chk.checked) {
+                            activeIds.push(chk.value);
+                        }
+                    });
+                    const fieldEl = doc.querySelector('[data-fwwebex-browse-filter-field="' + browseId + '"]');
+                    const operEl = doc.querySelector('[data-fwwebex-browse-filter-oper="' + browseId + '"]');
+                    const valEl = doc.querySelector('[data-fwwebex-browse-filter-value="' + browseId + '"]');
+                    const dynamic = (fieldEl && fieldEl.value && valEl && valEl.value)
+                        ? { field: fieldEl.value, operator: operEl ? operEl.value : 'CONTAINS', value: valEl.value }
+                        : null;
+                    applyFilterState(browseId, { clear: false, activeIds: activeIds, dynamic: dynamic }, table, badgeEl, setStatus);
+                });
+            }
+            if (clearFilterBtn) {
+                clearFilterBtn.addEventListener('click', function () {
+                    doc.querySelectorAll('[data-fwwebex-browse-filter-check="' + browseId + '"]').forEach(function (chk) {
+                        chk.checked = false;
+                    });
+                    const fieldEl = doc.querySelector('[data-fwwebex-browse-filter-field="' + browseId + '"]');
+                    const valEl = doc.querySelector('[data-fwwebex-browse-filter-value="' + browseId + '"]');
+                    if (fieldEl) fieldEl.value = '';
+                    if (valEl) valEl.value = '';
+                    applyFilterState(browseId, { clear: true }, table, badgeEl, setStatus);
+                });
+            }
+
+            // Pesquisa (Seek): Aplicar e Limpar
+            const seekBtn = doc.querySelector('[data-fwwebex-browse-seek-apply="' + browseId + '"]');
+            const seekClearBtn = doc.querySelector('[data-fwwebex-browse-seek-clear="' + browseId + '"]');
+            const seekTermEl = doc.querySelector('[data-fwwebex-browse-seek-term="' + browseId + '"]');
+            const seekFieldEl = doc.querySelector('[data-fwwebex-browse-seek-field="' + browseId + '"]');
+            const runSeek = function () {
+                const field = seekFieldEl ? seekFieldEl.value : '';
+                const selectedOpt = seekFieldEl && seekFieldEl.options ? seekFieldEl.options[seekFieldEl.selectedIndex] : null;
+                const order = selectedOpt && selectedOpt.getAttribute ? Number(selectedOpt.getAttribute('data-order') || 0) : 0;
+                const term = seekTermEl ? seekTermEl.value : '';
+                applySeekState(browseId, { clear: false, field: field, term: term, order: order }, table, setStatus);
+            };
+            if (seekBtn) {
+                seekBtn.addEventListener('click', runSeek);
+            }
+            if (seekTermEl) {
+                seekTermEl.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        runSeek();
+                    }
+                });
+            }
+            if (seekClearBtn) {
+                seekClearBtn.addEventListener('click', function () {
+                    if (seekTermEl) seekTermEl.value = '';
+                    applySeekState(browseId, { clear: true }, table, setStatus);
+                });
+            }
+        }
+
+        const syncSelectionHighlight = function () {
+            if (!tbody || state.selectedKey === null || state.selectedKey === undefined) {
+                return 0;
+            }
+            let matched = 0;
+            tbody.querySelectorAll('tr').forEach(function (tr) {
+                const rowData = table && typeof table.row === 'function' ? table.row(tr).data() : null;
+                if (rowData && String(rowData.__key) === String(state.selectedKey)) {
+                    tr.classList.add('fwwebex-row-selected');
+                    tr.setAttribute('aria-selected', 'true');
+                    matched += 1;
+                } else {
+                    tr.classList.remove('fwwebex-row-selected');
+                    tr.removeAttribute('aria-selected');
+                }
+            });
+            return matched;
+        };
+
+        state.syncSelectionHighlight = syncSelectionHighlight;
+
+        if (table && typeof table.on === 'function') {
+            table.on('draw', syncSelectionHighlight);
+        }
+
+        return state;
+    }
+
+    root.FWWebEx.Browse = {
+        __initialized: true,
+        renderLegend: renderLegend,
+        renderMark: renderMark,
+        renderRowActions: renderRowActions,
+        toggleMark: toggleMark,
+        showFeedback: showFeedback,
+        reloadTargets: reloadTargets,
+        openModal: openModal,
+        sendEvent: sendEvent,
+        createAjaxAdapter: createAjaxAdapter,
+        applyFilterState: applyFilterState,
+        applySeekState: applySeekState,
+        bindEvents: bindEvents,
+        getInstance: function (browseId) {
+            return instances.get(browseId);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+/* FWWebEx.Browse.Runtime.End */
+    endContent
+return(cScript)
+
+method __InitScript() class WebExBrowse
+    local cBrowseID := ::GetFixedID() as character
+    local cTableID  := ::oDataTable:GetFixedID() as character
+    local cStatusID := cBrowseID + "_status" as character
+    local cPostInit as character
+
+    beginContent var cPostInit
+        (function () {
+            const tableEl = document.getElementById("__TABLE_ID__");
+            const statusEl = document.getElementById("__STATUS_ID__");
+            window.FWWebEx.Browse.bindEvents("__BROWSE_ID__", table, tableEl, statusEl);
+        })();
+    endContent
+
+    cPostInit := WebExHelper():StrReplaceEx(;
+        cPostInit;
+        ,{"__TABLE_ID__",cTableID};
+        ,{"__STATUS_ID__",cStatusID};
+        ,{"__BROWSE_ID__",cBrowseID};
+    )
+return(cPostInit)
+
+method __SelectionStyle() class WebExBrowse
+    local cCss as character
+    local oStyle as object
+
+    beginContent var cCss
+        :root {
+            --fwwebex-browse-accent: var(--totvs-red, var(--bs-primary, #0d6efd));
+            --fwwebex-browse-selected-bg: color-mix(in srgb, var(--fwwebex-browse-accent) 18%, transparent);
+        }
+        .fwwebex-browse table.dataTable tbody tr {
+            cursor: pointer;
+            transition: background-color 0.12s ease-in-out;
+        }
+        .fwwebex-browse table.dataTable tbody tr.fwwebex-row-selected,
+        .fwwebex-browse table.dataTable tbody tr.fwwebex-row-selected:hover {
+            background-color: var(--fwwebex-browse-selected-bg) !important;
+        }
+        .fwwebex-browse table.dataTable tbody tr.fwwebex-row-selected > td,
+        .fwwebex-browse table.dataTable tbody tr.fwwebex-row-selected:hover > td {
+            box-shadow: inset 0 0 0 9999px var(--fwwebex-browse-selected-bg) !important;
+            color: var(--totvs-text, var(--bs-emphasis-color, inherit)) !important;
+            font-weight: 600;
+        }
+        .fwwebex-browse table.dataTable tbody tr.fwwebex-row-selected > td:first-child {
+            border-left: 4px solid var(--fwwebex-browse-accent) !important;
+        }
+        .fwwebex-browse .form-check-input {
+            cursor: pointer;
+            accent-color: var(--fwwebex-browse-accent);
+        }
+        .fwwebex-browse .form-check-input:checked,
+        .fwwebex-browse .form-check-input[type="checkbox"]:indeterminate {
+            background-color: var(--fwwebex-browse-accent) !important;
+            border-color: var(--fwwebex-browse-accent) !important;
+        }
+        .fwwebex-browse .form-check-input:focus {
+            border-color: var(--fwwebex-browse-accent) !important;
+            box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--fwwebex-browse-accent) 28%, transparent) !important;
+        }
+    endContent
+
+    oStyle := WebExStyle():New()
+    oStyle:SetFixedID("fwwebex_browse_selection_style")
+    oStyle:SetContent(cCss)
+return(oStyle)
+
+method __SerializeRowActions() class WebExBrowse
+    local aList := Array(0) as array
+    local cJson as character
+    local jItem as json
+    local jWrap := JSONObject():New() as json
+    local nI as numeric
+
+    for nI := 1 to Len(::aRowActions)
+        jItem := JSONObject():New()
+        jItem["id"]    := ::aRowActions[nI][1]
+        jItem["label"] := ::aRowActions[nI][2]
+        jItem["icon"]  := ::aRowActions[nI][4]
+        jItem["cls"]   := ::aRowActions[nI][5]
+        aAdd(aList,jItem)
+    next nI
+
+    jWrap["items"] := aList
+    cJson := StrTran(jWrap:ToJSON(),'"',"&quot;")
+    FreeObj(@jWrap)
+    FWFreeArray(@aList)
+return(cJson)
+
+method __ConfigureDataTable() class WebExBrowse
+    local cAjaxFn as character
+    local cBrowseID := ::GetFixedID() as character
+    local cStatusID := cBrowseID + "_status" as character
+    local jFields as json
+    local jOptions := JSONObject():New() as json
+
+    WebExBrowseDispatcher():Register(self)
+    ::AddInHeader(::__SelectionStyle())
+    ::SetAttr("data-fwwebex-browse-feedback-mode",::cFeedbackMode)
+    if (!Empty(::aRowActions))
+        ::SetAttr("data-fwwebex-row-actions",::__SerializeRowActions())
+    endif
+
+    jFields := ::__BuildDataTableConfig()
+    ::oDataTable:SetDataTableFields(jFields)
+
+    jOptions["pageLength"] := ::nPageLength
+    jOptions["processing"] := .T.
+    jOptions["dom"]        := "Blfrtip"
+    ::oDataTable:SetDataTableOptions(jOptions)
+
+    cAjaxFn := 'window.FWWebEx.Browse.createAjaxAdapter("' + cBrowseID + '", function(msg){ const el = document.getElementById("' + cStatusID + '"); if (el) el.textContent = msg || ""; })'
+    ::oDataTable:SetAjaxFunction(cAjaxFn)
+    ::oDataTable:EnableServerSide(::lServerSide)
+    ::oDataTable:SetPostInitJS(::__InitScript())
+
+    FreeObj(@jFields)
+    FreeObj(@jOptions)
+return(self)
+
+method __RenderControlHTML() class WebExBrowse
+return(_Super:RenderHTML())
+
+method RenderHTML() class WebExBrowse
+    local cBrowseID := ::GetFixedID() as character
+    local cHTML as character
+    local cStatusID := cBrowseID + "_status" as character
+    local oRuntimeScript as object
+    local oStatus as object
+    local oTableWrap as object
+    local oToolbar as object
+
+    ::__ConfigureDataTable()
+    if (ValType(::oDataTable) == "O")
+        ::oDataTable:SetTableTitle("")
+    endif
+
+    oToolbar := ::__BuildToolbar()
+    ::AddChild(oToolbar)
+
+    if (::cFeedbackMode == "HEADER")
+        ::AddChild(::__BuildFeedbackSlot())
+    endif
+
+    oTableWrap := WebExDiv():New()
+    oTableWrap:AddClass("table-responsive")
+    oTableWrap:AddChild(::oDataTable)
+    ::AddChild(oTableWrap)
+
+    if (::cFeedbackMode == "FOOTER")
+        ::AddChild(::__BuildFeedbackSlot())
+    endif
+
+    oStatus := WebExDiv():New()
+    oStatus:SetFixedID(cStatusID)
+    oStatus:AddClass("small text-muted mt-2")
+    oStatus:SetAttr("role","status")
+    oStatus:SetAttr("aria-live","polite")
+    ::AddChild(oStatus)
+
+    if (ValType(::oLegend) == "O" .and. ::oLegend:Count() > 0)
+        ::AddChild(::oLegend:BuildModal(cBrowseID))
+    endif
+
+    oRuntimeScript := WebExScript():New()
+    oRuntimeScript:SetContent(::__RuntimeScript())
+    ::AddChild(oRuntimeScript)
+
+    cHTML := _Super:RenderHTML()
+
+return(cHTML)
+
+method Clean() class WebExBrowse
+    local nI as numeric
+    local oCol as object
+
+    WebExBrowseDispatcher():Unregister(::GetFixedID())
+
+    if (ValType(::oProvider) == "O")
+        ::oProvider:Clean()
+        FreeObj(@::oProvider)
+    endif
+    if (ValType(::oFilter) == "O")
+        ::oFilter:Clean()
+        FreeObj(@::oFilter)
+    endif
+    if (ValType(::oSeek) == "O")
+        ::oSeek:Clean()
+        FreeObj(@::oSeek)
+    endif
+    if (ValType(::oLegend) == "O")
+        ::oLegend:Clean()
+        FreeObj(@::oLegend)
+    endif
+
+    for nI := 1 to Len(::aColumns)
+        oCol := ::aColumns[nI]
+        if (ValType(oCol) == "O")
+            oCol:Clean()
+            FreeObj(@oCol)
+        endif
+    next nI
+
+    FWFreeArray(@::aColumns)
+    FWFreeArray(@::aChildRelations)
+    FWFreeArray(@::aLegends)
+    FWFreeArray(@::aButtons)
+    FWFreeArray(@::aRowActions)
+
+    ::bChange      := NIL
+    ::bDoubleClick := NIL
+
+    _Super:Clean()
+return(self)

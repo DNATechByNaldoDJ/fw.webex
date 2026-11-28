@@ -2,8 +2,39 @@
      * Change  ! Fix  % Optimize  + Add  - Remove  ; Comment
    Entries may not always be in chronological/commit order.
    See license at the end of file.
-   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add new example page 037)"
+   (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm")+" UTC naldodj (Add WebEx browse components and examples)"
  */
+
+2026-11-28 17:11 UTC naldodj (Add WebEx browse components and examples)
+  Add WebEx browse components and examples
+    Introduce server-side browse providers, DataTables integration, filtering, seeking, legends, batch marking, and master-detail relations over TWebChannel.
+    Add FormBrowse and Layer components, runtime contract tests, and examples 038–043;
+      update the example registry and instruction-file version.
+        - .github/instructions/tds-vscode-1-0-2.instructions.md
+        + include/fw.webex.browse.th
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.column.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.dispatcher.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.filter.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.legend.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.provider.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.relation.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.seek.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.browse.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.form.browse.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.layer.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.mark.browse.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/fw.webex.mbrowse.tlpp
+        + src/fw.webex/contrib/fw.webex.browse/README.md
+        + src/fw.webex/contrib/fw.webex.browse/tests/browse-runtime.test.mjs
+        + src/fw.webex/tests/fw.webex.examples/038/fw.webex.example.038.tlpp
+        + src/fw.webex/tests/fw.webex.examples/038/README.md
+        + src/fw.webex/tests/fw.webex.examples/039/fw.webex.example.039.tlpp
+        + src/fw.webex/tests/fw.webex.examples/039/README.md
+        + src/fw.webex/tests/fw.webex.examples/040/fw.webex.example.040.tlpp
+        + src/fw.webex/tests/fw.webex.examples/041/fw.webex.example.041.tlpp
+        + src/fw.webex/tests/fw.webex.examples/042/fw.webex.example.042.tlpp
+        + src/fw.webex/tests/fw.webex.examples/043/fw.webex.example.043.tlpp
+        * src/fw.webex/tests/fw.webex.examples/000/fw.webex.example.000.tlpp
 
 2026-10-01 22:01 UTC naldodj (Add new example page 037)
   + src/fw.webex/tests/fw.webex.examples/037/fw.webex.example.037.tlpp

@@ -14,6 +14,8 @@ Released to Public Domain.
 using namespace FWWebEx
 using namespace FWWebEx.Tools
 
+#define __FWWEBEX_EXAMPLES__ 999
+
 /*
     Obs.:   Para chamada atraves do Menu do Protheus inclua FWWeb000 como funcao de usuario
             Em 01/07/2025 as 15:21:10 a equipe da TOTVS ainda nao resolveu a questao de funcoes TLPP com Nomes Longos no MENU.
@@ -66,7 +68,7 @@ static procedure FWWebExExample_000()
     local nRight as numeric
 
     local nExample as numeric
-    local nExamples:=37 as numeric
+    local nExamples:=__FWWEBEX_EXAMPLES__ as numeric
 
     local oTDlg as object
     local oTMenu as object
@@ -97,6 +99,7 @@ static procedure FWWebExExample_000()
     jFWWebExExamples["FWWebEx"]["ASCIIArt"]:=JSONObject():New()
     jFWWebExExamples["FWWebEx"]["Runtime"]:=JSONObject():New()
     jFWWebExExamples["FWWebEx"]["Labels"]:=JSONObject():New()
+    jFWWebExExamples["FWWebEx"]["Browse"]:=JSONObject():New()
 
     for nExample:=1 to nExamples
         cExample:="u_FWWebExExample_"+StrZero(nExample,3)
@@ -131,6 +134,8 @@ static procedure FWWebExExample_000()
             jFWWebExExamples["FWWebEx"]["Runtime"][cExample]:=&("{||"+cExample+"()}")
         case (cRight$"031|032|033|034")
             jFWWebExExamples["FWWebEx"]["Labels"][cExample]:=&("{||"+cExample+"()}")
+        case (cRight$"038|039|040|041|042|043")
+            jFWWebExExamples["FWWebEx"]["Browse"][cExample]:=&("{||"+cExample+"()}")
         endcase
     next nExample
 

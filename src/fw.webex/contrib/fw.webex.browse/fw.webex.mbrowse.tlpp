@@ -1,0 +1,395 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExMBrowse - Equivalente Web para FWMBrowse (SX3, SIX, MenuDef, Filial, Timer)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExMBrowse from WebExFormBrowse
+
+    public data aFields         as array
+    public data aFilial         as array
+    public data aMenuOptions    as array
+
+    public data bTimerAction    as codeblock
+
+    public data cMenuDef        as character
+
+    public data lAutoLoadSX3    as logical
+    public data lAutoLoadSIX    as logical
+    public data lSeeAll         as logical
+
+    public data nExecuteDef     as numeric
+    public data nTimerInterval  as numeric
+
+    private method __ApplyBranchFilter() as object
+    private method __LoadMenuDefButtons() as object
+    private method __LoadSX3Columns() as object
+    private method __LoadSIXOrders() as object
+    private method __ExecuteMenuOption(aMenuItem as array) as variant
+
+    public method New(cDescription as character) as object
+
+    // API compativel com FWMBrowse
+    public method SetFields(aFields as array) as object
+    public method SetMenuDef(xMenuDef as variant) as object
+    public method SetFilial(aFilial as array) as object
+    public method SetSeeAll(lSeeAll as logical) as object
+    public method SetTimer(bTimerAction as codeblock,nInterval as numeric) as object
+    public method SetExecuteDef(nOption as numeric) as object
+    public method SetAutoLoadSX3(lAuto as logical) as object
+    public method SetAutoLoadSIX(lAuto as logical) as object
+
+    public method CheckPerm(cFunction as character,nOption as numeric) as logical
+    public method RenderHTML() as character
+    public method Clean() as object
+
+endclass
+
+method New(cDescription) class WebExMBrowse
+    paramtype 1 var cDescription as character optional default ""
+
+    _Super:New(cDescription)
+
+    ::aFields        := Array(0)
+    ::aFilial        := Array(0)
+    ::aMenuOptions   := Array(0)
+
+    ::cMenuDef       := ""
+    ::lAutoLoadSX3   := .T.
+    ::lAutoLoadSIX   := .T.
+    ::lSeeAll        := .F.
+    ::nExecuteDef    := 0
+    ::nTimerInterval := 0
+
+return(self)
+
+method SetFields(aFields) class WebExMBrowse
+    paramtype 1 var aFields as array
+    ::aFields := aFields
+return(self)
+
+method SetMenuDef(xMenuDef) class WebExMBrowse
+    paramtype 1 var xMenuDef as character,array
+    if (ValType(xMenuDef) == "C")
+        ::cMenuDef := AllTrim(xMenuDef)
+    elseif (ValType(xMenuDef) == "A")
+        ::aMenuOptions := xMenuDef
+    endif
+return(self)
+
+method SetFilial(aFilial) class WebExMBrowse
+    paramtype 1 var aFilial as array
+    ::aFilial := aFilial
+return(self)
+
+method SetSeeAll(lSeeAll) class WebExMBrowse
+    paramtype 1 var lSeeAll as logical
+    ::lSeeAll := lSeeAll
+return(self)
+
+method SetTimer(bTimerAction,nInterval) class WebExMBrowse
+    paramtype 1 var bTimerAction as block optional
+    paramtype 2 var nInterval    as numeric optional default 30000
+    ::bTimerAction   := bTimerAction
+    ::nTimerInterval := Max(1000,nInterval)
+return(self)
+
+method SetExecuteDef(nOption) class WebExMBrowse
+    paramtype 1 var nOption as numeric
+    ::nExecuteDef := nOption
+return(self)
+
+method SetAutoLoadSX3(lAuto) class WebExMBrowse
+    paramtype 1 var lAuto as logical
+    ::lAutoLoadSX3 := lAuto
+return(self)
+
+method SetAutoLoadSIX(lAuto) class WebExMBrowse
+    paramtype 1 var lAuto as logical
+    ::lAutoLoadSIX := lAuto
+return(self)
+
+method CheckPerm(cFunction,nOption) class WebExMBrowse
+    paramtype 1 var cFunction as character optional default ""
+    paramtype 2 var nOption   as numeric optional default 0
+    // Hook extensivel para integracao com MPUserHasAccess / PswRet
+return(.T.)
+
+method __ApplyBranchFilter() class WebExMBrowse
+    local cFilField as character
+    local cFilExpr := "" as character
+    local nI as numeric
+
+    if (Empty(::cAlias) .or. ::lSeeAll)
+        return(self)
+    endif
+    if ((ValType(::oProvider) != "O") .or. (::oProvider:GetType() != FWWEBEX_BROWSE_DATA_TABLE))
+        return(self)
+    endif
+
+    cFilField := PrefixoCpo(::cAlias) + "_FILIAL"
+    if (Select(::cAlias) > 0 .and. (::cAlias)->(FieldPos(cFilField)) > 0)
+        if (!Empty(::aFilial))
+            for nI := 1 to Len(::aFilial)
+                if (nI > 1)
+                    cFilExpr += " .Or. "
+                endif
+                cFilExpr += ::cAlias + "->" + cFilField + " == '" + ::aFilial[nI] + "'"
+            next nI
+            cFilExpr := "(" + cFilExpr + ")"
+        else
+            cFilExpr := ::cAlias + "->" + cFilField + " == '" + xFilial(::cAlias) + "'"
+        endif
+
+        if (Empty(::cFilterDefault))
+            ::SetFilterDefault(cFilExpr)
+        elseif (!(cFilField $ ::cFilterDefault))
+            ::SetFilterDefault("(" + cFilExpr + ") .And. (" + ::cFilterDefault + ")")
+        endif
+    endif
+return(self)
+
+method __LoadSX3Columns() class WebExMBrowse
+    local aAllFields as array
+    local aUseFields := Array(0) as array
+    local cBrowseFlag as character
+    local cField as character
+    local cPicture as character
+    local cTitle as character
+    local cType as character
+    local nAlign as numeric
+    local nDecimal as numeric
+    local nI as numeric
+    local nSize as numeric
+    local oCol as object
+    local oError as object
+
+    if (!::lAutoLoadSX3 .or. Empty(::cAlias) .or. !Empty(::aColumns))
+        return(self)
+    endif
+    if ((ValType(::oProvider) == "O") .and. (::oProvider:GetType() != FWWEBEX_BROWSE_DATA_TABLE))
+        return(self)
+    endif
+
+    try
+        if (!Empty(::aFields))
+            aUseFields := aClone(::aFields)
+        else
+            aAllFields := FWSX3Util():GetAllFields(::cAlias,.F.)
+            for nI := 1 to Len(aAllFields)
+                cField := aAllFields[nI]
+                cBrowseFlag := Upper(AllTrim(cValToChar(GetSX3Cache(cField,"X3_BROWSE"))))
+                if (cBrowseFlag == "S")
+                    aAdd(aUseFields,cField)
+                endif
+            next nI
+            FWFreeArray(@aAllFields)
+        endif
+
+        for nI := 1 to Len(aUseFields)
+            cField   := Upper(AllTrim(aUseFields[nI]))
+            cTitle   := AllTrim(cValToChar(GetSX3Cache(cField,"X3_TITULO")))
+            cType    := Upper(AllTrim(cValToChar(GetSX3Cache(cField,"X3_TIPO"))))
+            cPicture := AllTrim(cValToChar(GetSX3Cache(cField,"X3_PICTURE")))
+            nSize    := GetSX3Cache(cField,"X3_TAMANHO")
+            nDecimal := GetSX3Cache(cField,"X3_DECIMAL")
+
+            if (Empty(cTitle))
+                cTitle := cField
+            endif
+            if (Empty(cType))
+                cType := "C"
+            endif
+            if (ValType(nSize) != "N" .or. nSize <= 0)
+                nSize := 15
+            endif
+            if (ValType(nDecimal) != "N")
+                nDecimal := 0
+            endif
+
+            nAlign := if(cType == "N",FWWEBEX_BROWSE_ALIGN_RIGHT,if(cType $ "D|L",FWWEBEX_BROWSE_ALIGN_CENTER,FWWEBEX_BROWSE_ALIGN_LEFT))
+
+            oCol := WebExBrowseColumn():New(cTitle,cField,cType,cPicture,nAlign,nSize,nDecimal)
+            oCol:SetField(cField)
+            ::AddColumn(oCol)
+        next nI
+    catch oError
+        ConOut("FWWebEx.WebExMBrowse:__LoadSX3Columns -> " + oError:Description)
+        FreeObj(@oError)
+    endtry
+
+    FWFreeArray(@aUseFields)
+return(self)
+
+method __LoadSIXOrders() class WebExMBrowse
+    local aArea := FWGetArea() as array
+    local aChave as array
+    local cDesc as character
+    local cFirstField as character
+    local nOrd := 0 as numeric
+    local oError as object
+
+    if (!::lAutoLoadSIX .or. Empty(::cAlias) .or. (ValType(::oSeek) == "O" .and. !Empty(::oSeek:aOrders)))
+        FWRestArea(aArea)
+        FWFreeArray(@aArea)
+        return(self)
+    endif
+    if ((ValType(::oProvider) == "O") .and. (::oProvider:GetType() != FWWEBEX_BROWSE_DATA_TABLE))
+        FWRestArea(aArea)
+        FWFreeArray(@aArea)
+        return(self)
+    endif
+
+    try
+        if (Select("SIX") > 0)
+            SIX->(dbSetOrder(1))
+            if (SIX->(dbSeek(::cAlias)))
+                while (!SIX->(Eof()) .and. SIX->INDICE == ::cAlias)
+                    nOrd++
+                    cDesc := AllTrim(SIX->DESCRICAO)
+                    aChave := StrTokArr2(AllTrim(SIX->CHAVE),"+",.T.)
+                    cFirstField := ""
+                    if (Len(aChave) >= 2 .and. "_FILIAL" $ Upper(aChave[1]))
+                        cFirstField := Upper(AllTrim(aChave[2]))
+                    elseif (Len(aChave) >= 1)
+                        cFirstField := Upper(AllTrim(aChave[1]))
+                    endif
+                    if (!Empty(cFirstField))
+                        ::AddSeekOrder(cDesc,cFirstField,nOrd)
+                    endif
+                    FWFreeArray(@aChave)
+                    SIX->(dbSkip())
+                end while
+            endif
+        endif
+    catch oError
+        ConOut("FWWebEx.WebExMBrowse:__LoadSIXOrders -> " + oError:Description)
+        FreeObj(@oError)
+    endtry
+
+    FWRestArea(aArea)
+    FWFreeArray(@aArea)
+return(self)
+
+method __ExecuteMenuOption(aMenuItem) class WebExMBrowse
+    local bExec as codeblock
+    local cFunc as character
+    local jRet := JSONObject():New() as json
+    local nOption as numeric
+    local oError as object
+
+    paramtype 1 var aMenuItem as array
+
+    cFunc   := if(Len(aMenuItem) >= 2 .and. ValType(aMenuItem[2]) == "C",AllTrim(aMenuItem[2]),"")
+    nOption := if(Len(aMenuItem) >= 4 .and. ValType(aMenuItem[4]) == "N",aMenuItem[4],0)
+
+    if (!::CheckPerm(cFunc,nOption))
+        jRet["refresh"] := .F.
+        jRet["message"] := "Usuario sem permissao para a opcao: " + aMenuItem[1]
+        return(jRet)
+    endif
+
+    if (Len(aMenuItem) >= 2 .and. ValType(aMenuItem[2]) == "B")
+        bExec := aMenuItem[2]
+        FreeObj(@jRet)
+        return(Eval(bExec,self,::At(),::GetRowData()))
+    endif
+
+    if (!Empty(cFunc))
+        try
+            if ("VIEWDEF." $ Upper(cFunc))
+                FWExecView(aMenuItem[1],SubStr(cFunc,9),nOption)
+            elseif (FindFunction(cFunc))
+                &(cFunc + "(::cAlias,::At()," + AllTrim(cValToChar(nOption)) + ")")
+            else
+                jRet["refresh"] := .F.
+                jRet["message"] := "Funcao nao localizada no RPO: " + cFunc
+                return(jRet)
+            endif
+            jRet["refresh"] := .T.
+            jRet["message"] := "Opcao '" + aMenuItem[1] + "' concluida."
+        catch oError
+            jRet["refresh"] := .F.
+            jRet["message"] := "Erro ao executar '" + aMenuItem[1] + "': " + oError:Description
+            FreeObj(@oError)
+        endtry
+    endif
+
+return(jRet)
+
+method __LoadMenuDefButtons() class WebExMBrowse
+    local aItem as array
+    local aMenu := Array(0) as array
+    local cBtnClass as character
+    local nI as numeric
+    local nOp as numeric
+    local oError as object
+
+    if (!Empty(::aMenuOptions))
+        aMenu := ::aMenuOptions
+    elseif (!Empty(::cMenuDef))
+        try
+            aMenu := FwLoadMenuDef(::cMenuDef)
+        catch oError
+            aMenu := Array(0)
+            ConOut("FWWebEx.WebExMBrowse:__LoadMenuDefButtons -> " + oError:Description)
+            FreeObj(@oError)
+        endtry
+    endif
+
+    for nI := 1 to Len(aMenu)
+        aItem := aMenu[nI]
+        if (ValType(aItem) != "A" .or. Len(aItem) < 2)
+            loop
+        endif
+        nOp := if(Len(aItem) >= 4 .and. ValType(aItem[4]) == "N",aItem[4],0)
+        do case
+            case (nOp == 3)
+                cBtnClass := "btn btn-sm btn-success"
+            case (nOp == 4)
+                cBtnClass := "btn btn-sm btn-primary"
+            case (nOp == 5)
+                cBtnClass := "btn btn-sm btn-outline-danger"
+            otherwise
+                cBtnClass := "btn btn-sm btn-outline-primary"
+        end case
+        ::AddButton(aItem[1],{|oBrw,xKey,xRow| ::__ExecuteMenuOption(aItem) },"",cBtnClass)
+        if ((::nExecuteDef > 0) .and. (nOp == ::nExecuteDef) .and. (ValType(::bDoubleClick) != "B"))
+            ::SetDoubleClick({|oBrw,xKey,xRow| ::__ExecuteMenuOption(aItem) })
+        endif
+    next nI
+
+return(self)
+
+method RenderHTML() class WebExMBrowse
+    local cHTML as character
+
+    ::__ApplyBranchFilter()
+    ::__LoadSX3Columns()
+    ::__LoadSIXOrders()
+    ::__LoadMenuDefButtons()
+
+    if (::nTimerInterval > 0)
+        ::SetAttr("data-fwwebex-browse-timer",AllTrim(cValToChar(::nTimerInterval)))
+    endif
+
+    cHTML := _Super:RenderHTML()
+return(cHTML)
+
+method Clean() class WebExMBrowse
+    FWFreeArray(@::aFields)
+    FWFreeArray(@::aFilial)
+    FWFreeArray(@::aMenuOptions)
+    ::bTimerAction := NIL
+    _Super:Clean()
+return(self)

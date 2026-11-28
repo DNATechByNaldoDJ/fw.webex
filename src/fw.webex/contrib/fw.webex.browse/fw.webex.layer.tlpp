@@ -1,0 +1,246 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExLayer - Equivalente Web para FWLayer sobre WebExRow/WebExCol (Bootstrap 5)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExLayer from WebExDiv
+
+    public data jLines      as json
+    public data jColumns    as json
+    public data jWindows    as json
+    public data jWinTitles  as json
+
+    private method __PercToBootstrapCol(nPerc as numeric) as numeric
+    private method __EnsureDefaultLine() as object
+    private method __WinKey(cColID as character,cWinID as character) as character
+
+    public method New() as object
+
+    public method AddLine(cID as character,nHeightPerc as numeric,lFixed as logical) as object
+    public method AddCollumn(cID as character,nWidthPerc as numeric,lFixed as logical,cLineID as character) as object
+    public method AddWindow(cColID as character,cWinID as character,cTitle as character,nHeightPerc as numeric,lEnableCollapse as logical,lEnableTitle as logical,cLineID as character) as object
+
+    public method GetLinePanel(cLineID as character) as object
+    public method GetColPanel(cColID as character) as object
+    public method GetWinPanel(cColID as character,cWinID as character) as object
+    public method SetWinTitle(cColID as character,cWinID as character,cTitle as character) as object
+
+    public method Clean() as object
+
+endclass
+
+method New() class WebExLayer
+    ::jLines     := JSONObject():New()
+    ::jColumns   := JSONObject():New()
+    ::jWindows   := JSONObject():New()
+    ::jWinTitles := JSONObject():New()
+    _Super:New()
+    ::AddClass("fwwebex-layer container-fluid px-0")
+return(self)
+
+method __PercToBootstrapCol(nPerc) class WebExLayer
+    local nCols as numeric
+    paramtype 1 var nPerc as numeric optional default 100
+    nCols := Round((Max(1,Min(100,nPerc)) / 100) * 12,0)
+    nCols := Max(1,Min(12,nCols))
+return(nCols)
+
+method __EnsureDefaultLine() class WebExLayer
+    local cDefault := "LINE_DEFAULT" as character
+    if (!::jLines:HasProperty(cDefault))
+        ::AddLine(cDefault,100,.F.)
+    endif
+return(::jLines[cDefault])
+
+method __WinKey(cColID,cWinID) class WebExLayer
+    paramtype 1 var cColID as character
+    paramtype 2 var cWinID as character
+return(Upper(AllTrim(cColID)) + "::" + Upper(AllTrim(cWinID)))
+
+method AddLine(cID,nHeightPerc,lFixed) class WebExLayer
+    local cKey as character
+    local oRow as object
+
+    paramtype 1 var cID         as character
+    paramtype 2 var nHeightPerc as numeric optional default 100
+    paramtype 3 var lFixed      as logical optional default .F.
+
+    cKey := Upper(AllTrim(cID))
+    oRow := WebExRow():New(2)
+    oRow:AddClass("fwwebex-layer-line mb-2")
+    oRow:SetAttr("data-fwwebex-layer-line",cKey)
+    if (nHeightPerc > 0 .and. nHeightPerc < 100 .and. lFixed)
+        oRow:SetAttr("style","min-height:" + tlpp.ToStr(nHeightPerc) + "vh;")
+    endif
+
+    ::jLines[cKey] := oRow
+    ::AddChild(oRow)
+
+return(oRow)
+
+method AddCollumn(cID,nWidthPerc,lFixed,cLineID) class WebExLayer
+    local cColKey as character
+    local cLineKey as character
+    local nBootstrapCol as numeric
+    local oCol as object
+    local oLine as object
+
+    paramtype 1 var cID        as character
+    paramtype 2 var nWidthPerc as numeric optional default 100
+    paramtype 3 var lFixed     as logical optional default .F.
+    paramtype 4 var cLineID    as character optional default ""
+
+    cColKey := Upper(AllTrim(cID))
+    if (Empty(cLineID))
+        oLine := ::__EnsureDefaultLine()
+    else
+        cLineKey := Upper(AllTrim(cLineID))
+        if (!::jLines:HasProperty(cLineKey))
+            oLine := ::AddLine(cLineKey,100,.F.)
+        else
+            oLine := ::jLines[cLineKey]
+        endif
+    endif
+
+    nBootstrapCol := ::__PercToBootstrapCol(nWidthPerc)
+    oCol := WebExCol():New(nBootstrapCol)
+    oCol:AddClass("fwwebex-layer-col d-flex flex-column gap-2")
+    oCol:SetAttr("data-fwwebex-layer-col",cColKey)
+
+    ::jColumns[cColKey] := oCol
+    oLine:AddChild(oCol)
+
+return(oCol)
+
+method AddWindow(cColID,cWinID,cTitle,nHeightPerc,lEnableCollapse,lEnableTitle,cLineID) class WebExLayer
+    local cBodyID as character
+    local cColKey as character
+    local cWinKey as character
+    local oBody as object
+    local oCard as object
+    local oCol as object
+    local oCollapseWrap as object
+    local oHeader as object
+    local oTitle as object
+    local oToggle as object
+
+    paramtype 1 var cColID          as character
+    paramtype 2 var cWinID          as character
+    paramtype 3 var cTitle          as character optional default ""
+    paramtype 4 var nHeightPerc     as numeric optional default 100
+    paramtype 5 var lEnableCollapse as logical optional default .T.
+    paramtype 6 var lEnableTitle    as logical optional default .T.
+    paramtype 7 var cLineID         as character optional default ""
+
+    cColKey := Upper(AllTrim(cColID))
+    if (!::jColumns:HasProperty(cColKey))
+        oCol := ::AddCollumn(cColKey,100,.F.,cLineID)
+    else
+        oCol := ::jColumns[cColKey]
+    endif
+
+    cWinKey := ::__WinKey(cColID,cWinID)
+
+    oCard := WebExDiv():New()
+    oCard:AddClass("card shadow-sm fwwebex-layer-window")
+    oCard:SetAttr("data-fwwebex-layer-win",cWinKey)
+
+    cBodyID := oCard:GetFixedID() + "_body"
+
+    if (lEnableTitle)
+        oHeader := WebExDiv():New()
+        oHeader:AddClass("card-header d-flex justify-content-between align-items-center py-2")
+
+        oTitle := WebExSpan():New()
+        oTitle:AddClass("fw-semibold")
+        oTitle:SetContent(cTitle)
+        oHeader:AddChild(oTitle)
+        ::jWinTitles[cWinKey] := oTitle
+
+        if (lEnableCollapse)
+            oToggle := WebExControl():New("button")
+            oToggle:SetAttr("type","button")
+            oToggle:SetAttr("data-bs-toggle","collapse")
+            oToggle:SetAttr("data-bs-target","#" + cBodyID)
+            oToggle:SetAttr("aria-expanded","true")
+            oToggle:SetAttr("aria-controls",cBodyID)
+            oToggle:AddClass("btn btn-sm btn-outline-secondary py-0 px-2")
+            oToggle:SetContent("-")
+            oHeader:AddChild(oToggle)
+        endif
+
+        oCard:AddChild(oHeader)
+    endif
+
+    oCollapseWrap := WebExDiv():New()
+    oCollapseWrap:SetFixedID(cBodyID)
+    oCollapseWrap:AddClass("collapse show")
+
+    oBody := WebExDiv():New()
+    oBody:AddClass("card-body p-2")
+    oCollapseWrap:AddChild(oBody)
+
+    oCard:AddChild(oCollapseWrap)
+    oCol:AddChild(oCard)
+
+    ::jWindows[cWinKey] := oBody
+
+return(oBody)
+
+method GetLinePanel(cLineID) class WebExLayer
+    local cKey as character
+    paramtype 1 var cLineID as character
+    cKey := Upper(AllTrim(cLineID))
+    if (::jLines:HasProperty(cKey))
+        return(::jLines[cKey])
+    endif
+return(NIL)
+
+method GetColPanel(cColID) class WebExLayer
+    local cKey as character
+    paramtype 1 var cColID as character
+    cKey := Upper(AllTrim(cColID))
+    if (::jColumns:HasProperty(cKey))
+        return(::jColumns[cKey])
+    endif
+return(NIL)
+
+method GetWinPanel(cColID,cWinID) class WebExLayer
+    local cWinKey as character
+    paramtype 1 var cColID as character
+    paramtype 2 var cWinID as character
+    cWinKey := ::__WinKey(cColID,cWinID)
+    if (::jWindows:HasProperty(cWinKey))
+        return(::jWindows[cWinKey])
+    endif
+return(NIL)
+
+method SetWinTitle(cColID,cWinID,cTitle) class WebExLayer
+    local cWinKey as character
+    paramtype 1 var cColID as character
+    paramtype 2 var cWinID as character
+    paramtype 3 var cTitle as character
+    cWinKey := ::__WinKey(cColID,cWinID)
+    if (::jWinTitles:HasProperty(cWinKey))
+        ::jWinTitles[cWinKey]:SetContent(cTitle)
+    endif
+return(self)
+
+method Clean() class WebExLayer
+    FreeObj(@::jLines)
+    FreeObj(@::jColumns)
+    FreeObj(@::jWindows)
+    FreeObj(@::jWinTitles)
+    _Super:Clean()
+return(self)

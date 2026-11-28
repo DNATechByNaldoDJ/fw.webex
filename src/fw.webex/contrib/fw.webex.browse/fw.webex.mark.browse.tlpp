@@ -1,0 +1,587 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExMarkBrowse - Equivalente Web para FWMarkBrowse (selecao em lote + semaforo)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExMarkBrowse from WebExMBrowse
+
+    public data bAfterMark     as codeblock
+    public data bAllMark       as codeblock
+    public data bValid         as codeblock
+
+    public data cFieldMark     as character
+    public data cLastRejectMsg as character
+    public data cMark          as character
+    public data cValidMessage  as character
+
+    public data jMarkedKeys    as json
+
+    public data lInvert        as logical
+    public data lSemaphore     as logical
+    public data lShowSelBtns   as logical
+
+    protected method __BuildDataTableConfig() as json
+    protected method __BuildOptionsPanel(oTarget as object) as object
+    private method __GetFilteredKeys() as array
+    private method __KeyToStr(xKey as variant) as character
+    private method __PersistTableMark(xKey as variant,lMarked as logical) as logical
+
+    public method New(cDescription as character) as object
+
+    // API compativel com FWMarkBrowse
+    public method SetFieldMark(cFieldMark as character) as object
+    public method SetMark(cMark as character,cAlias as character,cField as character) as object
+    public method GetMark() as character
+    public method SetValid(bValid as codeblock,cValidMessage as character) as object
+    public method SetValidMessage(cValidMessage as character) as object
+    public method SetAfterMark(bAfterMark as codeblock) as object
+    public method SetAllMark(bAllMark as codeblock) as object
+    public method SetInvert(lInvert as logical) as object
+    public method IsInvert() as logical
+    public method SetSemaphore(lSemaphore as logical) as object
+
+    public method IsMark(xKey as variant) as logical
+    public method MarkRec(xKey as variant,lForceState as logical) as logical
+    public method ClearMarks() as object
+    public method MarkAll(lChecked as logical) as numeric
+    public method InvertMarks() as numeric
+    public method SetShowSelectionButtons(lShow as logical) as object
+    public method GetMarkedKeys() as array
+    public method GetMarkedCount() as numeric
+
+    // Handlers sobrescritos/novos
+    public method HandlePageRequest(jRequest as json) as json
+    public method HandleMarkRequest(jRequest as json) as json
+    public method Clean() as object
+
+endclass
+
+method New(cDescription) class WebExMarkBrowse
+    paramtype 1 var cDescription as character optional default ""
+
+    _Super:New(cDescription)
+
+    ::cFieldMark  := ""
+    ::cLastRejectMsg := ""
+    ::cMark          := GetMark()
+    ::cValidMessage  := "Acao nao pode ser completada: registro bloqueado pela validacao."
+    ::jMarkedKeys := JSONObject():New()
+    ::lInvert     := .F.
+    ::lSemaphore   := .F.
+    ::lShowSelBtns := .T.
+    ::SetAttr("data-fwwebex-browse-mark-enabled","true")
+
+return(self)
+
+method __KeyToStr(xKey) class WebExMarkBrowse
+return(AllTrim(cValToChar(xKey)))
+
+method SetFieldMark(cFieldMark) class WebExMarkBrowse
+    paramtype 1 var cFieldMark as character
+    ::cFieldMark := Upper(AllTrim(cFieldMark))
+return(self)
+
+method SetMark(cMark,cAlias,cField) class WebExMarkBrowse
+    paramtype 1 var cMark  as character optional default GetMark()
+    paramtype 2 var cAlias as character optional default ""
+    paramtype 3 var cField as character optional default ""
+    ::cMark := cMark
+    if (!Empty(cAlias))
+        ::SetAlias(cAlias)
+    endif
+    if (!Empty(cField))
+        ::SetFieldMark(cField)
+    endif
+return(self)
+
+method GetMark() class WebExMarkBrowse
+return(::cMark)
+
+method SetValid(bValid,cValidMessage) class WebExMarkBrowse
+    paramtype 1 var bValid        as block
+    paramtype 2 var cValidMessage as character optional
+    ::bValid := bValid
+    if (ValType(cValidMessage) == "C" .and. !Empty(cValidMessage))
+        ::cValidMessage := cValidMessage
+    endif
+return(self)
+
+method SetValidMessage(cValidMessage) class WebExMarkBrowse
+    paramtype 1 var cValidMessage as character
+    ::cValidMessage := cValidMessage
+return(self)
+
+method SetAfterMark(bAfterMark) class WebExMarkBrowse
+    paramtype 1 var bAfterMark as block
+    ::bAfterMark := bAfterMark
+return(self)
+
+method SetAllMark(bAllMark) class WebExMarkBrowse
+    paramtype 1 var bAllMark as block
+    ::bAllMark := bAllMark
+return(self)
+
+method SetInvert(lInvert) class WebExMarkBrowse
+    paramtype 1 var lInvert as logical
+    ::lInvert := lInvert
+return(self)
+
+method IsInvert() class WebExMarkBrowse
+return(::lInvert)
+
+method SetSemaphore(lSemaphore) class WebExMarkBrowse
+    paramtype 1 var lSemaphore as logical
+    ::lSemaphore := lSemaphore
+return(self)
+
+method IsMark(xKey) class WebExMarkBrowse
+    local cKey as character
+    local lHas as logical
+    if (ValType(xKey) == "U")
+        xKey := ::At()
+    endif
+    cKey := ::__KeyToStr(xKey)
+    lHas := ::jMarkedKeys:HasProperty(cKey) .and. (::jMarkedKeys[cKey] == .T.)
+return(if(::lInvert,!lHas,lHas))
+
+method __PersistTableMark(xKey,lMarked) class WebExMarkBrowse
+    local aArea := FWGetArea() as array
+    local lOk := .T. as logical
+    local nFieldPos as numeric
+    local oError as object
+
+    if (Empty(::cAlias) .or. Empty(::cFieldMark))
+        FWRestArea(aArea)
+        FWFreeArray(@aArea)
+        return(.T.)
+    endif
+    if ((ValType(::oProvider) != "O") .or. (::oProvider:GetType() != FWWEBEX_BROWSE_DATA_TABLE))
+        FWRestArea(aArea)
+        FWFreeArray(@aArea)
+        return(.T.)
+    endif
+
+    try
+        if (::oProvider:SeekKey(xKey))
+            nFieldPos := (::cAlias)->(FieldPos(::cFieldMark))
+            if (nFieldPos > 0)
+                if (RecLock(::cAlias,.F.))
+                    (::cAlias)->(FieldPut(nFieldPos,if(lMarked,::cMark,Space(Len(::cMark)))))
+                    (::cAlias)->(MsUnlock())
+                else
+                    lOk := .F.
+                endif
+            endif
+        endif
+    catch oError
+        lOk := .F.
+        ConOut("FWWebEx.WebExMarkBrowse:__PersistTableMark -> " + oError:Description)
+        FreeObj(@oError)
+    endtry
+
+    FWRestArea(aArea)
+    FWFreeArray(@aArea)
+return(lOk)
+
+method MarkRec(xKey,lForceState) class WebExMarkBrowse
+    local cKey as character
+    local lNewState as logical
+    local lValid := .T. as logical
+    local oError as object
+    local xValidRet as variant
+
+    paramtype 1 var xKey        as numeric,character optional
+    paramtype 2 var lForceState as logical optional
+
+    if (ValType(xKey) == "U")
+        xKey := ::At()
+    endif
+
+    if (ValType(::oProvider) == "O")
+        ::oProvider:SeekKey(xKey)
+    endif
+
+    ::cLastRejectMsg := ""
+    if (ValType(::bValid) == "B")
+        try
+            xValidRet := Eval(::bValid,self,xKey,::GetRowData())
+            if (ValType(xValidRet) == "C")
+                lValid := .F.
+                ::cLastRejectMsg := xValidRet
+            else
+                lValid := (ValType(xValidRet) == "L" .and. xValidRet)
+            endif
+        catch oError
+            lValid := .F.
+            ::cLastRejectMsg := "Erro na validacao: " + oError:Description
+            FreeObj(@oError)
+        endtry
+        if (!lValid)
+            if (Empty(::cLastRejectMsg))
+                ::cLastRejectMsg := ::cValidMessage
+            endif
+            return(.F.)
+        endif
+    endif
+
+    cKey      := ::__KeyToStr(xKey)
+    lNewState := if(ValType(lForceState) == "L",lForceState,!::IsMark(xKey))
+
+    if (!::__PersistTableMark(xKey,lNewState))
+        return(.F.)
+    endif
+
+    if (if(::lInvert,!lNewState,lNewState))
+        ::jMarkedKeys[cKey] := .T.
+    elseif (::jMarkedKeys:HasProperty(cKey))
+        ::jMarkedKeys:DelName(cKey)
+    endif
+
+    if (ValType(::bAfterMark) == "B")
+        try
+            Eval(::bAfterMark,self,xKey,lNewState,::GetRowData())
+        catch oError
+            FreeObj(@oError)
+        endtry
+    endif
+
+return(.T.)
+
+method ClearMarks() class WebExMarkBrowse
+    FreeObj(@::jMarkedKeys)
+    ::jMarkedKeys := JSONObject():New()
+    ::lInvert     := .F.
+return(self)
+
+method SetShowSelectionButtons(lShow) class WebExMarkBrowse
+    paramtype 1 var lShow as logical
+    ::lShowSelBtns := lShow
+return(self)
+
+method __GetFilteredKeys() class WebExMarkBrowse
+    local aKeys := Array(0) as array
+    local aRows as array
+    local jAllReq := JSONObject():New() as json
+    local jPage as json
+    local jRow as json
+    local nI as numeric
+
+    if (ValType(::oProvider) != "O")
+        FreeObj(@jAllReq)
+        return(aKeys)
+    endif
+
+    jAllReq["start"]  := 0
+    jAllReq["length"] := -1
+    jAllReq["search"] := ""
+
+    jPage := ::oProvider:GetPage(self,jAllReq,::aColumns,::aLegends)
+    if (ValType(jPage) == "J" .and. jPage:HasProperty("data") .and. ValType(jPage["data"]) == "A")
+        aRows := jPage["data"]
+        for nI := 1 to Len(aRows)
+            jRow := aRows[nI]
+            if (ValType(jRow) == "J" .and. jRow:HasProperty("__key"))
+                aAdd(aKeys,jRow["__key"])
+            endif
+        next nI
+    endif
+
+    FreeObj(@jPage)
+    FreeObj(@jAllReq)
+return(aKeys)
+
+method MarkAll(lChecked) class WebExMarkBrowse
+    local aKeys as array
+    local nCount := 0 as numeric
+    local nI as numeric
+    local oError as object
+
+    paramtype 1 var lChecked as logical optional default .T.
+
+    if (!lChecked)
+        ::ClearMarks()
+    endif
+
+    aKeys := ::__GetFilteredKeys()
+    for nI := 1 to Len(aKeys)
+        if (::MarkRec(aKeys[nI],lChecked))
+            nCount++
+        endif
+    next nI
+
+    if (ValType(::bAllMark) == "B")
+        try
+            Eval(::bAllMark,self,lChecked)
+        catch oError
+            FreeObj(@oError)
+        endtry
+    endif
+
+    FWFreeArray(@aKeys)
+return(nCount)
+
+method InvertMarks() class WebExMarkBrowse
+    local aKeys as array
+    local nCount := 0 as numeric
+    local nI as numeric
+
+    aKeys := ::__GetFilteredKeys()
+    for nI := 1 to Len(aKeys)
+        if (::MarkRec(aKeys[nI]))
+            nCount++
+        endif
+    next nI
+
+    FWFreeArray(@aKeys)
+return(nCount)
+
+method __BuildOptionsPanel(oTarget) class WebExMarkBrowse
+    local cBrowseID := ::GetFixedID() as character
+    local oBtn as object
+    local oDiv as object
+    local oSep as object
+
+    paramtype 1 var oTarget as object
+
+    _Super:__BuildOptionsPanel(oTarget)
+
+    if (::lShowSelBtns)
+        oSep := WebExControl():New("hr")
+        oSep:AddClass("my-2")
+        oTarget:AddChild(oSep)
+
+        oDiv := WebExDiv():New()
+        oDiv:AddClass("d-grid gap-2")
+
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-fwwebex-browse-mark-cmd","all")
+        oBtn:SetAttr("data-fwwebex-browse-id",cBrowseID)
+        oBtn:AddClass("btn btn-sm btn-outline-success text-start")
+        oBtn:SetContent("Marcar Todos")
+        oDiv:AddChild(oBtn)
+
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-fwwebex-browse-mark-cmd","none")
+        oBtn:SetAttr("data-fwwebex-browse-id",cBrowseID)
+        oBtn:AddClass("btn btn-sm btn-outline-secondary text-start")
+        oBtn:SetContent("Desmarcar Todos")
+        oDiv:AddChild(oBtn)
+
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-fwwebex-browse-mark-cmd","invert")
+        oBtn:SetAttr("data-fwwebex-browse-id",cBrowseID)
+        oBtn:AddClass("btn btn-sm btn-outline-warning text-start")
+        oBtn:SetContent("Inverter Selecao")
+        oDiv:AddChild(oBtn)
+
+        oTarget:AddChild(oDiv)
+    endif
+return(self)
+
+method GetMarkedKeys() class WebExMarkBrowse
+    local aNames := ::jMarkedKeys:GetNames() as array
+    local aResult := Array(0) as array
+    local nI as numeric
+    for nI := 1 to Len(aNames)
+        if (::jMarkedKeys[aNames[nI]] == .T.)
+            aAdd(aResult,aNames[nI])
+        endif
+    next nI
+    FWFreeArray(@aNames)
+return(aResult)
+
+method GetMarkedCount() class WebExMarkBrowse
+    local aKeys := ::GetMarkedKeys() as array
+    local nCount := Len(aKeys) as numeric
+    FWFreeArray(@aKeys)
+return(nCount)
+
+method __BuildDataTableConfig() class WebExMarkBrowse
+    local aFields := Array(0) as array
+    local cBrowseID := ::GetFixedID() as character
+    local jBase as json
+    local jMarkCol := JSONObject():New() as json
+    local nI as numeric
+
+    jBase := _Super:__BuildDataTableConfig()
+
+    // Coluna 0: Checkbox de marcacao + selecionar todos no cabecalho
+    jMarkCol["data"]       := "__marked"
+    jMarkCol["title"]      := ""
+    jMarkCol["orderable"]  := .F.
+    jMarkCol["searchable"] := .F.
+    jMarkCol["width"]      := "34px"
+    jMarkCol["className"]  := "text-center fwwebex-mark-col"
+    jMarkCol["bRender"]    := {|| "function(data,type,row){ return window.FWWebEx.Browse.renderMark('" + cBrowseID + "', row.__key, !!data); }" }
+
+    aAdd(aFields,jMarkCol)
+
+    if (jBase:HasProperty("fields") .and. ValType(jBase["fields"]) == "A")
+        for nI := 1 to Len(jBase["fields"])
+            aAdd(aFields,jBase["fields"][nI])
+        next nI
+    endif
+
+    jBase["fields"] := aFields
+return(jBase)
+
+method HandlePageRequest(jRequest) class WebExMarkBrowse
+    local aRows as array
+    local jOrder as json
+    local jResult as json
+    local jRow as json
+    local nI as numeric
+
+    // Desconta 1 coluna extra do checkbox antes de delegar para _Super:HandlePageRequest
+    if (jRequest:HasProperty("order") .and. ValType(jRequest["order"]) == "J")
+        jOrder := jRequest["order"]
+        if (jOrder:HasProperty("column") .and. ValType(jOrder["column"]) == "N")
+            jOrder["column"] := jOrder["column"] - 1
+        endif
+    endif
+
+    jResult := _Super:HandlePageRequest(jRequest)
+
+    if (jResult:HasProperty("data") .and. ValType(jResult["data"]) == "A")
+        aRows := jResult["data"]
+        for nI := 1 to Len(aRows)
+            jRow := aRows[nI]
+            if (ValType(jRow) == "J" .and. jRow:HasProperty("__key"))
+                jRow["__marked"] := ::IsMark(jRow["__key"])
+            endif
+        next nI
+    endif
+
+return(jResult)
+
+method HandleMarkRequest(jRequest) class WebExMarkBrowse
+    local aKeys as array
+    local cFbType := "info" as character
+    local cMode := "" as character
+    local cMsg := "" as character
+    local nMarked := 0 as numeric
+    local nRejected := 0 as numeric
+    local jResult := JSONObject():New() as json
+    local lAll := .F. as logical
+    local lChecked := .F. as logical
+    local lRefresh := .F. as logical
+    local nI as numeric
+    local oError as object
+
+    paramtype 1 var jRequest as json
+
+    if (jRequest:HasProperty("mode") .and. ValType(jRequest["mode"]) == "C")
+        cMode := Lower(AllTrim(jRequest["mode"]))
+    endif
+    if (jRequest:HasProperty("all") .and. ValType(jRequest["all"]) == "L")
+        lAll := jRequest["all"]
+    endif
+    if (jRequest:HasProperty("checked") .and. ValType(jRequest["checked"]) == "L")
+        lChecked := jRequest["checked"]
+    endif
+
+    do case
+        case (cMode == "all")
+            aKeys := ::__GetFilteredKeys()
+            nMarked := ::MarkAll(.T.)
+            nRejected := Max(0,Len(aKeys) - nMarked)
+            FWFreeArray(@aKeys)
+            lRefresh := .T.
+            if (nRejected > 0 .and. nMarked == 0)
+                cMsg := "Acao nao pode ser completada: " + ::cValidMessage
+                cFbType := "warning"
+            elseif (nRejected > 0)
+                cMsg := AllTrim(cValToChar(nMarked)) + " registro(s) marcado(s). " + AllTrim(cValToChar(nRejected)) + " ignorado(s): " + ::cValidMessage
+                cFbType := "warning"
+            else
+                cMsg := AllTrim(cValToChar(nMarked)) + " registro(s) marcado(s)."
+                cFbType := "info"
+            endif
+        case (cMode == "none")
+            ::MarkAll(.F.)
+            lRefresh := .T.
+            cMsg := "Todas as marcacoes foram removidas."
+            cFbType := "info"
+        case (cMode == "invert")
+            aKeys := ::__GetFilteredKeys()
+            nMarked := ::InvertMarks()
+            nRejected := Max(0,Len(aKeys) - nMarked)
+            FWFreeArray(@aKeys)
+            lRefresh := .T.
+            if (nRejected > 0 .and. nMarked == 0)
+                cMsg := "Acao nao pode ser completada: " + ::cValidMessage
+                cFbType := "warning"
+            elseif (nRejected > 0)
+                cMsg := "Selecao invertida (" + AllTrim(cValToChar(::GetMarkedCount())) + " marcado(s)). " + AllTrim(cValToChar(nRejected)) + " bloqueado(s): " + ::cValidMessage
+                cFbType := "warning"
+            else
+                cMsg := "Selecao invertida (" + AllTrim(cValToChar(::GetMarkedCount())) + " marcado(s))."
+                cFbType := "info"
+            endif
+        case (lAll)
+            if (jRequest:HasProperty("keys") .and. ValType(jRequest["keys"]) == "A")
+                aKeys := jRequest["keys"]
+                for nI := 1 to Len(aKeys)
+                    if (::MarkRec(aKeys[nI],lChecked))
+                        nMarked++
+                    else
+                        nRejected++
+                    endif
+                next nI
+            endif
+            if (ValType(::bAllMark) == "B")
+                try
+                    Eval(::bAllMark,self,lChecked)
+                catch oError
+                    FreeObj(@oError)
+                endtry
+            endif
+            lRefresh := .T.
+            if (nRejected > 0)
+                cMsg := AllTrim(cValToChar(::GetMarkedCount())) + " marcado(s). " + AllTrim(cValToChar(nRejected)) + " bloqueado(s): " + ::cValidMessage
+                cFbType := "warning"
+            endif
+        otherwise
+            if (jRequest:HasProperty("key"))
+                if (!::MarkRec(jRequest["key"],lChecked))
+                    nRejected := 1
+                    lRefresh  := .T.
+                    cMsg      := if(!Empty(::cLastRejectMsg),::cLastRejectMsg,::cValidMessage)
+                    cFbType   := "warning"
+                endif
+            endif
+    end case
+
+    jResult["ok"]            := .T.
+    jResult["refresh"]       := lRefresh
+    jResult["markedCount"]   := ::GetMarkedCount()
+    jResult["markedKeys"]    := ::GetMarkedKeys()
+    jResult["rejectedCount"] := nRejected
+    if (!Empty(cMsg))
+        jResult["message"]      := cMsg
+        jResult["feedbackType"] := cFbType
+    endif
+
+return(jResult)
+
+method Clean() class WebExMarkBrowse
+    FreeObj(@::jMarkedKeys)
+    ::bValid     := NIL
+    ::bAfterMark := NIL
+    ::bAllMark   := NIL
+    _Super:Clean()
+return(self)
