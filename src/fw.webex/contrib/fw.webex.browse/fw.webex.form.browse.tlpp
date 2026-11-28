@@ -1,0 +1,403 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExFormBrowse - Equivalente Web para FWFormBrowse sobre WebExLayer
+Organiza: oPanelOptions (acoes) + oPanelBrowse (seek, filter, grid) + oPanelDetails (detalhes)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExFormBrowse from WebExBrowse
+
+    public data bAfterExec       as codeblock
+    public data bBeforeExec      as codeblock
+    public data bDetails         as codeblock
+
+    public data cDetailsTitle    as character
+    public data cOptionsPosition as character
+    public data cOptionsTitle    as character
+
+    public data lDetails         as logical
+    public data lFilter          as logical
+    public data lSeek            as logical
+
+    public data oLayer           as object
+    public data oPanelBrowse     as object
+    public data oPanelDetails    as object
+    public data oPanelOptions    as object
+
+    protected method __BuildOptionsPanel(oTarget as object) as object
+    private method __BuildFilterBanner() as object
+
+    public method New(cDescription as character) as object
+
+    // API compativel com FWFormBrowse
+    public method SetUseFilter(lFilter as logical) as object
+    public method AddFilter(cTitle as character,xExpression as variant,lActive as logical) as character
+    public method CleanFilter() as object
+
+    public method SetSeek(lSeek as logical,aOrders as array) as object
+    public method AddSeekOrder(cTitle as character,cField as character,nOrder as numeric) as object
+
+    public method SetDetails(bDetails as codeblock,cDetailsTitle as character) as object
+    public method DisableDetails() as object
+
+    public method SetBeforeExec(bBeforeExec as codeblock) as object
+    public method SetAfterExec(bAfterExec as codeblock) as object
+    public method SetOptionsPosition(cPosition as character) as object
+    public method SetOptionsTitle(cTitle as character) as object
+
+    public method GetLayer() as object
+
+    // Sobrescritas de eventos e renderizacao
+    public method HandleSelectRequest(jRequest as json) as json
+    public method HandleActionRequest(jRequest as json) as json
+    public method RenderHTML() as character
+    public method Clean() as object
+
+endclass
+
+method New(cDescription) class WebExFormBrowse
+    paramtype 1 var cDescription as character optional default ""
+
+    _Super:New(cDescription)
+
+    ::cDetailsTitle    := "Detalhes"
+    ::cOptionsPosition := "RIGHT"
+    ::cOptionsTitle    := "Opcoes"
+
+    ::lDetails         := .F.
+    ::lFilter          := .F.
+    ::lSeek            := .F.
+
+    ::oLayer           := WebExLayer():New()
+
+return(self)
+
+method SetUseFilter(lFilter) class WebExFormBrowse
+    paramtype 1 var lFilter as logical optional default .T.
+    ::lFilter := lFilter
+    if (::lFilter .and. ValType(::oFilter) != "O")
+        ::oFilter := WebExBrowseFilter():New()
+    endif
+return(self)
+
+method AddFilter(cTitle,xExpression,lActive) class WebExFormBrowse
+    paramtype 1 var cTitle      as character
+    paramtype 2 var xExpression as block,character
+    paramtype 3 var lActive     as logical optional default .F.
+    ::SetUseFilter(.T.)
+return(::oFilter:AddFilter(cTitle,xExpression,lActive))
+
+method CleanFilter() class WebExFormBrowse
+    if (ValType(::oFilter) == "O")
+        ::oFilter:ClearFilters()
+    endif
+return(self)
+
+method SetSeek(lSeek,aOrders) class WebExFormBrowse
+    paramtype 1 var lSeek   as logical optional default .T.
+    paramtype 2 var aOrders as array optional
+    ::lSeek := lSeek
+    if (::lSeek .and. ValType(::oSeek) != "O")
+        ::oSeek := WebExBrowseSeek():New()
+    endif
+    if (::lSeek .and. ValType(aOrders) == "A")
+        ::oSeek:SetOrders(aOrders)
+    endif
+return(self)
+
+method AddSeekOrder(cTitle,cField,nOrder) class WebExFormBrowse
+    paramtype 1 var cTitle as character
+    paramtype 2 var cField as character
+    paramtype 3 var nOrder as numeric optional default 0
+    ::SetSeek(.T.)
+    if (nOrder > 0)
+        ::oSeek:AddOrder(cTitle,cField,nOrder)
+    else
+        ::oSeek:AddOrder(cTitle,cField)
+    endif
+return(self)
+
+method SetDetails(bDetails,cDetailsTitle) class WebExFormBrowse
+    paramtype 1 var bDetails      as block
+    paramtype 2 var cDetailsTitle as character optional default "Detalhes"
+    ::bDetails      := bDetails
+    ::cDetailsTitle := cDetailsTitle
+    ::lDetails      := .T.
+return(self)
+
+method DisableDetails() class WebExFormBrowse
+    ::lDetails := .F.
+return(self)
+
+method SetBeforeExec(bBeforeExec) class WebExFormBrowse
+    paramtype 1 var bBeforeExec as block
+    ::bBeforeExec := bBeforeExec
+return(self)
+
+method SetAfterExec(bAfterExec) class WebExFormBrowse
+    paramtype 1 var bAfterExec as block
+    ::bAfterExec := bAfterExec
+return(self)
+
+method SetOptionsPosition(cPosition) class WebExFormBrowse
+    paramtype 1 var cPosition as character
+    ::cOptionsPosition := Upper(AllTrim(cPosition))
+return(self)
+
+method SetOptionsTitle(cTitle) class WebExFormBrowse
+    paramtype 1 var cTitle as character
+    ::cOptionsTitle := cTitle
+return(self)
+
+method GetLayer() class WebExFormBrowse
+return(::oLayer)
+
+method HandleSelectRequest(jRequest) class WebExFormBrowse
+    local jResult as json
+    local oError as object
+    local xHtml as variant
+
+    jResult := _Super:HandleSelectRequest(jRequest)
+
+    if (jResult:HasProperty("ok") .and. jResult["ok"] .and. ::lDetails .and. ValType(::bDetails) == "B")
+        try
+            xHtml := Eval(::bDetails,self,::At(),::GetRowData())
+            if (ValType(xHtml) == "C")
+                jResult["detailsHtml"] := xHtml
+            endif
+        catch oError
+            jResult["detailsHtml"] := '<div class="text-danger small">Erro ao montar detalhes: ' + oError:Description + '</div>'
+            FreeObj(@oError)
+        endtry
+    endif
+
+return(jResult)
+
+method HandleActionRequest(jRequest) class WebExFormBrowse
+    local cActionID := "" as character
+    local jResult as json
+    local lAllow := .T. as logical
+    local oError as object
+
+    if (jRequest:HasProperty("actionId") .and. ValType(jRequest["actionId"]) == "C")
+        cActionID := jRequest["actionId"]
+    endif
+
+    if (ValType(::bBeforeExec) == "B")
+        try
+            lAllow := Eval(::bBeforeExec,self,cActionID)
+        catch oError
+            lAllow := .F.
+            FreeObj(@oError)
+        endtry
+        if (!(ValType(lAllow) == "L" .and. lAllow))
+            jResult := JSONObject():New()
+            jResult["ok"]      := .F.
+            jResult["error"]   := "Execucao bloqueada por BeforeExec."
+            jResult["refresh"] := .F.
+            return(jResult)
+        endif
+    endif
+
+    jResult := _Super:HandleActionRequest(jRequest)
+
+    if (ValType(::bAfterExec) == "B")
+        try
+            Eval(::bAfterExec,self,cActionID,jResult)
+        catch oError
+            FreeObj(@oError)
+        endtry
+    endif
+
+return(jResult)
+
+method __BuildOptionsPanel(oTarget) class WebExFormBrowse
+    local aBtn as array
+    local cBrowseID := ::GetFixedID() as character
+    local nI as numeric
+    local oBtn as object
+    local oStack as object
+
+    paramtype 1 var oTarget as object
+
+    oStack := WebExDiv():New()
+    oStack:AddClass("d-grid gap-2")
+
+    for nI := 1 to Len(::aButtons)
+        aBtn := ::aButtons[nI]
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-fwwebex-browse-action",aBtn[1])
+        oBtn:SetAttr("data-fwwebex-browse-id",cBrowseID)
+        oBtn:AddClass(aBtn[5] + " text-start")
+        if (!Empty(aBtn[4]))
+            oBtn:SetContent('<i class="' + aBtn[4] + ' me-2"></i>' + aBtn[2])
+        else
+            oBtn:SetContent(aBtn[2])
+        endif
+        oStack:AddChild(oBtn)
+    next nI
+
+    if (::lFilter .and. ValType(::oFilter) == "O")
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-bs-toggle","collapse")
+        oBtn:SetAttr("data-bs-target","#" + ::oFilter:GetPanelID(cBrowseID))
+        oBtn:AddClass("btn btn-sm btn-outline-warning text-start")
+        oBtn:SetContent("Filtros")
+        oStack:AddChild(oBtn)
+    endif
+
+    if (ValType(::oLegend) == "O" .and. ::oLegend:Count() > 0)
+        oBtn := WebExControl():New("button")
+        oBtn:SetAttr("type","button")
+        oBtn:SetAttr("data-bs-toggle","modal")
+        oBtn:SetAttr("data-bs-target","#" + ::oLegend:GetModalID(cBrowseID))
+        oBtn:AddClass("btn btn-sm btn-outline-info text-start")
+        oBtn:SetContent("Legenda")
+        oStack:AddChild(oBtn)
+    endif
+
+    oBtn := WebExControl():New("button")
+    oBtn:SetAttr("type","button")
+    oBtn:SetAttr("data-fwwebex-browse-refresh",cBrowseID)
+    oBtn:AddClass("btn btn-sm btn-outline-secondary text-start")
+    oBtn:SetContent("Atualizar")
+    oStack:AddChild(oBtn)
+
+    oTarget:AddChild(oStack)
+
+return(self)
+
+method __BuildFilterBanner() class WebExFormBrowse
+    local cBrowseID := ::GetFixedID() as character
+    local cSummary := "" as character
+    local lActive := .F. as logical
+    local oBanner as object
+
+    if (ValType(::oFilter) == "O")
+        lActive  := ::oFilter:HasActiveFilter()
+        cSummary := ::oFilter:GetActiveSummary()
+    endif
+
+    oBanner := WebExDiv():New()
+    oBanner:SetAttr("data-fwwebex-browse-filter-badge",cBrowseID)
+    oBanner:AddClass("alert alert-warning py-1 px-2 small mb-2" + if(lActive,""," d-none"))
+    oBanner:SetContent(if(lActive,"Filtros ativos: " + cSummary,""))
+
+return(oBanner)
+
+method RenderHTML() class WebExFormBrowse
+    local cBrowseID := ::GetFixedID() as character
+    local cHTML as character
+    local cStatusID := cBrowseID + "_status" as character
+    local lHasRightOptions as logical
+    local nCenterPerc as numeric
+    local oDetailsBox as object
+    local oRuntimeScript as object
+    local oStatus as object
+    local oTableWrap as object
+
+    ::__ConfigureDataTable()
+    if (ValType(::oDataTable) == "O")
+        ::oDataTable:SetTableTitle("")
+    endif
+
+    lHasRightOptions := (::cOptionsPosition == "RIGHT")
+    nCenterPerc      := if(lHasRightOptions,84,100)
+
+    ::oLayer:AddLine("MAIN",100,.F.)
+    ::oLayer:AddCollumn("CENTER",nCenterPerc,.F.,"MAIN")
+
+    ::oPanelBrowse := ::oLayer:AddWindow("CENTER","BROWSE",if(!Empty(::cDescription),::cDescription,"Browse"),80,.T.,.T.,"MAIN")
+
+    // Barra de pesquisa (WebExBrowseSeek)
+    if (::lSeek .and. ValType(::oSeek) == "O")
+        ::oPanelBrowse:AddChild(::oSeek:BuildBar(cBrowseID))
+    endif
+
+    // Painel recolhivel de filtros + banner de filtros ativos (equivalente a ::oFiltrate)
+    if (::lFilter .and. ValType(::oFilter) == "O")
+        ::oPanelBrowse:AddChild(::oFilter:BuildPanel(cBrowseID,::aColumns))
+        ::oPanelBrowse:AddChild(::__BuildFilterBanner())
+    endif
+
+    // Feedback no cabecalho (quando SetFeedbackMode("HEADER"))
+    if (::cFeedbackMode == "HEADER")
+        ::oPanelBrowse:AddChild(::__BuildFeedbackSlot())
+    endif
+
+    // Tabela DataTables
+    oTableWrap := WebExDiv():New()
+    oTableWrap:AddClass("table-responsive")
+    oTableWrap:AddChild(::oDataTable)
+    ::oPanelBrowse:AddChild(oTableWrap)
+
+    // Feedback no rodape (quando SetFeedbackMode("FOOTER"))
+    if (::cFeedbackMode == "FOOTER")
+        ::oPanelBrowse:AddChild(::__BuildFeedbackSlot())
+    endif
+
+    // Barra de status
+    oStatus := WebExDiv():New()
+    oStatus:SetFixedID(cStatusID)
+    oStatus:AddClass("small text-muted mt-2")
+    oStatus:SetAttr("role","status")
+    oStatus:SetAttr("aria-live","polite")
+    ::oPanelBrowse:AddChild(oStatus)
+
+    // Painel de Detalhes abaixo do Browse (equivalente a ::oPanelDetails do FWFormBrowse)
+    if (::lDetails .and. ValType(::bDetails) == "B")
+        ::oPanelDetails := ::oLayer:AddWindow("CENTER","DETAILS",::cDetailsTitle,20,.T.,.T.,"MAIN")
+        oDetailsBox := WebExDiv():New()
+        oDetailsBox:SetAttr("data-fwwebex-browse-details",cBrowseID)
+        oDetailsBox:AddClass("small text-muted")
+        oDetailsBox:SetContent("Selecione um registro para visualizar os detalhes.")
+        ::oPanelDetails:AddChild(oDetailsBox)
+    endif
+
+    // Painel lateral de Opcoes (equivalente a ::oPanelOptions do FWFormBrowse)
+    if (lHasRightOptions)
+        ::oLayer:AddCollumn("RIGHT",16,.T.,"MAIN")
+        ::oPanelOptions := ::oLayer:AddWindow("RIGHT","OPTIONS",::cOptionsTitle,100,.T.,.T.,"MAIN")
+        ::__BuildOptionsPanel(::oPanelOptions)
+    else
+        ::oPanelOptions := ::oLayer:AddWindow("CENTER","OPTIONS",::cOptionsTitle,15,.T.,.T.,"MAIN")
+        ::__BuildOptionsPanel(::oPanelOptions)
+    endif
+
+    ::AddChild(::oLayer)
+
+    if (ValType(::oLegend) == "O" .and. ::oLegend:Count() > 0)
+        ::AddChild(::oLegend:BuildModal(cBrowseID))
+    endif
+
+    oRuntimeScript := WebExScript():New()
+    oRuntimeScript:SetContent(::__RuntimeScript())
+    ::AddChild(oRuntimeScript)
+
+    // Chama WebExControl:RenderHTML() evitando duplicar o layout simples do WebExBrowse
+    cHTML := ::__RenderControlHTML()
+
+return(cHTML)
+
+method Clean() class WebExFormBrowse
+    if (ValType(::oLayer) == "O")
+        ::oLayer:Clean()
+        FreeObj(@::oLayer)
+    endif
+    ::bBeforeExec := NIL
+    ::bAfterExec  := NIL
+    ::bDetails    := NIL
+    _Super:Clean()
+return(self)

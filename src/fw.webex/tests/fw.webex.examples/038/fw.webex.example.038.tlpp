@@ -1,0 +1,132 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Exemplo 038: WebExBrowse (Fase 1 - Core Grid sobre TWebChannel)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.browse.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+user function FWWebExExample_038()
+    local bExecute as codeblock
+    local cTitle := "FWWebEx :: Example 038 - WebExBrowse (Fase 1)" as character
+    bExecute := {|| FWWebExBrowseExample038() }
+    FWExampleTools():Execute(bExecute,cTitle,.F.,.F.)
+return
+
+static procedure FWWebExBrowseExample038()
+
+    local aClientes as array
+    local bPrevious as codeblock
+    local cFile := "fwwebex-example-038" as character
+    local cHTML := "" as character
+    local cTitle := "FWWebEx :: Example 038 - WebExBrowse" as character
+    local oBrowse as object
+    local oChannel as object
+    local oError as object
+    local oPage as object
+
+    // Dados de demonstracao (pode ser trocado por SetDataTable() + SetAlias("SA1")
+    // ou SetDataQuery() + SetQuery("SELECT ..."))
+    aClientes := {;
+        {"000001","01","DNATech Engenharia Protheus Ltda",  18450.75, Date() - 5,  "A"};
+        ,{"000002","01","Industria Metalurgica Capixaba SA", 92310.00, Date() - 12, "A"};
+        ,{"000003","02","Distribuidora Vitoria Express",      3200.50, Date() - 30, "B"};
+        ,{"000004","01","Comercial Serra Logistica Ltda",    41900.10, Date() - 2,  "A"};
+        ,{"000005","01","Tech Solutions ERP Brasil",          1250.00, Date() - 45, "P"};
+        ,{"000006","01","Alimentos Espirito Santo Ltda",     65400.00, Date() - 1,  "A"};
+        ,{"000007","02","Transportadora Litoral Sul",         8900.25, Date() - 18, "B"};
+        ,{"000008","01","Construtora Atlantica SA",         125000.00, Date() - 7,  "A"};
+        ,{"000009","01","Servicos Digitais Vix ME",           4780.90, Date() - 3,  "P"};
+        ,{"000010","01","Agroindustrial Rio Doce Ltda",      53210.40, Date() - 9,  "A"};
+        ,{"000011","01","Quimica Industrial Sudeste",        29800.00, Date() - 21, "A"};
+        ,{"000012","02","Varejo Central Atacadista",         15600.60, Date() - 14, "B"};
+    }
+
+    oChannel := WebApp():GetTWebChannel(.T.)
+    if (!oChannel:lConnected)
+        MsgStop("Nao foi possivel conectar o TWebChannel.",cTitle)
+        FWFreeArray(@aClientes)
+        return
+    endif
+
+    bPrevious := WebExBrowseDispatcher():BindChannel(oChannel)
+
+    try
+        BEGIN FWWEBEX oPage CLASS WebExPage ARGS cTitle
+            WITH WEBEXOBJECT CLASS WebExBody
+                WITH WEBEXOBJECT CLASS WebExMain
+                    WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                        .:AddClass("px-2 py-2")
+                        WITH WEBEXOBJECT oBrowse CLASS WebExBrowse ARGS "Clientes (Demonstracao WebExBrowse)"
+
+                            .:SetDataArray()
+                            .:SetArray(aClientes)
+                            .:SetPageLength(5)
+                            .:SetServerSide(.T.)
+
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "A" },"GREEN", "Ativo")
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "P" },"YELLOW","Pendente")
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "B" },"RED",   "Bloqueado")
+
+                            .:AddColumn({"Codigo",   {|oBrw,aRow| aRow[1] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER, 8, 0})
+                            .:AddColumn({"Loja",     {|oBrw,aRow| aRow[2] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER, 4, 0})
+                            .:AddColumn({"Cliente",  {|oBrw,aRow| aRow[3] },"C","",              FWWEBEX_BROWSE_ALIGN_LEFT,  40, 0})
+                            .:AddColumn({"Saldo",    {|oBrw,aRow| aRow[4] },"N","@E 999,999.99", FWWEBEX_BROWSE_ALIGN_RIGHT, 14, 2})
+                            .:AddColumn({"Ult. Mov.",{|oBrw,aRow| aRow[5] },"D","",              FWWEBEX_BROWSE_ALIGN_CENTER,10, 0})
+
+                            .:SetChange({|oBrw,nKey,aRow| "Selecionado: [" + aRow[1] + "/" + aRow[2] + "] " + aRow[3] })
+
+                            .:SetDoubleClick({|oBrw,nKey,aRow|;
+                                "Duplo clique no cliente " + aRow[3] + " (chave " + tlpp.ToStr(nKey) + ")";
+                            })
+
+                            .:AddButton("Alternar Status",{|oBrw,nKey,aRow| ToggleStatus(aRow) },"","btn btn-sm btn-primary")
+
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END FWWEBEX
+        if (WebFileTools():HTMLFromControl(oPage,oPage:GetFWWebExTmpPath(),@cFile,@cHTML,.T.))
+            if (!Empty(cFile) .and. File(cFile))
+                FWExampleTools():HtmlFileShow(cHTML,cTitle,cFile,oChannel,oChannel:bJSToAdvPL)
+            endif
+        endif
+
+    catch oError
+        MsgStop("Falha ao abrir WebExBrowse: " + oError:Description,cTitle)
+        FreeObj(@oError)
+    endtry
+
+    oChannel:bJSToAdvPL := bPrevious
+
+    if (ValType(oBrowse) == "O")
+        oBrowse:Clean()
+        FreeObj(@oBrowse)
+    endif
+
+    WEBEXOBJECT CLEAN
+
+    if (!Empty(cFile) .and. File(cFile))
+        fErase(cFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+    FWFreeArray(@aClientes)
+
+return
+
+static function ToggleStatus(aRow as array) as variant
+    if (ValType(aRow) != "A")
+        return("Selecione um cliente antes de alternar o status.")
+    endif
+    aRow[6] := if(aRow[6] == "A", "B", "A")
+return(.T.)

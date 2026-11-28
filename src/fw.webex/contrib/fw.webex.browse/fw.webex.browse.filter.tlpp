@@ -1,0 +1,355 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseFilter - Equivalente Web para FWFilter (filtros pre-definidos + dinamico)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExBrowseFilter from ClassBase
+
+    public data aFilters       as array
+    public data jDynamicFilter as json
+
+    private method __EvalDynamic(jRowJSON as json) as logical
+
+    public method New() as object
+    public method AddFilter(cTitle as character,xExpression as variant,lActive as logical) as character
+    public method SetActiveFilters(aActiveIDs as array) as object
+    public method SetDynamicFilter(jFilter as json) as object
+    public method ClearFilters() as object
+    public method HasActiveFilter() as logical
+    public method GetActiveSummary() as character
+    public method MatchRow(oBrowse as object,xRowData as variant,nRowIndex as numeric,jRowJSON as json) as logical
+    public method GetPanelID(cBrowseID as character) as character
+    public method BuildPanel(cBrowseID as character,aColumns as array) as object
+    public method Clean() as object
+
+endclass
+
+method New() class WebExBrowseFilter
+    _Super:New()
+    ::aFilters       := Array(0)
+    ::jDynamicFilter := JSONObject():New()
+return(self)
+
+method AddFilter(cTitle,xExpression,lActive) class WebExBrowseFilter
+    local cID as character
+    paramtype 1 var cTitle      as character
+    paramtype 2 var xExpression as block,character
+    paramtype 3 var lActive     as logical optional default .F.
+
+    cID := "flt_" + AllTrim(cValToChar(Len(::aFilters) + 1))
+    aAdd(::aFilters,{cID,cTitle,xExpression,lActive})
+return(cID)
+
+method SetActiveFilters(aActiveIDs) class WebExBrowseFilter
+    local nI as numeric
+    paramtype 1 var aActiveIDs as array
+    for nI := 1 to Len(::aFilters)
+        ::aFilters[nI][4] := (aScan(aActiveIDs,{|cID| cID == ::aFilters[nI][1] }) > 0)
+    next nI
+return(self)
+
+method SetDynamicFilter(jFilter) class WebExBrowseFilter
+    paramtype 1 var jFilter as json optional
+    FreeObj(@::jDynamicFilter)
+    if (ValType(jFilter) == "J")
+        ::jDynamicFilter := JSONObject():New()
+        if (jFilter:HasProperty("field") .and. ValType(jFilter["field"]) == "C")
+            ::jDynamicFilter["field"] := AllTrim(jFilter["field"])
+        endif
+        if (jFilter:HasProperty("operator") .and. ValType(jFilter["operator"]) == "C")
+            ::jDynamicFilter["operator"] := Upper(AllTrim(jFilter["operator"]))
+        endif
+        if (jFilter:HasProperty("value") .and. ValType(jFilter["value"]) == "C")
+            ::jDynamicFilter["value"] := AllTrim(jFilter["value"])
+        endif
+    else
+        ::jDynamicFilter := JSONObject():New()
+    endif
+return(self)
+
+method ClearFilters() class WebExBrowseFilter
+    local nI as numeric
+    for nI := 1 to Len(::aFilters)
+        ::aFilters[nI][4] := .F.
+    next nI
+    FreeObj(@::jDynamicFilter)
+    ::jDynamicFilter := JSONObject():New()
+return(self)
+
+method HasActiveFilter() class WebExBrowseFilter
+    local nI as numeric
+    for nI := 1 to Len(::aFilters)
+        if (::aFilters[nI][4])
+            return(.T.)
+        endif
+    next nI
+    if ((ValType(::jDynamicFilter) == "J") .and. ::jDynamicFilter:HasProperty("field") .and. !Empty(::jDynamicFilter["field"]) .and. ::jDynamicFilter:HasProperty("value") .and. !Empty(::jDynamicFilter["value"]))
+        return(.T.)
+    endif
+return(.F.)
+
+method GetActiveSummary() class WebExBrowseFilter
+    local aParts := Array(0) as array
+    local cSummary := "" as character
+    local nI as numeric
+
+    for nI := 1 to Len(::aFilters)
+        if (::aFilters[nI][4])
+            aAdd(aParts,::aFilters[nI][2])
+        endif
+    next nI
+
+    if ((ValType(::jDynamicFilter) == "J") .and. ::jDynamicFilter:HasProperty("field") .and. !Empty(::jDynamicFilter["field"]) .and. ::jDynamicFilter:HasProperty("value") .and. !Empty(::jDynamicFilter["value"]))
+        aAdd(aParts,::jDynamicFilter["field"] + " " + ::jDynamicFilter["operator"] + " " + ::jDynamicFilter["value"])
+    endif
+
+    for nI := 1 to Len(aParts)
+        if (nI > 1)
+            cSummary += " | "
+        endif
+        cSummary += aParts[nI]
+    next nI
+
+    FWFreeArray(@aParts)
+return(cSummary)
+
+method __EvalDynamic(jRowJSON) class WebExBrowseFilter
+    local cField as character
+    local cOper as character
+    local cRowVal as character
+    local cTarget as character
+    local nRowNum as numeric
+    local nTargetNum as numeric
+    local xCellVal as variant
+
+    if ((ValType(::jDynamicFilter) != "J") .or. !::jDynamicFilter:HasProperty("field") .or. Empty(::jDynamicFilter["field"]))
+        return(.T.)
+    endif
+    if (!::jDynamicFilter:HasProperty("value") .or. Empty(::jDynamicFilter["value"]))
+        return(.T.)
+    endif
+
+    cField  := ::jDynamicFilter["field"]
+    cOper   := if(::jDynamicFilter:HasProperty("operator"),::jDynamicFilter["operator"],"CONTAINS")
+    cTarget := Upper(AllTrim(::jDynamicFilter["value"]))
+
+    if ((ValType(jRowJSON) != "J") .or. !jRowJSON:HasProperty(cField))
+        return(.F.)
+    endif
+
+    xCellVal := jRowJSON[cField]
+    cRowVal  := Upper(AllTrim(if(ValType(xCellVal) == "C",xCellVal,cValToChar(xCellVal))))
+
+    do case
+        case (cOper == "=")
+            return(cRowVal == cTarget)
+        case (cOper == "!=")
+            return(cRowVal != cTarget)
+        case (cOper == "STARTS")
+            return(Left(cRowVal,Len(cTarget)) == cTarget)
+        case (cOper == "CONTAINS")
+            return(cTarget $ cRowVal)
+        case (cOper $ ">|>=|<|<=")
+            // Remove separadores de milhar PT-BR e normaliza virgula decimal
+            nRowNum    := Val(StrTran(StrTran(cRowVal,".",""),",","."))
+            nTargetNum := Val(StrTran(StrTran(cTarget,".",""),",","."))
+            do case
+                case (cOper == ">")
+                    return(nRowNum > nTargetNum)
+                case (cOper == ">=")
+                    return(nRowNum >= nTargetNum)
+                case (cOper == "<")
+                    return(nRowNum < nTargetNum)
+                case (cOper == "<=")
+                    return(nRowNum <= nTargetNum)
+            end case
+    end case
+
+return(.T.)
+
+method MatchRow(oBrowse,xRowData,nRowIndex,jRowJSON) class WebExBrowseFilter
+    local cExpr as character
+    local lOk as logical
+    local nI as numeric
+    local oError as object
+
+    for nI := 1 to Len(::aFilters)
+        if (!::aFilters[nI][4])
+            loop
+        endif
+        lOk := .F.
+        try
+            if (ValType(::aFilters[nI][3]) == "B")
+                lOk := Eval(::aFilters[nI][3],oBrowse,xRowData,nRowIndex,jRowJSON)
+            elseif (ValType(::aFilters[nI][3]) == "C")
+                cExpr := ::aFilters[nI][3]
+                lOk   := &(cExpr)
+            endif
+        catch oError
+            lOk := .F.
+            FreeObj(@oError)
+        endtry
+        if (!(ValType(lOk) == "L" .and. lOk))
+            return(.F.)
+        endif
+    next nI
+
+return(::__EvalDynamic(jRowJSON))
+
+method GetPanelID(cBrowseID) class WebExBrowseFilter
+    paramtype 1 var cBrowseID as character
+return(cBrowseID + "_filter_panel")
+
+method BuildPanel(cBrowseID,aColumns) class WebExBrowseFilter
+    local aItem as array
+    local aOpers as array
+    local cPanelID as character
+    local nI as numeric
+    local oApplyBtn as object
+    local oBody as object
+    local oCheck as object
+    local oCheckWrap as object
+    local oClearBtn as object
+    local oCol as object
+    local oCol1 as object
+    local oCol2 as object
+    local oCol3 as object
+    local oCol4 as object
+    local oDynRow as object
+    local oFieldSel as object
+    local oInput as object
+    local oLbl as object
+    local oOperSel as object
+    local oOpt as object
+    local oPanel as object
+    local oPresetWrap as object
+
+    paramtype 1 var cBrowseID as character
+    paramtype 2 var aColumns  as array
+
+    cPanelID := ::GetPanelID(cBrowseID)
+
+    oPanel := WebExDiv():New()
+    oPanel:SetFixedID(cPanelID)
+    oPanel:AddClass("collapse mb-3")
+    oPanel:SetAttr("data-fwwebex-browse-filter-panel",cBrowseID)
+
+    oBody := WebExDiv():New()
+    oBody:AddClass("card card-body bg-body-tertiary p-3")
+
+    // Filtros pre-definidos (checkboxes)
+    if (!Empty(::aFilters))
+        oPresetWrap := WebExDiv():New()
+        oPresetWrap:AddClass("d-flex flex-wrap gap-3 mb-3")
+        for nI := 1 to Len(::aFilters)
+            aItem := ::aFilters[nI]
+            oCheckWrap := WebExDiv():New()
+            oCheckWrap:AddClass("form-check")
+
+            oCheck := WebExControl():New("input")
+            oCheck:SetFixedID(cBrowseID + "_" + aItem[1])
+            oCheck:SetAttr("type","checkbox")
+            oCheck:SetAttr("value",aItem[1])
+            oCheck:SetAttr("data-fwwebex-browse-filter-check",cBrowseID)
+            oCheck:AddClass("form-check-input")
+            if (aItem[4])
+                oCheck:SetAttr("checked","checked")
+            endif
+
+            oLbl := WebExControl():New("label")
+            oLbl:SetAttr("for",cBrowseID + "_" + aItem[1])
+            oLbl:AddClass("form-check-label")
+            oLbl:SetContent(aItem[2])
+
+            oCheckWrap:AddChild(oCheck)
+            oCheckWrap:AddChild(oLbl)
+            oPresetWrap:AddChild(oCheckWrap)
+        next nI
+        oBody:AddChild(oPresetWrap)
+    endif
+
+    // Construtor dinamico de filtro (Campo + Operador + Valor + Botoes)
+    oDynRow := WebExRow():New(2)
+    oDynRow:AddClass("align-items-end")
+
+    oCol1 := WebExCol():New(3)
+    oFieldSel := WebExControl():New("select")
+    oFieldSel:AddClass("form-select form-select-sm")
+    oFieldSel:SetAttr("data-fwwebex-browse-filter-field",cBrowseID)
+    oOpt := WebExControl():New("option")
+    oOpt:SetAttr("value","")
+    oOpt:SetContent("-- Campo --")
+    oFieldSel:AddChild(oOpt)
+    for nI := 1 to Len(aColumns)
+        oCol := aColumns[nI]
+        oOpt := WebExControl():New("option")
+        oOpt:SetAttr("value",oCol:GetField())
+        oOpt:SetContent(oCol:GetTitle())
+        oFieldSel:AddChild(oOpt)
+    next nI
+    oCol1:AddChild(oFieldSel)
+
+    oCol2 := WebExCol():New(3)
+    oOperSel := WebExControl():New("select")
+    oOperSel:AddClass("form-select form-select-sm")
+    oOperSel:SetAttr("data-fwwebex-browse-filter-oper",cBrowseID)
+    aOpers := {{"CONTAINS","Contem"},{"=","Igual a"},{"!=","Diferente de"},{"STARTS","Inicia com"},{">","Maior que"},{">=","Maior ou igual"},{"<","Menor que"},{"<=","Menor ou igual"}}
+    for nI := 1 to Len(aOpers)
+        oOpt := WebExControl():New("option")
+        oOpt:SetAttr("value",aOpers[nI][1])
+        oOpt:SetContent(aOpers[nI][2])
+        oOperSel:AddChild(oOpt)
+    next nI
+    FWFreeArray(@aOpers)
+    oCol2:AddChild(oOperSel)
+
+    oCol3 := WebExCol():New(3)
+    oInput := WebExControl():New("input")
+    oInput:SetAttr("type","text")
+    oInput:SetAttr("placeholder","Valor do filtro...")
+    oInput:SetAttr("data-fwwebex-browse-filter-value",cBrowseID)
+    oInput:AddClass("form-control form-control-sm")
+    oCol3:AddChild(oInput)
+
+    oCol4 := WebExCol():New(3)
+    oCol4:AddClass("d-flex gap-2")
+    oApplyBtn := WebExControl():New("button")
+    oApplyBtn:SetAttr("type","button")
+    oApplyBtn:SetAttr("data-fwwebex-browse-filter-apply",cBrowseID)
+    oApplyBtn:AddClass("btn btn-sm btn-primary")
+    oApplyBtn:SetContent("Aplicar")
+
+    oClearBtn := WebExControl():New("button")
+    oClearBtn:SetAttr("type","button")
+    oClearBtn:SetAttr("data-fwwebex-browse-filter-clear",cBrowseID)
+    oClearBtn:AddClass("btn btn-sm btn-outline-secondary")
+    oClearBtn:SetContent("Limpar")
+
+    oCol4:AddChild(oApplyBtn)
+    oCol4:AddChild(oClearBtn)
+
+    oDynRow:AddChild(oCol1)
+    oDynRow:AddChild(oCol2)
+    oDynRow:AddChild(oCol3)
+    oDynRow:AddChild(oCol4)
+
+    oBody:AddChild(oDynRow)
+    oPanel:AddChild(oBody)
+
+return(oPanel)
+
+method Clean() class WebExBrowseFilter
+    FWFreeArray(@::aFilters)
+    FreeObj(@::jDynamicFilter)
+return(self)

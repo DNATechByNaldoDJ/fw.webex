@@ -1,0 +1,84 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseRelation - Equivalente Web para FWBrwRelation (Master-Detail)
+Sincroniza um ou mais browses filhos ao selecionar registro no browse pai.
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExBrowseRelation from ClassBase
+
+    public data aRelations as array
+    public data lActive    as logical
+
+    public method New() as object
+    public method AddRelation(oMaster as object,oDetail as object,bSync as codeblock) as object
+    public method Activate() as object
+    public method DeActivate() as object
+    public method Clean() as object
+
+endclass
+
+method New() class WebExBrowseRelation
+    _Super:New()
+    ::aRelations := Array(0)
+    ::lActive    := .F.
+return(self)
+
+method AddRelation(oMaster,oDetail,bSync) class WebExBrowseRelation
+    paramtype 1 var oMaster as object
+    paramtype 2 var oDetail as object
+    paramtype 3 var bSync   as block
+
+    aAdd(::aRelations,{oMaster,oDetail,bSync})
+return(self)
+
+method Activate() class WebExBrowseRelation
+    local aRel as array
+    local nI as numeric
+    local oDetail as object
+    local oMaster as object
+    local bSync as codeblock
+
+    if (::lActive)
+        return(self)
+    endif
+
+    for nI := 1 to Len(::aRelations)
+        aRel    := ::aRelations[nI]
+        oMaster := aRel[1]
+        oDetail := aRel[2]
+        bSync   := aRel[3]
+        oMaster:AddChildRelation(oDetail,bSync)
+    next nI
+
+    ::lActive := .T.
+return(self)
+
+method DeActivate() class WebExBrowseRelation
+    local nI as numeric
+    local oMaster as object
+
+    for nI := 1 to Len(::aRelations)
+        oMaster := ::aRelations[nI][1]
+        if (ValType(oMaster) == "O")
+            oMaster:ClearChildRelations()
+        endif
+    next nI
+
+    ::lActive := .F.
+return(self)
+
+method Clean() class WebExBrowseRelation
+    ::DeActivate()
+    FWFreeArray(@::aRelations)
+return(self)

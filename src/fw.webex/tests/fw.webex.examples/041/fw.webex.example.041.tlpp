@@ -1,0 +1,167 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Exemplo 041: WebExBrowseRelation (Fase 3 - Master-Detail Pedidos x Itens)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.browse.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+user function FWWebExExample_041()
+    local bExecute as codeblock
+    local cTitle := "FWWebEx :: Example 041 - Master-Detail (WebExBrowseRelation)" as character
+    bExecute := {|| FWWebExRelationExample041() }
+    FWExampleTools():Execute(bExecute,cTitle,.F.,.F.)
+return
+
+static procedure FWWebExRelationExample041()
+
+    local aItensAll as array
+    local aPedidos as array
+    local bPrevious as codeblock
+    local cFile := "fwwebex-example-041" as character
+    local cHTML := "" as character
+    local cTitle := "FWWebEx :: Example 041 - Pedidos x Itens (Master-Detail)" as character
+    local oBrwItens as object
+    local oBrwPed as object
+    local oChannel as object
+    local oError as object
+    local oLayer as object
+    local oPage as object
+    local oRelation as object
+
+    // Pedidos (Master): {Numero, Cliente, Emissao, Total, Status}
+    aPedidos := {;
+        {"PV0001","DNATech Engenharia Protheus Ltda",  Date() - 3, 18500.00, "L"};
+        ,{"PV0002","Industria Metalurgica Capixaba SA",Date() - 2, 42300.00, "A"};
+        ,{"PV0003","Comercial Serra Logistica Ltda",   Date() - 1,  9400.00, "F"};
+    }
+
+    // Todos os Itens (Detail): {Pedido, Item, Produto, Qtd, VlUnit, VlTotal}
+    aItensAll := {;
+        {"PV0001","01","Consultoria TL++ Avancada",        40,  350.00, 14000.00};
+        ,{"PV0001","02","Arquitetura FWWebEx",             10,  450.00,  4500.00};
+        ,{"PV0002","01","Tuning SQL Server Protheus",      60,  420.00, 25200.00};
+        ,{"PV0002","02","Sustentacao N3 Mensal",            1, 12100.00, 12100.00};
+        ,{"PV0002","03","Integracao Webhook REST",          1,  5000.00,  5000.00};
+        ,{"PV0003","01","Migracao FWBrowse para Web",      20,  470.00,  9400.00};
+    }
+
+    oChannel := WebApp():GetTWebChannel(.T.)
+    if (!oChannel:lConnected)
+        MsgStop("Nao foi possivel conectar o TWebChannel.",cTitle)
+        FWFreeArray(@aPedidos)
+        FWFreeArray(@aItensAll)
+        return
+    endif
+
+    bPrevious := WebExBrowseDispatcher():BindChannel(oChannel)
+
+    try
+        BEGIN FWWEBEX oPage CLASS WebExPage ARGS cTitle
+            WITH WEBEXOBJECT CLASS WebExBody
+                WITH WEBEXOBJECT CLASS WebExMain
+                    WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                        .:AddClass("px-2 py-2")
+                        WITH WEBEXOBJECT oLayer CLASS WebExLayer
+                            .:AddLine("TOP",50,.F.)
+                            .:AddCollumn("COL_TOP",100,.F.,"TOP")
+                            .:AddWindow("COL_TOP","WIN_PED","Pedidos de Venda (Clique em uma linha para filtrar os itens)",100,.T.,.T.,"TOP")
+
+                            .:AddLine("BOT",50,.F.)
+                            .:AddCollumn("COL_BOT",100,.F.,"BOT")
+                            .:AddWindow("COL_BOT","WIN_ITENS","Itens do Pedido Selecionado",100,.T.,.T.,"BOT")
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END FWWEBEX
+
+        // Browse Master (Pedidos)
+        oBrwPed := WebExBrowse():New("Pedidos")
+        oBrwPed:SetDataArray()
+        oBrwPed:SetArray(aPedidos)
+        oBrwPed:SetPageLength(5)
+        oBrwPed:AddLegend({|oBrw,aRow| aRow[5] == "L" },"GREEN", "Liberado")
+        oBrwPed:AddLegend({|oBrw,aRow| aRow[5] == "A" },"YELLOW","Em Aberto")
+        oBrwPed:AddLegend({|oBrw,aRow| aRow[5] == "F" },"BLUE",  "Faturado")
+        oBrwPed:AddColumn({"Pedido",  {|oBrw,aRow| aRow[1] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER,10,0})
+        oBrwPed:AddColumn({"Cliente", {|oBrw,aRow| aRow[2] },"C","",              FWWEBEX_BROWSE_ALIGN_LEFT,  38,0})
+        oBrwPed:AddColumn({"Emissao", {|oBrw,aRow| aRow[3] },"D","",              FWWEBEX_BROWSE_ALIGN_CENTER,10,0})
+        oBrwPed:AddColumn({"Total",   {|oBrw,aRow| aRow[4] },"N","@E 999,999.99", FWWEBEX_BROWSE_ALIGN_RIGHT, 14,2})
+        oLayer:GetWinPanel("COL_TOP","WIN_PED"):AddChild(oBrwPed)
+
+        // Browse Detail (Itens) - inicia com itens do primeiro pedido
+        oBrwItens := WebExBrowse():New("Itens")
+        oBrwItens:SetDataArray()
+        oBrwItens:SetArray(FiltrarItens(aItensAll,"PV0001"))
+        oBrwItens:SetPageLength(5)
+        oBrwItens:AddColumn({"Pedido",  {|oBrw,aRow| aRow[1] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER,10,0})
+        oBrwItens:AddColumn({"Item",    {|oBrw,aRow| aRow[2] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER, 6,0})
+        oBrwItens:AddColumn({"Produto", {|oBrw,aRow| aRow[3] },"C","",              FWWEBEX_BROWSE_ALIGN_LEFT,  36,0})
+        oBrwItens:AddColumn({"Qtd",     {|oBrw,aRow| aRow[4] },"N","@E 999,999",    FWWEBEX_BROWSE_ALIGN_RIGHT,  8,0})
+        oBrwItens:AddColumn({"Vl. Unit",{|oBrw,aRow| aRow[5] },"N","@E 999,999.99", FWWEBEX_BROWSE_ALIGN_RIGHT, 12,2})
+        oBrwItens:AddColumn({"Total",   {|oBrw,aRow| aRow[6] },"N","@E 999,999.99", FWWEBEX_BROWSE_ALIGN_RIGHT, 14,2})
+        oLayer:GetWinPanel("COL_BOT","WIN_ITENS"):AddChild(oBrwItens)
+
+        // Vincula Master -> Detail via WebExBrowseRelation
+        oRelation := WebExBrowseRelation():New()
+        oRelation:AddRelation(oBrwPed,oBrwItens,{|oMaster,oDetail,xKey,aRow|;
+            if(ValType(aRow) == "A", oDetail:SetArray(FiltrarItens(aItensAll,aRow[1])), NIL);
+        })
+        oRelation:Activate()
+
+        if (WebFileTools():HTMLFromControl(oPage,oPage:GetFWWebExTmpPath(),@cFile,@cHTML,.T.))
+            if (!Empty(cFile) .and. File(cFile))
+                FWExampleTools():HtmlFileShow(cHTML,cTitle,cFile,oChannel,oChannel:bJSToAdvPL)
+            endif
+        endif
+
+    catch oError
+        MsgStop("Falha ao abrir Master-Detail: " + oError:Description,cTitle)
+        FreeObj(@oError)
+    endtry
+
+    oChannel:bJSToAdvPL := bPrevious
+
+    if (ValType(oRelation) == "O")
+        oRelation:Clean()
+        FreeObj(@oRelation)
+    endif
+    if (ValType(oBrwPed) == "O")
+        oBrwPed:Clean()
+        FreeObj(@oBrwPed)
+    endif
+    if (ValType(oBrwItens) == "O")
+        oBrwItens:Clean()
+        FreeObj(@oBrwItens)
+    endif
+
+    WEBEXOBJECT CLEAN
+
+    if (!Empty(cFile) .and. File(cFile))
+        fErase(cFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+    FWFreeArray(@aPedidos)
+    FWFreeArray(@aItensAll)
+
+return
+
+static function FiltrarItens(aTodos as array,cPedido as character) as array
+    local aResult := Array(0) as array
+    local nI as numeric
+    for nI := 1 to Len(aTodos)
+        if (aTodos[nI][1] == cPedido)
+            aAdd(aResult,aTodos[nI])
+        endif
+    next nI
+return(aResult)

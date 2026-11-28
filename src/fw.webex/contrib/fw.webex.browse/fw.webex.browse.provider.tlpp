@@ -1,0 +1,640 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseProvider - Provedores de Dados (Array, Query, Table) com suporte a Filter e Seek
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+// ---------------------------------------------------------------------------
+// Base abstrata de provedor
+// ---------------------------------------------------------------------------
+class WebExBrowseProvider from ClassBase
+
+    public data cProviderType as character
+    public data xCurrentKey   as variant
+
+    public method New(cProviderType as character) as object
+    public method GetType() as character
+    public method Open() as logical
+    public method Close() as logical
+    public method SeekKey(xKey as variant) as logical
+    public method GetCurrentKey() as variant
+    public method GetCurrentRow() as variant
+    public method GetPage(oBrowse as object,jRequest as json,aColumns as array,aLegends as array) as json
+    public method Clean() as object
+
+    protected method BuildRowJSON(oBrowse as object,xRowData as variant,nRowIndex as numeric,xKey as variant,aColumns as array,aLegends as array) as json
+    protected method EvalLegend(oBrowse as object,xRowData as variant,nRowIndex as numeric,aLegends as array) as json
+    protected method MatchCriteria(oBrowse as object,xRowData as variant,nRowIndex as numeric,jRowJSON as json,aColumns as array,cSearch as character) as logical
+
+endclass
+
+method New(cProviderType) class WebExBrowseProvider
+    paramtype 1 var cProviderType as character optional default ""
+    _Super:New()
+    ::cProviderType := cProviderType
+    ::xCurrentKey   := 0
+return(self)
+
+method GetType() class WebExBrowseProvider
+return(::cProviderType)
+
+method Open() class WebExBrowseProvider
+return(.T.)
+
+method Close() class WebExBrowseProvider
+return(.T.)
+
+method SeekKey(xKey) class WebExBrowseProvider
+    ::xCurrentKey := xKey
+return(.T.)
+
+method GetCurrentKey() class WebExBrowseProvider
+return(::xCurrentKey)
+
+method GetCurrentRow() class WebExBrowseProvider
+return(NIL)
+
+method GetPage(oBrowse,jRequest,aColumns,aLegends) class WebExBrowseProvider
+    local jResult := JSONObject():New() as json
+    jResult["ok"]              := .F.
+    jResult["recordsTotal"]    := 0
+    jResult["recordsFiltered"] := 0
+    jResult["data"]            := Array(0)
+    jResult["error"]           := "Provedor de dados nao implementado."
+return(jResult)
+
+method EvalLegend(oBrowse,xRowData,nRowIndex,aLegends) class WebExBrowseProvider
+    local aLegend as array
+    local cExpr as character
+    local jLegend as json
+    local lMatch := .F. as logical
+    local nI as numeric
+    local nLen as numeric
+    local oError as object
+
+    if (ValType(aLegends) != "A" .or. Empty(aLegends))
+        return(NIL)
+    endif
+
+    nLen := Len(aLegends)
+    for nI := 1 to nLen
+        aLegend := aLegends[nI]
+        lMatch  := .F.
+        try
+            if (ValType(aLegend[1]) == "B")
+                lMatch := Eval(aLegend[1],oBrowse,xRowData,nRowIndex)
+            elseif (ValType(aLegend[1]) == "C")
+                cExpr  := aLegend[1]
+                lMatch := &(cExpr)
+            endif
+        catch oError
+            lMatch := .F.
+            FreeObj(@oError)
+        endtry
+        if (ValType(lMatch) == "L" .and. lMatch)
+            jLegend := JSONObject():New()
+            jLegend["color"] := aLegend[2]
+            jLegend["title"] := aLegend[3]
+            return(jLegend)
+        endif
+    next nI
+
+return(NIL)
+
+method BuildRowJSON(oBrowse,xRowData,nRowIndex,xKey,aColumns,aLegends) class WebExBrowseProvider
+    local cField as character
+    local jLegend as json
+    local jRow := JSONObject():New() as json
+    local nCol as numeric
+    local nCols as numeric
+    local oCol as object
+    local xRaw as variant
+
+    jRow["__key"] := xKey
+
+    if (ValType(aLegends) == "A" .and. !Empty(aLegends))
+        jLegend := ::EvalLegend(oBrowse,xRowData,nRowIndex,aLegends)
+        if (ValType(jLegend) == "J")
+            jRow["__legend"] := jLegend
+        else
+            jRow["__legend"] := NIL
+        endif
+    endif
+
+    nCols := Len(aColumns)
+    for nCol := 1 to nCols
+        oCol   := aColumns[nCol]
+        cField := oCol:GetField()
+        if (Empty(cField))
+            cField := "col_" + AllTrim(cValToChar(nCol))
+            oCol:SetField(cField)
+        endif
+        xRaw := oCol:EvalRaw(oBrowse,xRowData,nRowIndex)
+        jRow[cField] := oCol:FormatValue(xRaw)
+    next nCol
+
+return(jRow)
+
+method MatchCriteria(oBrowse,xRowData,nRowIndex,jRowJSON,aColumns,cSearch) class WebExBrowseProvider
+    local cField as character
+    local lSearchOk := .T. as logical
+    local nCol as numeric
+    local nCols as numeric
+    local oCol as object
+    local oFilter as object
+    local oSeek as object
+    local xCellVal as variant
+
+    // 1. Filtro estruturado (WebExBrowseFilter)
+    oFilter := oBrowse:GetFilter()
+    if (ValType(oFilter) == "O" .and. oFilter:HasActiveFilter())
+        if (!oFilter:MatchRow(oBrowse,xRowData,nRowIndex,jRowJSON))
+            return(.F.)
+        endif
+    endif
+
+    // 2. Pesquisa por indice/campo (WebExBrowseSeek)
+    oSeek := oBrowse:GetSeek()
+    if (ValType(oSeek) == "O" .and. oSeek:HasSeek())
+        if (!oSeek:MatchRow(jRowJSON))
+            return(.F.)
+        endif
+    endif
+
+    // 3. Busca global do DataTables
+    if (!Empty(cSearch))
+        lSearchOk := .F.
+        nCols := Len(aColumns)
+        for nCol := 1 to nCols
+            oCol := aColumns[nCol]
+            if (!oCol:IsSearchable())
+                loop
+            endif
+            cField := oCol:GetField()
+            xCellVal := jRowJSON[cField]
+            if (cSearch $ Upper(AllTrim(if(ValType(xCellVal) == "C",xCellVal,cValToChar(xCellVal)))))
+                lSearchOk := .T.
+                exit
+            endif
+        next nCol
+    endif
+
+return(lSearchOk)
+
+method Clean() class WebExBrowseProvider
+    ::Close()
+    ::xCurrentKey := 0
+return(self)
+
+// ---------------------------------------------------------------------------
+// Provedor Array (equivalente a FWBrwArray)
+// ---------------------------------------------------------------------------
+class WebExBrowseArrayProvider from WebExBrowseProvider
+
+    public data aData as array
+
+    public method New(aData as array) as object
+    public method SetArray(aData as array) as object
+    public method GetArray() as array
+    public method SeekKey(xKey as variant) as logical
+    public method GetCurrentRow() as variant
+    public method GetPage(oBrowse as object,jRequest as json,aColumns as array,aLegends as array) as json
+    public method Clean() as object
+
+endclass
+
+method New(aData) class WebExBrowseArrayProvider
+    paramtype 1 var aData as array optional default Array(0)
+    _Super:New(FWWEBEX_BROWSE_DATA_ARRAY)
+    ::aData := aData
+return(self)
+
+method SetArray(aData) class WebExBrowseArrayProvider
+    paramtype 1 var aData as array
+    ::aData := aData
+    ::xCurrentKey := if(Len(::aData) > 0,1,0)
+return(self)
+
+method GetArray() class WebExBrowseArrayProvider
+return(::aData)
+
+method SeekKey(xKey) class WebExBrowseArrayProvider
+    local nPos as numeric
+    nPos := if(ValType(xKey)=="N",xKey,Val(cValToChar(xKey)))
+    if ((nPos >= 1) .and. (nPos <= Len(::aData)))
+        ::xCurrentKey := nPos
+        return(.T.)
+    endif
+return(.F.)
+
+method GetCurrentRow() class WebExBrowseArrayProvider
+    if ((ValType(::xCurrentKey)=="N") .and. (::xCurrentKey >= 1) .and. (::xCurrentKey <= Len(::aData)))
+        return(::aData[::xCurrentKey])
+    endif
+return(NIL)
+
+method GetPage(oBrowse,jRequest,aColumns,aLegends) class WebExBrowseArrayProvider
+    local aFiltered := Array(0) as array
+    local aPageRows := Array(0) as array
+    local cDir := "asc" as character
+    local cField as character
+    local cSearch := "" as character
+    local jEntry as json
+    local jOrder as json
+    local jResult := JSONObject():New() as json
+    local nCols as numeric
+    local nEnd as numeric
+    local nFiltered as numeric
+    local nI as numeric
+    local nLength := 10 as numeric
+    local nOrderCol := -1 as numeric
+    local nSavedKey as numeric
+    local nStart := 0 as numeric
+    local nTotal as numeric
+
+    nTotal    := Len(::aData)
+    nCols     := Len(aColumns)
+    nSavedKey := ::xCurrentKey
+
+    if (jRequest:HasProperty("start") .and. ValType(jRequest["start"]) == "N")
+        nStart := Max(0,jRequest["start"])
+    endif
+    if (jRequest:HasProperty("length") .and. ValType(jRequest["length"]) == "N")
+        nLength := jRequest["length"]
+    endif
+    if (jRequest:HasProperty("search") .and. ValType(jRequest["search"]) == "C")
+        cSearch := Upper(AllTrim(jRequest["search"]))
+    endif
+    if (jRequest:HasProperty("order") .and. ValType(jRequest["order"]) == "J")
+        jOrder := jRequest["order"]
+        if (jOrder:HasProperty("column") .and. ValType(jOrder["column"]) == "N")
+            nOrderCol := jOrder["column"]
+        endif
+        if (jOrder:HasProperty("dir") .and. ValType(jOrder["dir"]) == "C")
+            cDir := Lower(AllTrim(jOrder["dir"]))
+        endif
+    endif
+
+    for nI := 1 to nTotal
+        ::xCurrentKey := nI
+        jEntry := ::BuildRowJSON(oBrowse,::aData[nI],nI,nI,aColumns,aLegends)
+        if (::MatchCriteria(oBrowse,::aData[nI],nI,jEntry,aColumns,cSearch))
+            aAdd(aFiltered,jEntry)
+        else
+            FreeObj(@jEntry)
+        endif
+    next nI
+
+    nFiltered := Len(aFiltered)
+
+    if ((nOrderCol >= 1) .and. (nOrderCol <= nCols) .and. aColumns[nOrderCol]:IsOrderable())
+        cField := aColumns[nOrderCol]:GetField()
+        if (cDir == "desc")
+            aSort(aFiltered,,,{|a,b| Upper(cValToChar(a[cField])) > Upper(cValToChar(b[cField])) })
+        else
+            aSort(aFiltered,,,{|a,b| Upper(cValToChar(a[cField])) < Upper(cValToChar(b[cField])) })
+        endif
+    endif
+
+    if (nLength <= 0)
+        nStart := 0
+        nEnd   := nFiltered
+    else
+        nEnd := Min(nStart + nLength,nFiltered)
+    endif
+
+    for nI := (nStart + 1) to nEnd
+        aAdd(aPageRows,aFiltered[nI])
+    next nI
+
+    for nI := 1 to nFiltered
+        if ((nI <= nStart) .or. (nI > nEnd))
+            jEntry := aFiltered[nI]
+            FreeObj(@jEntry)
+        endif
+    next nI
+    FWFreeArray(@aFiltered)
+
+    ::xCurrentKey := nSavedKey
+
+    jResult["ok"]              := .T.
+    jResult["recordsTotal"]    := nTotal
+    jResult["recordsFiltered"] := nFiltered
+    jResult["data"]            := aPageRows
+
+return(jResult)
+
+method Clean() class WebExBrowseArrayProvider
+    ::aData := Array(0)
+    _Super:Clean()
+return(self)
+
+// ---------------------------------------------------------------------------
+// Provedor Table / WorkArea (equivalente a FWBrwTable)
+// ---------------------------------------------------------------------------
+class WebExBrowseTableProvider from WebExBrowseProvider
+
+    public data cAlias         as character
+    public data cFilterDefault as character
+    public data nOrder         as numeric
+
+    public method New(cAlias as character,nOrder as numeric,cFilterDefault as character) as object
+    public method SetAlias(cAlias as character) as object
+    public method GetAlias() as character
+    public method SetOrder(nOrder as numeric) as object
+    public method SetFilterDefault(cFilterDefault as character) as object
+    public method Open() as logical
+    public method SeekKey(xKey as variant) as logical
+    public method GetPage(oBrowse as object,jRequest as json,aColumns as array,aLegends as array) as json
+
+endclass
+
+method New(cAlias,nOrder,cFilterDefault) class WebExBrowseTableProvider
+    paramtype 1 var cAlias         as character optional default ""
+    paramtype 2 var nOrder         as numeric optional default 1
+    paramtype 3 var cFilterDefault as character optional default ""
+    _Super:New(FWWEBEX_BROWSE_DATA_TABLE)
+    ::cAlias         := Upper(AllTrim(cAlias))
+    ::nOrder         := nOrder
+    ::cFilterDefault := cFilterDefault
+return(self)
+
+method SetAlias(cAlias) class WebExBrowseTableProvider
+    paramtype 1 var cAlias as character
+    ::cAlias := Upper(AllTrim(cAlias))
+return(self)
+
+method GetAlias() class WebExBrowseTableProvider
+return(::cAlias)
+
+method SetOrder(nOrder) class WebExBrowseTableProvider
+    paramtype 1 var nOrder as numeric
+    ::nOrder := nOrder
+return(self)
+
+method SetFilterDefault(cFilterDefault) class WebExBrowseTableProvider
+    paramtype 1 var cFilterDefault as character
+    ::cFilterDefault := cFilterDefault
+return(self)
+
+method Open() class WebExBrowseTableProvider
+    if (Empty(::cAlias))
+        return(.F.)
+    endif
+    if (Select(::cAlias) == 0)
+        dbSelectArea(::cAlias)
+    endif
+    if (::nOrder > 0)
+        (::cAlias)->(dbSetOrder(::nOrder))
+    endif
+return(Select(::cAlias) > 0)
+
+method SeekKey(xKey) class WebExBrowseTableProvider
+    local nRecno as numeric
+    if (!::Open())
+        return(.F.)
+    endif
+    nRecno := if(ValType(xKey)=="N",xKey,Val(cValToChar(xKey)))
+    if (nRecno > 0)
+        (::cAlias)->(dbGoTo(nRecno))
+        if (!(::cAlias)->(Eof()))
+            ::xCurrentKey := nRecno
+            return(.T.)
+        endif
+    endif
+return(.F.)
+
+method GetPage(oBrowse,jRequest,aColumns,aLegends) class WebExBrowseTableProvider
+    local aArea := FWGetArea() as array
+    local aPageRows := Array(0) as array
+    local cFilter as character
+    local cSearch := "" as character
+    local jEntry as json
+    local jResult := JSONObject():New() as json
+    local lFilterOk as logical
+    local nFiltered := 0 as numeric
+    local nLength := 10 as numeric
+    local nRecno as numeric
+    local nStart := 0 as numeric
+    local nTotal := 0 as numeric
+    local oError as object
+
+    if (!::Open())
+        jResult["ok"]    := .F.
+        jResult["error"] := "Nao foi possivel abrir o alias " + ::cAlias
+        FWRestArea(aArea)
+        FWFreeArray(@aArea)
+        return(jResult)
+    endif
+
+    if (jRequest:HasProperty("start") .and. ValType(jRequest["start"]) == "N")
+        nStart := Max(0,jRequest["start"])
+    endif
+    if (jRequest:HasProperty("length") .and. ValType(jRequest["length"]) == "N")
+        nLength := jRequest["length"]
+    endif
+    if (jRequest:HasProperty("search") .and. ValType(jRequest["search"]) == "C")
+        cSearch := Upper(AllTrim(jRequest["search"]))
+    endif
+
+    cFilter := AllTrim(::cFilterDefault)
+
+    try
+        dbSelectArea(::cAlias)
+        if (::nOrder > 0)
+            (::cAlias)->(dbSetOrder(::nOrder))
+        endif
+        (::cAlias)->(dbGoTop())
+
+        while (!(::cAlias)->(Eof()))
+            if ((::cAlias)->(Deleted()))
+                (::cAlias)->(dbSkip())
+                loop
+            endif
+
+            lFilterOk := .T.
+            if (!Empty(cFilter))
+                lFilterOk := &(cFilter)
+            endif
+            if (!lFilterOk)
+                (::cAlias)->(dbSkip())
+                loop
+            endif
+
+            nTotal++
+            nRecno := (::cAlias)->(RecNo())
+            ::xCurrentKey := nRecno
+
+            jEntry := ::BuildRowJSON(oBrowse,NIL,nTotal,nRecno,aColumns,aLegends)
+
+            if (::MatchCriteria(oBrowse,NIL,nTotal,jEntry,aColumns,cSearch))
+                nFiltered++
+                if ((nLength <= 0) .or. ((nFiltered > nStart) .and. (Len(aPageRows) < nLength)))
+                    aAdd(aPageRows,jEntry)
+                else
+                    FreeObj(@jEntry)
+                endif
+            else
+                FreeObj(@jEntry)
+            endif
+
+            (::cAlias)->(dbSkip())
+        end while
+
+        jResult["ok"]              := .T.
+        jResult["recordsTotal"]    := nTotal
+        jResult["recordsFiltered"] := nFiltered
+        jResult["data"]            := aPageRows
+    catch oError
+        jResult["ok"]    := .F.
+        jResult["error"] := "Falha ao ler tabela " + ::cAlias + ": " + oError:Description
+        jResult["data"]  := Array(0)
+        FreeObj(@oError)
+    endtry
+
+    FWRestArea(aArea)
+    FWFreeArray(@aArea)
+
+return(jResult)
+
+// ---------------------------------------------------------------------------
+// Provedor Query SQL (equivalente a FWBrwQuery)
+// IMPORTANTE: cQuery e definida exclusivamente no servidor (nunca aceita do JS).
+// ---------------------------------------------------------------------------
+class WebExBrowseQueryProvider from WebExBrowseProvider
+
+    public data cQuery      as character
+    public data cQueryAlias as character
+    public data cKeyField   as character
+
+    public method New(cQuery as character,cKeyField as character) as object
+    public method SetQuery(cQuery as character) as object
+    public method GetQuery() as character
+    public method SetKeyField(cKeyField as character) as object
+    public method Close() as logical
+    public method GetPage(oBrowse as object,jRequest as json,aColumns as array,aLegends as array) as json
+
+endclass
+
+method New(cQuery,cKeyField) class WebExBrowseQueryProvider
+    paramtype 1 var cQuery    as character optional default ""
+    paramtype 2 var cKeyField as character optional default ""
+    _Super:New(FWWEBEX_BROWSE_DATA_QUERY)
+    ::cQuery      := cQuery
+    ::cQueryAlias := ""
+    ::cKeyField   := Upper(AllTrim(cKeyField))
+return(self)
+
+method SetQuery(cQuery) class WebExBrowseQueryProvider
+    paramtype 1 var cQuery as character
+    ::cQuery := cQuery
+return(self)
+
+method GetQuery() class WebExBrowseQueryProvider
+return(::cQuery)
+
+method SetKeyField(cKeyField) class WebExBrowseQueryProvider
+    paramtype 1 var cKeyField as character
+    ::cKeyField := Upper(AllTrim(cKeyField))
+return(self)
+
+method Close() class WebExBrowseQueryProvider
+    if (!Empty(::cQueryAlias) .and. Select(::cQueryAlias) > 0)
+        (::cQueryAlias)->(dbCloseArea())
+    endif
+    ::cQueryAlias := ""
+return(.T.)
+
+method GetPage(oBrowse,jRequest,aColumns,aLegends) class WebExBrowseQueryProvider
+    local aArea := FWGetArea() as array
+    local aPageRows := Array(0) as array
+    local cAlias as character
+    local cSearch := "" as character
+    local cSql as character
+    local jEntry as json
+    local jResult := JSONObject():New() as json
+    local nFiltered := 0 as numeric
+    local nKeyPos := 0 as numeric
+    local nLength := 10 as numeric
+    local nStart := 0 as numeric
+    local nTotal := 0 as numeric
+    local oError as object
+    local xRowKey as variant
+
+    if (Empty(::cQuery))
+        jResult["ok"]    := .F.
+        jResult["error"] := "Consulta SQL (SetQuery) nao informada."
+        FWRestArea(aArea)
+        FWFreeArray(@aArea)
+        return(jResult)
+    endif
+
+    if (jRequest:HasProperty("start") .and. ValType(jRequest["start"]) == "N")
+        nStart := Max(0,jRequest["start"])
+    endif
+    if (jRequest:HasProperty("length") .and. ValType(jRequest["length"]) == "N")
+        nLength := jRequest["length"]
+    endif
+    if (jRequest:HasProperty("search") .and. ValType(jRequest["search"]) == "C")
+        cSearch := Upper(AllTrim(jRequest["search"]))
+    endif
+
+    try
+        ::Close()
+        cSql   := ChangeQuery(::cQuery)
+        cAlias := MPSysOpenQuery(cSql)
+        ::cQueryAlias := cAlias
+
+        dbSelectArea(cAlias)
+        if (!Empty(::cKeyField))
+            nKeyPos := (cAlias)->(FieldPos(::cKeyField))
+        endif
+        (cAlias)->(dbGoTop())
+
+        while (!(cAlias)->(Eof()))
+            nTotal++
+            xRowKey := if(nKeyPos > 0,(cAlias)->(FieldGet(nKeyPos)),nTotal)
+            ::xCurrentKey := xRowKey
+
+            jEntry := ::BuildRowJSON(oBrowse,NIL,nTotal,xRowKey,aColumns,aLegends)
+
+            if (::MatchCriteria(oBrowse,NIL,nTotal,jEntry,aColumns,cSearch))
+                nFiltered++
+                if ((nLength <= 0) .or. ((nFiltered > nStart) .and. (Len(aPageRows) < nLength)))
+                    aAdd(aPageRows,jEntry)
+                else
+                    FreeObj(@jEntry)
+                endif
+            else
+                FreeObj(@jEntry)
+            endif
+
+            (cAlias)->(dbSkip())
+        end while
+
+        jResult["ok"]              := .T.
+        jResult["recordsTotal"]    := nTotal
+        jResult["recordsFiltered"] := nFiltered
+        jResult["data"]            := aPageRows
+    catch oError
+        jResult["ok"]    := .F.
+        jResult["error"] := "Falha ao executar consulta SQL: " + oError:Description
+        jResult["data"]  := Array(0)
+        FreeObj(@oError)
+    endtry
+
+    ::Close()
+    FWRestArea(aArea)
+    FWFreeArray(@aArea)
+
+return(jResult)

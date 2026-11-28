@@ -1,0 +1,166 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+Exemplo 040: WebExMarkBrowse (Fase 3 - Selecao em lote, Marcar Todos & Acao em Lote)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+#include "fw.webex.browse.th"
+
+using namespace FWWebEx
+using namespace FWWebEx.Tools
+
+user function FWWebExExample_040()
+    local bExecute as codeblock
+    local cTitle := "FWWebEx :: Example 040 - WebExMarkBrowse (Fase 3)" as character
+    bExecute := {|| FWWebExMarkBrowseExample040() }
+    FWExampleTools():Execute(bExecute,cTitle,.F.,.F.)
+return
+
+static procedure FWWebExMarkBrowseExample040()
+
+    local aTitulos as array
+    local bPrevious as codeblock
+    local cFile := "fwwebex-example-040" as character
+    local cHTML := "" as character
+    local cTitle := "FWWebEx :: Example 040 - WebExMarkBrowse" as character
+    local oBrowse as object
+    local oChannel as object
+    local oError as object
+    local oPage as object
+
+    // {Numero, Parcela, Cliente, Valor, Vencto, Status}
+    // Obs.: Para usar com tabela real do Protheus (ex.: SE1/SA1), basta usar:
+    // .:SetAlias("SE1") / .:SetFieldMark("E1_OK") / .:SetMenuDef("FINA040")
+    aTitulos := {;
+        {"000101","01","DNATech Engenharia Protheus Ltda",   4500.00, Date() + 5,  "A"};
+        ,{"000102","01","Industria Metalurgica Capixaba SA",18200.50, Date() - 2,  "V"};
+        ,{"000103","02","Distribuidora Vitoria Express",     1950.00, Date() + 10, "A"};
+        ,{"000104","01","Comercial Serra Logistica Ltda",    9800.75, Date() - 5,  "V"};
+        ,{"000105","01","Tech Solutions ERP Brasil",         3100.00, Date() + 1,  "A"};
+        ,{"000106","01","Alimentos Espirito Santo Ltda",    12400.00, Date() - 1,  "V"};
+        ,{"000107","02","Transportadora Litoral Sul",        2750.30, Date() + 15, "A"};
+        ,{"000108","01","Construtora Atlantica SA",         32000.00, Date() + 3,  "A"};
+    }
+
+    oChannel := WebApp():GetTWebChannel(.T.)
+    if (!oChannel:lConnected)
+        MsgStop("Nao foi possivel conectar o TWebChannel.",cTitle)
+        FWFreeArray(@aTitulos)
+        return
+    endif
+
+    bPrevious := WebExBrowseDispatcher():BindChannel(oChannel)
+
+    try
+        BEGIN FWWEBEX oPage CLASS WebExPage ARGS cTitle
+            WITH WEBEXOBJECT CLASS WebExBody
+                WITH WEBEXOBJECT CLASS WebExMain
+                    WITH WEBEXOBJECT CLASS WebExContainer ARGS .T.
+                        .:AddClass("px-2 py-2")
+                        WITH WEBEXOBJECT oBrowse CLASS WebExMarkBrowse ARGS "Baixa em Lote de Titulos (WebExMarkBrowse)"
+
+                            .:SetDataArray()
+                            .:SetArray(aTitulos)
+                            .:SetPageLength(5)
+                            .:SetServerSide(.T.)
+                            .:SetOptionsPosition("RIGHT")
+                            .:SetOptionsTitle("Lote")
+
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "A" },"GREEN", "Em Aberto")
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "V" },"RED",   "Vencido")
+                            .:AddLegend({|oBrw,aRow| aRow[6] == "B" },"BLUE",  "Baixado")
+
+                            .:AddColumn({"Titulo",  {|oBrw,aRow| aRow[1] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER,10,0})
+                            .:AddColumn({"Parc.",   {|oBrw,aRow| aRow[2] },"C","@!",            FWWEBEX_BROWSE_ALIGN_CENTER, 5,0})
+                            .:AddColumn({"Cliente", {|oBrw,aRow| aRow[3] },"C","",              FWWEBEX_BROWSE_ALIGN_LEFT,  36,0})
+                            .:AddColumn({"Valor",   {|oBrw,aRow| aRow[4] },"N","@E 999,999.99", FWWEBEX_BROWSE_ALIGN_RIGHT, 14,2})
+                            .:AddColumn({"Vencto",  {|oBrw,aRow| aRow[5] },"D","",              FWWEBEX_BROWSE_ALIGN_CENTER,10,0})
+
+                            .:AddSeekOrder("Por Cliente","col_3",1)
+                            .:AddSeekOrder("Por Titulo", "col_1",2)
+
+                            .:AddFilter("Somente Vencidos", {|oBrw,aRow| aRow[6] == "V" }, .F.)
+                            .:AddFilter("Somente Em Aberto",{|oBrw,aRow| aRow[6] == "A" }, .F.)
+
+                            // Onde exibir avisos de validacao/acoes: "HEADER", "FOOTER", "POPUP", "TOAST" ou "NONE"
+                            .:SetFeedbackMode("HEADER")
+
+                            // Impede marcar titulos ja baixados com mensagem clara para o usuario
+                            .:SetValid({|oBrw,nKey,aRow| ValType(aRow) == "A" .and. aRow[6] != "B" },"Titulos ja baixados nao podem ser marcados.")
+
+                            .:AddButton("Baixar Marcados",{|oBrw,nKey,aRow| BaixarMarcados(oBrw,aTitulos) },"","btn btn-sm btn-success")
+
+                        END WEBEXOBJECT
+                    END WEBEXOBJECT
+                END WEBEXOBJECT
+            END WEBEXOBJECT
+        END FWWEBEX
+
+        if (WebFileTools():HTMLFromControl(oPage,oPage:GetFWWebExTmpPath(),@cFile,@cHTML,.T.))
+            if (!Empty(cFile) .and. File(cFile))
+                FWExampleTools():HtmlFileShow(cHTML,cTitle,cFile,oChannel,oChannel:bJSToAdvPL)
+            endif
+        endif
+
+    catch oError
+        MsgStop("Falha ao abrir WebExMarkBrowse: " + oError:Description,cTitle)
+        FreeObj(@oError)
+    endtry
+
+    oChannel:bJSToAdvPL := bPrevious
+
+    if (ValType(oBrowse) == "O")
+        oBrowse:Clean()
+        FreeObj(@oBrowse)
+    endif
+
+    WEBEXOBJECT CLEAN
+
+    if (!Empty(cFile) .and. File(cFile))
+        fErase(cFile)
+    endif
+    WebFileTools():ObliterateFWWebExTmpFiles(.T.)
+    FWFreeArray(@aTitulos)
+
+return
+
+static function BaixarMarcados(oBrw as object,aTitulos as array) as variant
+    local aKeys := oBrw:GetMarkedKeys() as array
+    local jRet := JSONObject():New() as json
+    local nI as numeric
+    local nIdx as numeric
+    local nTotal := 0 as numeric
+
+    if (Empty(aKeys))
+        FWFreeArray(@aKeys)
+        FreeObj(@jRet)
+        return("Marque ao menos um titulo antes de baixar.")
+    endif
+
+    for nI := 1 to Len(aKeys)
+        nIdx := Val(aKeys[nI])
+        if ((nIdx >= 1) .and. (nIdx <= Len(aTitulos)))
+            aTitulos[nIdx][6] := "B"
+            nTotal += aTitulos[nIdx][4]
+        endif
+    next nI
+
+    oBrw:ClearMarks()
+    jRet["refresh"] := .T.
+    jRet["message"] := AllTrim(cValToChar(Len(aKeys))) + " titulo(s) baixado(s). Total: R$ " + AllTrim(Transform(nTotal,"@E 999,999.99"))
+
+    FWFreeArray(@aKeys)
+return(jRet)
+
+static function LimparMarcacoes(oBrw as object) as variant
+    local jRet := JSONObject():New() as json
+    oBrw:ClearMarks()
+    jRet["refresh"] := .T.
+    jRet["message"] := "Marcacoes limpas."
+return(jRet)

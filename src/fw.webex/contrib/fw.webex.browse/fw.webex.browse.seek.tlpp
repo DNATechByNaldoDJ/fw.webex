@@ -1,0 +1,166 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseSeek - Equivalente Web para FWSeek (pesquisa rapida por indice/campo)
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+class WebExBrowseSeek from ClassBase
+
+    public data aOrders        as array
+    public data cCurrentField  as character
+    public data cCurrentTerm   as character
+    public data nCurrentOrder  as numeric
+
+    public method New() as object
+    public method AddOrder(cTitle as character,cField as character,nOrder as numeric) as object
+    public method SetOrders(aOrders as array) as object
+    public method SetSeek(cField as character,cTerm as character,nOrder as numeric) as object
+    public method ClearSeek() as object
+    public method HasSeek() as logical
+    public method MatchRow(jRowJSON as json) as logical
+    public method BuildBar(cBrowseID as character) as object
+    public method Clean() as object
+
+endclass
+
+method New() class WebExBrowseSeek
+    _Super:New()
+    ::aOrders       := Array(0)
+    ::cCurrentField := ""
+    ::cCurrentTerm  := ""
+    ::nCurrentOrder := 0
+return(self)
+
+method AddOrder(cTitle,cField,nOrder) class WebExBrowseSeek
+    paramtype 1 var cTitle as character
+    paramtype 2 var cField as character
+    paramtype 3 var nOrder as numeric optional default (Len(::aOrders) + 1)
+    aAdd(::aOrders,{cTitle,AllTrim(cField),nOrder})
+    if (Empty(::cCurrentField))
+        ::cCurrentField := AllTrim(cField)
+        ::nCurrentOrder := nOrder
+    endif
+return(self)
+
+method SetOrders(aOrders) class WebExBrowseSeek
+    local aItem as array
+    local nI as numeric
+    paramtype 1 var aOrders as array
+    FWFreeArray(@::aOrders)
+    ::aOrders := Array(0)
+    for nI := 1 to Len(aOrders)
+        aItem := aOrders[nI]
+        if (ValType(aItem) == "A" .and. Len(aItem) >= 2)
+            ::AddOrder(aItem[1],aItem[2],if(Len(aItem) >= 3 .and. ValType(aItem[3]) == "N",aItem[3],nI))
+        endif
+    next nI
+return(self)
+
+method SetSeek(cField,cTerm,nOrder) class WebExBrowseSeek
+    paramtype 1 var cField as character optional default ""
+    paramtype 2 var cTerm  as character optional default ""
+    paramtype 3 var nOrder as numeric optional default 0
+    ::cCurrentField := AllTrim(cField)
+    ::cCurrentTerm  := AllTrim(cTerm)
+    if (nOrder > 0)
+        ::nCurrentOrder := nOrder
+    endif
+return(self)
+
+method ClearSeek() class WebExBrowseSeek
+    ::cCurrentTerm := ""
+return(self)
+
+method HasSeek() class WebExBrowseSeek
+return(!Empty(::cCurrentField) .and. !Empty(::cCurrentTerm))
+
+method MatchRow(jRowJSON) class WebExBrowseSeek
+    local cRowVal as character
+    local cTarget as character
+    local xCellVal as variant
+    if (!::HasSeek())
+        return(.T.)
+    endif
+    if ((ValType(jRowJSON) != "J") .or. !jRowJSON:HasProperty(::cCurrentField))
+        return(.F.)
+    endif
+    xCellVal := jRowJSON[::cCurrentField]
+    cRowVal  := Upper(AllTrim(if(ValType(xCellVal) == "C",xCellVal,cValToChar(xCellVal))))
+    cTarget := Upper(::cCurrentTerm)
+return(cTarget $ cRowVal)
+
+method BuildBar(cBrowseID) class WebExBrowseSeek
+    local aItem as array
+    local nI as numeric
+    local oBar as object
+    local oBtnClear as object
+    local oBtnSeek as object
+    local oGroup as object
+    local oInput as object
+    local oOpt as object
+    local oSelect as object
+
+    paramtype 1 var cBrowseID as character
+
+    oBar := WebExDiv():New()
+    oBar:AddClass("mb-3")
+    oBar:SetAttr("data-fwwebex-browse-seek-bar",cBrowseID)
+
+    oGroup := WebExDiv():New()
+    oGroup:AddClass("input-group input-group-sm")
+
+    oSelect := WebExControl():New("select")
+    oSelect:AddClass("form-select")
+    oSelect:SetAttr("style","max-width:220px;")
+    oSelect:SetAttr("data-fwwebex-browse-seek-field",cBrowseID)
+    for nI := 1 to Len(::aOrders)
+        aItem := ::aOrders[nI]
+        oOpt := WebExControl():New("option")
+        oOpt:SetAttr("value",aItem[2])
+        oOpt:SetAttr("data-order",AllTrim(cValToChar(aItem[3])))
+        oOpt:SetContent(aItem[1])
+        oSelect:AddChild(oOpt)
+    next nI
+
+    oInput := WebExControl():New("input")
+    oInput:SetAttr("type","text")
+    oInput:SetAttr("placeholder","Pesquisar registro...")
+    oInput:SetAttr("data-fwwebex-browse-seek-term",cBrowseID)
+    oInput:AddClass("form-control")
+
+    oBtnSeek := WebExControl():New("button")
+    oBtnSeek:SetAttr("type","button")
+    oBtnSeek:SetAttr("data-fwwebex-browse-seek-apply",cBrowseID)
+    oBtnSeek:AddClass("btn btn-outline-primary")
+    oBtnSeek:SetContent("Pesquisar")
+
+    oBtnClear := WebExControl():New("button")
+    oBtnClear:SetAttr("type","button")
+    oBtnClear:SetAttr("data-fwwebex-browse-seek-clear",cBrowseID)
+    oBtnClear:AddClass("btn btn-outline-secondary")
+    oBtnClear:SetContent("Limpar")
+
+    oGroup:AddChild(oSelect)
+    oGroup:AddChild(oInput)
+    oGroup:AddChild(oBtnSeek)
+    oGroup:AddChild(oBtnClear)
+    oBar:AddChild(oGroup)
+
+return(oBar)
+
+method Clean() class WebExBrowseSeek
+    FWFreeArray(@::aOrders)
+    ::cCurrentField := ""
+    ::cCurrentTerm  := ""
+    ::nCurrentOrder := 0
+return(self)

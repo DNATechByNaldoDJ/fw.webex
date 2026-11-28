@@ -1,0 +1,167 @@
+/*
+  __                            _
+ / _|__      ____      __  ___ | |__    ___ __  __
+| |_ \ \ /\ / /\ \ /\ / / / _ \| '_ \  / _ \\ \/ /
+|  _| \ V  V /  \ V  V / |  __/| |_) ||  __/ >  <
+|_|    \_/\_/    \_/\_/   \___||_.__/  \___|/_/\_\
+
+WebExBrowseDispatcher - Roteamento de eventos TWebChannel (JS <-> TL++)
+Fases 1, 2 e 3: PAGE, SELECT, DBLCLICK, ACTION, FILTER, SEEK e MARK.
+Released to Public Domain.
+--------------------------------------------------------------------------------------
+*/
+
+namespace FWWebEx
+
+#include "fw.webex.browse.th"
+
+static __jBrowseRegistry := JSONObject():New() as json
+
+class WebExBrowseDispatcher
+
+    static method Register(oBrowse as object) as logical
+    static method Unregister(cBrowseID as character) as logical
+    static method Get(cBrowseID as character) as object
+    static method Clear() as logical
+
+    static method Callback(oTWebChannel as object,cCodeType as character,cCodeContent as character) as logical
+    static method BindChannel(oTWebChannel as object) as codeblock
+
+endclass
+
+static method Register(oBrowse) class WebExBrowseDispatcher
+    local cBrowseID as character
+    paramtype 1 var oBrowse as object
+    cBrowseID := oBrowse:GetFixedID()
+    if (Empty(cBrowseID))
+        cBrowseID := oBrowse:GetID()
+    endif
+    __jBrowseRegistry[cBrowseID] := oBrowse
+return(.T.)
+
+static method Unregister(cBrowseID) class WebExBrowseDispatcher
+    paramtype 1 var cBrowseID as character
+    if (__jBrowseRegistry:HasProperty(cBrowseID))
+        __jBrowseRegistry:DelName(cBrowseID)
+        return(.T.)
+    endif
+return(.F.)
+
+static method Get(cBrowseID) class WebExBrowseDispatcher
+    paramtype 1 var cBrowseID as character
+    if (__jBrowseRegistry:HasProperty(cBrowseID))
+        return(__jBrowseRegistry[cBrowseID])
+    endif
+return(NIL)
+
+static method Clear() class WebExBrowseDispatcher
+    FreeObj(@__jBrowseRegistry)
+    __jBrowseRegistry := JSONObject():New()
+return(.T.)
+
+static method BindChannel(oTWebChannel) class WebExBrowseDispatcher
+    local bPrevious as codeblock
+    paramtype 1 var oTWebChannel as object class TWEBCHANNEL
+    bPrevious := oTWebChannel:bJSToAdvPL
+    oTWebChannel:bJSToAdvPL := {|oSender,cType,cContent| WebExBrowseDispatcher():Callback(oSender,cType,cContent) }
+return(bPrevious)
+
+static method Callback(oTWebChannel,cCodeType,cCodeContent) class WebExBrowseDispatcher
+    local cBrowseID := "" as character
+    local cEvent as character
+    local cReplyEvent as character
+    local cReqID := "" as character
+    local jRequest := JSONObject():New() as json
+    local jResponse as json
+    local lHandled := .F. as logical
+    local oBrowse as object
+    local oError as object
+
+    paramtype 1 var oTWebChannel as object class TWEBCHANNEL
+    paramtype 2 var cCodeType    as character
+    paramtype 3 var cCodeContent as character optional default ""
+
+    cEvent := Upper(AllTrim(cCodeType))
+
+    do case
+        case (cEvent == FWWEBEX_BROWSE_EVT_PAGE)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_PAGE_RESULT
+        case (cEvent == FWWEBEX_BROWSE_EVT_SELECT)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_SELECT_RESULT
+        case (cEvent == FWWEBEX_BROWSE_EVT_DBLCLICK)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_DBLCLICK_RESULT
+        case (cEvent == FWWEBEX_BROWSE_EVT_ACTION)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_ACTION_RESULT
+        case (cEvent == FWWEBEX_BROWSE_EVT_FILTER)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_FILTER_RESULT
+        case (cEvent == FWWEBEX_BROWSE_EVT_SEEK)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_SEEK_RESULT
+        case (cEvent == FWWEBEX_BROWSE_EVT_MARK)
+            cReplyEvent := FWWEBEX_BROWSE_EVT_MARK_RESULT
+        otherwise
+            FreeObj(@jRequest)
+            return(.F.)
+    end case
+
+    lHandled := .T.
+
+    try
+        if (!Empty(jRequest:FromJSON(cCodeContent)))
+            jResponse := JSONObject():New()
+            jResponse["ok"]    := .F.
+            jResponse["error"] := "Payload JSON invalido."
+        else
+            if (jRequest:HasProperty("id") .and. ValType(jRequest["id"]) == "C")
+                cReqID := jRequest["id"]
+            endif
+            if (jRequest:HasProperty("browseId") .and. ValType(jRequest["browseId"]) == "C")
+                cBrowseID := jRequest["browseId"]
+            endif
+
+            oBrowse := WebExBrowseDispatcher():Get(cBrowseID)
+            if (ValType(oBrowse) != "O")
+                jResponse := JSONObject():New()
+                jResponse["ok"]    := .F.
+                jResponse["error"] := "Instancia WebExBrowse nao encontrada para o ID: " + cBrowseID
+            else
+                do case
+                    case (cEvent == FWWEBEX_BROWSE_EVT_PAGE)
+                        jResponse := oBrowse:HandlePageRequest(jRequest)
+                    case (cEvent == FWWEBEX_BROWSE_EVT_SELECT)
+                        jResponse := oBrowse:HandleSelectRequest(jRequest)
+                    case (cEvent == FWWEBEX_BROWSE_EVT_DBLCLICK)
+                        jResponse := oBrowse:HandleDblClickRequest(jRequest)
+                    case (cEvent == FWWEBEX_BROWSE_EVT_ACTION)
+                        jResponse := oBrowse:HandleActionRequest(jRequest)
+                    case (cEvent == FWWEBEX_BROWSE_EVT_FILTER)
+                        jResponse := oBrowse:HandleFilterRequest(jRequest)
+                    case (cEvent == FWWEBEX_BROWSE_EVT_SEEK)
+                        jResponse := oBrowse:HandleSeekRequest(jRequest)
+                    case (cEvent == FWWEBEX_BROWSE_EVT_MARK)
+                        jResponse := oBrowse:HandleMarkRequest(jRequest)
+                end case
+            endif
+        endif
+    catch oError
+        jResponse := JSONObject():New()
+        jResponse["ok"]    := .F.
+        jResponse["error"] := "Erro interno no dispatcher WebExBrowse: " + oError:Description
+        ConOut("FWWebEx.WebExBrowseDispatcher:Callback -> " + oError:Description)
+        FreeObj(@oError)
+    endtry
+
+    if (ValType(jResponse) != "J")
+        jResponse := JSONObject():New()
+        jResponse["ok"]    := .F.
+        jResponse["error"] := "Resposta vazia do handler."
+    endif
+
+    jResponse["id"]       := cReqID
+    jResponse["browseId"] := cBrowseID
+
+    oTWebChannel:AdvPLToJS(cReplyEvent,jResponse:ToJSON())
+
+    FreeObj(@jResponse)
+    FreeObj(@jRequest)
+
+return(lHandled)
